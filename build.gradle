@@ -1,0 +1,431 @@
+// ===== 修改：插件 ID 升级为官方新格式 =====
+plugins {
+    id 'java'
+    id 'net.fabricmc.fabric-loom' version '1.17.9'
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://maven.fabricmc.net/' }
+}
+
+dependencies {
+    // ===== 修改：移除 mappings 行（不再需要） =====
+    // minecraft 依赖保持不变，但版本号需要在 gradle.properties 中改为 26.3 快照
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    // mappings loom.officialMojangMappings()   ← 这行已删除
+
+    // Fabric API 和 Loader 保留为 modImplementation（它们仍是 mod）
+ //   modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+  //  modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    // 以下依赖为原版运行时所需，可保留（loom 会自动处理大部分，保留无妨）
+    implementation 'at.yawk.lz4:lz4-java:1.10.1'
+    implementation 'ca.weblite:java-objc-bridge:1.1'
+    implementation 'com.azure:azure-json:1.4.0'
+    implementation 'com.github.oshi:oshi-core:6.9.0'
+    implementation 'com.google.code.gson:gson:2.14.0'
+    implementation 'com.google.guava:failureaccess:1.0.3'
+    implementation 'com.google.guava:guava:33.6.0-jre'
+    implementation 'com.ibm.icu:icu4j:78.3'
+    implementation 'com.microsoft.azure:msal4j:1.24.1'
+    implementation 'com.mojang:authlib:10.0.76'
+    implementation 'com.mojang:blocklist:1.0.10'
+    implementation 'com.mojang:brigadier:1.3.10'
+    implementation 'com.mojang:datafixerupper:10.0.21'
+    implementation 'com.mojang:jtracy:1.0.37'
+    implementation 'com.mojang:jtracy:1.0.37:natives-linux'
+    implementation 'com.mojang:jtracy:1.0.37:natives-macos'
+    implementation 'com.mojang:jtracy:1.0.37:natives-macos-arm64'
+    implementation 'com.mojang:jtracy:1.0.37:natives-windows'
+    implementation 'com.mojang:logging:1.7.12'
+    implementation 'com.mojang:patchy:2.2.10'
+    implementation 'com.mojang:text2speech:1.19.12'
+    implementation 'commons-codec:commons-codec:1.22.0'
+    implementation 'commons-io:commons-io:2.20.0'
+    implementation 'io.netty:netty-buffer:4.2.15.Final'
+    implementation 'io.netty:netty-codec-base:4.2.15.Final'
+    implementation 'io.netty:netty-codec-compression:4.2.15.Final'
+    implementation 'io.netty:netty-codec-http:4.2.15.Final'
+    implementation 'io.netty:netty-common:4.2.15.Final'
+    implementation 'io.netty:netty-handler:4.2.15.Final'
+    implementation 'io.netty:netty-resolver:4.2.15.Final'
+    implementation 'io.netty:netty-transport-classes-epoll:4.2.15.Final'
+    implementation 'io.netty:netty-transport-classes-kqueue:4.2.15.Final'
+    implementation 'io.netty:netty-transport-native-epoll:4.2.15.Final:linux-aarch_64'
+    implementation 'io.netty:netty-transport-native-epoll:4.2.15.Final:linux-x86_64'
+    implementation 'io.netty:netty-transport-native-kqueue:4.2.15.Final:osx-aarch_64'
+    implementation 'io.netty:netty-transport-native-kqueue:4.2.15.Final:osx-x86_64'
+    implementation 'io.netty:netty-transport-native-unix-common:4.2.15.Final'
+    implementation 'io.netty:netty-transport:4.2.15.Final'
+    implementation 'it.unimi.dsi:fastutil:8.5.18'
+    implementation 'net.java.dev.jna:jna-platform:5.17.0'
+    implementation 'net.java.dev.jna:jna:5.17.0'
+    implementation 'net.sf.jopt-simple:jopt-simple:5.0.4'
+    implementation 'org.apache.commons:commons-compress:1.28.0'
+    implementation 'org.apache.commons:commons-lang3:3.20.0'
+    implementation 'org.apache.logging.log4j:log4j-api:2.26.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.26.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.0'
+    implementation 'org.jcraft:jorbis:0.0.17'
+    implementation 'org.joml:joml:1.10.8'
+    implementation 'org.jspecify:jspecify:1.0.0'
+    implementation 'org.lwjgl:lwjgl-freetype:3.4.1'
+    implementation 'org.lwjgl:lwjgl-freetype:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl-freetype:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-freetype:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl-freetype:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl-freetype:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl-freetype:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl-glfw:3.4.1'
+    implementation 'org.lwjgl:lwjgl-glfw:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl-glfw:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-glfw:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl-glfw:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl-glfw:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl-glfw:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl-jemalloc:3.4.1'
+    implementation 'org.lwjgl:lwjgl-jemalloc:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl-jemalloc:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-jemalloc:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl-jemalloc:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl-jemalloc:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl-jemalloc:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl-openal:3.4.1'
+    implementation 'org.lwjgl:lwjgl-openal:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl-openal:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-openal:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl-openal:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl-openal:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl-openal:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl-opengl:3.4.1'
+    implementation 'org.lwjgl:lwjgl-opengl:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl-opengl:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-opengl:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl-opengl:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl-opengl:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl-opengl:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl-shaderc:3.4.1'
+    implementation 'org.lwjgl:lwjgl-shaderc:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl-shaderc:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-shaderc:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl-shaderc:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl-shaderc:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl-shaderc:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl-spvc:3.4.1'
+    implementation 'org.lwjgl:lwjgl-spvc:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl-spvc:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-spvc:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl-spvc:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl-spvc:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl-spvc:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl-stb:3.4.1'
+    implementation 'org.lwjgl:lwjgl-stb:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl-stb:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-stb:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl-stb:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl-stb:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl-stb:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl-tinyfd:3.4.1'
+    implementation 'org.lwjgl:lwjgl-tinyfd:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl-tinyfd:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-tinyfd:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl-tinyfd:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl-tinyfd:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl-tinyfd:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl-vma:3.4.1'
+    implementation 'org.lwjgl:lwjgl-vma:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl-vma:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-vma:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl-vma:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl-vma:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl-vma:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl-vulkan:3.4.1'
+    implementation 'org.lwjgl:lwjgl-vulkan:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl-vulkan:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl:3.4.1:natives-linux'
+    implementation 'org.lwjgl:lwjgl:3.4.1:natives-macos'
+    implementation 'org.lwjgl:lwjgl:3.4.1:natives-macos-arm64'
+    implementation 'org.lwjgl:lwjgl:3.4.1:natives-windows'
+    implementation 'org.lwjgl:lwjgl:3.4.1:natives-windows-arm64'
+    implementation 'org.lwjgl:lwjgl:3.4.1:natives-windows-x86'
+    implementation 'org.lwjgl:lwjgl:3.4.1:unsafe'
+    implementation 'org.slf4j:slf4j-api:2.0.17'
+}
+
+// ===== 修改：Java 版本升级到 25 =====
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xmaxerrs' << '10000'
+    options.compilerArgs << '-Xmaxwarns' << '0'
+    options.fork = true
+    options.forkOptions.jvmArgs = ['-Xmx4G']
+    // ===== 修改：显式指定 source/target 为 25（覆盖默认） =====
+    options.compilerArgs += [
+        '-source', '25',
+        '-target', '25',
+        '-Xlint:-unchecked',
+        '-Xlint:-rawtypes',
+        '-Xlint:-deprecation',
+        '-parameters'
+    ]
+}
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+// brokenPatterns 排除列表保持不变（这些是你已修复的文件）
+def brokenPatterns = [
+'net/minecraft/advancements/Advancement.java',
+'net/minecraft/advancements/predicates/entity/EntityFlagsPredicate.java',
+'net/minecraft/advancements/triggers/Criterion.java',
+'net/minecraft/advancements/triggers/EnterBlockTrigger.java',
+'net/minecraft/advancements/triggers/SlideDownBlockTrigger.java',
+'net/minecraft/client/Minecraft.java',
+'net/minecraft/client/OptionInstance.java',
+'net/minecraft/client/PeriodicNotificationManager.java',
+'net/minecraft/client/data/models/BlockModelGenerators.java',
+'net/minecraft/client/data/models/blockstates/PropertyValueList.java',
+'net/minecraft/client/data/models/model/ModelTemplate.java',
+'net/minecraft/client/gui/components/ChatComponent.java',
+'net/minecraft/client/gui/font/FontManager.java',
+'net/minecraft/client/gui/font/providers/BitmapProvider.java',
+'net/minecraft/client/gui/screens/PresetFlatWorldScreen.java',
+'net/minecraft/client/gui/screens/inventory/BookViewScreen.java',
+'net/minecraft/client/gui/screens/packs/PackSelectionScreen.java',
+'net/minecraft/client/gui/screens/worldselection/AbstractGameRulesScreen.java',
+'net/minecraft/client/gui/screens/worldselection/CreateWorldScreen.java',
+'net/minecraft/client/gui/screens/worldselection/WorldCreationUiState.java',
+'net/minecraft/client/multiplayer/ClientCommonPacketListenerImpl.java',
+'net/minecraft/client/multiplayer/resolver/AddressCheck.java',
+'net/minecraft/client/renderer/LevelEventHandler.java',
+'net/minecraft/client/renderer/block/dispatch/BlockStateModelDispatcher.java',
+'net/minecraft/client/renderer/block/dispatch/VariantSelector.java',
+'net/minecraft/client/renderer/entity/EntityRenderDispatcher.java',
+'net/minecraft/client/renderer/feature/ModelFeatureRenderer.java',
+'net/minecraft/client/renderer/item/ConditionalItemModel.java',
+'net/minecraft/client/renderer/item/properties/select/ComponentContents.java',
+'net/minecraft/client/resources/WaypointStyle.java',
+'net/minecraft/client/resources/metadata/gui/GuiSpriteScaling.java',
+'net/minecraft/client/resources/model/ModelBakery.java',
+'net/minecraft/client/resources/palette/PalettedTextureManager.java',
+'net/minecraft/commands/arguments/ArgumentSignatures.java',
+'net/minecraft/commands/synchronization/ArgumentTypeInfos.java',
+'net/minecraft/commands/synchronization/SuggestionProviders.java',
+'net/minecraft/core/component/predicates/DataComponentPredicate.java',
+'net/minecraft/core/registries/BuiltInRegistries.java',
+'net/minecraft/data/info/RegistryDumpReport.java',
+'net/minecraft/data/loot/packs/VanillaBlockLoot.java',
+'net/minecraft/data/recipes/RecipeProvider.java',
+'net/minecraft/data/worldgen/TrialChambersStructurePools.java',
+'net/minecraft/data/worldgen/placement/VegetationPlacements.java',
+'net/minecraft/locale/Language.java',
+'net/minecraft/nbt/NbtOps.java',
+'net/minecraft/nbt/NbtUtils.java',
+'net/minecraft/nbt/SnbtGrammar.java',
+'net/minecraft/network/chat/LastSeenMessages.java',
+'net/minecraft/network/codec/StreamCodec.java',
+'net/minecraft/network/protocol/common/ClientboundCustomPayloadPacket.java',
+'net/minecraft/network/protocol/common/ServerboundCustomPayloadPacket.java',
+'net/minecraft/network/protocol/common/custom/CustomPacketPayload.java',
+'net/minecraft/network/protocol/configuration/ClientboundUpdateEnabledFeaturesPacket.java',
+'net/minecraft/network/protocol/game/ClientboundGameRuleValuesPacket.java',
+'net/minecraft/network/protocol/game/VecDelta.java',
+'net/minecraft/network/syncher/EntityDataSerializer.java',
+'net/minecraft/server/dedicated/DedicatedServerProperties.java',
+'net/minecraft/server/dedicated/Settings.java',
+'net/minecraft/server/dialog/CommonDialogData.java',
+'net/minecraft/server/dialog/action/StaticAction.java',
+'net/minecraft/server/dialog/input/NumberRangeInput.java',
+'net/minecraft/server/dialog/input/SingleOptionInput.java',
+'net/minecraft/server/dialog/input/TextInput.java',
+'net/minecraft/server/jsonrpc/IncomingRpcMethods.java',
+'net/minecraft/server/jsonrpc/api/MethodInfo.java',
+'net/minecraft/server/jsonrpc/api/ParamInfo.java',
+'net/minecraft/server/jsonrpc/api/ResultInfo.java',
+'net/minecraft/server/jsonrpc/api/Schema.java',
+'net/minecraft/server/jsonrpc/methods/DiscoveryService.java',
+'net/minecraft/server/level/ChunkTaskPriorityQueue.java',
+'net/minecraft/server/network/ServerGamePacketListenerImpl.java',
+'net/minecraft/server/packs/metadata/MetadataSectionType.java',
+'net/minecraft/server/packs/resources/FallbackResourceManager.java',
+'net/minecraft/stats/ServerStatsCounter.java',
+'net/minecraft/util/NullOps.java',
+'net/minecraft/util/PlaceholderLookupProvider.java',
+'net/minecraft/util/ProblemReporter.java',
+'net/minecraft/util/SortedArraySet.java',
+'net/minecraft/util/Util.java',
+'net/minecraft/util/filefix/FileFixerUpper.java',
+'net/minecraft/util/filefix/fixes/LevelDatToSavedDataFileFix.java',
+'net/minecraft/util/profiling/jfr/parse/JfrStatsResult.java',
+'net/minecraft/world/attribute/AttributeType.java',
+'net/minecraft/world/attribute/EnvironmentAttributeMap.java',
+'net/minecraft/world/attribute/modifier/AttributeModifier.java',
+'net/minecraft/world/attribute/modifier/ColorModifier.java',
+'net/minecraft/world/attribute/modifier/FloatModifier.java',
+'net/minecraft/world/attribute/modifier/IntegerModifier.java',
+'net/minecraft/world/entity/Avatar.java',
+'net/minecraft/world/entity/SpawnPlacements.java',
+'net/minecraft/world/entity/ai/Brain.java',
+'net/minecraft/world/entity/ai/attributes/DefaultAttributes.java',
+'net/minecraft/world/entity/ai/behavior/GiveGiftToHero.java',
+'net/minecraft/world/entity/ai/behavior/InteractWith.java',
+'net/minecraft/world/entity/ai/goal/CatSitOnBlockGoal.java',
+'net/minecraft/world/entity/ai/sensing/VillagerHostilesSensor.java',
+'net/minecraft/world/entity/ai/village/poi/PoiManager.java',
+'net/minecraft/world/entity/animal/allay/Allay.java',
+'net/minecraft/world/entity/animal/allay/AllayAi.java',
+'net/minecraft/world/entity/animal/armadillo/Armadillo.java',
+'net/minecraft/world/entity/animal/armadillo/ArmadilloAi.java',
+'net/minecraft/world/entity/animal/axolotl/Axolotl.java',
+'net/minecraft/world/entity/animal/camel/Camel.java',
+'net/minecraft/world/entity/animal/camel/CamelAi.java',
+'net/minecraft/world/entity/animal/chicken/Chicken.java',
+'net/minecraft/world/entity/animal/cow/Cow.java',
+'net/minecraft/world/entity/animal/feline/Cat.java',
+'net/minecraft/world/entity/animal/fox/Fox.java',
+'net/minecraft/world/entity/animal/frog/Frog.java',
+'net/minecraft/world/entity/animal/frog/FrogAi.java',
+'net/minecraft/world/entity/animal/frog/Tadpole.java',
+'net/minecraft/world/entity/animal/frog/TadpoleAi.java',
+'net/minecraft/world/entity/animal/goat/Goat.java',
+'net/minecraft/world/entity/animal/goat/GoatAi.java',
+'net/minecraft/world/entity/animal/golem/CopperGolem.java',
+'net/minecraft/world/entity/animal/golem/CopperGolemAi.java',
+'net/minecraft/world/entity/animal/happyghast/HappyGhast.java',
+'net/minecraft/world/entity/animal/happyghast/HappyGhastAi.java',
+'net/minecraft/world/entity/animal/nautilus/Nautilus.java',
+'net/minecraft/world/entity/animal/nautilus/NautilusAi.java',
+'net/minecraft/world/entity/animal/nautilus/ZombieNautilus.java',
+'net/minecraft/world/entity/animal/pig/Pig.java',
+'net/minecraft/world/entity/animal/sniffer/Sniffer.java',
+'net/minecraft/world/entity/animal/sniffer/SnifferAi.java',
+'net/minecraft/world/entity/animal/wolf/Wolf.java',
+'net/minecraft/world/entity/monster/Zoglin.java',
+'net/minecraft/world/entity/monster/breeze/Breeze.java',
+'net/minecraft/world/entity/monster/breeze/BreezeAi.java',
+'net/minecraft/world/entity/monster/creaking/Creaking.java',
+'net/minecraft/world/entity/monster/creaking/CreakingAi.java',
+'net/minecraft/world/entity/monster/hoglin/Hoglin.java',
+'net/minecraft/world/entity/monster/piglin/Piglin.java',
+'net/minecraft/world/entity/monster/piglin/PiglinAi.java',
+'net/minecraft/world/entity/monster/piglin/PiglinBrute.java',
+'net/minecraft/world/entity/monster/piglin/StartHuntingHoglin.java',
+'net/minecraft/world/entity/monster/warden/AngerManagement.java',
+'net/minecraft/world/entity/monster/warden/Warden.java',
+'net/minecraft/world/entity/monster/warden/WardenAi.java',
+'net/minecraft/world/entity/npc/villager/Villager.java',
+'net/minecraft/world/entity/variant/PriorityProvider.java',
+'net/minecraft/world/item/HoneycombItem.java',
+'net/minecraft/world/item/component/BlockTransformerMappings.java',
+'net/minecraft/world/item/component/KineticWeapon.java',
+'net/minecraft/world/item/component/PiercingWeapon.java',
+'net/minecraft/world/item/crafting/RecipeMap.java',
+'net/minecraft/world/item/enchantment/LevelBasedValue.java',
+'net/minecraft/world/item/enchantment/effects/SpawnParticlesEffect.java',
+'net/minecraft/world/item/trading/VillagerTrade.java',
+'net/minecraft/world/level/TicketStorage.java',
+'net/minecraft/world/level/biome/BiomeSpecialEffects.java',
+'net/minecraft/world/level/biome/Climate.java',
+'net/minecraft/world/level/biome/MobSpawnSettings.java',
+'net/minecraft/world/level/biome/MultiNoiseBiomeSourceParameterList.java',
+'net/minecraft/world/level/block/BaseEntityBlock.java',
+'net/minecraft/world/level/block/Block.java',
+'net/minecraft/world/level/block/HopperBlock.java',
+'net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java',
+'net/minecraft/world/level/block/entity/TestInstanceBlockEntity.java',
+'net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java',
+'net/minecraft/world/level/block/entity/vault/VaultConfig.java',
+'net/minecraft/world/level/block/state/StateDefinition.java',
+'net/minecraft/world/level/block/state/properties/Property.java',
+'net/minecraft/world/level/dimension/end/EnderDragonFight.java',
+'net/minecraft/world/level/gameevent/EntityPositionSource.java',
+'net/minecraft/world/level/gamerules/GameRuleMap.java',
+'net/minecraft/world/level/levelgen/DensityFunctions.java',
+'net/minecraft/world/level/levelgen/NoiseSettings.java',
+'net/minecraft/world/level/levelgen/blending/BlendingData.java',
+'net/minecraft/world/level/levelgen/feature/FossilFeature.java',
+'net/minecraft/world/level/levelgen/feature/MultifaceGrowthFeature.java',
+'net/minecraft/world/level/levelgen/flat/FlatLevelGeneratorSettings.java',
+'net/minecraft/world/level/levelgen/placement/NoiseThresholdCountPlacement.java',
+'net/minecraft/world/level/levelgen/presets/WorldPreset.java',
+'net/minecraft/world/level/levelgen/structure/StructurePiece.java',
+'net/minecraft/world/level/levelgen/structure/pieces/PiecesContainer.java',
+'net/minecraft/world/level/levelgen/structure/placement/RandomSpreadStructurePlacement.java',
+'net/minecraft/world/level/levelgen/structure/structures/JigsawStructure.java',
+'net/minecraft/world/level/levelgen/structure/structures/MineshaftPieces.java',
+'net/minecraft/world/level/levelgen/structure/structures/OceanMonumentPieces.java',
+'net/minecraft/world/level/storage/loot/LootContextArg.java',
+'net/minecraft/world/level/storage/loot/functions/SetCustomModelDataFunction.java',
+'net/minecraft/world/level/storage/loot/predicates/LootItemBlockStatePropertyCondition.java',
+'net/minecraft/world/scores/Scoreboard.java',
+'net/minecraft/world/timeline/Timeline.java',
+'net/minecraft/util/valueproviders/**',
+'net/minecraft/util/datafix/**',
+'net/minecraft/core/component/DataComponentPatch.java',
+'net/minecraft/core/component/TypedDataComponent.java',
+'net/minecraft/core/component/DataComponentType.java',
+'net/minecraft/core/Registry.java',
+'net/minecraft/core/HolderLookup.java',
+'net/minecraft/resources/RegistryOps.java',
+'net/minecraft/resources/HolderSetCodec.java',
+'net/minecraft/resources/RegistryDataLoader.java',
+'net/minecraft/world/level/storage/SavedDataStorage.java',
+'net/minecraft/world/level/storage/loot/ValidationContext.java',
+'net/minecraft/client/renderer/blockentity/BeaconRenderer.java',
+'net/minecraft/world/level/storage/loot/functions/ListOperation.java',
+'net/minecraft/world/level/storage/loot/predicates/EnvironmentAttributeCheck.java',
+'net/minecraft/world/entity/EntityReference.java',
+'net/minecraft/world/item/AdventureModePredicate.java',
+'net/minecraft/world/entity/ai/memory/MemoryMap.java',
+'net/minecraft/world/item/component/DebugStickState.java',
+'net/minecraft/world/level/block/entity/BeehiveBlockEntity.java',
+'net/minecraft/world/level/block/SculkSpreader.java',
+'net/minecraft/network/syncher/EntityDataSerializers.java',
+'net/minecraft/network/chat/contents/NbtContents.java',
+'net/minecraft/advancements/predicates/MinMaxBounds.java',
+'net/minecraft/util/ExtraCodecs.java',
+'net/minecraft/commands/arguments/ResourceOrIdArgument.java',
+'net/minecraft/commands/execution/tasks/BuildContexts.java',
+'net/minecraft/server/commands/LootCommand.java',
+'net/minecraft/server/commands/TimeCommand.java',
+'net/minecraft/server/commands/ReturnCommand.java'
+]
+
+sourceSets {
+    main {
+        java {
+            include 'net/minecraft/**'
+            include 'com/**'
+            
+            brokenPatterns.each { pattern -> exclude pattern }
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+            include '**'
+        }
+    }
+}
+
+// ===== 修改：remapJar 仍可保留，但 targetNamespace 已是 official（无需转换） =====
+// 使用标准的 jar 任务，打包编译后的类
+tasks.jar {
+    archiveFileName.set('modified.jar')        // 输出文件名
+    manifest {
+        attributes 'Main-Class': 'net.minecraft.client.main.Main'
+    }
+    // 如果你只想包含部分 class，可以设置 include/exclude
+    // 默认会打包所有编译后的 class
+}
+
+// build 任务默认已经依赖 jar，所以我们不需要额外指定
+// 如果你希望 build 直接生成最终 jar，可以保留依赖
+tasks.build {
+    dependsOn tasks.jar
+}
