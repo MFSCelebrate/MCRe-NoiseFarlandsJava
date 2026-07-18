@@ -98,6 +98,6 @@ jobs:
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: Minecraft-${{ env.MINECRAFT_VERSION }}-Custom
-          path: minecraft-${{ env.MINECRAFT_VERSION }}-custom-full.jar
+          name: 26.3-snapshot-3
+          path: 26.3-snapshot-3.jar
           if-no-files-found: error
