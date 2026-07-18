@@ -33,18 +33,18 @@ annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
     implementation 'com.google.guava:guava:33.6.0-jre'
     implementation 'com.ibm.icu:icu4j:78.3'
     implementation 'com.microsoft.azure:msal4j:1.24.1'
-    // implementation 'com.mojang:authlib:10.0.76'
-    // implementation 'com.mojang:blocklist:1.0.10'
-    // implementation 'com.mojang:brigadier:1.3.10'
-    // implementation 'com.mojang:datafixerupper:10.0.21'
-    // implementation 'com.mojang:jtracy:1.0.37'
-    // implementation 'com.mojang:jtracy:1.0.37:natives-linux'
-    // implementation 'com.mojang:jtracy:1.0.37:natives-macos'
-    // implementation 'com.mojang:jtracy:1.0.37:natives-macos-arm64'
-    // implementation 'com.mojang:jtracy:1.0.37:natives-windows'
-    // implementation 'com.mojang:logging:1.7.12'
-    // implementation 'com.mojang:patchy:2.2.10'
-    // implementation 'com.mojang:text2speech:1.19.12'
+    implementation 'com.mojang:authlib:10.0.76'
+    implementation 'com.mojang:blocklist:1.0.10'
+    implementation 'com.mojang:brigadier:1.3.10'
+    implementation 'com.mojang:datafixerupper:10.0.21'
+    implementation 'com.mojang:jtracy:1.0.37'
+    implementation 'com.mojang:jtracy:1.0.37:natives-linux'
+    implementation 'com.mojang:jtracy:1.0.37:natives-macos'
+    implementation 'com.mojang:jtracy:1.0.37:natives-macos-arm64'
+    implementation 'com.mojang:jtracy:1.0.37:natives-windows'
+    implementation 'com.mojang:logging:1.7.12'
+    implementation 'com.mojang:patchy:2.2.10'
+    implementation 'com.mojang:text2speech:1.19.12'
     implementation 'commons-codec:commons-codec:1.22.0'
     implementation 'commons-io:commons-io:2.20.0'
     implementation 'io.netty:netty-buffer:4.2.15.Final'
@@ -209,6 +209,22 @@ def brokenPatterns = [
 'net/minecraft/client/multiplayer/resolver/AddressCheck.java',
 'net/minecraft/client/renderer/LevelEventHandler.java',
 'net/minecraft/client/renderer/block/dispatch/VariantSelector.java',
+'net/minecraft/core/BlockPos.java',
+'net/minecraft/core/Vec3i.java',
+'net/minecraft/network/chat/ComponentUtils.java',
+'net/minecraft/util/thread/BlockableEventLoop.java',
+'net/minecraft/world/DifficultyInstance.java',
+'net/minecraft/core/BlockPos.java',
+'net/minecraft/core/Vec3i.java',
+'net/minecraft/network/chat/ComponentUtils.java',
+'net/minecraft/util/thread/BlockableEventLoop.java',
+'net/minecraft/world/DifficultyInstance.java',
+'net/minecraft/core/BlockPos.java',
+'net/minecraft/core/Vec3i.java',
+'net/minecraft/network/chat/ComponentUtils.java',
+'net/minecraft/util/thread/BlockableEventLoop.java',
+'net/minecraft/world/DifficultyInstance.java',
+
 'net/minecraft/client/renderer/entity/EntityRenderDispatcher.java',
 'net/minecraft/client/renderer/feature/ModelFeatureRenderer.java',
 'net/minecraft/client/renderer/item/ConditionalItemModel.java',
