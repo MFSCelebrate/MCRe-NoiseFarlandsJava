@@ -183,7 +183,8 @@ processResources {
 // brokenPatterns 排除列表保持不变（这些是你已修复的文件）
 def brokenPatterns = [
 'net/minecraft/util/valueproviders/**',
-'net/minecraft/util/datafix/**'
+'net/minecraft/util/datafix/**',
+'net/minecraft/client/renderer/blockentity/BeaconRenderer.java'
 ]
 
 sourceSets {

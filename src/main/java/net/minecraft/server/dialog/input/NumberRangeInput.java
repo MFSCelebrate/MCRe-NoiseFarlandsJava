@@ -12,9 +12,9 @@ import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 
 public record NumberRangeInput(int width, Component label, String labelFormat, NumberRangeInput.RangeInfo rangeInfo) implements InputControl {
-   // ===== 修改：为 group 显式类型 =====
+   // ===== 修改：RecordCodecBuilder.<NumberRangeInput>group → i.group =====
    public static final MapCodec<NumberRangeInput> MAP_CODEC = RecordCodecBuilder.mapCodec(
-      i -> RecordCodecBuilder.<NumberRangeInput>group(
+      i -> i.group(
             Dialog.WIDTH_CODEC.optionalFieldOf("width", 200).forGetter(NumberRangeInput::width),
             ComponentSerialization.CODEC.fieldOf("label").forGetter(NumberRangeInput::label),
             Codec.STRING.optionalFieldOf("label_format", "options.generic_value").forGetter(NumberRangeInput::labelFormat),
@@ -33,9 +33,9 @@ public record NumberRangeInput(int width, Component label, String labelFormat, N
    }
 
    public record RangeInfo(float start, float end, Optional<Float> initial, Optional<Float> step) {
-      // ===== 修改：为 group 显式类型，validate lambda 显式参数类型 =====
+      // ===== 修改：RecordCodecBuilder.<NumberRangeInput.RangeInfo>group → i.group =====
       public static final MapCodec<NumberRangeInput.RangeInfo> MAP_CODEC = RecordCodecBuilder.mapCodec(
-            i -> RecordCodecBuilder.<NumberRangeInput.RangeInfo>group(
+            i -> i.group(
                   Codec.FLOAT.fieldOf("start").forGetter(NumberRangeInput.RangeInfo::start),
                   Codec.FLOAT.fieldOf("end").forGetter(NumberRangeInput.RangeInfo::end),
                   Codec.FLOAT.optionalFieldOf("initial").forGetter(NumberRangeInput.RangeInfo::initial),

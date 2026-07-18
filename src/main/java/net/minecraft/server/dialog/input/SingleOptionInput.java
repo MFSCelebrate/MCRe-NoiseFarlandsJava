@@ -12,9 +12,9 @@ import net.minecraft.server.dialog.Dialog;
 import net.minecraft.util.ExtraCodecs;
 
 public record SingleOptionInput(int width, List<SingleOptionInput.Entry> entries, Component label, boolean labelVisible) implements InputControl {
-   // ===== 修改：group 显式类型，validate lambda 显式参数类型 =====
+   // ===== 修改：RecordCodecBuilder.<SingleOptionInput>group → i.group，lambda 参数显式类型 =====
    public static final MapCodec<SingleOptionInput> MAP_CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<SingleOptionInput>group(
+         i -> i.group(
                Dialog.WIDTH_CODEC.optionalFieldOf("width", 200).forGetter(SingleOptionInput::width),
                ExtraCodecs.nonEmptyList(SingleOptionInput.Entry.CODEC.listOf()).fieldOf("options").forGetter(SingleOptionInput::entries),
                ComponentSerialization.CODEC.fieldOf("label").forGetter(SingleOptionInput::label),
@@ -37,16 +37,15 @@ public record SingleOptionInput(int width, List<SingleOptionInput.Entry> entries
    }
 
    public record Entry(String id, Optional<Component> display, boolean initial) {
-      // ===== 修改：group 显式类型 =====
+      // ===== 修改：RecordCodecBuilder.<SingleOptionInput.Entry>group → i.group =====
       public static final Codec<SingleOptionInput.Entry> FULL_CODEC = RecordCodecBuilder.create(
-         i -> RecordCodecBuilder.<SingleOptionInput.Entry>group(
+         i -> i.group(
                Codec.STRING.fieldOf("id").forGetter(SingleOptionInput.Entry::id),
                ComponentSerialization.CODEC.optionalFieldOf("display").forGetter(SingleOptionInput.Entry::display),
                Codec.BOOL.optionalFieldOf("initial", false).forGetter(SingleOptionInput.Entry::initial)
             )
             .apply(i, SingleOptionInput.Entry::new)
       );
-      // ===== 修改：显式指定 Codec 类型参数 =====
       public static final Codec<SingleOptionInput.Entry> CODEC = Codec.<SingleOptionInput.Entry>withAlternative(
          FULL_CODEC, Codec.STRING, id -> new SingleOptionInput.Entry(id, Optional.empty(), false)
       );

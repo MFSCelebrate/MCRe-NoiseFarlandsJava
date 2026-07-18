@@ -34,9 +34,9 @@ public record FossilFeature(
    Holder<StructureProcessorList> overlayProcessors,
    int maxEmptyCornersAllowed
 ) implements Feature {
-   // ===== 修改：为 group 显式类型 =====
+   // ===== 修改：RecordCodecBuilder.<FossilFeature>group → i.group =====
    public static final MapCodec<FossilFeature> CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<FossilFeature>group(
+         i -> i.group(
                ExtraCodecs.nonEmptyList(Identifier.CODEC.listOf()).fieldOf("fossil_structures").forGetter(FossilFeature::fossilStructures),
                ExtraCodecs.nonEmptyList(Identifier.CODEC.listOf()).fieldOf("overlay_structures").forGetter(FossilFeature::overlayStructures),
                StructureProcessorType.LIST_CODEC.fieldOf("fossil_processors").forGetter(FossilFeature::fossilProcessors),
@@ -46,7 +46,7 @@ public record FossilFeature(
             .apply(i, FossilFeature::new)
       )
       .validate(
-         fossil -> fossil.fossilStructures.size() == fossil.overlayStructures.size()
+         (FossilFeature fossil) -> fossil.fossilStructures.size() == fossil.overlayStructures.size()
             ? DataResult.success(fossil)
             : DataResult.error(() -> "Fossil structure lists must be equal lengths")
       );

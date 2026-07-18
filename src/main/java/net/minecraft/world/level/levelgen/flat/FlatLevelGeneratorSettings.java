@@ -33,9 +33,10 @@ import org.slf4j.Logger;
 
 public class FlatLevelGeneratorSettings {
    private static final Logger LOGGER = LogUtils.getLogger();
-   // ===== 修改：为 group 显式类型，comapFlatMap 改为 lambda =====
+   
+   // ===== 修改：group 改为 i.group，comapFlatMap 第二个参数改为显式 lambda =====
    public static final Codec<FlatLevelGeneratorSettings> CODEC = RecordCodecBuilder.create(
-         i -> RecordCodecBuilder.<FlatLevelGeneratorSettings>group(
+         i -> i.group(
                RegistryCodecs.homogeneousList(Registries.STRUCTURE_SET).lenientOptionalFieldOf("structure_overrides").forGetter(c -> c.structureOverrides),
                FlatLayerInfo.CODEC.listOf().fieldOf("layers").forGetter(FlatLevelGeneratorSettings::getLayersInfo),
                ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.BOOL, "lakes", false).forGetter(s -> s.addLakes),
@@ -47,7 +48,10 @@ public class FlatLevelGeneratorSettings {
             )
             .apply(i, FlatLevelGeneratorSettings::new)
       )
-      .comapFlatMap(settings -> FlatLevelGeneratorSettings.validateHeight(settings), Function.identity())
+      .comapFlatMap(
+         (FlatLevelGeneratorSettings settings) -> FlatLevelGeneratorSettings.validateHeight(settings),
+         (FlatLevelGeneratorSettings settings) -> settings
+      )
       .stable();
    private final Optional<HolderSet<StructureSet>> structureOverrides;
    private final List<FlatLayerInfo> layersInfo = Lists.newArrayList();

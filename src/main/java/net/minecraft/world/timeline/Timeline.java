@@ -34,7 +34,9 @@ public class Timeline {
    private static final Codec<Map<EnvironmentAttribute<?>, AttributeTrack<?, ?>>> TRACKS_CODEC = Codec.dispatchedMap(
       EnvironmentAttributes.CODEC, Util.memoize(AttributeTrack::createCodec)
    );
-   public static final Codec<Timeline> DIRECT_CODEC = RecordCodecBuilder.create(
+   
+   // ===== 修改：RecordCodecBuilder.create 显式类型参数，validate 改为 lambda =====
+   public static final Codec<Timeline> DIRECT_CODEC = RecordCodecBuilder.<Timeline>create(
          i -> i.group(
                WorldClock.CODEC.fieldOf("clock").forGetter(t -> t.clock),
                ExtraCodecs.POSITIVE_INT.optionalFieldOf("period_ticks").forGetter(t -> t.periodTicks),
@@ -45,7 +47,7 @@ public class Timeline {
             )
             .apply(i, Timeline::new)
       )
-      .validate(Timeline::validateInternal);
+      .validate((Timeline t) -> Timeline.validateInternal(t));
    public static final Codec<Timeline> NETWORK_CODEC = DIRECT_CODEC.xmap(Timeline::filterSyncableTracks, Timeline::filterSyncableTracks);
    private final Holder<WorldClock> clock;
    private final Optional<Integer> periodTicks;
@@ -201,7 +203,8 @@ public class Timeline {
    }
 
    private record TimeMarkerInfo(int ticks, boolean showInCommands) {
-      private static final Codec<Timeline.TimeMarkerInfo> FULL_CODEC = RecordCodecBuilder.create(
+      // ===== 修改：RecordCodecBuilder.create 显式类型参数 =====
+      private static final Codec<Timeline.TimeMarkerInfo> FULL_CODEC = RecordCodecBuilder.<Timeline.TimeMarkerInfo>create(
          i -> i.group(
                ExtraCodecs.NON_NEGATIVE_INT.fieldOf("ticks").forGetter(Timeline.TimeMarkerInfo::ticks),
                Codec.BOOL.optionalFieldOf("show_in_commands", false).forGetter(Timeline.TimeMarkerInfo::showInCommands)

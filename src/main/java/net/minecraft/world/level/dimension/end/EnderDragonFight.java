@@ -103,9 +103,10 @@ public class EnderDragonFight extends SavedData {
    private @Nullable DragonRespawnStage respawnStage;
    private int respawnTime;
    private List<EntityReference<EndCrystal>> respawnCrystals;
-   // ===== 修改：为 group 显式类型，修复 ArrayList 泛型 =====
-   public static final Codec<EnderDragonFight> CODEC = RecordCodecBuilder.create(
-      i -> RecordCodecBuilder.<EnderDragonFight>group(
+   
+   // ===== 修改：RecordCodecBuilder.create 显式类型参数，gateways 默认值使用 ObjectArrayList =====
+   public static final Codec<EnderDragonFight> CODEC = RecordCodecBuilder.<EnderDragonFight>create(
+      i -> i.group(
             ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.BOOL, "needs_state_scanning", true).forGetter(fight -> fight.needsStateScanning),
             ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.BOOL, "dragon_killed", false).forGetter(fight -> fight.dragonKilled),
             ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.BOOL, "previously_killed", false).forGetter(fight -> fight.hasPreviouslyKilledDragon),
@@ -113,7 +114,7 @@ public class EnderDragonFight extends SavedData {
             ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.INT, "respawn_time", 0).forGetter(fight -> fight.respawnTime),
             UUIDUtil.CODEC.lenientOptionalFieldOf("dragon_uuid").forGetter(fight -> Optional.ofNullable(fight.dragonUUID)),
             BlockPos.CODEC.lenientOptionalFieldOf("exit_portal_location").forGetter(fight -> Optional.ofNullable(fight.exitPortalLocation)),
-            Codec.list(Codec.INT).lenientOptionalFieldOf("gateways", new ArrayList<>()).forGetter(fight -> fight.gateways),
+            Codec.list(Codec.INT).lenientOptionalFieldOf("gateways", new ObjectArrayList<>()).forGetter(fight -> fight.gateways),
             Codec.list(EntityReference.codec()).optionalFieldOf("respawn_crystals", List.of()).forGetter(fight -> fight.respawnCrystals)
          )
          .apply(i, EnderDragonFight::new)

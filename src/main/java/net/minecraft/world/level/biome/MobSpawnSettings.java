@@ -25,9 +25,10 @@ public class MobSpawnSettings {
    private static final float DEFAULT_CREATURE_SPAWN_PROBABILITY = 0.1F;
    public static final WeightedList<MobSpawnSettings.SpawnerData> EMPTY_MOB_LIST = WeightedList.of();
    public static final MobSpawnSettings EMPTY = new MobSpawnSettings.Builder().build();
-   // ===== 修改：为 group 显式类型 =====
+   
+   // ===== 修改：RecordCodecBuilder.<MobSpawnSettings>group → i.group =====
    public static final MapCodec<MobSpawnSettings> CODEC = RecordCodecBuilder.mapCodec(
-      i -> RecordCodecBuilder.<MobSpawnSettings>group(
+      i -> i.group(
             Codec.floatRange(0.0F, 0.9999999F).optionalFieldOf("creature_spawn_probability", 0.1F).forGetter(b -> b.creatureGenerationProbability),
             Codec.simpleMap(
                   MobCategory.CODEC,
@@ -100,9 +101,9 @@ public class MobSpawnSettings {
    }
 
    public record MobSpawnCost(double energyBudget, double charge) {
-      // ===== 修改：为 group 显式类型 =====
+      // ===== 修改：RecordCodecBuilder.<MobSpawnCost>group → i.group =====
       public static final Codec<MobSpawnSettings.MobSpawnCost> CODEC = RecordCodecBuilder.create(
-         i -> RecordCodecBuilder.<MobSpawnSettings.MobSpawnCost>group(
+         i -> i.group(
                Codec.DOUBLE.fieldOf("energy_budget").forGetter(e -> e.energyBudget),
                Codec.DOUBLE.fieldOf("charge").forGetter(e -> e.charge)
             )
@@ -111,9 +112,9 @@ public class MobSpawnSettings {
    }
 
    public record SpawnerData(EntityType<?> type, int minCount, int maxCount) {
-      // ===== 修改：为 group 显式类型 =====
+      // ===== 修改：RecordCodecBuilder.<SpawnerData>group → i.group =====
       public static final MapCodec<MobSpawnSettings.SpawnerData> CODEC = RecordCodecBuilder.mapCodec(
-            i -> RecordCodecBuilder.<MobSpawnSettings.SpawnerData>group(
+            i -> i.group(
                   BuiltInRegistries.ENTITY_TYPE.byNameCodec().fieldOf("type").forGetter(d -> d.type),
                   ExtraCodecs.POSITIVE_INT.fieldOf("minCount").forGetter(e -> e.minCount),
                   ExtraCodecs.POSITIVE_INT.fieldOf("maxCount").forGetter(e -> e.maxCount)
@@ -127,7 +128,6 @@ public class MobSpawnSettings {
          );
 
       public SpawnerData {
-         // ===== 注意：原版此处应为 EntityType.PIG，但 EntityTypes 可能是旧映射，此处保留原样 =====
          type = type.getCategory() == MobCategory.MISC ? EntityTypes.PIG : type;
       }
 

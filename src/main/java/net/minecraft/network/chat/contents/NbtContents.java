@@ -43,7 +43,8 @@ public record NbtContents(
          }
       }
    );
-   public static final MapCodec<NbtContents> MAP_CODEC = RecordCodecBuilder.mapCodec(
+   // ===== 修改：显式指定 mapCodec 类型参数，validate lambda 显式类型 =====
+   public static final MapCodec<NbtContents> MAP_CODEC = RecordCodecBuilder.<NbtContents>mapCodec(
          i -> i.group(
                NBT_PATH_CODEC.fieldOf("nbt").forGetter(NbtContents::nbtPath),
                Codec.BOOL.lenientOptionalFieldOf("interpret", false).forGetter(NbtContents::interpreting),
@@ -53,7 +54,7 @@ public record NbtContents(
             )
             .apply(i, NbtContents::new)
       )
-      .validate(v -> v.interpreting && v.plain ? DataResult.error(() -> "'interpret' and 'plain' flags can't be both on") : DataResult.success(v));
+      .validate((NbtContents v) -> v.interpreting && v.plain ? DataResult.error(() -> "'interpret' and 'plain' flags can't be both on") : DataResult.success(v));
 
    @Override
    public MutableComponent resolve(final ResolutionContext context, final int recursionDepth) throws CommandSyntaxException {

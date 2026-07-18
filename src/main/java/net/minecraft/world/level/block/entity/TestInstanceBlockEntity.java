@@ -104,7 +104,6 @@ public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxR
       return this.data.test();
    }
 
-   // ===== 修改：统一返回类型为 Component，避免 MutableComponent 与 Component 类型不匹配 =====
    public Component getTestName() {
       return this.test().<Component>map(key -> Component.literal(key.identifier().toString())).orElse(INVALID_TEST_NAME);
    }
@@ -162,7 +161,6 @@ public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxR
    protected void loadAdditional(final ValueInput input) {
       input.<TestInstanceBlockEntity.Data>read("data", TestInstanceBlockEntity.Data.CODEC).ifPresent(this::set);
       this.errorMarkers.clear();
-      // ===== 修改：去掉泛型通配符，直接用 List<ErrorMarker> =====
       this.errorMarkers.addAll(input.<List<TestInstanceBlockEntity.ErrorMarker>>read("errors", TestInstanceBlockEntity.ErrorMarker.LIST_CODEC).orElse(List.of()));
    }
 
@@ -423,9 +421,9 @@ public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxR
       TestInstanceBlockEntity.Status status,
       Optional<Component> errorMessage
    ) {
-      // ===== 修改：为 group 显式类型 =====
+      // ===== 修改：RecordCodecBuilder.<TestInstanceBlockEntity.Data>group → i.group =====
       public static final Codec<TestInstanceBlockEntity.Data> CODEC = RecordCodecBuilder.create(
-         i -> RecordCodecBuilder.<TestInstanceBlockEntity.Data>group(
+         i -> i.group(
                ResourceKey.codec(Registries.TEST_INSTANCE).optionalFieldOf("test").forGetter(TestInstanceBlockEntity.Data::test),
                Vec3i.CODEC.fieldOf("size").forGetter(TestInstanceBlockEntity.Data::size),
                Rotation.CODEC.fieldOf("rotation").forGetter(TestInstanceBlockEntity.Data::rotation),
@@ -467,7 +465,8 @@ public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxR
    }
 
    public record ErrorMarker(BlockPos pos, Component text) {
-      public static final Codec<TestInstanceBlockEntity.ErrorMarker> CODEC = RecordCodecBuilder.create(
+      // ===== 修改：RecordCodecBuilder.create 显式类型参数 =====
+      public static final Codec<TestInstanceBlockEntity.ErrorMarker> CODEC = RecordCodecBuilder.<TestInstanceBlockEntity.ErrorMarker>create(
          i -> i.group(
                BlockPos.CODEC.fieldOf("pos").forGetter(TestInstanceBlockEntity.ErrorMarker::pos),
                ComponentSerialization.CODEC.fieldOf("text").forGetter(TestInstanceBlockEntity.ErrorMarker::text)

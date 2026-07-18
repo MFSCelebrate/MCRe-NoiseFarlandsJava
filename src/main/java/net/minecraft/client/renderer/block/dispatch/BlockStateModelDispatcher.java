@@ -27,15 +27,15 @@ public record BlockStateModelDispatcher(
    Optional<BlockStateModelDispatcher.SimpleModelSelectors> simpleModels, Optional<BlockStateModelDispatcher.MultiPartDefinition> multiPart
 ) {
    private static final Logger LOGGER = LogUtils.getLogger();
-   public static final Codec<BlockStateModelDispatcher> CODEC = RecordCodecBuilder.create(
+   // ===== 修改：显式指定 RecordCodecBuilder 类型参数，validate lambda 显式类型 =====
+   public static final Codec<BlockStateModelDispatcher> CODEC = RecordCodecBuilder.<BlockStateModelDispatcher>create(
          i -> i.group(
                BlockStateModelDispatcher.SimpleModelSelectors.CODEC.optionalFieldOf("variants").forGetter(BlockStateModelDispatcher::simpleModels),
                BlockStateModelDispatcher.MultiPartDefinition.CODEC.optionalFieldOf("multipart").forGetter(BlockStateModelDispatcher::multiPart)
             )
             .apply(i, BlockStateModelDispatcher::new)
       )
-      .validate(
-         o -> o.simpleModels().isEmpty() && o.multiPart().isEmpty()
+      .validate((BlockStateModelDispatcher o) -> o.simpleModels().isEmpty() && o.multiPart().isEmpty()
             ? DataResult.error(() -> "Neither 'variants' nor 'multipart' found")
             : DataResult.success(o)
       );

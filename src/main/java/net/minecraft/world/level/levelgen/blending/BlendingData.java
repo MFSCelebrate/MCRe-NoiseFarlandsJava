@@ -406,16 +406,16 @@ public class BlendingData {
 
    public record Packed(int minSection, int maxSection, Optional<double[]> heights) {
       private static final Codec<double[]> DOUBLE_ARRAY_CODEC = Codec.DOUBLE.listOf().xmap(Doubles::toArray, Doubles::asList);
-      // ===== 修改：为 group 显式类型，validate 改为 lambda =====
-      public static final Codec<BlendingData.Packed> CODEC = RecordCodecBuilder.create(
-            i -> RecordCodecBuilder.<BlendingData.Packed>group(
+      // ===== 修改：RecordCodecBuilder.create 显式类型参数，validate 改为 lambda =====
+      public static final Codec<BlendingData.Packed> CODEC = RecordCodecBuilder.<BlendingData.Packed>create(
+            i -> i.group(
                   Codec.INT.fieldOf("min_section").forGetter(BlendingData.Packed::minSection),
                   Codec.INT.fieldOf("max_section").forGetter(BlendingData.Packed::maxSection),
                   DOUBLE_ARRAY_CODEC.lenientOptionalFieldOf("heights").forGetter(BlendingData.Packed::heights)
                )
                .apply(i, BlendingData.Packed::new)
          )
-         .validate(packed -> BlendingData.Packed.validateArraySize(packed));
+         .validate((BlendingData.Packed packed) -> BlendingData.Packed.validateArraySize(packed));
 
       private static DataResult<BlendingData.Packed> validateArraySize(final BlendingData.Packed blendingData) {
          return blendingData.heights.isPresent() && ((double[])blendingData.heights.get()).length != BlendingData.CELL_COLUMN_COUNT

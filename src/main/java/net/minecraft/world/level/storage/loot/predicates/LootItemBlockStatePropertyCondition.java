@@ -15,15 +15,15 @@ import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 
 public record LootItemBlockStatePropertyCondition(Holder<Block> block, Optional<StatePropertiesPredicate> properties) implements LootItemCondition {
-   // ===== 修改：为 group 显式类型 =====
+   // ===== 修改：RecordCodecBuilder.<LootItemBlockStatePropertyCondition>group → i.group，validate 改为显式 lambda =====
    public static final MapCodec<LootItemBlockStatePropertyCondition> MAP_CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<LootItemBlockStatePropertyCondition>group(
+         i -> i.group(
                BuiltInRegistries.BLOCK.holderByNameCodec().fieldOf("block").forGetter(LootItemBlockStatePropertyCondition::block),
                StatePropertiesPredicate.CODEC.optionalFieldOf("properties").forGetter(LootItemBlockStatePropertyCondition::properties)
             )
             .apply(i, LootItemBlockStatePropertyCondition::new)
       )
-      .validate(LootItemBlockStatePropertyCondition::validate);
+      .validate((LootItemBlockStatePropertyCondition condition) -> LootItemBlockStatePropertyCondition.validate(condition));
 
    private static DataResult<LootItemBlockStatePropertyCondition> validate(final LootItemBlockStatePropertyCondition condition) {
       return condition.properties()

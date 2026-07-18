@@ -23,9 +23,10 @@ public record VaultConfig(
 ) {
    public static final String TAG_NAME = "config";
    public static final VaultConfig DEFAULT = new VaultConfig();
-   // ===== 修改：为 group 显式类型，validate 改为 lambda =====
+   
+   // ===== 修改：RecordCodecBuilder.<VaultConfig>group → i.group =====
    public static final Codec<VaultConfig> CODEC = RecordCodecBuilder.create(
-         i -> RecordCodecBuilder.<VaultConfig>group(
+         i -> i.group(
                LootTable.KEY_CODEC.lenientOptionalFieldOf("loot_table", DEFAULT.lootTable()).forGetter(VaultConfig::lootTable),
                Codec.DOUBLE.lenientOptionalFieldOf("activation_range", DEFAULT.activationRange()).forGetter(VaultConfig::activationRange),
                Codec.DOUBLE.lenientOptionalFieldOf("deactivation_range", DEFAULT.deactivationRange()).forGetter(VaultConfig::deactivationRange),
@@ -34,7 +35,7 @@ public record VaultConfig(
             )
             .apply(i, VaultConfig::new)
       )
-      .validate(config -> config.validate());
+      .validate((VaultConfig config) -> config.validate());
 
    private VaultConfig() {
       this(

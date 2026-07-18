@@ -33,9 +33,10 @@ public final class JigsawStructure extends Structure {
    public static final int MAX_TOTAL_STRUCTURE_RANGE = 128;
    public static final int MIN_DEPTH = 0;
    public static final int MAX_DEPTH = 20;
-   // ===== 修改：为 group 显式类型，validate 改为 lambda =====
+   
+   // ===== 修改：RecordCodecBuilder.<JigsawStructure>group → i.group =====
    public static final MapCodec<JigsawStructure> CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<JigsawStructure>group(
+         i -> i.group(
                settingsCodec(i),
                StructureTemplatePool.CODEC.fieldOf("start_pool").forGetter(j -> j.startPool),
                Identifier.CODEC.optionalFieldOf("start_jigsaw_name").forGetter(j -> j.startJigsawName),
@@ -50,7 +51,7 @@ public final class JigsawStructure extends Structure {
             )
             .apply(i, JigsawStructure::new)
       )
-      .validate(structure -> JigsawStructure.verifyRange(structure));
+      .validate((JigsawStructure structure) -> JigsawStructure.verifyRange(structure));
 
    private final Holder<StructureTemplatePool> startPool;
    private final Optional<Identifier> startJigsawName;
@@ -181,9 +182,10 @@ public final class JigsawStructure extends Structure {
 
    public record MaxDistance(int horizontal, int vertical) {
       private static final Codec<Integer> HORIZONTAL_VALUE_CODEC = Codec.intRange(1, 128);
-      // ===== 修改：为 group 显式类型 =====
+      
+      // ===== 修改：RecordCodecBuilder.<JigsawStructure.MaxDistance>group → i.group =====
       private static final Codec<JigsawStructure.MaxDistance> FULL_CODEC = RecordCodecBuilder.create(
-         i -> RecordCodecBuilder.<JigsawStructure.MaxDistance>group(
+         i -> i.group(
                HORIZONTAL_VALUE_CODEC.fieldOf("horizontal").forGetter(JigsawStructure.MaxDistance::horizontal),
                ExtraCodecs.intRange(1, DimensionType.Y_SIZE).optionalFieldOf("vertical", DimensionType.Y_SIZE).forGetter(JigsawStructure.MaxDistance::vertical)
             )

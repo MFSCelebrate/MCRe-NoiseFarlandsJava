@@ -25,9 +25,9 @@ public record SpawnParticlesEffect(
    SpawnParticlesEffect.VelocitySource verticalVelocity,
    FloatProvider speed
 ) implements EnchantmentEntityEffect {
-   // ===== 修改：为 group 显式类型 =====
+   // ===== 修改：RecordCodecBuilder.<SpawnParticlesEffect>group → i.group =====
    public static final MapCodec<SpawnParticlesEffect> CODEC = RecordCodecBuilder.mapCodec(
-      i -> RecordCodecBuilder.<SpawnParticlesEffect>group(
+      i -> i.group(
             ParticleTypes.CODEC.fieldOf("particle").forGetter(SpawnParticlesEffect::particle),
             SpawnParticlesEffect.PositionSource.CODEC.fieldOf("horizontal_position").forGetter(SpawnParticlesEffect::horizontalPosition),
             SpawnParticlesEffect.PositionSource.CODEC.fieldOf("vertical_position").forGetter(SpawnParticlesEffect::verticalPosition),
@@ -79,9 +79,9 @@ public record SpawnParticlesEffect(
    }
 
    public record PositionSource(SpawnParticlesEffect.PositionSourceType type, float offset, float scale) {
-      // ===== 修改：为 group 显式类型 =====
+      // ===== 修改：RecordCodecBuilder.<SpawnParticlesEffect.PositionSource>group → i.group =====
       public static final MapCodec<SpawnParticlesEffect.PositionSource> CODEC = RecordCodecBuilder.mapCodec(
-            i -> RecordCodecBuilder.<SpawnParticlesEffect.PositionSource>group(
+            i -> i.group(
                   SpawnParticlesEffect.PositionSourceType.CODEC.fieldOf("type").forGetter(SpawnParticlesEffect.PositionSource::type),
                   Codec.FLOAT.optionalFieldOf("offset", 0.0F).forGetter(SpawnParticlesEffect.PositionSource::offset),
                   ExtraCodecs.POSITIVE_FLOAT.optionalFieldOf("scale", 1.0F).forGetter(SpawnParticlesEffect.PositionSource::scale)
@@ -89,7 +89,7 @@ public record SpawnParticlesEffect(
                .apply(i, SpawnParticlesEffect.PositionSource::new)
          )
          .validate(
-            positioning -> positioning.type() == SpawnParticlesEffect.PositionSourceType.ENTITY_POSITION && positioning.scale() != 1.0F
+            (SpawnParticlesEffect.PositionSource positioning) -> positioning.type() == SpawnParticlesEffect.PositionSourceType.ENTITY_POSITION && positioning.scale() != 1.0F
                ? DataResult.error(() -> "Cannot scale an entity position coordinate source")
                : DataResult.success(positioning)
          );
@@ -128,9 +128,9 @@ public record SpawnParticlesEffect(
    }
 
    public record VelocitySource(float movementScale, FloatProvider base) {
-      // ===== 修改：为 group 显式类型 =====
+      // ===== 修改：RecordCodecBuilder.<SpawnParticlesEffect.VelocitySource>group → i.group =====
       public static final MapCodec<SpawnParticlesEffect.VelocitySource> CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<SpawnParticlesEffect.VelocitySource>group(
+         i -> i.group(
                Codec.FLOAT.optionalFieldOf("movement_scale", 0.0F).forGetter(SpawnParticlesEffect.VelocitySource::movementScale),
                FloatProviders.CODEC.optionalFieldOf("base", ConstantFloat.ZERO).forGetter(SpawnParticlesEffect.VelocitySource::base)
             )

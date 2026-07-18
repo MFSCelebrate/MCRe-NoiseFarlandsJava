@@ -25,9 +25,9 @@ import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
 import org.jspecify.annotations.Nullable;
 
 public class VillagerTrade implements Validatable {
-   // ===== 修改：group 显式类型，validate 改为 lambda =====
+   // ===== 修改：RecordCodecBuilder.<VillagerTrade>group → i.group =====
    public static final Codec<VillagerTrade> CODEC = RecordCodecBuilder.create(
-         i -> RecordCodecBuilder.<VillagerTrade>group(
+         i -> i.group(
                TradeCost.CODEC.fieldOf("wants").forGetter(villagerTrade -> villagerTrade.wants),
                TradeCost.CODEC.optionalFieldOf("additional_wants").forGetter(villagerTrade -> villagerTrade.additionalWants),
                ItemStackTemplate.CODEC.fieldOf("gives").forGetter(villagerTrade -> villagerTrade.gives),
@@ -47,7 +47,7 @@ public class VillagerTrade implements Validatable {
             )
             .apply(i, VillagerTrade::new)
       )
-      .validate(trade -> Validatable.validatorForContext(LootContextParamSets.VILLAGER_TRADE).apply(trade));
+      .validate((VillagerTrade trade) -> Validatable.validatorForContext(LootContextParamSets.VILLAGER_TRADE).apply(trade));
 
    private final TradeCost wants;
    private final Optional<TradeCost> additionalWants;

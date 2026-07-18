@@ -12,11 +12,11 @@ import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 
 public class RandomSpreadStructurePlacement extends AbstractSpreadingStructurePlacement {
-   // ===== 修改：显式指定 placementCodec 类型参数，为 group 显式类型，validate 改为 lambda =====
-   public static final MapCodec<RandomSpreadStructurePlacement> CODEC = RecordCodecBuilder.mapCodec(
+   // ===== 修改：显式指定 mapCodec 类型参数，并显式指定 validate lambda 参数类型 =====
+   public static final MapCodec<RandomSpreadStructurePlacement> CODEC = RecordCodecBuilder.<RandomSpreadStructurePlacement>mapCodec(
          i -> AbstractSpreadingStructurePlacement.<RandomSpreadStructurePlacement>placementCodec(i)
             .and(
-               RecordCodecBuilder.<RandomSpreadStructurePlacement>group(
+               i.group(
                   Codec.intRange(0, 4096).fieldOf("spacing").forGetter(RandomSpreadStructurePlacement::spacing),
                   Codec.intRange(0, 4096).fieldOf("separation").forGetter(RandomSpreadStructurePlacement::separation),
                   RandomSpreadType.CODEC.optionalFieldOf("spread_type", RandomSpreadType.LINEAR).forGetter(RandomSpreadStructurePlacement::spreadType)
@@ -24,7 +24,7 @@ public class RandomSpreadStructurePlacement extends AbstractSpreadingStructurePl
             )
             .apply(i, RandomSpreadStructurePlacement::new)
       )
-      .validate(c -> RandomSpreadStructurePlacement.validate(c));
+      .validate((RandomSpreadStructurePlacement c) -> RandomSpreadStructurePlacement.validate(c));
 
    private final int spacing;
    private final int separation;

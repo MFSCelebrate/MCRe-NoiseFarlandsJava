@@ -19,20 +19,21 @@ import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
 
 public class SetCustomModelDataFunction extends LootItemConditionalFunction {
-   // ===== 修改：显式指定 Codec 类型参数 =====
+   // ===== 修改：显式指定 Codec 类型参数，方法引用改为 lambda =====
    private static final Codec<NumberProvider> COLOR_PROVIDER_CODEC = Codec.<NumberProvider>withAlternative(
-      NumberProviders.DIRECT_CODEC, ExtraCodecs.RGB_COLOR_CODEC, ConstantValue::new
+      NumberProviders.DIRECT_CODEC,
+      ExtraCodecs.RGB_COLOR_CODEC,
+      (Integer i) -> new ConstantValue(i)
    );
-   // ===== 修改：为 group 显式类型 =====
+   
+   // ===== 修改：用标准 i.group 重写，包含 conditions 字段 =====
    public static final MapCodec<SetCustomModelDataFunction> MAP_CODEC = RecordCodecBuilder.mapCodec(
-      i -> commonFields(i)
-         .and(
-            RecordCodecBuilder.<SetCustomModelDataFunction>group(
-               ListOperation.StandAlone.codec(NumberProviders.DIRECT_CODEC, Integer.MAX_VALUE).optionalFieldOf("floats").forGetter(o -> o.floats),
-               ListOperation.StandAlone.codec(Codec.BOOL, Integer.MAX_VALUE).optionalFieldOf("flags").forGetter(o -> o.flags),
-               ListOperation.StandAlone.codec(Codec.STRING, Integer.MAX_VALUE).optionalFieldOf("strings").forGetter(o -> o.strings),
-               ListOperation.StandAlone.codec(COLOR_PROVIDER_CODEC, Integer.MAX_VALUE).optionalFieldOf("colors").forGetter(o -> o.colors)
-            )
+      i -> i.group(
+            LootItemCondition.DIRECT_CODEC.listOf().optionalFieldOf("conditions", List.of()).forGetter(LootItemConditionalFunction::getPredicates),
+            ListOperation.StandAlone.codec(NumberProviders.DIRECT_CODEC, Integer.MAX_VALUE).optionalFieldOf("floats").forGetter(o -> o.floats),
+            ListOperation.StandAlone.codec(Codec.BOOL, Integer.MAX_VALUE).optionalFieldOf("flags").forGetter(o -> o.flags),
+            ListOperation.StandAlone.codec(Codec.STRING, Integer.MAX_VALUE).optionalFieldOf("strings").forGetter(o -> o.strings),
+            ListOperation.StandAlone.codec(COLOR_PROVIDER_CODEC, Integer.MAX_VALUE).optionalFieldOf("colors").forGetter(o -> o.colors)
          )
          .apply(i, SetCustomModelDataFunction::new)
    );

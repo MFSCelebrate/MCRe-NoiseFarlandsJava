@@ -35,9 +35,12 @@ public record Advancement(
    boolean sendsTelemetryEvent,
    Optional<Component> name
 ) {
-   private static final Codec<Map<String, Criterion<?>>> CRITERIA_CODEC = Codec.unboundedMap(Codec.STRING, Criterion.CODEC)
+   // ===== 修改：Codec.unboundedMap 显式类型参数 =====
+   private static final Codec<Map<String, Criterion<?>>> CRITERIA_CODEC = Codec.<String, Criterion<?>>unboundedMap(Codec.STRING, Criterion.CODEC)
       .validate(criteria -> criteria.isEmpty() ? DataResult.error(() -> "Advancement criteria cannot be empty") : DataResult.success(criteria));
-   public static final Codec<Advancement> CODEC = RecordCodecBuilder.create(
+   
+   // ===== 修改：RecordCodecBuilder.create 显式类型参数，validate 改为 lambda =====
+   public static final Codec<Advancement> CODEC = RecordCodecBuilder.<Advancement>create(
          i -> i.group(
                Identifier.CODEC.optionalFieldOf("parent").forGetter(Advancement::parent),
                DisplayInfo.CODEC.optionalFieldOf("display").forGetter(Advancement::display),
@@ -51,7 +54,7 @@ public record Advancement(
                return new Advancement(parent, display, rewards, criteria, requirements, sendsTelemetryEvent);
             })
       )
-      .validate(Advancement::validate);
+      .validate((Advancement advancement) -> Advancement.validate(advancement));
    public static final StreamCodec<RegistryFriendlyByteBuf, Advancement> STREAM_CODEC = StreamCodec.ofMember(Advancement::write, Advancement::read);
 
    public Advancement(

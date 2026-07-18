@@ -96,6 +96,7 @@ public final class DensityFunctions {
       return singleArgumentCodec(DensityFunction.CODEC, constructor, getter);
    }
 
+   // ===== 修改：group 改为实例方法调用 i.group() =====
    private static <O> KeyDispatchDataCodec<O> doubleFunctionArgumentCodec(
       final BiFunction<DensityFunction, DensityFunction, O> constructor,
       final Function<O, DensityFunction> firstArgumentGetter,
@@ -103,7 +104,7 @@ public final class DensityFunctions {
    ) {
       return KeyDispatchDataCodec.of(
          RecordCodecBuilder.mapCodec(
-            i -> RecordCodecBuilder.<O>group(
+            i -> i.group(
                   DensityFunction.CODEC.fieldOf("argument1").forGetter(firstArgumentGetter),
                   DensityFunction.CODEC.fieldOf("argument2").forGetter(secondArgumentGetter)
                )
@@ -434,17 +435,17 @@ public final class DensityFunctions {
       }
    }
 
+   // ===== 修改：group 改为 i.group，validate 已为 lambda =====
    protected record Clamp(DensityFunction input, double min, double max) implements DensityFunctions.PureTransformer {
-      // ===== 修改：为 group 显式类型，validate 改为 lambda =====
       private static final MapCodec<DensityFunctions.Clamp> DATA_CODEC = RecordCodecBuilder.mapCodec(
-            i -> RecordCodecBuilder.<DensityFunctions.Clamp>group(
+            i -> i.group(
                   DensityFunction.CODEC.fieldOf("input").forGetter(DensityFunctions.Clamp::input),
                   DensityFunctions.NOISE_VALUE_CODEC.fieldOf("min").forGetter(DensityFunctions.Clamp::min),
                   DensityFunctions.NOISE_VALUE_CODEC.fieldOf("max").forGetter(DensityFunctions.Clamp::max)
                )
                .apply(i, DensityFunctions.Clamp::new)
          )
-         .validate(clamp -> DensityFunctions.Clamp.validate(clamp));
+         .validate((DensityFunctions.Clamp clamp) -> DensityFunctions.Clamp.validate(clamp));
       public static final KeyDispatchDataCodec<DensityFunctions.Clamp> CODEC = DensityFunctions.makeCodec(DATA_CODEC);
 
       private static DataResult<DensityFunctions.Clamp> validate(final DensityFunctions.Clamp clamp) {
@@ -556,10 +557,10 @@ public final class DensityFunctions {
       }
    }
 
+   // ===== 修改：group 改为 i.group =====
    private record FindTopSurface(DensityFunction density, DensityFunction upperBound, int lowerBound, int cellHeight) implements DensityFunction {
-      // ===== 修改：为 group 显式类型 =====
       private static final MapCodec<DensityFunctions.FindTopSurface> DATA_CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<DensityFunctions.FindTopSurface>group(
+         i -> i.group(
                DensityFunction.CODEC.fieldOf("density").forGetter(DensityFunctions.FindTopSurface::density),
                DensityFunction.CODEC.fieldOf("upper_bound").forGetter(DensityFunctions.FindTopSurface::upperBound),
                Codec.intRange(DimensionType.MIN_Y * 2, DimensionType.MAX_Y * 2).fieldOf("lower_bound").forGetter(DensityFunctions.FindTopSurface::lowerBound),
@@ -634,18 +635,18 @@ public final class DensityFunctions {
       }
    }
 
+   // ===== 修改：group 改为 i.group，validate 改为显式 lambda =====
    private record IntervalSelect(DensityFunction input, DoubleList thresholds, List<DensityFunction> functions) implements DensityFunction {
       private static final Codec<DoubleList> THRESHOLDS_CODEC = DensityFunctions.NOISE_VALUE_CODEC.listOf().xmap(DoubleArrayList::new, Function.identity());
-      // ===== 修改：为 group 显式类型，validate 改为 lambda =====
       public static final MapCodec<DensityFunctions.IntervalSelect> DATA_CODEC = RecordCodecBuilder.mapCodec(
-            i -> RecordCodecBuilder.<DensityFunctions.IntervalSelect>group(
+            i -> i.group(
                   DensityFunction.CODEC.fieldOf("input").forGetter(DensityFunctions.IntervalSelect::input),
                   THRESHOLDS_CODEC.fieldOf("thresholds").forGetter(DensityFunctions.IntervalSelect::thresholds),
                   DensityFunction.CODEC.listOf(2, Integer.MAX_VALUE).fieldOf("functions").forGetter(DensityFunctions.IntervalSelect::functions)
                )
                .apply(i, DensityFunctions.IntervalSelect::new)
          )
-         .validate(intervalSelect -> intervalSelect.validate());
+         .validate((DensityFunctions.IntervalSelect intervalSelect) -> intervalSelect.validate());
       public static final KeyDispatchDataCodec<DensityFunctions.IntervalSelect> CODEC = DensityFunctions.makeCodec(DATA_CODEC);
 
       private DataResult<DensityFunctions.IntervalSelect> validate() {
@@ -873,10 +874,10 @@ public final class DensityFunctions {
       }
    }
 
+   // ===== 修改：group 改为 i.group =====
    protected record Noise(DensityFunction.NoiseHolder noise, @Deprecated double xzScale, double yScale) implements DensityFunction {
-      // ===== 修改：为 group 显式类型 =====
       public static final MapCodec<DensityFunctions.Noise> DATA_CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<DensityFunctions.Noise>group(
+         i -> i.group(
                DensityFunction.NoiseHolder.CODEC.fieldOf("noise").forGetter(DensityFunctions.Noise::noise),
                Codec.DOUBLE.fieldOf("xz_scale").forGetter(DensityFunctions.Noise::xzScale),
                Codec.DOUBLE.fieldOf("y_scale").forGetter(DensityFunctions.Noise::yScale)
@@ -931,11 +932,11 @@ public final class DensityFunctions {
       double transform(final double input);
    }
 
+   // ===== 修改：group 改为 i.group =====
    private record RangeChoice(DensityFunction input, double minInclusive, double maxExclusive, DensityFunction whenInRange, DensityFunction whenOutOfRange)
       implements DensityFunction {
-      // ===== 修改：为 group 显式类型 =====
       public static final MapCodec<DensityFunctions.RangeChoice> DATA_CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<DensityFunctions.RangeChoice>group(
+         i -> i.group(
                DensityFunction.CODEC.fieldOf("input").forGetter(DensityFunctions.RangeChoice::input),
                DensityFunctions.NOISE_VALUE_CODEC.fieldOf("min_inclusive").forGetter(DensityFunctions.RangeChoice::minInclusive),
                DensityFunctions.NOISE_VALUE_CODEC.fieldOf("max_exclusive").forGetter(DensityFunctions.RangeChoice::maxExclusive),
@@ -1065,12 +1066,12 @@ public final class DensityFunctions {
       }
    }
 
+   // ===== 修改：group 改为 i.group =====
    protected record ShiftedNoise(
       DensityFunction shiftX, DensityFunction shiftY, DensityFunction shiftZ, double xzScale, double yScale, DensityFunction.NoiseHolder noise
    ) implements DensityFunction {
-      // ===== 修改：为 group 显式类型 =====
       private static final MapCodec<DensityFunctions.ShiftedNoise> DATA_CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<DensityFunctions.ShiftedNoise>group(
+         i -> i.group(
                DensityFunction.CODEC.fieldOf("shift_x").forGetter(DensityFunctions.ShiftedNoise::shiftX),
                DensityFunction.CODEC.fieldOf("shift_y").forGetter(DensityFunctions.ShiftedNoise::shiftY),
                DensityFunction.CODEC.fieldOf("shift_z").forGetter(DensityFunctions.ShiftedNoise::shiftZ),
@@ -1274,10 +1275,10 @@ public final class DensityFunctions {
       }
    }
 
+   // ===== 修改：group 改为 i.group =====
    private record YClampedGradient(int fromY, int toY, double fromValue, double toValue) implements DensityFunction.SimpleFunction {
-      // ===== 修改：为 group 显式类型 =====
       private static final MapCodec<DensityFunctions.YClampedGradient> DATA_CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<DensityFunctions.YClampedGradient>group(
+         i -> i.group(
                Codec.intRange(DimensionType.MIN_Y * 2, DimensionType.MAX_Y * 2).fieldOf("from_y").forGetter(DensityFunctions.YClampedGradient::fromY),
                Codec.intRange(DimensionType.MIN_Y * 2, DimensionType.MAX_Y * 2).fieldOf("to_y").forGetter(DensityFunctions.YClampedGradient::toY),
                DensityFunctions.NOISE_VALUE_CODEC.fieldOf("from_value").forGetter(DensityFunctions.YClampedGradient::fromValue),

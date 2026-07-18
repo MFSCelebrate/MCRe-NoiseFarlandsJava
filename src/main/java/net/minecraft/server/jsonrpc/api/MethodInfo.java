@@ -13,7 +13,6 @@ public record MethodInfo<Params, Result>(String description, Optional<ParamInfo<
       this(description, Optional.ofNullable(paramInfo), Optional.ofNullable(resultInfo));
    }
 
-   // ===== 修改：lambda 显式类型，替代方法引用 =====
    private static <Params> Optional<ParamInfo<Params>> toOptional(final List<ParamInfo<Params>> list) {
       return list.isEmpty() ? Optional.empty() : Optional.of(list.getFirst());
    }
@@ -23,16 +22,17 @@ public record MethodInfo<Params, Result>(String description, Optional<ParamInfo<
    }
 
    private static <Params> Codec<Optional<ParamInfo<Params>>> paramsTypedCodec() {
-      return ParamInfo.<Params>typedCodec().codec().listOf().<Optional<ParamInfo<Params>>>xmap(
-         (List<ParamInfo<Params>> list) -> MethodInfo.<Params>toOptional(list),
-         (Optional<ParamInfo<Params>> opt) -> MethodInfo.<Params>toList(opt)
-      );
+      return ParamInfo.<Params>typedCodec().codec().listOf()
+         .<Optional<ParamInfo<Params>>>xmap(
+            (List<ParamInfo<Params>> list) -> MethodInfo.<Params>toOptional(list),
+            (Optional<ParamInfo<Params>> opt) -> MethodInfo.<Params>toList(opt)
+         );
    }
 
-   // ===== 修改：显式指定 RecordCodecBuilder 类型参数 =====
+   // ===== 修改：RecordCodecBuilder.group 改为 i.group =====
    private static <Params, Result> MapCodec<MethodInfo<Params, Result>> typedCodec() {
-      return RecordCodecBuilder.<MethodInfo<Params, Result>>mapCodec(
-         i -> RecordCodecBuilder.<MethodInfo<Params, Result>>group(
+      return RecordCodecBuilder.mapCodec(
+         i -> i.group(
                Codec.STRING.fieldOf("description").forGetter(MethodInfo::description),
                MethodInfo.<Params>paramsTypedCodec().fieldOf("params").forGetter(MethodInfo::params),
                ResultInfo.<Result>typedCodec().optionalFieldOf("result").forGetter(MethodInfo::result)
@@ -46,12 +46,12 @@ public record MethodInfo<Params, Result>(String description, Optional<ParamInfo<
    }
 
    public record Named<Params, Result>(Identifier name, MethodInfo<Params, Result> contents) {
-      // ===== 修改：显式指定 Codec 类型 =====
       public static final Codec<MethodInfo.Named<?, ?>> CODEC = MethodInfo.Named.<Object, Object>typedCodec();
 
+      // ===== 修改：RecordCodecBuilder.group 改为 i.group =====
       public static <Params, Result> Codec<MethodInfo.Named<Params, Result>> typedCodec() {
-         return RecordCodecBuilder.<MethodInfo.Named<Params, Result>>create(
-            i -> RecordCodecBuilder.<MethodInfo.Named<Params, Result>>group(
+         return RecordCodecBuilder.create(
+            i -> i.group(
                   Identifier.CODEC.fieldOf("name").forGetter(MethodInfo.Named::name),
                   MethodInfo.<Params, Result>typedCodec().forGetter(MethodInfo.Named::contents)
                )
