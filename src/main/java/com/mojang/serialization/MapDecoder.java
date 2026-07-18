@@ -101,11 +101,15 @@ public interface MapDecoder<A> extends Keyable {
       };
    }
 
+   // ===== 修改：去掉多余的强制转换 =====
    default <E> MapDecoder<E> ap(final MapDecoder<Function<? super A, ? extends E>> decoder) {
       return new MapDecoder.Implementation<E>() {
          @Override
          public <T> DataResult<E> decode(DynamicOps<T> ops, MapLike<T> input) {
-            return MapDecoder.this.decode(ops, input).flatMap(f -> decoder.decode(ops, input).map(e -> (T)e.apply((A)f)));
+            return MapDecoder.this.decode(ops, input)
+               .flatMap(f -> decoder.decode(ops, input)
+                  .map(e -> e.apply(f))
+               );
          }
 
          @Override

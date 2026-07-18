@@ -86,13 +86,16 @@ public record TypedOptic<S, T, A, B>(Set<TypeToken<? extends K1>> bounds, List<?
       return (TypedOptic<S, T, A1, B1>)(new TypedOptic<>(proof.build(), elements.build()));
    }
 
+   // ===== 修改：使用 toCollection(ArrayList::new) 替代 toList()，修复类型推断 =====
    public <Proof2 extends K1> Optional<Optic<? super Proof2, S, T, A, B>> upCast(TypeToken<Proof2> proof) {
       if (instanceOf(this.bounds, proof)) {
          if (this.elements.size() == 1) {
             return Optional.of((Optic<? super Proof2, S, T, A, B>)this.elements.get(0).optic());
          }
 
-         List<Optic<? super Proof2, ?, ?, ?, ?>> optics = this.elements.stream().map(e -> e.optic()).collect(Collectors.toList());
+         List<Optic<? super Proof2, ?, ?, ?, ?>> optics = this.elements.stream()
+            .<Optic<? super Proof2, ?, ?, ?, ?>>map(e -> (Optic<? super Proof2, ?, ?, ?, ?>)e.optic())
+            .collect(Collectors.toCollection(ArrayList::new));
          return Optional.of(new Optic.CompositionOptic<>(optics));
       } else {
          return Optional.empty();

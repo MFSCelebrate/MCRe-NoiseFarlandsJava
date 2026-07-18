@@ -71,16 +71,18 @@ public abstract class DynamicLike<T> {
       return this.decode(decoder).map(Pair::getFirst);
    }
 
+   // ===== 修改：补全泛型参数，使用双重强制转换 =====
    public <E> DataResult<List<E>> readList(Decoder<E> decoder) {
       return this.asStreamOpt()
          .map(s -> s.<DataResult<E>>map(d -> d.read(decoder)).collect(Collectors.toList()))
-         .flatMap(l -> DataResult.unbox(ListBox.flip(DataResult.instance(), (List<App<DataResult.Mu, E>>)l)));
+         .flatMap(l -> DataResult.unbox(ListBox.flip(DataResult.instance(), (List<App<DataResult.Mu, E>>) (List<?>) l)));
    }
 
+   // ===== 修改：补全泛型参数，使用双重强制转换 =====
    public <E> DataResult<List<E>> readList(Function<? super Dynamic<?>, ? extends DataResult<? extends E>> decoder) {
       return this.asStreamOpt()
          .map(s -> s.map((Function<? super Dynamic<T>, ? extends DataResult<? extends E>>)decoder).map(r -> r.map(e -> (T)e)).collect(Collectors.toList()))
-         .flatMap(l -> DataResult.unbox(ListBox.flip(DataResult.instance(), (List<App<DataResult.Mu, E>>)l)));
+         .flatMap(l -> DataResult.unbox(ListBox.flip(DataResult.instance(), (List<App<DataResult.Mu, E>>) (List<?>) l)));
    }
 
    public <K, V> DataResult<List<Pair<K, V>>> readMap(Decoder<K> keyDecoder, Decoder<V> valueDecoder) {
@@ -91,7 +93,7 @@ public abstract class DynamicLike<T> {
                )
                .collect(Collectors.toList())
          )
-         .flatMap(l -> DataResult.unbox(ListBox.flip(DataResult.instance(), (List<App<DataResult.Mu, Pair<K, V>>>)l)));
+         .flatMap(l -> DataResult.unbox(ListBox.flip(DataResult.instance(), (List<App<DataResult.Mu, Pair<K, V>>>) (List<?>) l)));
    }
 
    public <K, V> DataResult<List<Pair<K, V>>> readMap(Decoder<K> keyDecoder, Function<K, Decoder<V>> valueDecoder) {
@@ -102,7 +104,7 @@ public abstract class DynamicLike<T> {
                )
                .collect(Collectors.toList())
          )
-         .flatMap(l -> DataResult.unbox(ListBox.flip(DataResult.instance(), (List<App<DataResult.Mu, Pair<K, V>>>)l)));
+         .flatMap(l -> DataResult.unbox(ListBox.flip(DataResult.instance(), (List<App<DataResult.Mu, Pair<K, V>>>) (List<?>) l)));
    }
 
    public <R> DataResult<R> readMap(DataResult<R> empty, Function3<R, Dynamic<T>, Dynamic<T>, DataResult<R>> combiner) {

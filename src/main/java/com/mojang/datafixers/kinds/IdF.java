@@ -14,8 +14,9 @@ public final class IdF<A> implements App<IdF.Mu, A> {
       return this.value;
    }
 
+   // ===== 修改：强制转换加上泛型参数 =====
    public static <A> A get(App<IdF.Mu, A> box) {
-      return ((IdF)box).value;
+      return ((IdF<A>)box).value;
    }
 
    public static <A> IdF<A> create(A a) {

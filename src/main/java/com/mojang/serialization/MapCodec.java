@@ -363,16 +363,17 @@ public abstract class MapCodec<A> extends CompressorHolder implements MapDecoder
          return Stream.concat(this.codec.keys(ops), this.initialInstance.keys(ops));
       }
 
+      // ===== 修改：去掉多余的强制转换，修复类型推断 =====
       @Override
       public <T> DataResult<O> decode(DynamicOps<T> ops, MapLike<T> input) {
          return this.codec
             .decode(ops, input)
             .flatMap(
                base -> this.splitter
-                  .apply((O)base)
+                  .apply(base)
                   .getSecond()
                   .decode(ops, input)
-                  .map(e -> (T)this.combiner.apply((O)base, (E)e))
+                  .map(e -> this.combiner.apply(base, e))
                   .setLifecycle(Lifecycle.experimental())
             );
       }

@@ -58,11 +58,14 @@ public record View<A, B>(PointFree<Function<A, B>> function) implements App2<Vie
       return new View<>(Functions.fun(name, function, type, newType));
    }
 
+   // ===== 修改：拆分三元运算符，显式强制转换 =====
    public <C> View<C, B> compose(View<C, A> that) {
       if (this.isNop()) {
-         return new View<>((PointFree<Function<C, B>>)that.function());
+         return (View<C, B>) that;
+      } else if (that.isNop()) {
+         return (View<C, B>) this;
       } else {
-         return (View<C, B>)(that.isNop() ? new View<>(this.function()) : new View<>(Functions.comp(this.function(), that.function())));
+         return new View<>(Functions.comp(this.function(), that.function()));
       }
    }
 

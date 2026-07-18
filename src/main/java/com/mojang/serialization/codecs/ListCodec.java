@@ -39,10 +39,11 @@ public record ListCodec<E>(Codec<E> elementCodec, int minSize, int maxSize) impl
       return builder.build(prefix);
    }
 
+   // ===== 修改：去掉外部类限定，直接 new DecoderState<>(ops) =====
    @Override
    public <T> DataResult<Pair<List<E>, T>> decode(DynamicOps<T> ops, T input) {
       return ops.getList(input).setLifecycle(Lifecycle.stable()).flatMap(stream -> {
-         ListCodec<E>.DecoderState<T> decoder = new ListCodec.DecoderState<>(ops);
+         DecoderState<T> decoder = new DecoderState<>(ops);
          stream.accept(decoder::accept);
          return decoder.build();
       });

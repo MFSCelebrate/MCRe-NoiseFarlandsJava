@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
+import net.minecraft.SharedConstants;
 import org.lwjgl.glfw.GLFWVulkan;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VK12;
@@ -63,7 +64,7 @@ public class VulkanPhysicalDevice implements AutoCloseable {
          this.vkPhysicalDeviceMultiDrawPropertiesEXT = VkPhysicalDeviceMultiDrawPropertiesEXT.calloc().sType$Default();
          this.vkPhysicalDeviceProperties.pNext(this.vkPhysicalDeviceDriverProperties);
          this.vkPhysicalDeviceProperties.pNext(this.vkPhysicalDeviceVulkan11Properties);
-         if (this.hasDeviceExtension("VK_EXT_multi_draw")) {
+         if (this.hasDeviceExtension("VK_EXT_multi_draw") || SharedConstants.DEBUG_FORCE_VULKAN_RENDERER) {
             this.vkPhysicalDeviceProperties.pNext(this.vkPhysicalDeviceMultiDrawPropertiesEXT);
          }
 

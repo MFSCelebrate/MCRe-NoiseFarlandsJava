@@ -83,15 +83,18 @@ public final class Typed<A> {
          .orElse(def);
    }
 
+   // ===== 修改：移除 Object 强制转换，直接使用 FT =====
    public <FT> Optional<Typed<FT>> getOptionalTyped(OpticFinder<FT> optic) {
       TypedOptic<A, ?, FT, FT> o = optic.findType(this.type, false).orThrow();
       return ForgetOpt.unbox(
             o.apply(
-               new TypeToken<ForgetOpt.Instance.Mu<FT>>() {}, new ForgetOpt.Instance<>(), (App2<ForgetOpt.Mu<Object>, FT, FT>)Optics.forgetOpt(Optional::of)
+               new TypeToken<ForgetOpt.Instance.Mu<FT>>() {},
+               new ForgetOpt.Instance<>(),
+               Optics.forgetOpt(Optional::of)
             )
          )
          .run(this.value)
-         .map(v -> new Typed<>(o.aType(), this.ops, (FT)v));
+         .map(v -> new Typed<>(o.aType(), this.ops, v));
    }
 
    public <FT> Typed<FT> getOrCreateTyped(OpticFinder<FT> optic) {
@@ -193,12 +196,14 @@ public final class Typed<A> {
       return new Typed<>(unfold, this.ops, this.value);
    }
 
+   // ===== 修改：显式指定 Optics.inj1 的类型参数 =====
    public <B> Typed<Either<A, B>> inj1(Type<B> type) {
-      return new Typed<>(DSL.or(this.type, type), this.ops, Optics.inj1().build(this.value));
+      return new Typed<>(DSL.or(this.type, type), this.ops, Optics.<A, B>inj1().build(this.value));
    }
 
+   // ===== 修改：显式指定 Optics.inj2 的类型参数 =====
    public <B> Typed<Either<B, A>> inj2(Type<B> type) {
-      return new Typed<>(DSL.or(type, this.type), this.ops, Optics.inj2().build(this.value));
+      return new Typed<>(DSL.or(type, this.type), this.ops, Optics.<B, A>inj2().build(this.value));
    }
 
    public static <A, B> Typed<Pair<A, B>> pair(Typed<A> first, Typed<B> second) {

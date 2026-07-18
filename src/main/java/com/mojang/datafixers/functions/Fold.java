@@ -64,9 +64,10 @@ final class Fold<A, B> extends PointFree<Function<A, B>> {
       return RewriteResult.create(new View<>((PointFree<Function<A, B>>)rewrite), view.recData());
    }
 
+   // ===== 修改：使用双重强制转换修复类型不匹配 =====
    private <FB> PointFree<Function<A, B>> cap(RewriteResult<?, FB> resResult) {
       RewriteResult<A, B> op = (RewriteResult<A, B>)this.algebra.apply(this.index);
-      return Functions.comp(op.view().function(), (PointFree<Function<A, A>>)resResult.view().function());
+      return Functions.comp(op.view().function(), (PointFree<Function<A, A>>)(PointFree<?>)resResult.view().function());
    }
 
    @Override

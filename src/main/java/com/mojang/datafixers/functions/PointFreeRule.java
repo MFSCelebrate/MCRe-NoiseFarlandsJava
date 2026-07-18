@@ -449,6 +449,7 @@ public interface PointFreeRule {
       }
    }
 
+   // ===== 修改：SortInj 和 SortProj 中的强制转换，使用双重转换绕过类型检查 =====
    enum SortInj implements PointFreeRule.CompRewrite {
       INSTANCE;
 
@@ -476,8 +477,11 @@ public interface PointFreeRule {
       }
 
       private <R, A, A2, B, B2> R cap(Apply<?, ?> first, Apply<?, ?> second) {
-         ProfunctorTransformer<Either<A, B2>, Either<A2, B2>, A, A2> firstFunc = (ProfunctorTransformer<Either<A, B2>, Either<A2, B2>, A, A2>)first.func;
-         ProfunctorTransformer<Either<A, B>, Either<A, B2>, B, B2> secondFunc = (ProfunctorTransformer<Either<A, B>, Either<A, B2>, B, B2>)second.func;
+         // ===== 修改：使用双重强制转换 =====
+         ProfunctorTransformer<Either<A, B2>, Either<A2, B2>, A, A2> firstFunc = 
+             (ProfunctorTransformer<Either<A, B2>, Either<A2, B2>, A, A2>)(PointFree<?>)first.func;
+         ProfunctorTransformer<Either<A, B>, Either<A, B2>, B, B2> secondFunc = 
+             (ProfunctorTransformer<Either<A, B>, Either<A, B2>, B, B2>)(PointFree<?>)second.func;
          PointFree<Function<A, A2>> firstArg = (PointFree<Function<A, A2>>)first.arg;
          PointFree<Function<B, B2>> secondArg = (PointFree<Function<B, B2>>)second.arg;
          Func<Either<A, B2>, Either<A2, B2>> firstType = (Func<Either<A, B2>, Either<A2, B2>>)first.type;
@@ -518,8 +522,11 @@ public interface PointFreeRule {
       }
 
       private <R, A, A2, B, B2> R cap(Apply<?, ?> first, Apply<?, ?> second) {
-         ProfunctorTransformer<Pair<A, B2>, Pair<A2, B2>, A, A2> firstFunc = (ProfunctorTransformer<Pair<A, B2>, Pair<A2, B2>, A, A2>)first.func;
-         ProfunctorTransformer<Pair<A, B>, Pair<A, B2>, B, B2> secondFunc = (ProfunctorTransformer<Pair<A, B>, Pair<A, B2>, B, B2>)second.func;
+         // ===== 修改：使用双重强制转换 =====
+         ProfunctorTransformer<Pair<A, B2>, Pair<A2, B2>, A, A2> firstFunc = 
+             (ProfunctorTransformer<Pair<A, B2>, Pair<A2, B2>, A, A2>)(PointFree<?>)first.func;
+         ProfunctorTransformer<Pair<A, B>, Pair<A, B2>, B, B2> secondFunc = 
+             (ProfunctorTransformer<Pair<A, B>, Pair<A, B2>, B, B2>)(PointFree<?>)second.func;
          PointFree<Function<A, A2>> firstArg = (PointFree<Function<A, A2>>)first.arg;
          PointFree<Function<B, B2>> secondArg = (PointFree<Function<B, B2>>)second.arg;
          Func<Pair<A, B2>, Pair<A2, B2>> firstType = (Func<Pair<A, B2>, Pair<A2, B2>>)first.type;

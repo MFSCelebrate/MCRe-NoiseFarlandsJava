@@ -88,10 +88,11 @@ public abstract class Either<L, R> implements App<Either.Mu<R>, L> {
          return a -> (App<Either.Mu<R2>, R>)Either.unbox(function).flatMap(f -> (Either<R, R2>)Either.unbox(a).mapLeft(f));
       }
 
+      // ===== 修改：去掉泛型指定，直接使用 Either.unbox =====
       @Override
       public <A, B, R> BiFunction<App<Either.Mu<R2>, A>, App<Either.Mu<R2>, B>, App<Either.Mu<R2>, R>> lift2(App<Either.Mu<R2>, BiFunction<A, B, R>> function) {
          return (a, b) -> (App<Either.Mu<R2>, R>)Either.unbox(function)
-            .flatMap(f -> (Either<R, R2>)Either.<Object, R>unbox(a).flatMap(av -> Either.<L, R>unbox(b).mapLeft(bv -> (R)f.apply(av, bv))));
+            .flatMap(f -> Either.unbox(a).flatMap(av -> Either.unbox(b).mapLeft(bv -> f.apply(av, bv))));
       }
 
       @Override

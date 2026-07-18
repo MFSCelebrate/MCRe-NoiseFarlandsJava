@@ -9,11 +9,12 @@ import com.mojang.serialization.DynamicOps;
 import java.util.function.Function;
 
 public abstract class Functions {
+   // ===== 修改：使用双重强制转换解决类型推断问题 =====
    public static <A, B, C> PointFree<Function<A, C>> comp(PointFree<Function<B, C>> f1, PointFree<Function<A, B>> f2) {
       if (isId(f1)) {
-         return (PointFree<Function<A, C>>)f2;
+         return (PointFree<Function<A, C>>)(PointFree<?>)f2;
       } else if (isId(f2)) {
-         return (PointFree<Function<A, C>>)f1;
+         return (PointFree<Function<A, C>>)(PointFree<?>)f1;
       } else if (f1 instanceof Comp<B, C> comp1 && f2 instanceof Comp<A, B> comp2) {
          PointFree<? extends Function<?, ?>>[] functions = new PointFree[comp1.functions.length + comp2.functions.length];
          System.arraycopy(comp1.functions, 0, functions, 0, comp1.functions.length);
