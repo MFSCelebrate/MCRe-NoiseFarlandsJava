@@ -86,7 +86,7 @@ jobs:
       - name: 重新打包完整 jar
         run: |
           cd extracted
-          jar cfm ../minecraft-${{ env.MINECRAFT_VERSION }}-custom-full.jar META-INF/MANIFEST.MF .
+          jar cfm ../26.3-snapshot-3.jar META-INF/MANIFEST.MF .
           cd ..
 
       - name: 验证关键类
