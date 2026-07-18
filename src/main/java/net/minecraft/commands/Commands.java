@@ -279,7 +279,7 @@ public class Commands {
          }
       }
 
-      if (commandSelection.includeDedicated) {
+      if (commandSelection.includeDedicated || SharedConstants.DEBUG_FORCE_ENABLED_DEDICATED_SERVER_COMMANDS) {
          BanIpCommands.register(this.dispatcher);
          BanListCommands.register(this.dispatcher);
          BanPlayerCommands.register(this.dispatcher);
