@@ -1691,7 +1691,7 @@ public class Options {
                             if (tag == null) {
                                 return null;
                             } else if (tag instanceof StringTag) {
-                                return ((StringTag) tag).getAsString();
+                                return ((StringTag) tag).value();
                             } else {
                                 throw new IllegalStateException("Cannot read field of wrong type, expected string: " + tag);
                             }
