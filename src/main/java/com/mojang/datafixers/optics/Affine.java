@@ -31,29 +31,32 @@ public interface Affine<S, T, A, B> extends App2<Affine.Mu<A, B>, S, T>, Optic<A
    }
 
    final class Instance<A2, B2> implements AffineP<Affine.Mu<A2, B2>, AffineP.Mu> {
+      // ===== 修改：修复 dimap 方法，移除错误的类型变量引用 =====
       @Override
       public <A, B, C, D> FunctionType<App2<Affine.Mu<A2, B2>, A, B>, App2<Affine.Mu<A2, B2>, C, D>> dimap(Function<C, A> g, Function<B, D> h) {
-         return affineBox -> Optics.affine(
-            c -> Affine.<S, T, A, B>unbox(affineBox).preview((S)g.apply((C)c)).mapLeft(h),
-            (b2, c) -> (T)h.apply(Affine.<S, B, A, B>unbox(affineBox).set((B)b2, (S)g.apply((C)c)))
+         return affineBox -> Optics.<C, D, A2, B2>affine(
+            c -> Affine.unbox(affineBox).preview(g.apply(c)).mapLeft(h),
+            (b2, c) -> h.apply(Affine.unbox(affineBox).set(b2, g.apply(c)))
          );
       }
 
+      // ===== 修改：修复 first 方法 =====
       @Override
       public <A, B, C> App2<Affine.Mu<A2, B2>, Pair<A, C>, Pair<B, C>> first(App2<Affine.Mu<A2, B2>, A, B> input) {
          Affine<A, B, A2, B2> affine = Affine.unbox(input);
-         return Optics.affine(
-            pair -> affine.preview(pair.getFirst()).mapBoth(b -> (Pair<B, C>)Pair.of((B)b, pair.getSecond()), Function.identity()),
-            (b2, pair) -> Pair.of(affine.set((B2)b2, pair.getFirst()), pair.getSecond())
+         return Optics.<Pair<A, C>, Pair<B, C>, A2, B2>affine(
+            pair -> affine.preview(pair.getFirst()).mapBoth(b -> Pair.of(b, pair.getSecond()), Function.identity()),
+            (b2, pair) -> Pair.of(affine.set(b2, pair.getFirst()), pair.getSecond())
          );
       }
 
+      // ===== 修改：修复 second 方法 =====
       @Override
       public <A, B, C> App2<Affine.Mu<A2, B2>, Pair<C, A>, Pair<C, B>> second(App2<Affine.Mu<A2, B2>, A, B> input) {
          Affine<A, B, A2, B2> affine = Affine.unbox(input);
-         return Optics.affine(
-            pair -> affine.preview(pair.getSecond()).mapBoth(b -> (Pair<C, B>)Pair.of((C)pair.getFirst(), b), Function.identity()),
-            (b2, pair) -> Pair.of(pair.getFirst(), affine.set((B2)b2, pair.getSecond()))
+         return Optics.<Pair<C, A>, Pair<C, B>, A2, B2>affine(
+            pair -> affine.preview(pair.getSecond()).mapBoth(b -> Pair.of(pair.getFirst(), b), Function.identity()),
+            (b2, pair) -> Pair.of(pair.getFirst(), affine.set(b2, pair.getSecond()))
          );
       }
 

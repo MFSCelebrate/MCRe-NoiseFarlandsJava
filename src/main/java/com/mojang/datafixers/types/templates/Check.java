@@ -58,8 +58,10 @@ public record Check(String name, int index, TypeTemplate element) implements Typ
       };
    }
 
+   // ===== 修改：使用具体类型 CheckType<A> 而非通配符 =====
    private <A> RewriteResult<?, ?> cap(TypeFamily family, int index, RewriteResult<A, ?> elementResult) {
-      return Check.CheckType.fix((Check.CheckType<?>)this.apply(family).apply(index), elementResult);
+      Check.CheckType<A> type = (Check.CheckType<A>) this.apply(family).apply(index);
+      return Check.CheckType.fix(type, elementResult);
    }
 
    @Override

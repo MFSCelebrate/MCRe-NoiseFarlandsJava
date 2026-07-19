@@ -17,12 +17,16 @@ interface ReForgetEP<R, A, B> extends App2<ReForgetEP.Mu<R>, A, B> {
    B run(Either<A, Pair<A, R>> var1);
 
    final class Instance<R> implements AffineP<ReForgetEP.Mu<R>, ReForgetEP.Instance.Mu<R>>, App<ReForgetEP.Instance.Mu<R>, ReForgetEP.Mu<R>> {
+      // ===== 修改：为 mapBoth 显式指定泛型参数 =====
       @Override
       public <A, B, C, D> FunctionType<App2<ReForgetEP.Mu<R>, A, B>, App2<ReForgetEP.Mu<R>, C, D>> dimap(Function<C, A> g, Function<B, D> h) {
-         return input -> (App2<ReForgetEP.Mu<R>, C, D>)Optics.reForgetEP("dimap", e -> {
-            Either<A, Pair<A, R>> either = e.mapBoth(g, p -> Pair.of(g.apply((C)p.getFirst()), p.getSecond()));
+         return input -> (App2<ReForgetEP.Mu<R>, C, D>) Optics.reForgetEP("dimap", e -> {
+            Either<A, Pair<A, R>> either = e.<A, Pair<A, R>>mapBoth(
+                g,
+                p -> Pair.of(g.apply(p.getFirst()), p.getSecond())
+            );
             B b = ReForgetEP.<R, A, B>unbox(input).run(either);
-            return (B)h.apply(b);
+            return h.apply(b);
          });
       }
 

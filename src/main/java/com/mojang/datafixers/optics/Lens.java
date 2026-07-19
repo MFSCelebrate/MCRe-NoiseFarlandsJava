@@ -39,24 +39,30 @@ public interface Lens<S, T, A, B> extends App2<Lens.Mu<A, B>, S, T>, Optic<Carte
    }
 
    final class Instance<A2, B2> implements Cartesian<Lens.Mu<A2, B2>, Cartesian.Mu> {
+      // ===== 修改：修复 dimap 方法，移除错误的类型变量引用 =====
       @Override
       public <A, B, C, D> FunctionType<App2<Lens.Mu<A2, B2>, A, B>, App2<Lens.Mu<A2, B2>, C, D>> dimap(Function<C, A> g, Function<B, D> h) {
-         return l -> Optics.lens(
-            c -> Lens.<S, T, A, B>unbox(l).view((S)g.apply((C)c)), (b2, c) -> (T)h.apply(Lens.<S, B, A, B>unbox(l).update((B)b2, (S)g.apply((C)c)))
+         return l -> Optics.<C, D, A2, B2>lens(
+            c -> Lens.unbox(l).view(g.apply(c)),
+            (b2, c) -> h.apply(Lens.unbox(l).update(b2, g.apply(c)))
          );
       }
 
+      // ===== 修改：修复 first 方法，移除错误的强制转换 =====
       @Override
       public <A, B, C> App2<Lens.Mu<A2, B2>, Pair<A, C>, Pair<B, C>> first(App2<Lens.Mu<A2, B2>, A, B> input) {
-         return Optics.lens(
-            pair -> (A)Lens.unbox(input).view(pair.getFirst()), (b2, pair) -> Pair.of(Lens.unbox(input).update((B2)b2, pair.getFirst()), pair.getSecond())
+         return Optics.<Pair<A, C>, Pair<B, C>, A2, B2>lens(
+            pair -> Lens.unbox(input).view(pair.getFirst()),
+            (b2, pair) -> Pair.of(Lens.unbox(input).update(b2, pair.getFirst()), pair.getSecond())
          );
       }
 
+      // ===== 修改：修复 second 方法，移除错误的强制转换 =====
       @Override
       public <A, B, C> App2<Lens.Mu<A2, B2>, Pair<C, A>, Pair<C, B>> second(App2<Lens.Mu<A2, B2>, A, B> input) {
-         return Optics.lens(
-            pair -> (A)Lens.unbox(input).view(pair.getSecond()), (b2, pair) -> Pair.of(pair.getFirst(), Lens.unbox(input).update((B2)b2, pair.getSecond()))
+         return Optics.<Pair<C, A>, Pair<C, B>, A2, B2>lens(
+            pair -> Lens.unbox(input).view(pair.getSecond()),
+            (b2, pair) -> Pair.of(pair.getFirst(), Lens.unbox(input).update(b2, pair.getSecond()))
          );
       }
    }

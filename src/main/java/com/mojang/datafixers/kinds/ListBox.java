@@ -21,12 +21,14 @@ public final class ListBox<T> implements App<ListBox.Mu, T> {
       this.value = value;
    }
 
+   // ===== 修改：移除错误的强制转换 =====
    public static <F extends K1, A, B> App<F, List<B>> traverse(Applicative<F, ?> applicative, Function<A, App<F, B>> function, List<A> input) {
-      return applicative.map(ListBox::unbox, ListBox.Instance.INSTANCE.traverse(applicative, (Function<A, App<F, T>>)function, create(input)));
+      return applicative.map(ListBox::unbox, ListBox.Instance.INSTANCE.traverse(applicative, function, create(input)));
    }
 
+   // ===== 修改：移除错误的强制转换 =====
    public static <F extends K1, A> App<F, List<A>> flip(Applicative<F, ?> applicative, List<App<F, A>> input) {
-      return applicative.map(ListBox::unbox, ListBox.Instance.INSTANCE.flip(applicative, create((List<App<F, T>>)input)));
+      return applicative.map(ListBox::unbox, ListBox.Instance.INSTANCE.flip(applicative, create(input)));
    }
 
    public enum Instance implements Traversable<ListBox.Mu, ListBox.Instance.Mu> {

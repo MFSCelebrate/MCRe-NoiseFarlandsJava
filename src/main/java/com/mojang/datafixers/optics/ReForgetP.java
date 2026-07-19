@@ -17,33 +17,35 @@ interface ReForgetP<R, A, B> extends App2<ReForgetP.Mu<R>, A, B> {
    B run(A var1, R var2);
 
    final class Instance<R> implements AffineP<ReForgetP.Mu<R>, ReForgetP.Instance.Mu<R>>, App<ReForgetP.Instance.Mu<R>, ReForgetP.Mu<R>> {
+      // ===== 修改：移除错误的显式类型参数和强制转换 =====
       @Override
       public <A, B, C, D> FunctionType<App2<ReForgetP.Mu<R>, A, B>, App2<ReForgetP.Mu<R>, C, D>> dimap(Function<C, A> g, Function<B, D> h) {
-         return input -> (App2<ReForgetP.Mu<R>, C, D>)Optics.reForgetP("dimap", (c, r) -> {
-            A a = g.apply((C)c);
-            B b = ReForgetP.<R, A, B>unbox(input).run(a, r);
-            return (B)h.apply(b);
+         return input -> Optics.<R, C, D>reForgetP("dimap", (c, r) -> {
+            A a = g.apply(c);
+            return h.apply(ReForgetP.unbox(input).run(a, r));
          });
       }
 
+      // ===== 修改：移除多余的强制转换 =====
       @Override
       public <A, B, C> App2<ReForgetP.Mu<R>, Either<A, C>, Either<B, C>> left(App2<ReForgetP.Mu<R>, A, B> input) {
-         return Optics.reForgetP("left", (e, r) -> e.mapLeft(a -> ReForgetP.unbox(input).run((A)a, (R)r)));
+         return Optics.<R, Either<A, C>, Either<B, C>>reForgetP("left", (e, r) -> e.mapLeft(a -> ReForgetP.unbox(input).run(a, r)));
       }
 
+      // ===== 修改：移除多余的强制转换 =====
       @Override
       public <A, B, C> App2<ReForgetP.Mu<R>, Either<C, A>, Either<C, B>> right(App2<ReForgetP.Mu<R>, A, B> input) {
-         return Optics.reForgetP("right", (e, r) -> e.mapRight(a -> ReForgetP.unbox(input).run((A)a, (R)r)));
+         return Optics.<R, Either<C, A>, Either<C, B>>reForgetP("right", (e, r) -> e.mapRight(a -> ReForgetP.unbox(input).run(a, r)));
       }
 
       @Override
       public <A, B, C> App2<ReForgetP.Mu<R>, Pair<A, C>, Pair<B, C>> first(App2<ReForgetP.Mu<R>, A, B> input) {
-         return Optics.reForgetP("first", (p, r) -> Pair.of(ReForgetP.unbox(input).run(p.getFirst(), r), p.getSecond()));
+         return Optics.<R, Pair<A, C>, Pair<B, C>>reForgetP("first", (p, r) -> Pair.of(ReForgetP.unbox(input).run(p.getFirst(), r), p.getSecond()));
       }
 
       @Override
       public <A, B, C> App2<ReForgetP.Mu<R>, Pair<C, A>, Pair<C, B>> second(App2<ReForgetP.Mu<R>, A, B> input) {
-         return Optics.reForgetP("second", (p, r) -> Pair.of(p.getFirst(), ReForgetP.unbox(input).run(p.getSecond(), r)));
+         return Optics.<R, Pair<C, A>, Pair<C, B>>reForgetP("second", (p, r) -> Pair.of(p.getFirst(), ReForgetP.unbox(input).run(p.getSecond(), r)));
       }
 
       static final class Mu<R> implements AffineP.Mu {

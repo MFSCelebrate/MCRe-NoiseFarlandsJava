@@ -20,9 +20,12 @@ interface Grate<S, T, A, B> extends App2<Grate.Mu<A, B>, S, T>, Optic<Closed.Mu,
    }
 
    final class Instance<A2, B2> implements Closed<Grate.Mu<A2, B2>, Closed.Mu> {
+      // ===== 修改：修复 dimap 方法，移除错误的类型变量引用 =====
       @Override
       public <A, B, C, D> FunctionType<App2<Grate.Mu<A2, B2>, A, B>, App2<Grate.Mu<A2, B2>, C, D>> dimap(Function<C, A> g, Function<B, D> h) {
-         return input -> Optics.grate(f -> (T)h.apply(Grate.<S, B, A, B>unbox(input).grate(fa -> (B)f.apply(FunctionType.create(fa.compose(g))))));
+         return input -> Optics.<C, D, A2, B2>grate(
+            f -> h.apply(Grate.unbox(input).grate(fa -> f.apply(FunctionType.create(fa.compose(g)))))
+         );
       }
 
       @Override

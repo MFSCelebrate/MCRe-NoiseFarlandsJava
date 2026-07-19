@@ -22,9 +22,13 @@ public interface Adapter<S, T, A, B> extends App2<Adapter.Mu<A, B>, S, T>, Optic
    }
 
    final class Instance<A2, B2> implements Profunctor<Adapter.Mu<A2, B2>, Profunctor.Mu> {
+      // ===== 修改：修复 dimap 方法，移除错误的类型变量引用 =====
       @Override
       public <A, B, C, D> FunctionType<App2<Adapter.Mu<A2, B2>, A, B>, App2<Adapter.Mu<A2, B2>, C, D>> dimap(Function<C, A> g, Function<B, D> h) {
-         return a -> Optics.adapter(c -> Adapter.<S, T, A, B>unbox(a).from((S)g.apply((C)c)), b2 -> (T)h.apply(Adapter.<S, B, A, B>unbox(a).to((B)b2)));
+         return a -> Optics.<C, D, A2, B2>adapter(
+            c -> Adapter.unbox(a).from(g.apply(c)),
+            b2 -> h.apply(Adapter.unbox(a).to(b2))
+         );
       }
    }
 

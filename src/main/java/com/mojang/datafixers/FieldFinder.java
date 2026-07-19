@@ -60,41 +60,72 @@ public final class FieldFinder<FT> implements OpticFinder<FT> {
 
       @Override
       public <S> Either<TypedOptic<S, ?, FT, FR>, Type.FieldNotFoundException> match(Type<S> targetType) {
+         // ===== 修改：显式指定 TypedOptic 类型参数 =====
          if (this.name == null && this.type.equals(targetType, true, false)) {
-            return Either.left(new TypedOptic<>(Profunctor.Mu.TYPE_TOKEN, targetType, this.resultType, (Type<FT>)targetType, this.resultType, Optics.id()));
+            return Either.left(new TypedOptic<>(
+                Profunctor.Mu.TYPE_TOKEN,
+                targetType,
+                this.resultType,
+                (Type<FT>) targetType,
+                this.resultType,
+                Optics.id()
+            ));
          }
 
          if (targetType instanceof Tag.TagType<S> tagType) {
             if (!Objects.equals(tagType.name(), this.name)) {
                return Either.right(new Type.FieldNotFoundException(String.format("Not found: \"%s\" (in type: %s)", this.name, targetType)));
             } else {
-               return !Objects.equals(this.type, tagType.element())
-                  ? Either.right(
+               if (!Objects.equals(this.type, tagType.element())) {
+                  return Either.right(
                      new Type.FieldNotFoundException(
                         String.format("Type error for field \"%s\": expected type: %s, actual type: %s)", this.name, this.type, tagType.element())
                      )
-                  )
-                  : Either.left(
-                     new TypedOptic<>(Profunctor.Mu.TYPE_TOKEN, tagType, DSL.field(tagType.name(), this.resultType), this.type, this.resultType, Optics.id())
                   );
+               }
+               // ===== 修改：显式指定 TypedOptic 类型参数 =====
+               return Either.left(
+                  new TypedOptic<>(
+                     Profunctor.Mu.TYPE_TOKEN,
+                     tagType,
+                     DSL.field(tagType.name(), this.resultType),
+                     this.type,
+                     this.resultType,
+                     Optics.id()
+                  )
+               );
             }
-         } else if (!(targetType instanceof TaggedChoice.TaggedChoiceType<FT> choiceType && Objects.equals(this.name, choiceType.getName()))) {
+         }
+
+         // ===== 修改：使用通配符进行 instanceof 检查，然后手动处理 =====
+         if (!(targetType instanceof TaggedChoice.TaggedChoiceType<?> choiceType) || !Objects.equals(this.name, choiceType.getName())) {
             return Either.right(new Type.Continue());
-         } else if (!Objects.equals(this.type, choiceType.getKeyType())) {
+         }
+
+         @SuppressWarnings("unchecked")
+         TaggedChoice.TaggedChoiceType<FT> ftChoiceType = (TaggedChoice.TaggedChoiceType<FT>) choiceType;
+
+         if (!Objects.equals(this.type, ftChoiceType.getKeyType())) {
             return Either.right(
                new Type.FieldNotFoundException(
-                  String.format("Type error for field \"%s\": expected type: %s, actual type: %s)", this.name, this.type, choiceType.getKeyType())
+                  String.format("Type error for field \"%s\": expected type: %s, actual type: %s)", this.name, this.type, ftChoiceType.getKeyType())
                )
             );
-         } else {
-            return !Objects.equals(this.type, this.resultType)
-               ? Either.right(new Type.FieldNotFoundException("TaggedChoiceType key type change is unsupported."))
-               : Either.left(this.capChoice(choiceType));
          }
+
+         if (!Objects.equals(this.type, this.resultType)) {
+            return Either.right(new Type.FieldNotFoundException("TaggedChoiceType key type change is unsupported."));
+         }
+
+         // ===== 修改：显式指定 capChoice 的 V 类型 =====
+         return Either.left(this.<Object>capChoice(ftChoiceType));
       }
 
-      private <V> TypedOptic<Pair<FT, V>, ?, FT, FT> capChoice(Type<?> choiceType) {
-         return new TypedOptic<>(Cartesian.Mu.TYPE_TOKEN, (Type<Pair<FT, V>>)choiceType, choiceType, this.type, this.type, Optics.proj1());
+      // ===== 修改：显式指定 TypedOptic 类型参数 =====
+      private <V> TypedOptic<Pair<FT, V>, Pair<FT, V>, FT, FT> capChoice(TaggedChoice.TaggedChoiceType<FT> choiceType) {
+         @SuppressWarnings("unchecked")
+         Type<Pair<FT, V>> pairType = (Type<Pair<FT, V>>) (Type<?>) choiceType;
+         return new TypedOptic<>(Cartesian.Mu.TYPE_TOKEN, pairType, pairType, this.type, this.type, Optics.proj1());
       }
 
       @Override

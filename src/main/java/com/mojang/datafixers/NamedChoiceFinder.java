@@ -56,13 +56,18 @@ final class NamedChoiceFinder<FT> implements OpticFinder<FT> {
          if (targetType instanceof TaggedChoice.TaggedChoiceType<?> choiceType) {
             Type<?> elementType = choiceType.types().get(this.name);
             if (elementType != null) {
-               return !Objects.equals(this.type, elementType)
-                  ? Either.right(
+               if (!Objects.equals(this.type, elementType)) {
+                  return Either.right(
                      new Type.FieldNotFoundException(
                         String.format("Type error for choice type \"%s\": expected type: %s, actual type: %s)", this.name, targetType, elementType)
                      )
-                  )
-                  : Either.left(TypedOptic.tagged(choiceType, this.name, this.type, this.resultType));
+                  );
+               } else {
+                  // ===== 修改：强制转换为 TaggedChoiceType<String>，因为键类型是 String =====
+                  @SuppressWarnings("unchecked")
+                  TaggedChoice.TaggedChoiceType<String> stringChoiceType = (TaggedChoice.TaggedChoiceType<String>) choiceType;
+                  return Either.left(TypedOptic.tagged(stringChoiceType, this.name, this.type, this.resultType));
+               }
             } else {
                return Either.right(new Type.Continue());
             }

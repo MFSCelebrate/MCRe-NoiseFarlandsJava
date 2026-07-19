@@ -21,9 +21,10 @@ interface ReForget<R, A, B> extends App2<ReForget.Mu<R>, A, B> {
       implements ReCartesian<ReForget.Mu<R>, ReForget.Instance.Mu<R>>,
       Cocartesian<ReForget.Mu<R>, ReForget.Instance.Mu<R>>,
       App<ReForget.Instance.Mu<R>, ReForget.Mu<R>> {
+      // ===== 修改：移除错误的强制转换 =====
       @Override
       public <A, B, C, D> FunctionType<App2<ReForget.Mu<R>, A, B>, App2<ReForget.Mu<R>, C, D>> dimap(Function<C, A> g, Function<B, D> h) {
-         return input -> (App2<ReForget.Mu<R>, C, D>)Optics.reForget(r -> (B)h.apply(ReForget.unbox(input).run(r)));
+         return input -> Optics.reForget(r -> h.apply(ReForget.unbox(input).run(r)));
       }
 
       @Override
@@ -36,9 +37,10 @@ interface ReForget<R, A, B> extends App2<ReForget.Mu<R>, A, B> {
          return Optics.reForget(r -> ReForget.unbox(input).run(r).getSecond());
       }
 
+      // ===== 修改：移除错误的强制转换 =====
       @Override
       public <A, B, C> App2<ReForget.Mu<R>, Either<A, C>, Either<B, C>> left(App2<ReForget.Mu<R>, A, B> input) {
-         return Optics.reForget(r -> (Either<B, C>)Either.left(ReForget.unbox(input).run(r)));
+         return Optics.reForget(r -> Either.left(ReForget.unbox(input).run(r)));
       }
 
       @Override

@@ -6,8 +6,9 @@ import java.util.function.Function;
 public final class Const<C, T> implements App<Const.Mu<C>, T> {
    private final C value;
 
+   // ===== 修改：强制转换加上泛型参数 =====
    public static <C, T> C unbox(App<Const.Mu<C>, T> box) {
-      return ((Const)box).value;
+      return ((Const<C, T>)box).value;
    }
 
    public static <C, T> Const<C, T> create(C value) {

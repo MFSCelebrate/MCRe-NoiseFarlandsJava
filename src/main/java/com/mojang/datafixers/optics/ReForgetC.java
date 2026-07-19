@@ -22,14 +22,18 @@ public interface ReForgetC<R, A, B> extends App2<ReForgetC.Mu<R>, A, B> {
    }
 
    final class Instance<R> implements AffineP<ReForgetC.Mu<R>, ReForgetC.Instance.Mu<R>>, App<ReForgetC.Instance.Mu<R>, ReForgetC.Mu<R>> {
+      // ===== 修改：修复 dimap 方法，显式类型转换 =====
       @Override
       public <A, B, C, D> FunctionType<App2<ReForgetC.Mu<R>, A, B>, App2<ReForgetC.Mu<R>, C, D>> dimap(Function<C, A> g, Function<B, D> h) {
-         return input -> (App2<ReForgetC.Mu<R>, C, D>)Optics.reForgetC(
-            "dimap",
-            ReForgetC.unbox(input)
-               .impl()
-               .map(f -> Either.left(r -> (B)h.apply(f.apply(r))), f -> Either.right((c, r) -> (B)h.apply((B)f.apply(g.apply((C)c), r))))
-         );
+         return input -> {
+            Either<Function<R, B>, BiFunction<A, R, B>> e = ReForgetC.<R, A, B>unbox(input).impl();
+            return (App2<ReForgetC.Mu<R>, C, D>) Optics.reForgetC("dimap",
+                e.<Function<R, D>, BiFunction<C, R, D>>map(
+                    f -> Either.left(r -> h.apply(f.apply(r))),
+                    f -> Either.right((c, r) -> h.apply(f.apply(g.apply(c), r)))
+                )
+            );
+         };
       }
 
       @Override

@@ -12,9 +12,10 @@ public interface CartesianLike<T extends K1, C, Mu extends CartesianLike.Mu> ext
 
    <A> App<T, A> from(App<Pair.Mu<C>, A> var1);
 
+   // ===== 修改：移除错误的强制转换 =====
    @Override
    default <F extends K1, A, B> App<F, App<T, B>> traverse(Applicative<F, ?> applicative, Function<A, App<F, B>> function, App<T, A> input) {
-      return applicative.map(this::from, new Pair.Instance<C>().traverse(applicative, (Function<A, App<F, A>>)function, this.to(input)));
+      return applicative.map(this::from, new Pair.Instance<C>().traverse(applicative, function, this.to(input)));
    }
 
    interface Mu extends Functor.Mu, Traversable.Mu {

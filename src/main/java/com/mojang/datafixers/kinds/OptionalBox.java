@@ -34,15 +34,16 @@ public final class OptionalBox<T> implements App<OptionalBox.Mu, T> {
 
       @Override
       public <A, R> Function<App<OptionalBox.Mu, A>, App<OptionalBox.Mu, R>> lift1(App<OptionalBox.Mu, Function<A, R>> function) {
-         return a -> OptionalBox.create(OptionalBox.unbox(function).flatMap(f -> OptionalBox.unbox(a).map((Function<? super A, ? extends R>)f)));
+         return a -> OptionalBox.create(OptionalBox.unbox(function).flatMap(f -> OptionalBox.unbox(a).map(f)));
       }
 
+      // ===== 修改：移除错误的类型参数和强制转换 =====
       @Override
       public <A, B, R> BiFunction<App<OptionalBox.Mu, A>, App<OptionalBox.Mu, B>, App<OptionalBox.Mu, R>> lift2(
          App<OptionalBox.Mu, BiFunction<A, B, R>> function
       ) {
          return (a, b) -> OptionalBox.create(
-            OptionalBox.unbox(function).flatMap(f -> OptionalBox.<Object>unbox(a).flatMap(av -> OptionalBox.<Object>unbox(b).map(bv -> (T)f.apply(av, bv))))
+            OptionalBox.unbox(function).flatMap(f -> OptionalBox.unbox(a).flatMap(av -> OptionalBox.unbox(b).map(bv -> f.apply(av, bv))))
          );
       }
 

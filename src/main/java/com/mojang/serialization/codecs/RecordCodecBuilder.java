@@ -152,10 +152,10 @@ public final class RecordCodecBuilder<O, F> implements App<RecordCodecBuilder.Mu
                final MapEncoder<A> aEnc = a.encoder.apply(o);
                final A aFromO = a.getter.apply(o);
                return new MapEncoder.Implementation<R>() {
+                  // ===== 修改：参数类型改为 R =====
                   @Override
-                  public <T> RecordBuilder<T> encode(Object input, DynamicOps<T> ops, RecordBuilder<T> prefix) {
-                     // ===== 修改：补全泛型参数 =====
-                     fEnc.encode((Function<Object, Object>) a1 -> input, ops, prefix);
+                  public <T> RecordBuilder<T> encode(R input, DynamicOps<T> ops, RecordBuilder<T> prefix) {
+                     fEnc.encode((a1) -> input, ops, prefix);
                      aEnc.encode(aFromO, ops, prefix);
                      return prefix;
                   }
@@ -205,10 +205,10 @@ public final class RecordCodecBuilder<O, F> implements App<RecordCodecBuilder.Mu
                final MapEncoder<B> bEncoder = fb.encoder.apply(o);
                final B bFromO = fb.getter.apply(o);
                return new MapEncoder.Implementation<R>() {
+                  // ===== 修改：参数类型改为 R =====
                   @Override
                   public <T> RecordBuilder<T> encode(R input, DynamicOps<T> ops, RecordBuilder<T> prefix) {
-                     // ===== 修改：补全泛型参数 =====
-                     fEncoder.encode((BiFunction<Object, Object, Object>) (a1, b1) -> input, ops, prefix);
+                     fEncoder.encode((a1, b1) -> input, ops, prefix);
                      aEncoder.encode(aFromO, ops, prefix);
                      bEncoder.encode(bFromO, ops, prefix);
                      return prefix;
@@ -268,10 +268,10 @@ public final class RecordCodecBuilder<O, F> implements App<RecordCodecBuilder.Mu
                final MapEncoder<T3> e3 = f3.encoder.apply(o);
                final T3 v3 = f3.getter.apply(o);
                return new MapEncoder.Implementation<R>() {
+                  // ===== 修改：参数类型改为 R =====
                   @Override
                   public <T> RecordBuilder<T> encode(R input, DynamicOps<T> ops, RecordBuilder<T> prefix) {
-                     // ===== 修改：补全泛型参数 =====
-                     fEncoder.encode((Function3<Object, Object, Object, Object>) (t1x, t2x, t3x) -> input, ops, prefix);
+                     fEncoder.encode((t1x, t2x, t3x) -> input, ops, prefix);
                      e1.encode(v1, ops, prefix);
                      e2.encode(v2, ops, prefix);
                      e3.encode(v3, ops, prefix);
@@ -337,10 +337,10 @@ public final class RecordCodecBuilder<O, F> implements App<RecordCodecBuilder.Mu
                final MapEncoder<T4> e4 = f4.encoder.apply(o);
                final T4 v4 = f4.getter.apply(o);
                return new MapEncoder.Implementation<R>() {
+                  // ===== 修改：参数类型改为 R =====
                   @Override
                   public <T> RecordBuilder<T> encode(R input, DynamicOps<T> ops, RecordBuilder<T> prefix) {
-                     // ===== 修改：补全泛型参数 =====
-                     fEncoder.encode((Function4<Object, Object, Object, Object, Object>) (t1x, t2x, t3x, t4x) -> input, ops, prefix);
+                     fEncoder.encode((t1x, t2x, t3x, t4x) -> input, ops, prefix);
                      e1.encode(v1, ops, prefix);
                      e2.encode(v2, ops, prefix);
                      e3.encode(v3, ops, prefix);

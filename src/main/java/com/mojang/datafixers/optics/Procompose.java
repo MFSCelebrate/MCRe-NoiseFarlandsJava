@@ -45,10 +45,11 @@ public final class Procompose<F extends K2, G extends K2, A, B, C> implements Ap
          return cmp -> this.cap(Procompose.unbox(cmp), g, h);
       }
 
+      // ===== 修改：移除错误的强制转换 =====
       private <A, B, C, D, E> App2<Procompose.Mu<F, G>, C, D> cap(Procompose<F, G, A, B, E> cmp, Function<C, A> g, Function<B, D> h) {
          return new Procompose<>(
-            () -> this.p1.dimap(g, Function.identity()).apply((App2<F, A, D>)cmp.first.get()),
-            this.p2.dimap(Function.identity(), h).apply((App2<G, D, B>)cmp.second)
+            () -> this.p1.dimap(g, Function.identity()).apply(cmp.first.get()),
+            this.p2.dimap(Function.identity(), h).apply(cmp.second)
          );
       }
    }

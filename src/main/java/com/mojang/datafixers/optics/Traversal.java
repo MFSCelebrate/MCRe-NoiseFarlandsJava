@@ -20,12 +20,13 @@ public interface Traversal<S, T, A, B> extends Wander<S, T, A, B>, App2<Traversa
    }
 
    final class Instance<A2, B2> implements TraversalP<Traversal.Mu<A2, B2>, TraversalP.Mu> {
+      // ===== 修改：修复 dimap 方法，移除错误的类型变量引用 =====
       @Override
       public <A, B, C, D> FunctionType<App2<Traversal.Mu<A2, B2>, A, B>, App2<Traversal.Mu<A2, B2>, C, D>> dimap(Function<C, A> g, Function<B, D> h) {
          return tr -> new Traversal<C, D, A2, B2>() {
             @Override
             public <F extends K1> FunctionType<C, App<F, D>> wander(Applicative<F, ?> applicative, FunctionType<A2, App<F, B2>> input) {
-               return c -> applicative.map(h, Traversal.<S, B, A, B>unbox(tr).wander(applicative, (FunctionType<A, App<F, B>>)input).apply((S)g.apply(c)));
+               return c -> applicative.map(h, Traversal.unbox(tr).wander(applicative, input).apply(g.apply(c)));
             }
          };
       }

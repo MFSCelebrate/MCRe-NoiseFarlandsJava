@@ -249,9 +249,10 @@ public final class TaggedChoice<K> implements TypeTemplate {
          return valueCodec.xmap(value -> Pair.of(key, (V)value), Pair::getSecond);
       }
 
+      // ===== 修改：显式类型转换 =====
       private DataResult<? extends MapCodec<?>> getMapCodec(K key) {
          return Optional.ofNullable((Type)this.types.get(key))
-            .map(type -> DataResult.success(MapCodec.assumeMapUnsafe(((Type)type).codec())))
+            .map(type -> DataResult.success((MapCodec<?>)MapCodec.assumeMapUnsafe(((Type)type).codec())))
             .orElseGet(() -> DataResult.error(() -> "Unsupported key: " + key));
       }
 
@@ -286,7 +287,8 @@ public final class TaggedChoice<K> implements TypeTemplate {
             .map(e -> Pair.of(e.getKey(), ((Type)e.getValue()).findType(type, resultType, matcher, recurse)))
             .filter(e -> e.getSecond().left().isPresent())
             .map(e -> e.mapSecond(o -> (TypedOptic)o.left().get()))
-            .collect((Collector<? super Pair<Object, TypedOptic>, ?, Map<K, ? extends TypedOptic<?, ?, FT, FR>>>)Pair.toMap());
+            // ===== 修改：显式类型参数 =====
+            .collect(Pair.<K, TypedOptic<?, ?, FT, FR>>toMap());
          if (optics.isEmpty()) {
             return Either.right(new Type.FieldNotFoundException("Not found in any choices"));
          }

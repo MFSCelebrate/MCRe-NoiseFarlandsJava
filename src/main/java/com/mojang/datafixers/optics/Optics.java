@@ -58,8 +58,9 @@ public abstract class Optics {
       return lens(s -> Pair.of(getter.view(s), lens.view(s)), lens::update);
    }
 
+   // ===== 修改：使用双重强制转换修复类型不匹配 =====
    public static <S, T> Adapter<S, T, S, T> id() {
-      return IdAdapter.INSTANCE;
+      return (Adapter<S, T, S, T>) (Adapter<?, ?, ?, ?>) IdAdapter.INSTANCE;
    }
 
    public static boolean isId(Optic<?, ?, ?, ?, ?> optic) {
