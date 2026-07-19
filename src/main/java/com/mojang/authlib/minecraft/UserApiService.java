@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public interface UserApiService {
    UserApiService.UserProperties OFFLINE_PROPERTIES = new UserApiService.UserProperties(

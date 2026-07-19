@@ -19,7 +19,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DynamicOps;
 import java.util.Optional;
 import java.util.function.IntFunction;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record CompoundList(TypeTemplate key, TypeTemplate element) implements TypeTemplate {
    @Override

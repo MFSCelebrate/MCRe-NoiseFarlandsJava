@@ -3,7 +3,7 @@ package com.mojang.serialization;
 import com.mojang.datafixers.util.Pair;
 import java.util.Map;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public interface MapLike<T> {
    MapLike<Object> EMPTY = new MapLike<Object>() {

@@ -7,7 +7,7 @@ import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.services.ProfileResult;
 import java.net.InetAddress;
 import java.util.UUID;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public interface SessionService {
    void joinServer(UUID var1, String var2, String var3) throws AuthenticationException;

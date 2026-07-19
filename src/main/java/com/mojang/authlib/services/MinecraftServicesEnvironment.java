@@ -3,7 +3,7 @@ package com.mojang.authlib.services;
 import com.mojang.authlib.Environment;
 import java.util.Locale;
 import java.util.Optional;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public enum MinecraftServicesEnvironment {
    PROD("https://discovery.minecraftservices.com/minecraft/client"),

@@ -47,7 +47,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Collector;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public final class TaggedChoice<K> implements TypeTemplate {
    private final String name;

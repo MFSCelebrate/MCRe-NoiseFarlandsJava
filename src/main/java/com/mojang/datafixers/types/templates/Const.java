@@ -14,7 +14,7 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import java.util.Objects;
 import java.util.function.IntFunction;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record Const(Type<?> type) implements TypeTemplate {
    @Override

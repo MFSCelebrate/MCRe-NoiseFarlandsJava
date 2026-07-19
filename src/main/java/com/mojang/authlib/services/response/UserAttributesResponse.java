@@ -5,7 +5,7 @@ import com.mojang.authlib.services.ToggleValue;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record UserAttributesResponse(
    @Nullable @SerializedName("privileges") UserAttributesResponse.Privileges privileges,

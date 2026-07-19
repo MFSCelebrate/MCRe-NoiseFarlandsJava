@@ -1,7 +1,7 @@
 package com.mojang.authlib.minecraft;
 
 import com.mojang.authlib.SignatureState;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record MinecraftProfileTextures(
    @Nullable MinecraftProfileTexture skin, @Nullable MinecraftProfileTexture cape, @Nullable MinecraftProfileTexture elytra, SignatureState signatureState

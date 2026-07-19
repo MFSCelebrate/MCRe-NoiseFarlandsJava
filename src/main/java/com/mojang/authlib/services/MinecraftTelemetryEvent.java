@@ -3,7 +3,7 @@ package com.mojang.authlib.services;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.mojang.authlib.minecraft.TelemetryEvent;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class MinecraftTelemetryEvent implements TelemetryEvent {
    private final MinecraftTelemetrySession service;

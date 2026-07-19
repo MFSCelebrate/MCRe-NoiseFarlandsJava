@@ -3,7 +3,7 @@ package com.mojang.authlib.services.request;
 import com.google.gson.annotations.SerializedName;
 import com.mojang.authlib.minecraft.report.AbuseReport;
 import java.util.UUID;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record AbuseReportRequest(
    @SerializedName("version") int version,

@@ -22,7 +22,7 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class MinecraftServicesUserApiService implements UserApiService {
    private static final long REQUEST_COOLDOWN_SECONDS = 120L;

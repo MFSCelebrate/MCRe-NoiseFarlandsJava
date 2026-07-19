@@ -9,7 +9,7 @@ import com.mojang.datafixers.types.templates.TaggedChoice;
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 import java.util.Objects;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public final class FieldFinder<FT> implements OpticFinder<FT> {
    @Nullable

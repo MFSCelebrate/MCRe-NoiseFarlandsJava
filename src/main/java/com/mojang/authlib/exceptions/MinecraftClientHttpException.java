@@ -4,7 +4,7 @@ import com.mojang.authlib.services.response.ErrorResponse;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.StringJoiner;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
 
 public class MinecraftClientHttpException extends MinecraftClientException {

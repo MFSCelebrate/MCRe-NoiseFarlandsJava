@@ -19,7 +19,7 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 public interface FunctionType<A, B> extends Function<A, B>, App2<FunctionType.Mu, A, B>, App<FunctionType.ReaderMu<A>, B> {
    static <A, B> FunctionType<A, B> create(Function<? super A, ? extends B> function) {
@@ -34,9 +34,9 @@ public interface FunctionType<A, B> extends Function<A, B>, App2<FunctionType.Mu
       return (FunctionType)box;
    }
 
-   @Nonnull
+   @NonNull
    @Override
-   B apply(@Nonnull A var1);
+   B apply(@NonNull A var1);
 
    enum Instance
       implements TraversalP<FunctionType.Mu, FunctionType.Instance.Mu>,

@@ -2,7 +2,7 @@ package com.mojang.authlib.minecraft.report;
 
 import com.google.gson.annotations.SerializedName;
 import java.time.Instant;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record AbuseReport(
    @SerializedName("opinionComments") String opinionComments,

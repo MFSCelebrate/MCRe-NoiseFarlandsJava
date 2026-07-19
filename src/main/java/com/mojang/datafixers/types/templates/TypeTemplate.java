@@ -7,7 +7,7 @@ import com.mojang.datafixers.types.Type;
 import com.mojang.datafixers.types.families.TypeFamily;
 import com.mojang.datafixers.util.Either;
 import java.util.function.IntFunction;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public interface TypeTemplate {
    int size();

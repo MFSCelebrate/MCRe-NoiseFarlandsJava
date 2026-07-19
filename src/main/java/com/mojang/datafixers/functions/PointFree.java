@@ -4,7 +4,7 @@ import com.mojang.datafixers.types.Type;
 import com.mojang.serialization.DynamicOps;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public abstract class PointFree<T> {
    private volatile boolean initialized;

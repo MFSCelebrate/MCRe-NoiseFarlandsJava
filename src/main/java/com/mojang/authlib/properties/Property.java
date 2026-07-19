@@ -8,7 +8,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Base64;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record Property(@SerializedName("name") String name, @SerializedName("value") String value, @Nullable @SerializedName("signature") String signature) {
    public Property(String name, String value) {

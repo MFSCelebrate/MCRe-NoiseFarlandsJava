@@ -2,7 +2,7 @@ package com.mojang.authlib.services.request;
 
 import com.google.gson.annotations.SerializedName;
 import com.mojang.authlib.services.ToggleValue;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record UserAttributesRequest(
    @Nullable @SerializedName("profanityFilterPreferences") UserAttributesRequest.ProfanityFilterPreferences profanityFilterPreferences,

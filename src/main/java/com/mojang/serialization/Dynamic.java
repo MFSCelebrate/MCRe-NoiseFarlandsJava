@@ -13,8 +13,8 @@ import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import javax.annotation.CheckReturnValue;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.CheckReturnValue;
+import org.jspecify.annotations.Nullable;
 
 public class Dynamic<T> extends DynamicLike<T> {
    private final T value;

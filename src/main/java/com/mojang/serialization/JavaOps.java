@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class JavaOps implements DynamicOps<Object> {
    public static final JavaOps INSTANCE = new JavaOps();
