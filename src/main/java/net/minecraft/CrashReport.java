@@ -84,33 +84,30 @@ public class CrashReport {
         if (exception.getMessage() == null) {
             exception = replaceMessage(exception, this.title);
         }
-
         try {
             writer = new StringWriter();
             printWriter = new PrintWriter(writer);
             exception.printStackTrace(printWriter);
-            return writer.toString();
+            String fullStack = writer.toString();
+
+            // 提取第一个堆栈帧作为“抛出点”提示（可选）
+            String targetMethod = "";
+            try {
+                StackTraceElement[] trace = exception.getStackTrace();
+                if (trace.length > 0) {
+                    targetMethod = trace[0].toString();
+                }
+            } catch (Throwable ignored) {
+            }
+
+            if (!targetMethod.isEmpty()) {
+                return "\n🚨 Exception thrown in method: " + targetMethod + "\n" + fullStack;
+            }
+            return fullStack;
         } finally {
             IOUtils.closeQuietly(writer);
             IOUtils.closeQuietly(printWriter);
         }
-
-        String fullStack = writer.toString();
-
-        // ===== 新增：尝试从堆栈中提取第一个"非框架"方法 =====
-        String targetMethod = "";
-        try {
-            StackTraceElement[] trace = exception.getStackTrace();
-            if (trace.length > 0) {
-                targetMethod = trace[0].toString();
-            }
-        } catch (Throwable ignored) {
-        }
-
-        if (!targetMethod.isEmpty()) {
-            return "\n🚨 Exception thrown in method: " + targetMethod + "\n" + fullStack;
-        }
-        return fullStack;
     }
 
     private static Throwable copyProperties(final Throwable original, final Throwable copy) {
