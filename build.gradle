@@ -3,7 +3,6 @@ plugins {
     id 'java'
     id 'application'
     id 'net.fabricmc.fabric-loom' version '1.17.9'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'net.minecraft'
@@ -155,22 +154,7 @@ tasks.withType(JavaCompile).configureEach {
     options.forkOptions.jvmArgs = ['-Xmx4G']
 }
 
-// ===== 修改：关键！补上 ShadowJar 配置（你的原版漏了） =====
-shadowJar {
-    from sourceSets.main.output
-    configurations = [project.configurations.runtimeClasspath]
-    archiveFileName.set('modified.jar')  // 用回霸气名字
-    manifest {
-        attributes(
-            'Main-Class': 'net.minecraft.client.main.Main',
-            'Multi-Release': 'true'
-        )
-    }
-    mergeServiceFiles()   // 处理 META-INF/services
-    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA' // 签名去重
-}
-
-// ===== 修改：让 build 依赖 shadowJar，而不是直接覆盖 jar =====
+// ===== 修改：让 build 依赖 Jar =====
 tasks.named('build') {
      dependsOn tasks.jar //tasks.named('shadowJar')
 }
