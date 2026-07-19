@@ -177,12 +177,10 @@ public class BehaviorBuilder<E extends LivingEntity, M> implements App<BehaviorB
          return new BehaviorBuilder.Constant<>(a, debugString);
       }
 
-      // ===== 修改：将 M 替换为正确的类型参数 A，并添加 @SuppressWarnings =====
-      @SuppressWarnings("unchecked")
       public <A, R> Function<App<BehaviorBuilder.Mu<E>, A>, App<BehaviorBuilder.Mu<E>, R>> lift1(final App<BehaviorBuilder.Mu<E>, Function<A, R>> function) {
          return a -> {
             final BehaviorBuilder.TriggerWithResult<E, A> aTrigger = (BehaviorBuilder.TriggerWithResult<E, A>)BehaviorBuilder.get(
-               (App<BehaviorBuilder.Mu<E>, A>)a
+               (App<BehaviorBuilder.Mu<E>, M>)a
             );
             final BehaviorBuilder.TriggerWithResult<E, Function<A, R>> fTrigger = BehaviorBuilder.get(function);
             return BehaviorBuilder.create(new BehaviorBuilder.TriggerWithResult<E, R>() {
@@ -218,11 +216,9 @@ public class BehaviorBuilder<E extends LivingEntity, M> implements App<BehaviorB
          };
       }
 
-      // ===== 修改：将 M 替换为 T =====
-      @SuppressWarnings("unchecked")
       public <T, R> BehaviorBuilder<E, R> map(final Function<? super T, ? extends R> func, final App<BehaviorBuilder.Mu<E>, T> ts) {
          final BehaviorBuilder.TriggerWithResult<E, T> tTrigger = (BehaviorBuilder.TriggerWithResult<E, T>)BehaviorBuilder.get(
-            (App<BehaviorBuilder.Mu<E>, T>)ts
+            (App<BehaviorBuilder.Mu<E>, M>)ts
          );
          return BehaviorBuilder.create(new BehaviorBuilder.TriggerWithResult<E, R>() {
             @Override
@@ -248,13 +244,11 @@ public class BehaviorBuilder<E extends LivingEntity, M> implements App<BehaviorB
          });
       }
 
-      // ===== 修改：将 M 替换为 A 和 B =====
-      @SuppressWarnings("unchecked")
       public <A, B, R> BehaviorBuilder<E, R> ap2(
          final App<BehaviorBuilder.Mu<E>, BiFunction<A, B, R>> func, final App<BehaviorBuilder.Mu<E>, A> a, final App<BehaviorBuilder.Mu<E>, B> b
       ) {
-         final BehaviorBuilder.TriggerWithResult<E, A> aTrigger = (BehaviorBuilder.TriggerWithResult<E, A>)BehaviorBuilder.get((App<BehaviorBuilder.Mu<E>, A>)a);
-         final BehaviorBuilder.TriggerWithResult<E, B> bTrigger = (BehaviorBuilder.TriggerWithResult<E, B>)BehaviorBuilder.get((App<BehaviorBuilder.Mu<E>, B>)b);
+         final BehaviorBuilder.TriggerWithResult<E, A> aTrigger = (BehaviorBuilder.TriggerWithResult<E, A>)BehaviorBuilder.get((App<BehaviorBuilder.Mu<E>, M>)a);
+         final BehaviorBuilder.TriggerWithResult<E, B> bTrigger = (BehaviorBuilder.TriggerWithResult<E, B>)BehaviorBuilder.get((App<BehaviorBuilder.Mu<E>, M>)b);
          final BehaviorBuilder.TriggerWithResult<E, BiFunction<A, B, R>> fTrigger = BehaviorBuilder.get(func);
          return BehaviorBuilder.create(new BehaviorBuilder.TriggerWithResult<E, R>() {
             @Override
@@ -294,8 +288,6 @@ public class BehaviorBuilder<E extends LivingEntity, M> implements App<BehaviorB
          });
       }
 
-      // ===== 修改：将 M 替换为 T1, T2, T3 =====
-      @SuppressWarnings("unchecked")
       public <T1, T2, T3, R> BehaviorBuilder<E, R> ap3(
          final App<BehaviorBuilder.Mu<E>, Function3<T1, T2, T3, R>> func,
          final App<BehaviorBuilder.Mu<E>, T1> t1,
@@ -303,13 +295,13 @@ public class BehaviorBuilder<E extends LivingEntity, M> implements App<BehaviorB
          final App<BehaviorBuilder.Mu<E>, T3> t3
       ) {
          final BehaviorBuilder.TriggerWithResult<E, T1> t1Trigger = (BehaviorBuilder.TriggerWithResult<E, T1>)BehaviorBuilder.get(
-            (App<BehaviorBuilder.Mu<E>, T1>)t1
+            (App<BehaviorBuilder.Mu<E>, M>)t1
          );
          final BehaviorBuilder.TriggerWithResult<E, T2> t2Trigger = (BehaviorBuilder.TriggerWithResult<E, T2>)BehaviorBuilder.get(
-            (App<BehaviorBuilder.Mu<E>, T2>)t2
+            (App<BehaviorBuilder.Mu<E>, M>)t2
          );
          final BehaviorBuilder.TriggerWithResult<E, T3> t3Trigger = (BehaviorBuilder.TriggerWithResult<E, T3>)BehaviorBuilder.get(
-            (App<BehaviorBuilder.Mu<E>, T3>)t3
+            (App<BehaviorBuilder.Mu<E>, M>)t3
          );
          final BehaviorBuilder.TriggerWithResult<E, Function3<T1, T2, T3, R>> fTrigger = BehaviorBuilder.get(func);
          return BehaviorBuilder.create(new BehaviorBuilder.TriggerWithResult<E, R>() {
@@ -356,8 +348,6 @@ public class BehaviorBuilder<E extends LivingEntity, M> implements App<BehaviorB
          });
       }
 
-      // ===== 修改：将 M 替换为 T1, T2, T3, T4 =====
-      @SuppressWarnings("unchecked")
       public <T1, T2, T3, T4, R> BehaviorBuilder<E, R> ap4(
          final App<BehaviorBuilder.Mu<E>, Function4<T1, T2, T3, T4, R>> func,
          final App<BehaviorBuilder.Mu<E>, T1> t1,
@@ -366,16 +356,16 @@ public class BehaviorBuilder<E extends LivingEntity, M> implements App<BehaviorB
          final App<BehaviorBuilder.Mu<E>, T4> t4
       ) {
          final BehaviorBuilder.TriggerWithResult<E, T1> t1Trigger = (BehaviorBuilder.TriggerWithResult<E, T1>)BehaviorBuilder.get(
-            (App<BehaviorBuilder.Mu<E>, T1>)t1
+            (App<BehaviorBuilder.Mu<E>, M>)t1
          );
          final BehaviorBuilder.TriggerWithResult<E, T2> t2Trigger = (BehaviorBuilder.TriggerWithResult<E, T2>)BehaviorBuilder.get(
-            (App<BehaviorBuilder.Mu<E>, T2>)t2
+            (App<BehaviorBuilder.Mu<E>, M>)t2
          );
          final BehaviorBuilder.TriggerWithResult<E, T3> t3Trigger = (BehaviorBuilder.TriggerWithResult<E, T3>)BehaviorBuilder.get(
-            (App<BehaviorBuilder.Mu<E>, T3>)t3
+            (App<BehaviorBuilder.Mu<E>, M>)t3
          );
          final BehaviorBuilder.TriggerWithResult<E, T4> t4Trigger = (BehaviorBuilder.TriggerWithResult<E, T4>)BehaviorBuilder.get(
-            (App<BehaviorBuilder.Mu<E>, T4>)t4
+            (App<BehaviorBuilder.Mu<E>, M>)t4
          );
          final BehaviorBuilder.TriggerWithResult<E, Function4<T1, T2, T3, T4, R>> fTrigger = BehaviorBuilder.get(func);
          return BehaviorBuilder.create(

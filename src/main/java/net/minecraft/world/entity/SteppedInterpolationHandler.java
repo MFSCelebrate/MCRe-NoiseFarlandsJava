@@ -34,11 +34,27 @@ public class SteppedInterpolationHandler extends InterpolationHandler {
       }
 
       int rotationSteps = this.interpolationSteps;
-      // ===== 修改：直接使用模式变量，移除 var14 等 =====
-      if (position instanceof PositionPath.Stepped stepped) {
-         stepped.endPosition(); // 保留原副作用（若有）
-         List<PositionStep> steps = stepped.steps();
+      if (position instanceof PositionPath.Stepped var6) {
+         PositionPath.Stepped var10000 = var6;
+
+         try {
+            var10000.endPosition();
+         } catch (Throwable var11) {
+            throw new MatchException(var11.toString(), var11);
+         }
+
+         var10000 = var6;
+
+         try {
+            var14 = var10000.steps();
+         } catch (Throwable var10) {
+            throw new MatchException(var10.toString(), var10);
+         }
+
+         List var8 = var14;
+         List<PositionStep> steps = var8;
          rotationSteps = 0;
+
          for (PositionStep step : steps) {
             rotationSteps += step.tickOffset();
          }
@@ -99,14 +115,29 @@ public class SteppedInterpolationHandler extends InterpolationHandler {
             this.currentStepTicks = 1.0F;
          }
 
-         // ===== 修改：直接使用模式变量，移除 var16 等 =====
          switch (position) {
             case PositionPath.Linear(Vec3 pos):
                this.remainingSteps.add(new PositionStep(pos, interpolationSteps));
                break;
-            case PositionPath.Stepped stepped:
-               stepped.endPosition(); // 保留原副作用
-               List<PositionStep> steps = stepped.steps();
+            case PositionPath.Stepped var8:
+               PositionPath.Stepped var10000 = var8;
+
+               try {
+                  var10000.endPosition();
+               } catch (Throwable var12) {
+                  throw new MatchException(var12.toString(), var12);
+               }
+
+               var10000 = var8;
+
+               try {
+                  var16 = var10000.steps();
+               } catch (Throwable var11) {
+                  throw new MatchException(var11.toString(), var11);
+               }
+
+               List var10 = var16;
+               List<PositionStep> steps = var10;
                this.remainingSteps.addAll(steps);
                break;
             default:

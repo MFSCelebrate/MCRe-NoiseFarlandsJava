@@ -31,10 +31,9 @@ import org.slf4j.Logger;
 public class PeriodicNotificationManager
    extends SimplePreparableReloadListener<Map<String, List<PeriodicNotificationManager.Notification>>>
    implements AutoCloseable {
-   // ===== 修改：显式指定 Codec.unboundedMap 类型参数，以及 RecordCodecBuilder.create 类型参数 =====
-   private static final Codec<Map<String, List<PeriodicNotificationManager.Notification>>> CODEC = Codec.<String, List<PeriodicNotificationManager.Notification>>unboundedMap(
+   private static final Codec<Map<String, List<PeriodicNotificationManager.Notification>>> CODEC = Codec.unboundedMap(
       Codec.STRING,
-      RecordCodecBuilder.<PeriodicNotificationManager.Notification>create(
+      RecordCodecBuilder.create(
             i -> i.group(
                   Codec.LONG.optionalFieldOf("delay", 0L).forGetter(PeriodicNotificationManager.Notification::delay),
                   Codec.LONG.fieldOf("period").forGetter(PeriodicNotificationManager.Notification::period),

@@ -58,7 +58,7 @@ public record AttributeType<Value>(
    private static <Value> Codec<AttributeModifier<Value, ?>> createModifierCodec(
       final Map<AttributeModifier.OperationId, AttributeModifier<Value, ?>> modifiers
    ) {
-      ImmutableBiMap<AttributeModifier.OperationId, AttributeModifier<Value, ?>> modifierLookup = ImmutableBiMap.builder()
+      ImmutableBiMap<AttributeModifier.OperationId, AttributeModifier<Value, ?>> modifierLookup = ImmutableBiMap.<AttributeModifier.OperationId, AttributeModifier<Value, ?>>builder()
          .put(AttributeModifier.OperationId.OVERRIDE, AttributeModifier.override())
          .putAll(modifiers)
          .buildOrThrow();

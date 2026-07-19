@@ -34,7 +34,9 @@ public class RecipeMap {
    }
 
    public <I extends RecipeInput, T extends Recipe<I>> Collection<RecipeHolder<T>> byType(final RecipeType<T> type) {
-      return this.byType.get(type);
+      @SuppressWarnings("unchecked")
+      Collection<RecipeHolder<T>> result = (Collection<RecipeHolder<T>>)(Collection<?>)this.byType.get(type);
+      return result;
    }
 
    public Collection<RecipeHolder<?>> values() {

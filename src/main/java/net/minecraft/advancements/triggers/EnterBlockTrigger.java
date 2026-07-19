@@ -25,7 +25,6 @@ public class EnterBlockTrigger extends SimpleCriterionTrigger<EnterBlockTrigger.
 
    public record TriggerInstance(Optional<ContextAwarePredicate> player, Optional<Holder<Block>> block, Optional<StatePropertiesPredicate> state)
       implements SimpleCriterionTrigger.SimpleInstance {
-      // ===== 修改：RecordCodecBuilder.create 显式类型参数，validate 改为 lambda =====
       public static final Codec<EnterBlockTrigger.TriggerInstance> CODEC = RecordCodecBuilder.<EnterBlockTrigger.TriggerInstance>create(
             i -> i.group(
                   EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(EnterBlockTrigger.TriggerInstance::player),
@@ -34,7 +33,7 @@ public class EnterBlockTrigger extends SimpleCriterionTrigger<EnterBlockTrigger.
                )
                .apply(i, EnterBlockTrigger.TriggerInstance::new)
          )
-         .validate((EnterBlockTrigger.TriggerInstance t) -> EnterBlockTrigger.TriggerInstance.validate(t));
+         .validate(trigger -> EnterBlockTrigger.TriggerInstance.validate(trigger));
 
       private static DataResult<EnterBlockTrigger.TriggerInstance> validate(final EnterBlockTrigger.TriggerInstance trigger) {
          return trigger.block

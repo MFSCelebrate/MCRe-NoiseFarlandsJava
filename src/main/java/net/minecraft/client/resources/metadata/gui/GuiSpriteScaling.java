@@ -16,8 +16,7 @@ public interface GuiSpriteScaling {
    GuiSpriteScaling.Type type();
 
    record NineSlice(int width, int height, GuiSpriteScaling.NineSlice.Border border, boolean stretchInner) implements GuiSpriteScaling {
-      // ===== 修改：mapCodec 显式类型参数，validate 改为 lambda =====
-      public static final MapCodec<GuiSpriteScaling.NineSlice> CODEC = RecordCodecBuilder.<GuiSpriteScaling.NineSlice>mapCodec(
+      public static final MapCodec<GuiSpriteScaling.NineSlice> CODEC = RecordCodecBuilder.mapCodec(
             i -> i.group(
                   ExtraCodecs.POSITIVE_INT.fieldOf("width").forGetter(GuiSpriteScaling.NineSlice::width),
                   ExtraCodecs.POSITIVE_INT.fieldOf("height").forGetter(GuiSpriteScaling.NineSlice::height),
@@ -26,7 +25,7 @@ public interface GuiSpriteScaling {
                )
                .apply(i, GuiSpriteScaling.NineSlice::new)
          )
-         .validate((GuiSpriteScaling.NineSlice nineSlice) -> GuiSpriteScaling.NineSlice.validate(nineSlice));
+         .validate(GuiSpriteScaling.NineSlice::validate);
 
       private static DataResult<GuiSpriteScaling.NineSlice> validate(final GuiSpriteScaling.NineSlice nineSlice) {
          GuiSpriteScaling.NineSlice.Border border = nineSlice.border();
@@ -54,8 +53,7 @@ public interface GuiSpriteScaling {
                OptionalInt size = border.unpackValue();
                return size.isPresent() ? DataResult.success(size.getAsInt()) : DataResult.error(() -> "Border has different side sizes");
             });
-         // ===== 修改：RecordCodecBuilder.create 显式类型参数 =====
-         private static final Codec<GuiSpriteScaling.NineSlice.Border> RECORD_CODEC = RecordCodecBuilder.<GuiSpriteScaling.NineSlice.Border>create(
+         private static final Codec<GuiSpriteScaling.NineSlice.Border> RECORD_CODEC = RecordCodecBuilder.create(
             i -> i.group(
                   ExtraCodecs.NON_NEGATIVE_INT.fieldOf("left").forGetter(GuiSpriteScaling.NineSlice.Border::left),
                   ExtraCodecs.NON_NEGATIVE_INT.fieldOf("top").forGetter(GuiSpriteScaling.NineSlice.Border::top),
@@ -83,8 +81,7 @@ public interface GuiSpriteScaling {
    }
 
    record Tile(int width, int height) implements GuiSpriteScaling {
-      // ===== 修改：mapCodec 显式类型参数 =====
-      public static final MapCodec<GuiSpriteScaling.Tile> CODEC = RecordCodecBuilder.<GuiSpriteScaling.Tile>mapCodec(
+      public static final MapCodec<GuiSpriteScaling.Tile> CODEC = RecordCodecBuilder.mapCodec(
          i -> i.group(
                ExtraCodecs.POSITIVE_INT.fieldOf("width").forGetter(GuiSpriteScaling.Tile::width),
                ExtraCodecs.POSITIVE_INT.fieldOf("height").forGetter(GuiSpriteScaling.Tile::height)

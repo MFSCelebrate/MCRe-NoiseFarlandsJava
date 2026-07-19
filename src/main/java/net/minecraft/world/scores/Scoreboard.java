@@ -54,14 +54,14 @@ public class Scoreboard {
       }
 
       Objective objective = new Objective(this, name, criteria, displayName, renderType, displayAutoUpdate, numberFormat);
-      ((List)this.objectivesByCriteria.computeIfAbsent(criteria, k -> Lists.newArrayList())).add(objective);
+      ((List<Objective>)this.objectivesByCriteria.computeIfAbsent(criteria, k -> Lists.newArrayList())).add(objective);
       this.objectivesByName.put(name, objective);
       this.onObjectiveAdded(objective);
       return objective;
    }
 
    public final void forAllObjectives(final ObjectiveCriteria criteria, final ScoreHolder name, final Consumer<ScoreAccess> operation) {
-      ((List)this.objectivesByCriteria.getOrDefault(criteria, Collections.emptyList()))
+      ((List<Objective>)this.objectivesByCriteria.getOrDefault(criteria, Collections.emptyList()))
          .forEach(o -> operation.accept(this.getOrCreatePlayerScore(name, o, true)));
    }
 

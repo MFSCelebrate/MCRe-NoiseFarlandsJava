@@ -22,16 +22,12 @@ public record MethodInfo<Params, Result>(String description, Optional<ParamInfo<
    }
 
    private static <Params> Codec<Optional<ParamInfo<Params>>> paramsTypedCodec() {
-      return ParamInfo.<Params>typedCodec().codec().listOf()
-         .<Optional<ParamInfo<Params>>>xmap(
-            (List<ParamInfo<Params>> list) -> MethodInfo.<Params>toOptional(list),
-            (Optional<ParamInfo<Params>> opt) -> MethodInfo.<Params>toList(opt)
-         );
+      Codec<List<ParamInfo<Params>>> listCodec = ParamInfo.<Params>typedCodec().codec().listOf();
+      return listCodec.xmap(MethodInfo::toOptional, MethodInfo::toList);
    }
 
-   // ===== 修改：RecordCodecBuilder.group 改为 i.group =====
-   private static <Params, Result> MapCodec<MethodInfo<Params, Result>> typedCodec() {
-      return RecordCodecBuilder.mapCodec(
+   static <Params, Result> MapCodec<MethodInfo<Params, Result>> typedCodec() {
+      return RecordCodecBuilder.<MethodInfo<Params, Result>>mapCodec(
          i -> i.group(
                Codec.STRING.fieldOf("description").forGetter(MethodInfo::description),
                MethodInfo.<Params>paramsTypedCodec().fieldOf("params").forGetter(MethodInfo::params),
@@ -46,11 +42,13 @@ public record MethodInfo<Params, Result>(String description, Optional<ParamInfo<
    }
 
    public record Named<Params, Result>(Identifier name, MethodInfo<Params, Result> contents) {
-      public static final Codec<MethodInfo.Named<?, ?>> CODEC = MethodInfo.Named.<Object, Object>typedCodec();
+      @SuppressWarnings({"unchecked", "rawtypes"})
+      public static final Codec<MethodInfo.Named<?, ?>> CODEC = (Codec<MethodInfo.Named<?, ?>>)(Codec<?>)MethodInfo.<Object, Object>typedCodec()
+         .codec()
+         .xmap(mi -> (MethodInfo.Named<?, ?>)new MethodInfo.Named<Object, Object>(null, mi), named -> (MethodInfo<Object, Object>)(Object)named.contents());
 
-      // ===== 修改：RecordCodecBuilder.group 改为 i.group =====
       public static <Params, Result> Codec<MethodInfo.Named<Params, Result>> typedCodec() {
-         return RecordCodecBuilder.create(
+         return RecordCodecBuilder.<MethodInfo.Named<Params, Result>>create(
             i -> i.group(
                   Identifier.CODEC.fieldOf("name").forGetter(MethodInfo.Named::name),
                   MethodInfo.<Params, Result>typedCodec().forGetter(MethodInfo.Named::contents)

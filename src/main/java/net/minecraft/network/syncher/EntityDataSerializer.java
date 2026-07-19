@@ -13,7 +13,7 @@ public interface EntityDataSerializer<T> {
    T copy(T value);
 
    static <T> EntityDataSerializer<T> forValueType(final StreamCodec<? super RegistryFriendlyByteBuf, T> codec) {
-      return () -> codec;
+      return (EntityDataSerializer.ForValueType<T>) () -> codec;
    }
 
    interface ForValueType<T> extends EntityDataSerializer<T> {

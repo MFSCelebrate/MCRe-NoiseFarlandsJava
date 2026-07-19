@@ -15,8 +15,6 @@ public record WaypointStyle(int nearDistance, int farDistance, List<Identifier> 
    public static final int DEFAULT_NEAR_DISTANCE = 128;
    public static final int DEFAULT_FAR_DISTANCE = 332;
    private static final Codec<Integer> DISTANCE_CODEC = Codec.intRange(0, 60000000);
-   
-   // ===== 修改：RecordCodecBuilder.create 显式类型参数，validate 改为 lambda =====
    public static final Codec<WaypointStyle> CODEC = RecordCodecBuilder.<WaypointStyle>create(
          i -> i.group(
                DISTANCE_CODEC.optionalFieldOf("near_distance", 128).forGetter(WaypointStyle::nearDistance),
@@ -25,7 +23,7 @@ public record WaypointStyle(int nearDistance, int farDistance, List<Identifier> 
             )
             .apply(i, WaypointStyle::new)
       )
-      .validate((WaypointStyle w) -> w.validate());
+      .validate(ws -> ws.validate());
 
    public WaypointStyle(final int nearDistance, final int farDistance, final List<Identifier> sprites) {
       this(nearDistance, farDistance, sprites, sprites.stream().map(sprite -> sprite.withPrefix("hud/locator_bar_dot/")).toList());

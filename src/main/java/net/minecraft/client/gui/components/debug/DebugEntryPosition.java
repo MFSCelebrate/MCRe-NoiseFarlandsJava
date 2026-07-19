@@ -47,7 +47,7 @@ public class DebugEntryPosition implements DebugScreenEntry {
             List.of(
                String.format(
                   Locale.ROOT,
-                  "XYZ: %.10f / %.12f / %.10f",
+                  "XYZ: %.3f / %.5f / %.3f",
                   minecraft.getCameraEntity().getX(),
                   minecraft.getCameraEntity().getY(),
                   minecraft.getCameraEntity().getZ()

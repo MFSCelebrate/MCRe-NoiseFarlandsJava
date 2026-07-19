@@ -2170,71 +2170,70 @@ public abstract class Entity
    }
 
    public void load(final ValueInput input) {
-   try {
-      Vec3 pos = input.<Vec3>read("Pos", Vec3.CODEC).orElse(Vec3.ZERO);
-      Vec3 motion = input.<Vec3>read("Motion", Vec3.CODEC).orElse(Vec3.ZERO);
-      Vec2 rotation = input.<Vec2>read("Rotation", Vec2.CODEC).orElse(Vec2.ZERO);
-      this.setDeltaMovement(
-         Math.abs(motion.x) > 10.0 ? 0.0 : motion.x, Math.abs(motion.y) > 10.0 ? 0.0 : motion.y, Math.abs(motion.z) > 10.0 ? 0.0 : motion.z
-      );
-      this.needsSync = true;
-      double maxHorizontalPosition = 3.0000512E7;
-      this.setPosRaw(Mth.clamp(pos.x, -3.0000512E7, 3.0000512E7), Mth.clamp(pos.y, -2.0E7, 2.0E7), Mth.clamp(pos.z, -3.0000512E7, 3.0000512E7));
-      this.setYRot(rotation.x);
-      this.setXRot(rotation.y);
-      this.setOldPosAndRot();
-      this.setYHeadRot(this.getYRot());
-      this.setYBodyRot(this.getYRot());
-      this.fallDistance = input.getDoubleOr("fall_distance", 0.0);
-      this.remainingFireTicks = input.getShortOr("Fire", (short)0);
-      this.setAirSupply(input.getIntOr("Air", this.getMaxAirSupply()));
-      this.onGround = input.getBooleanOr("OnGround", false);
-      this.invulnerable = input.getBooleanOr("Invulnerable", false);
-      this.portalCooldown = input.getIntOr("PortalCooldown", 0);
-      input.<UUID>read("UUID", UUIDUtil.CODEC).ifPresent(id -> {
-         this.uuid = id;
-         this.stringUUID = this.uuid.toString();
-      });
-      if (!Double.isFinite(this.getX()) || !Double.isFinite(this.getY()) || !Double.isFinite(this.getZ())) {
-         throw new IllegalStateException("Entity has invalid position");
-      }
-
-      if (Double.isFinite(this.getYRot()) && Double.isFinite(this.getXRot())) {
-         this.reapplyPosition();
-         this.setRot(this.getYRot(), this.getXRot());
-         this.setCustomName(input.<Component>read("CustomName", ComponentSerialization.CODEC).orElse(null));
-         this.setCustomNameVisible(input.getBooleanOr("CustomNameVisible", false));
-         this.setSilent(input.getBooleanOr("Silent", false));
-         this.setNoGravity(input.getBooleanOr("NoGravity", false));
-         this.setGlowingTag(input.getBooleanOr("Glowing", false));
-         this.setTicksFrozen(input.getIntOr("TicksFrozen", 0));
-         this.hasVisualFire = input.getBooleanOr("HasVisualFire", false);
-         this.customData = input.<CustomData>read("data", CustomData.CODEC).orElse(CustomData.EMPTY);
-         this.tags.clear();
-         // ===== 修改：将 Collection<? extends E> 改为 List<String> =====
-         input.<List<String>>read("Tags", TAG_LIST_CODEC).ifPresent(this.tags::addAll);
-         input.getString("Team").ifPresent(teamName -> {
-            Scoreboard scoreboard = this.level().getScoreboard();
-            PlayerTeam team = scoreboard.getPlayerTeam(teamName);
-            boolean success = team != null && scoreboard.addPlayerToTeam(this.getStringUUID(), team);
-            if (!success) {
-               LOGGER.warn("Unable to add entity to team \"{}\" (that team probably doesn't exist)", teamName);
-            }
+      try {
+         Vec3 pos = input.<Vec3>read("Pos", Vec3.CODEC).orElse(Vec3.ZERO);
+         Vec3 motion = input.<Vec3>read("Motion", Vec3.CODEC).orElse(Vec3.ZERO);
+         Vec2 rotation = input.<Vec2>read("Rotation", Vec2.CODEC).orElse(Vec2.ZERO);
+         this.setDeltaMovement(
+            Math.abs(motion.x) > 10.0 ? 0.0 : motion.x, Math.abs(motion.y) > 10.0 ? 0.0 : motion.y, Math.abs(motion.z) > 10.0 ? 0.0 : motion.z
+         );
+         this.needsSync = true;
+         double maxHorizontalPosition = 3.0000512E7;
+         this.setPosRaw(Mth.clamp(pos.x, -3.0000512E7, 3.0000512E7), Mth.clamp(pos.y, -2.0E7, 2.0E7), Mth.clamp(pos.z, -3.0000512E7, 3.0000512E7));
+         this.setYRot(rotation.x);
+         this.setXRot(rotation.y);
+         this.setOldPosAndRot();
+         this.setYHeadRot(this.getYRot());
+         this.setYBodyRot(this.getYRot());
+         this.fallDistance = input.getDoubleOr("fall_distance", 0.0);
+         this.remainingFireTicks = input.getShortOr("Fire", (short)0);
+         this.setAirSupply(input.getIntOr("Air", this.getMaxAirSupply()));
+         this.onGround = input.getBooleanOr("OnGround", false);
+         this.invulnerable = input.getBooleanOr("Invulnerable", false);
+         this.portalCooldown = input.getIntOr("PortalCooldown", 0);
+         input.<UUID>read("UUID", UUIDUtil.CODEC).ifPresent(id -> {
+            this.uuid = id;
+            this.stringUUID = this.uuid.toString();
          });
-         this.readAdditionalSaveData(input);
-         if (this.repositionEntityAfterLoad()) {
-            this.reapplyPosition();
+         if (!Double.isFinite(this.getX()) || !Double.isFinite(this.getY()) || !Double.isFinite(this.getZ())) {
+            throw new IllegalStateException("Entity has invalid position");
          }
-      } else {
-         throw new IllegalStateException("Entity has invalid rotation");
+
+         if (Double.isFinite(this.getYRot()) && Double.isFinite(this.getXRot())) {
+            this.reapplyPosition();
+            this.setRot(this.getYRot(), this.getXRot());
+            this.setCustomName(input.<Component>read("CustomName", ComponentSerialization.CODEC).orElse(null));
+            this.setCustomNameVisible(input.getBooleanOr("CustomNameVisible", false));
+            this.setSilent(input.getBooleanOr("Silent", false));
+            this.setNoGravity(input.getBooleanOr("NoGravity", false));
+            this.setGlowingTag(input.getBooleanOr("Glowing", false));
+            this.setTicksFrozen(input.getIntOr("TicksFrozen", 0));
+            this.hasVisualFire = input.getBooleanOr("HasVisualFire", false);
+            this.customData = input.<CustomData>read("data", CustomData.CODEC).orElse(CustomData.EMPTY);
+            this.tags.clear();
+            input.<List<String>>read("Tags", TAG_LIST_CODEC).ifPresent(this.tags::addAll);
+            input.getString("Team").ifPresent(teamName -> {
+               Scoreboard scoreboard = this.level().getScoreboard();
+               PlayerTeam team = scoreboard.getPlayerTeam(teamName);
+               boolean success = team != null && scoreboard.addPlayerToTeam(this.getStringUUID(), team);
+               if (!success) {
+                  LOGGER.warn("Unable to add entity to team \"{}\" (that team probably doesn't exist)", teamName);
+               }
+            });
+            this.readAdditionalSaveData(input);
+            if (this.repositionEntityAfterLoad()) {
+               this.reapplyPosition();
+            }
+         } else {
+            throw new IllegalStateException("Entity has invalid rotation");
+         }
+      } catch (Throwable t) {
+         CrashReport report = CrashReport.forThrowable(t, "Loading entity NBT");
+         CrashReportCategory category = report.addCategory("Entity being loaded");
+         this.fillCrashReportCategory(category);
+         throw new ReportedException(report);
       }
-   } catch (Throwable t) {
-      CrashReport report = CrashReport.forThrowable(t, "Loading entity NBT");
-      CrashReportCategory category = report.addCategory("Entity being loaded");
-      this.fillCrashReportCategory(category);
-      throw new ReportedException(report);
    }
-}
 
    protected boolean repositionEntityAfterLoad() {
       return true;

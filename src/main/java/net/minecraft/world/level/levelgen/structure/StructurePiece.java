@@ -41,7 +41,7 @@ public abstract class StructurePiece {
    private Rotation rotation;
    protected int genDepth;
    private final StructurePieceType type;
-   private static final Set<Block> SHAPE_CHECK_BLOCKS = ImmutableSet.builder()
+   private static final Set<Block> SHAPE_CHECK_BLOCKS = ImmutableSet.<Block>builder()
       .add(Blocks.NETHER_BRICK_FENCE)
       .add(Blocks.TORCH)
       .add(Blocks.WALL_TORCH)

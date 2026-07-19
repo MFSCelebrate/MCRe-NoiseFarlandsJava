@@ -22,7 +22,7 @@ import org.jspecify.annotations.Nullable;
 
 public final class DataComponentPatch {
    public static final DataComponentPatch EMPTY = new DataComponentPatch(Reference2ObjectMaps.emptyMap());
-   public static final Codec<DataComponentPatch> CODEC = Codec.dispatchedMap(DataComponentPatch.PatchKey.CODEC, DataComponentPatch.PatchKey::valueCodec)
+   public static final Codec<DataComponentPatch> CODEC = Codec.<DataComponentPatch.PatchKey, Object>dispatchedMap(DataComponentPatch.PatchKey.CODEC, k -> (Codec<? extends Object>)k.valueCodec())
       .xmap(data -> {
          if (data.isEmpty()) {
             return EMPTY;

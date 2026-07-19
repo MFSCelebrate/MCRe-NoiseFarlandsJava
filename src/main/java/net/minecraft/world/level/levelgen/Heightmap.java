@@ -48,8 +48,7 @@ public class Heightmap {
          }
 
          List<Heightmap> remainingHeightmaps = new ObjectArrayList(size);
-         // ===== 修改：使用 getMaxSectionY() + 1 替代弃用的 getHighestSectionPosition() + 16 =====
-         int highestSectionPosition = (chunk.getMaxSectionY() + 1) * 16;
+         int highestSectionPosition = chunk.getHighestSectionPosition() + 16;
          BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
          for (int x = 0; x < 16; x++) {

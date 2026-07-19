@@ -96,7 +96,6 @@ public final class DensityFunctions {
       return singleArgumentCodec(DensityFunction.CODEC, constructor, getter);
    }
 
-   // ===== 修改：group 改为实例方法调用 i.group() =====
    private static <O> KeyDispatchDataCodec<O> doubleFunctionArgumentCodec(
       final BiFunction<DensityFunction, DensityFunction, O> constructor,
       final Function<O, DensityFunction> firstArgumentGetter,
@@ -435,7 +434,6 @@ public final class DensityFunctions {
       }
    }
 
-   // ===== 修改：group 改为 i.group，validate 已为 lambda =====
    protected record Clamp(DensityFunction input, double min, double max) implements DensityFunctions.PureTransformer {
       private static final MapCodec<DensityFunctions.Clamp> DATA_CODEC = RecordCodecBuilder.mapCodec(
             i -> i.group(
@@ -445,7 +443,7 @@ public final class DensityFunctions {
                )
                .apply(i, DensityFunctions.Clamp::new)
          )
-         .validate((DensityFunctions.Clamp clamp) -> DensityFunctions.Clamp.validate(clamp));
+         .validate(DensityFunctions.Clamp::validate);
       public static final KeyDispatchDataCodec<DensityFunctions.Clamp> CODEC = DensityFunctions.makeCodec(DATA_CODEC);
 
       private static DataResult<DensityFunctions.Clamp> validate(final DensityFunctions.Clamp clamp) {
@@ -557,7 +555,6 @@ public final class DensityFunctions {
       }
    }
 
-   // ===== 修改：group 改为 i.group =====
    private record FindTopSurface(DensityFunction density, DensityFunction upperBound, int lowerBound, int cellHeight) implements DensityFunction {
       private static final MapCodec<DensityFunctions.FindTopSurface> DATA_CODEC = RecordCodecBuilder.mapCodec(
          i -> i.group(
@@ -635,7 +632,6 @@ public final class DensityFunctions {
       }
    }
 
-   // ===== 修改：group 改为 i.group，validate 改为显式 lambda =====
    private record IntervalSelect(DensityFunction input, DoubleList thresholds, List<DensityFunction> functions) implements DensityFunction {
       private static final Codec<DoubleList> THRESHOLDS_CODEC = DensityFunctions.NOISE_VALUE_CODEC.listOf().xmap(DoubleArrayList::new, Function.identity());
       public static final MapCodec<DensityFunctions.IntervalSelect> DATA_CODEC = RecordCodecBuilder.mapCodec(
@@ -646,7 +642,7 @@ public final class DensityFunctions {
                )
                .apply(i, DensityFunctions.IntervalSelect::new)
          )
-         .validate((DensityFunctions.IntervalSelect intervalSelect) -> intervalSelect.validate());
+         .validate(DensityFunctions.IntervalSelect::validate);
       public static final KeyDispatchDataCodec<DensityFunctions.IntervalSelect> CODEC = DensityFunctions.makeCodec(DATA_CODEC);
 
       private DataResult<DensityFunctions.IntervalSelect> validate() {
@@ -874,7 +870,6 @@ public final class DensityFunctions {
       }
    }
 
-   // ===== 修改：group 改为 i.group =====
    protected record Noise(DensityFunction.NoiseHolder noise, @Deprecated double xzScale, double yScale) implements DensityFunction {
       public static final MapCodec<DensityFunctions.Noise> DATA_CODEC = RecordCodecBuilder.mapCodec(
          i -> i.group(
@@ -932,7 +927,6 @@ public final class DensityFunctions {
       double transform(final double input);
    }
 
-   // ===== 修改：group 改为 i.group =====
    private record RangeChoice(DensityFunction input, double minInclusive, double maxExclusive, DensityFunction whenInRange, DensityFunction whenOutOfRange)
       implements DensityFunction {
       public static final MapCodec<DensityFunctions.RangeChoice> DATA_CODEC = RecordCodecBuilder.mapCodec(
@@ -1066,7 +1060,6 @@ public final class DensityFunctions {
       }
    }
 
-   // ===== 修改：group 改为 i.group =====
    protected record ShiftedNoise(
       DensityFunction shiftX, DensityFunction shiftY, DensityFunction shiftZ, double xzScale, double yScale, DensityFunction.NoiseHolder noise
    ) implements DensityFunction {
@@ -1275,7 +1268,6 @@ public final class DensityFunctions {
       }
    }
 
-   // ===== 修改：group 改为 i.group =====
    private record YClampedGradient(int fromY, int toY, double fromValue, double toValue) implements DensityFunction.SimpleFunction {
       private static final MapCodec<DensityFunctions.YClampedGradient> DATA_CODEC = RecordCodecBuilder.mapCodec(
          i -> i.group(

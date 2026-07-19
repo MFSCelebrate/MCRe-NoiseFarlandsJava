@@ -41,7 +41,7 @@ public interface HolderLookup<T> extends HolderGetter<T> {
       }
 
       default <V> RegistryOps<V> createSerializationContext(final DynamicOps<V> parent) {
-         return RegistryOps.create((DynamicOps<T>)parent, this);
+         return RegistryOps.create(parent, this);
       }
 
       static HolderLookup.Provider create(final Stream<HolderLookup.RegistryLookup<?>> lookups) {

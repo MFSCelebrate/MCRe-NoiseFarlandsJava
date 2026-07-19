@@ -11,7 +11,7 @@ public record TypedDataComponent<T>(DataComponentType<T> type, T value) {
    public static final StreamCodec<RegistryFriendlyByteBuf, TypedDataComponent<?>> STREAM_CODEC = new StreamCodec<RegistryFriendlyByteBuf, TypedDataComponent<?>>() {
       public TypedDataComponent<?> decode(final RegistryFriendlyByteBuf input) {
          DataComponentType<?> type = DataComponentType.STREAM_CODEC.decode(input);
-         return decodeTyped(input, (DataComponentType<T>)type);
+          return decodeTyped(input, type);
       }
 
       private static <T> TypedDataComponent<T> decodeTyped(final RegistryFriendlyByteBuf input, final DataComponentType<T> type) {
@@ -19,7 +19,7 @@ public record TypedDataComponent<T>(DataComponentType<T> type, T value) {
       }
 
       public void encode(final RegistryFriendlyByteBuf output, final TypedDataComponent<?> value) {
-         encodeCap(output, (TypedDataComponent<T>)value);
+          encodeCap(output, value);
       }
 
       private static <T> void encodeCap(final RegistryFriendlyByteBuf output, final TypedDataComponent<T> component) {

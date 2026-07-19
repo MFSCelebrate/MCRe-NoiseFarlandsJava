@@ -12,7 +12,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
-import org.jspecify.annotations.CheckReturnValue;
+import javax.annotation.CheckReturnValue;
 import net.minecraft.CrashReport;
 import net.minecraft.ReportedException;
 import net.minecraft.SharedConstants;

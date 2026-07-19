@@ -78,7 +78,7 @@ public class RegistryOps<T> extends DelegatingOps<T> {
                ? registryOps.lookupProvider
                   .lookup(registryKey)
                   .flatMap(r -> r.get(key))
-                  .<DataResult<E>>map(DataResult::success)
+                  .map(DataResult::success)
                   .orElseGet(() -> DataResult.error(() -> "Can't find value: " + key))
                : DataResult.error(() -> "Not a registry ops")
          )

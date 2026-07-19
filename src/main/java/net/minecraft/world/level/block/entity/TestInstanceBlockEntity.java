@@ -105,7 +105,7 @@ public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxR
    }
 
    public Component getTestName() {
-      return this.test().<Component>map(key -> Component.literal(key.identifier().toString())).orElse(INVALID_TEST_NAME);
+      return this.test().map(key -> Component.literal(key.identifier().toString())).orElse(INVALID_TEST_NAME);
    }
 
    private Optional<Holder.Reference<GameTestInstance>> getTestHolder() {
@@ -161,7 +161,8 @@ public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxR
    protected void loadAdditional(final ValueInput input) {
       input.<TestInstanceBlockEntity.Data>read("data", TestInstanceBlockEntity.Data.CODEC).ifPresent(this::set);
       this.errorMarkers.clear();
-      this.errorMarkers.addAll(input.<List<TestInstanceBlockEntity.ErrorMarker>>read("errors", TestInstanceBlockEntity.ErrorMarker.LIST_CODEC).orElse(List.of()));
+      this.errorMarkers
+         .addAll(input.<List<? extends TestInstanceBlockEntity.ErrorMarker>>read("errors", TestInstanceBlockEntity.ErrorMarker.LIST_CODEC).orElse(List.of()));
    }
 
    @Override
@@ -421,7 +422,6 @@ public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxR
       TestInstanceBlockEntity.Status status,
       Optional<Component> errorMessage
    ) {
-      // ===== 修改：RecordCodecBuilder.<TestInstanceBlockEntity.Data>group → i.group =====
       public static final Codec<TestInstanceBlockEntity.Data> CODEC = RecordCodecBuilder.create(
          i -> i.group(
                ResourceKey.codec(Registries.TEST_INSTANCE).optionalFieldOf("test").forGetter(TestInstanceBlockEntity.Data::test),
@@ -465,8 +465,7 @@ public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxR
    }
 
    public record ErrorMarker(BlockPos pos, Component text) {
-      // ===== 修改：RecordCodecBuilder.create 显式类型参数 =====
-      public static final Codec<TestInstanceBlockEntity.ErrorMarker> CODEC = RecordCodecBuilder.<TestInstanceBlockEntity.ErrorMarker>create(
+      public static final Codec<TestInstanceBlockEntity.ErrorMarker> CODEC = RecordCodecBuilder.create(
          i -> i.group(
                BlockPos.CODEC.fieldOf("pos").forGetter(TestInstanceBlockEntity.ErrorMarker::pos),
                ComponentSerialization.CODEC.fieldOf("text").forGetter(TestInstanceBlockEntity.ErrorMarker::text)

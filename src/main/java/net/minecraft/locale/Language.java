@@ -58,7 +58,7 @@ public abstract class Language {
          @Override
          public FormattedCharSequence getVisualOrder(final FormattedText logicalOrderText) {
             return outputx -> logicalOrderText.visit(
-                  (style, contents) -> StringDecomposer.iterateFormatted(contents, style, output) ? Optional.empty() : FormattedText.STOP_ITERATION,
+                  (style, contents) -> StringDecomposer.iterateFormatted(contents, style, outputx) ? Optional.empty() : FormattedText.STOP_ITERATION,
                   Style.EMPTY
                )
                .isPresent();

@@ -46,11 +46,10 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
       return codec(elementCodec, strategy, defaultValue, unpacker);
    }
 
-   // ===== 修改：显式指定 RecordCodecBuilder 类型，为 comapFlatMap 的 lambda 显式参数类型 =====
    private static <T, C extends PalettedContainerRO<T>> Codec<C> codec(
       final Codec<T> elementCodec, final Strategy<T> strategy, final T defaultValue, final PalettedContainerRO.Unpacker<T, C> unpacker
    ) {
-      return RecordCodecBuilder.<PalettedContainerRO.PackedData<T>>create(
+      return RecordCodecBuilder.create(
             i -> i.group(
                   elementCodec.mapResult(ExtraCodecs.orElsePartial(defaultValue))
                      .listOf()
@@ -58,12 +57,9 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
                      .forGetter(PalettedContainerRO.PackedData::paletteEntries),
                   Codec.LONG_STREAM.lenientOptionalFieldOf("data").forGetter(PalettedContainerRO.PackedData::storage)
                )
-               .apply(i, PalettedContainerRO.PackedData::new)
+               .apply(i, (list, storage) -> new PalettedContainerRO.PackedData<>(list, storage))
          )
-         .comapFlatMap(
-            (PalettedContainerRO.PackedData<T> discData) -> unpacker.read(strategy, discData),
-            (C palettedContainer) -> palettedContainer.pack(strategy)
-         );
+         .comapFlatMap(discData -> unpacker.read(strategy, (PalettedContainerRO.PackedData<T>)discData), palettedContainer -> palettedContainer.pack(strategy));
    }
 
    private PalettedContainer(final Strategy<T> strategy, final Configuration dataConfiguration, final BitStorage storage, final Palette<T> palette) {

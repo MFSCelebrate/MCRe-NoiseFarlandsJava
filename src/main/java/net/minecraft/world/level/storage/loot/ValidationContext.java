@@ -53,7 +53,7 @@ public class ValidationContext {
    }
 
    public ValidationContext enterElement(final ProblemReporter.PathElement subContext, final ResourceKey<?> element) {
-      Set<ResourceKey<?>> newVisitedElements = ImmutableSet.builder().addAll(this.visitedElements).add(element).build();
+      Set<ResourceKey<?>> newVisitedElements = ImmutableSet.<ResourceKey<?>>builder().addAll(this.visitedElements).add(element).build();
       return new ValidationContext(this.reporter.forChild(subContext), this.contextKeySet, this.resolver, newVisitedElements);
    }
 

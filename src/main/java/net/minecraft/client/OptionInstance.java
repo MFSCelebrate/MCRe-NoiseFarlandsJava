@@ -237,7 +237,7 @@ public final class OptionInstance<T> {
          final int width,
          final OptionInstance.ValueUpdateListener<? super T> onValueChanged
       ) {
-         return instance -> CycleButton.builder(instance.toString, instance::get)
+         return instance -> CycleButton.<T>builder(instance.toString, instance::get)
             .withValues(this.valueListSupplier())
             .withTooltip(tooltip)
             .create(x, y, width, 20, instance.caption, (var4x, value) -> {

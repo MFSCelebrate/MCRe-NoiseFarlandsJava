@@ -12,8 +12,7 @@ import net.minecraft.util.ExtraCodecs;
 
 public record TextInput(int width, Component label, boolean labelVisible, String initial, int maxLength, Optional<TextInput.MultilineOptions> multiline)
    implements InputControl {
-   // ===== 修改：RecordCodecBuilder.<TextInput>group → i.group，validate 改为显式 lambda =====
-   public static final MapCodec<TextInput> MAP_CODEC = RecordCodecBuilder.mapCodec(
+   public static final MapCodec<TextInput> MAP_CODEC = RecordCodecBuilder.<TextInput>mapCodec(
          i -> i.group(
                Dialog.WIDTH_CODEC.optionalFieldOf("width", 200).forGetter(TextInput::width),
                ComponentSerialization.CODEC.fieldOf("label").forGetter(TextInput::label),
@@ -24,7 +23,7 @@ public record TextInput(int width, Component label, boolean labelVisible, String
             )
             .apply(i, TextInput::new)
       )
-      .validate((TextInput o) -> o.initial().length() > o.maxLength() ? DataResult.error(() -> "Default text length exceeds allowed size") : DataResult.success(o));
+      .validate((TextInput o) -> o.initial.length() > o.maxLength() ? DataResult.error(() -> "Default text length exceeds allowed size") : DataResult.success(o));
 
    @Override
    public MapCodec<TextInput> mapCodec() {
@@ -33,7 +32,6 @@ public record TextInput(int width, Component label, boolean labelVisible, String
 
    public record MultilineOptions(Optional<Integer> maxLines, Optional<Integer> height) {
       public static final int MAX_HEIGHT = 512;
-      // ===== 修改：RecordCodecBuilder.<TextInput.MultilineOptions>group → i.group =====
       public static final Codec<TextInput.MultilineOptions> CODEC = RecordCodecBuilder.create(
          i -> i.group(
                ExtraCodecs.POSITIVE_INT.optionalFieldOf("max_lines").forGetter(TextInput.MultilineOptions::maxLines),

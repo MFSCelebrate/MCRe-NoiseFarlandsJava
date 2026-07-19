@@ -34,21 +34,21 @@ import net.minecraft.world.level.gamerules.GameRuleType;
 public record Schema<T>(
    Optional<URI> reference, List<String> type, Optional<Schema<?>> items, Map<String, Schema<?>> properties, List<String> enumValues, Codec<T> codec
 ) {
-   // ===== 修改：显式指定 RecordCodecBuilder 类型参数，以及 Codec.unboundedMap 类型参数，validate lambda 显式类型 =====
-   public static final Codec<? extends Schema<?>> CODEC = Codec.recursive(
+   @SuppressWarnings({"unchecked", "rawtypes"})
+   public static final Codec<? extends Schema<?>> CODEC = (Codec<? extends Schema<?>>) (Codec<?>) Codec.<Schema<?>>recursive(
          "Schema",
          subCodec -> RecordCodecBuilder.<Schema<?>>create(
             i -> i.group(
                   ReferenceUtil.REFERENCE_CODEC.optionalFieldOf("$ref").forGetter(Schema::reference),
                   ExtraCodecs.compactListCodec(Codec.STRING).optionalFieldOf("type", List.of()).forGetter(Schema::type),
                   subCodec.optionalFieldOf("items").forGetter(Schema::items),
-                  Codec.<String, Schema<?>>unboundedMap(Codec.STRING, subCodec).optionalFieldOf("properties", Map.of()).forGetter(Schema::properties),
+                  Codec.unboundedMap(Codec.STRING, subCodec).optionalFieldOf("properties", Map.of()).forGetter(Schema::properties),
                   Codec.STRING.listOf().optionalFieldOf("enum", List.of()).forGetter(Schema::enumValues)
                )
                .apply(i, (ref, type, items, properties, enumValues) -> null)
          )
       )
-      .validate((Schema<?> schema) -> schema == null ? DataResult.error(() -> "Should not deserialize schema") : DataResult.success(schema));
+      .validate(schema -> schema == null ? DataResult.error(() -> "Should not deserialize schema") : DataResult.success(schema));
    private static final List<SchemaComponent<?>> SCHEMA_REGISTRY = new ArrayList<>();
    public static final Schema<Boolean> BOOL_SCHEMA = ofType("boolean", Codec.BOOL);
    public static final Schema<Integer> INT_SCHEMA = ofType("integer", Codec.INT);

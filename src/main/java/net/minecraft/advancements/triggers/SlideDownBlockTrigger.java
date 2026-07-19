@@ -25,8 +25,7 @@ public class SlideDownBlockTrigger extends SimpleCriterionTrigger<SlideDownBlock
 
    public record TriggerInstance(Optional<ContextAwarePredicate> player, Optional<Holder<Block>> block, Optional<StatePropertiesPredicate> state)
       implements SimpleCriterionTrigger.SimpleInstance {
-      // ===== 修改：RecordCodecBuilder.create 显式类型参数，validate 改为 lambda =====
-      public static final Codec<SlideDownBlockTrigger.TriggerInstance> CODEC = RecordCodecBuilder.<TriggerInstance>create(
+      public static final Codec<SlideDownBlockTrigger.TriggerInstance> CODEC = RecordCodecBuilder.<SlideDownBlockTrigger.TriggerInstance>create(
             i -> i.group(
                   EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(SlideDownBlockTrigger.TriggerInstance::player),
                   BuiltInRegistries.BLOCK.holderByNameCodec().optionalFieldOf("block").forGetter(SlideDownBlockTrigger.TriggerInstance::block),
@@ -34,7 +33,7 @@ public class SlideDownBlockTrigger extends SimpleCriterionTrigger<SlideDownBlock
                )
                .apply(i, SlideDownBlockTrigger.TriggerInstance::new)
          )
-         .validate((SlideDownBlockTrigger.TriggerInstance t) -> SlideDownBlockTrigger.TriggerInstance.validate(t));
+         .validate(trigger -> SlideDownBlockTrigger.TriggerInstance.validate(trigger));
 
       private static DataResult<SlideDownBlockTrigger.TriggerInstance> validate(final SlideDownBlockTrigger.TriggerInstance trigger) {
          return trigger.block

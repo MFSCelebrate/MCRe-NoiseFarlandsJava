@@ -21,7 +21,7 @@ public abstract class Avatar extends LivingEntity {
    protected static final EntityDimensions STANDING_DIMENSIONS = EntityDimensions.scalable(0.6F, 1.8F)
       .withEyeHeight(1.62F)
       .withAttachments(EntityAttachments.builder().attach(EntityAttachment.VEHICLE, DEFAULT_VEHICLE_ATTACHMENT));
-   protected static final Map<Pose, EntityDimensions> POSES = ImmutableMap.builder()
+   protected static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder()
       .put(Pose.STANDING, STANDING_DIMENSIONS)
       .put(Pose.SLEEPING, SLEEPING_DIMENSIONS)
       .put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F).withEyeHeight(0.4F))

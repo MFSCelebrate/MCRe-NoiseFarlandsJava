@@ -103,9 +103,7 @@ public class EnderDragonFight extends SavedData {
    private @Nullable DragonRespawnStage respawnStage;
    private int respawnTime;
    private List<EntityReference<EndCrystal>> respawnCrystals;
-   
-   // ===== 修改：RecordCodecBuilder.create 显式类型参数，gateways 默认值使用 ObjectArrayList =====
-   public static final Codec<EnderDragonFight> CODEC = RecordCodecBuilder.<EnderDragonFight>create(
+   public static final Codec<EnderDragonFight> CODEC = RecordCodecBuilder.create(
       i -> i.group(
             ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.BOOL, "needs_state_scanning", true).forGetter(fight -> fight.needsStateScanning),
             ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.BOOL, "dragon_killed", false).forGetter(fight -> fight.dragonKilled),
@@ -114,7 +112,7 @@ public class EnderDragonFight extends SavedData {
             ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.INT, "respawn_time", 0).forGetter(fight -> fight.respawnTime),
             UUIDUtil.CODEC.lenientOptionalFieldOf("dragon_uuid").forGetter(fight -> Optional.ofNullable(fight.dragonUUID)),
             BlockPos.CODEC.lenientOptionalFieldOf("exit_portal_location").forGetter(fight -> Optional.ofNullable(fight.exitPortalLocation)),
-            Codec.list(Codec.INT).lenientOptionalFieldOf("gateways", new ObjectArrayList<>()).forGetter(fight -> fight.gateways),
+            Codec.list(Codec.INT).lenientOptionalFieldOf("gateways", new ArrayList()).forGetter(fight -> fight.gateways),
             Codec.list(EntityReference.codec()).optionalFieldOf("respawn_crystals", List.of()).forGetter(fight -> fight.respawnCrystals)
          )
          .apply(i, EnderDragonFight::new)
@@ -124,7 +122,7 @@ public class EnderDragonFight extends SavedData {
    );
 
    public static EnderDragonFight createDefault() {
-      return new EnderDragonFight(true, false, false, Optional.empty(), 0, Optional.empty(), Optional.empty(), new ObjectArrayList<>(), List.of());
+      return new EnderDragonFight(true, false, false, Optional.empty(), 0, Optional.empty(), Optional.empty(), new ObjectArrayList(), List.of());
    }
 
    public EnderDragonFight(
@@ -145,7 +143,7 @@ public class EnderDragonFight extends SavedData {
       this.respawnStage = respawnStage.orElse(null);
       this.respawnTime = respawnTime;
       this.exitPortalLocation = exitPortalLocation.orElse(null);
-      this.gateways = new ObjectArrayList<>(gateways);
+      this.gateways = new ObjectArrayList(gateways);
       this.respawnCrystals = respawnCrystals;
    }
 
@@ -162,7 +160,7 @@ public class EnderDragonFight extends SavedData {
       this.dragonEvent.setPlayBossMusic(true).setCreateWorldFog(true);
       this.validPlayer = EntitySelector.ENTITY_STILL_ALIVE.and(EntitySelector.withinDistance(origin.getX(), 128 + origin.getY(), origin.getZ(), 192.0));
       if (this.gateways.isEmpty()) {
-         ObjectArrayList<Integer> newGateways = new ObjectArrayList<>(ContiguousSet.create(Range.closedOpen(0, 20), DiscreteDomain.integers()));
+         ObjectArrayList<Integer> newGateways = new ObjectArrayList(ContiguousSet.create(Range.closedOpen(0, 20), DiscreteDomain.integers()));
          Util.shuffle(newGateways, RandomSource.createThreadLocalInstance(seed));
          this.gateways.addAll(newGateways);
          this.setDirty();

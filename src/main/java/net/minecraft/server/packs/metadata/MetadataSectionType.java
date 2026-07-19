@@ -10,7 +10,7 @@ public record MetadataSectionType<T>(String name, Codec<T> codec) {
 
    public record WithValue<T>(MetadataSectionType<T> type, T value) {
       public <U> Optional<U> unwrapToType(final MetadataSectionType<U> type) {
-         return type == this.type ? Optional.of(this.value) : Optional.empty();
+         return type == this.type ? Optional.of((U)this.value) : Optional.empty();
       }
    }
 }

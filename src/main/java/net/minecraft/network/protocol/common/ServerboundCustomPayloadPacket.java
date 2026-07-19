@@ -1,6 +1,7 @@
 package net.minecraft.network.protocol.common;
 
 import com.google.common.collect.Lists;
+import java.util.List;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.Packet;
@@ -12,12 +13,10 @@ import net.minecraft.util.Util;
 
 public record ServerboundCustomPayloadPacket(CustomPacketPayload payload) implements Packet<ServerCommonPacketListener> {
    private static final int MAX_PAYLOAD_SIZE = 32767;
+   @SuppressWarnings({"unchecked", "rawtypes"})
    public static final StreamCodec<FriendlyByteBuf, ServerboundCustomPayloadPacket> STREAM_CODEC = CustomPacketPayload.<FriendlyByteBuf>codec(
          id -> DiscardedPayload.codec(id, 32767),
-         Util.make(
-            Lists.newArrayList(new CustomPacketPayload.TypeAndCodec[]{new CustomPacketPayload.TypeAndCodec<>(BrandPayload.TYPE, BrandPayload.STREAM_CODEC)}),
-            types -> {}
-         )
+         (List<CustomPacketPayload.TypeAndCodec<? super FriendlyByteBuf, ?>>) (List) List.of(new CustomPacketPayload.TypeAndCodec<>(BrandPayload.TYPE, BrandPayload.STREAM_CODEC))
       )
       .map(ServerboundCustomPayloadPacket::new, ServerboundCustomPayloadPacket::payload);
 

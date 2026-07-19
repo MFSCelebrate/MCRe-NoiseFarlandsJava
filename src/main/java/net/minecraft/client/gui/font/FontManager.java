@@ -287,9 +287,9 @@ public class FontManager implements AutoCloseable, PreparableReloadListener {
 
    private record BuilderResult(FontManager.BuilderId id, FontOption.Filter filter, Either<CompletableFuture<Optional<GlyphProvider>>, Identifier> result) {
       public Optional<List<GlyphProvider.Conditional>> resolve(final Function<Identifier, @Nullable List<GlyphProvider.Conditional>> resolver) {
-         return (Optional<List<GlyphProvider.Conditional>>)this.result
+         return this.result
             .map(
-               provider -> ((Optional)provider.join()).map(p -> List.of(new GlyphProvider.Conditional(p, this.filter))),
+               provider -> provider.join().map(p -> List.of(new GlyphProvider.Conditional(p, this.filter))),
                reference -> {
                   List<GlyphProvider.Conditional> resolvedReferences = resolver.apply(reference);
                   if (resolvedReferences == null) {

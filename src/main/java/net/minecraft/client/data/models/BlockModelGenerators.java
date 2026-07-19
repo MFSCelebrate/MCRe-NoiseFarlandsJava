@@ -193,7 +193,7 @@ public class BlockModelGenerators {
       .select(Direction.SOUTH, Y_ROT_180)
       .select(Direction.WEST, Y_ROT_270)
       .select(Direction.NORTH, NOP);
-   private static final Map<Block, TexturedModel> TEXTURED_MODELS = ImmutableMap.builder()
+   private static final Map<Block, TexturedModel> TEXTURED_MODELS = ImmutableMap.<Block, TexturedModel>builder()
       .put(Blocks.SANDSTONE, TexturedModel.TOP_BOTTOM_WITH_WALL.get(Blocks.SANDSTONE))
       .put(Blocks.RED_SANDSTONE, TexturedModel.TOP_BOTTOM_WITH_WALL.get(Blocks.RED_SANDSTONE))
       .put(Blocks.SMOOTH_SANDSTONE, TexturedModel.createAllSame(TextureMapping.getBlockTexture(Blocks.SANDSTONE, "_top")))

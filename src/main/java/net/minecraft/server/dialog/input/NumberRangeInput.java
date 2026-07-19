@@ -12,8 +12,7 @@ import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 
 public record NumberRangeInput(int width, Component label, String labelFormat, NumberRangeInput.RangeInfo rangeInfo) implements InputControl {
-   // ===== 修改：RecordCodecBuilder.<NumberRangeInput>group → i.group =====
-   public static final MapCodec<NumberRangeInput> MAP_CODEC = RecordCodecBuilder.mapCodec(
+   public static final MapCodec<NumberRangeInput> MAP_CODEC = RecordCodecBuilder.<NumberRangeInput>mapCodec(
       i -> i.group(
             Dialog.WIDTH_CODEC.optionalFieldOf("width", 200).forGetter(NumberRangeInput::width),
             ComponentSerialization.CODEC.fieldOf("label").forGetter(NumberRangeInput::label),
@@ -33,8 +32,7 @@ public record NumberRangeInput(int width, Component label, String labelFormat, N
    }
 
    public record RangeInfo(float start, float end, Optional<Float> initial, Optional<Float> step) {
-      // ===== 修改：RecordCodecBuilder.<NumberRangeInput.RangeInfo>group → i.group =====
-      public static final MapCodec<NumberRangeInput.RangeInfo> MAP_CODEC = RecordCodecBuilder.mapCodec(
+      public static final MapCodec<NumberRangeInput.RangeInfo> MAP_CODEC = RecordCodecBuilder.<NumberRangeInput.RangeInfo>mapCodec(
             i -> i.group(
                   Codec.FLOAT.fieldOf("start").forGetter(NumberRangeInput.RangeInfo::start),
                   Codec.FLOAT.fieldOf("end").forGetter(NumberRangeInput.RangeInfo::end),

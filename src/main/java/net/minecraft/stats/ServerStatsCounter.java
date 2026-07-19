@@ -52,12 +52,14 @@ public class ServerStatsCounter extends StatsCounter {
    private final Path file;
    private final Set<Stat<?>> dirty = Sets.newHashSet();
 
+   @SuppressWarnings({"unchecked", "rawtypes"})
    private static <T> Codec<Map<Stat<?>, Integer>> createTypedStatsCodec(final StatType<T> type) {
       Codec<T> valueCodec = type.getRegistry().byNameCodec();
-      Codec<Stat<?>> statCodec = valueCodec.flatComapMap(
+      Codec<Stat<T>> typedStatCodec = valueCodec.<Stat<T>>flatComapMap(
          type::get,
          stat -> stat.getType() == type ? DataResult.success(stat.getValue()) : DataResult.error(() -> "Expected type " + type + ", but got " + stat.getType())
       );
+      Codec<Stat<?>> statCodec = (Codec<Stat<?>>)(Codec<?>)typedStatCodec;
       return Codec.unboundedMap(statCodec, Codec.INT);
    }
 

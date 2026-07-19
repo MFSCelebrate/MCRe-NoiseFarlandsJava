@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 public record PiecesContainer(List<StructurePiece> pieces) {
    private static final Logger LOGGER = LogUtils.getLogger();
    private static final Identifier JIGSAW_RENAME = Identifier.withDefaultNamespace("jigsaw");
-   private static final Map<Identifier, Identifier> RENAMES = ImmutableMap.builder()
+   private static final Map<Identifier, Identifier> RENAMES = ImmutableMap.<Identifier, Identifier>builder()
       .put(Identifier.withDefaultNamespace("nvi"), JIGSAW_RENAME)
       .put(Identifier.withDefaultNamespace("pcp"), JIGSAW_RENAME)
       .put(Identifier.withDefaultNamespace("bastionremnant"), JIGSAW_RENAME)

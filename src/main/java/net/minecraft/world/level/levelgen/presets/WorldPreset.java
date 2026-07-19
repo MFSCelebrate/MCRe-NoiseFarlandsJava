@@ -16,17 +16,11 @@ import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldDimensions;
 
 public class WorldPreset {
-   // ===== 修改：为 group 显式类型，validate 改为 lambda =====
-   public static final Codec<WorldPreset> DIRECT_CODEC = RecordCodecBuilder.create(
-         i -> RecordCodecBuilder.<WorldPreset>group(
-               Codec.unboundedMap(ResourceKey.codec(Registries.LEVEL_STEM), LevelStem.CODEC)
-                  .fieldOf("dimensions")
-                  .forGetter(e -> e.dimensions)
-            )
+   public static final Codec<WorldPreset> DIRECT_CODEC = RecordCodecBuilder.<WorldPreset>create(
+         i -> i.group(Codec.unboundedMap(ResourceKey.codec(Registries.LEVEL_STEM), LevelStem.CODEC).fieldOf("dimensions").forGetter((WorldPreset e) -> e.dimensions))
             .apply(i, WorldPreset::new)
       )
-      .validate(preset -> WorldPreset.requireOverworld(preset));
-
+      .validate(WorldPreset::requireOverworld);
    public static final Codec<Holder<WorldPreset>> CODEC = RegistryFileCodec.create(Registries.WORLD_PRESET, DIRECT_CODEC);
    private final Map<ResourceKey<LevelStem>, LevelStem> dimensions;
 

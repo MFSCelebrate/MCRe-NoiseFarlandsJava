@@ -34,20 +34,18 @@ public class Timeline {
    private static final Codec<Map<EnvironmentAttribute<?>, AttributeTrack<?, ?>>> TRACKS_CODEC = Codec.dispatchedMap(
       EnvironmentAttributes.CODEC, Util.memoize(AttributeTrack::createCodec)
    );
-   
-   // ===== 修改：RecordCodecBuilder.create 显式类型参数，validate 改为 lambda =====
    public static final Codec<Timeline> DIRECT_CODEC = RecordCodecBuilder.<Timeline>create(
          i -> i.group(
-               WorldClock.CODEC.fieldOf("clock").forGetter(t -> t.clock),
-               ExtraCodecs.POSITIVE_INT.optionalFieldOf("period_ticks").forGetter(t -> t.periodTicks),
-               TRACKS_CODEC.optionalFieldOf("tracks", Map.of()).forGetter(t -> t.tracks),
+               WorldClock.CODEC.fieldOf("clock").forGetter((Timeline t) -> t.clock),
+               ExtraCodecs.POSITIVE_INT.optionalFieldOf("period_ticks").forGetter((Timeline t) -> t.periodTicks),
+               TRACKS_CODEC.optionalFieldOf("tracks", Map.of()).forGetter((Timeline t) -> t.tracks),
                Codec.unboundedMap(ClockTimeMarker.KEY_CODEC, Timeline.TimeMarkerInfo.CODEC)
                   .optionalFieldOf("time_markers", Map.of())
-                  .forGetter(t -> t.timeMarkers)
+                  .forGetter((Timeline t) -> t.timeMarkers)
             )
             .apply(i, Timeline::new)
       )
-      .validate((Timeline t) -> Timeline.validateInternal(t));
+      .validate(Timeline::validateInternal);
    public static final Codec<Timeline> NETWORK_CODEC = DIRECT_CODEC.xmap(Timeline::filterSyncableTracks, Timeline::filterSyncableTracks);
    private final Holder<WorldClock> clock;
    private final Optional<Integer> periodTicks;
@@ -203,8 +201,7 @@ public class Timeline {
    }
 
    private record TimeMarkerInfo(int ticks, boolean showInCommands) {
-      // ===== 修改：RecordCodecBuilder.create 显式类型参数 =====
-      private static final Codec<Timeline.TimeMarkerInfo> FULL_CODEC = RecordCodecBuilder.<Timeline.TimeMarkerInfo>create(
+      private static final Codec<Timeline.TimeMarkerInfo> FULL_CODEC = RecordCodecBuilder.create(
          i -> i.group(
                ExtraCodecs.NON_NEGATIVE_INT.fieldOf("ticks").forGetter(Timeline.TimeMarkerInfo::ticks),
                Codec.BOOL.optionalFieldOf("show_in_commands", false).forGetter(Timeline.TimeMarkerInfo::showInCommands)

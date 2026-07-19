@@ -14,16 +14,16 @@ import net.minecraft.util.Util;
 
 public record ClientboundCustomPayloadPacket(CustomPacketPayload payload) implements Packet<ClientCommonPacketListener> {
    private static final int MAX_PAYLOAD_SIZE = 1048576;
+   @SuppressWarnings({"unchecked", "rawtypes"})
    public static final StreamCodec<RegistryFriendlyByteBuf, ClientboundCustomPayloadPacket> GAMEPLAY_STREAM_CODEC = CustomPacketPayload.<RegistryFriendlyByteBuf>codec(
          id -> DiscardedPayload.codec(id, 1048576),
-         Util.make(
-            Lists.newArrayList(new CustomPacketPayload.TypeAndCodec[]{new CustomPacketPayload.TypeAndCodec<>(BrandPayload.TYPE, BrandPayload.STREAM_CODEC)}),
-            types -> {}
-         )
+         (List<CustomPacketPayload.TypeAndCodec<? super RegistryFriendlyByteBuf, ?>>) (List) List.of(new CustomPacketPayload.TypeAndCodec<>(BrandPayload.TYPE, BrandPayload.STREAM_CODEC))
       )
       .map(ClientboundCustomPayloadPacket::new, ClientboundCustomPayloadPacket::payload);
+   @SuppressWarnings({"unchecked", "rawtypes"})
    public static final StreamCodec<FriendlyByteBuf, ClientboundCustomPayloadPacket> CONFIG_STREAM_CODEC = CustomPacketPayload.<FriendlyByteBuf>codec(
-         id -> DiscardedPayload.codec(id, 1048576), List.of(new CustomPacketPayload.TypeAndCodec<>(BrandPayload.TYPE, BrandPayload.STREAM_CODEC))
+         id -> DiscardedPayload.codec(id, 1048576),
+         (List<CustomPacketPayload.TypeAndCodec<? super FriendlyByteBuf, ?>>) (List) List.of(new CustomPacketPayload.TypeAndCodec<>(BrandPayload.TYPE, BrandPayload.STREAM_CODEC))
       )
       .map(ClientboundCustomPayloadPacket::new, ClientboundCustomPayloadPacket::payload);
 

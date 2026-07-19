@@ -43,8 +43,8 @@ public class TicketStorage extends SavedData {
    private final Long2ObjectOpenHashMap<List<Ticket>> tickets;
    private final Long2ObjectOpenHashMap<List<Ticket>> deactivatedTickets;
    private LongSet chunksWithForcedTickets = new LongOpenHashSet();
-   private TicketStorage.@Nullable ChunkUpdated loadingChunkUpdatedListener;
-   private TicketStorage.@Nullable ChunkUpdated simulationChunkUpdatedListener;
+   private @Nullable ChunkUpdated loadingChunkUpdatedListener;
+   private @Nullable ChunkUpdated simulationChunkUpdatedListener;
 
    private TicketStorage(final Long2ObjectOpenHashMap<List<Ticket>> tickets, final Long2ObjectOpenHashMap<List<Ticket>> deactivatedTickets) {
       this.tickets = tickets;
@@ -90,7 +90,7 @@ public class TicketStorage extends SavedData {
          Entry<List<Ticket>> entry = (Entry<List<Ticket>>)var2.next();
          ChunkPos chunkPos = ChunkPos.unpack(entry.getLongKey());
 
-         for (Ticket ticket : (List)entry.getValue()) {
+         for (Ticket ticket : (List<Ticket>)entry.getValue()) {
             output.accept(chunkPos, ticket);
          }
       }
@@ -102,21 +102,21 @@ public class TicketStorage extends SavedData {
       while (var1.hasNext()) {
          Entry<List<Ticket>> entry = (Entry<List<Ticket>>)var1.next();
 
-         for (Ticket ticket : (List)entry.getValue()) {
+         for (Ticket ticket : (List<Ticket>)entry.getValue()) {
             this.addTicket(entry.getLongKey(), ticket);
          }
+
+         this.deactivatedTickets.clear();
       }
-
-      this.deactivatedTickets.clear();
    }
 
-   public void setLoadingChunkUpdatedListener(final TicketStorage.@Nullable ChunkUpdated loadingChunkUpdatedListener) {
-      this.loadingChunkUpdatedListener = loadingChunkUpdatedListener;
-   }
+    public void setLoadingChunkUpdatedListener(final ChunkUpdated loadingChunkUpdatedListener) {
+       this.loadingChunkUpdatedListener = loadingChunkUpdatedListener;
+    }
 
-   public void setSimulationChunkUpdatedListener(final TicketStorage.@Nullable ChunkUpdated simulationChunkUpdatedListener) {
-      this.simulationChunkUpdatedListener = simulationChunkUpdatedListener;
-   }
+    public void setSimulationChunkUpdatedListener(final ChunkUpdated simulationChunkUpdatedListener) {
+       this.simulationChunkUpdatedListener = simulationChunkUpdatedListener;
+    }
 
    public boolean hasTickets() {
       return !this.tickets.isEmpty();
@@ -378,7 +378,7 @@ public class TicketStorage extends SavedData {
       while (var4.hasNext()) {
          Entry<List<Ticket>> entry = (Entry<List<Ticket>>)var4.next();
 
-         for (Ticket ticket : (List)entry.getValue()) {
+         for (Ticket ticket : (List<Ticket>)entry.getValue()) {
             if (ticket.getType() == ticketType) {
                affectedTickets.add(Pair.of(ticket, entry.getLongKey()));
             }
@@ -410,7 +410,7 @@ public class TicketStorage extends SavedData {
       while (var3.hasNext()) {
          Entry<List<Ticket>> entry = (Entry<List<Ticket>>)var3.next();
 
-         for (Ticket ticket : (List)entry.getValue()) {
+         for (Ticket ticket : (List<Ticket>)entry.getValue()) {
             if (ticketCheck.test(ticket)) {
                chunks.add(entry.getLongKey());
                break;

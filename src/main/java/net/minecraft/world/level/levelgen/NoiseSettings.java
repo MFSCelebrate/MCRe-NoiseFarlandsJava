@@ -9,8 +9,7 @@ import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.dimension.DimensionType;
 
 public record NoiseSettings(int minY, int height, int noiseSizeHorizontal, int noiseSizeVertical) {
-   // ===== 修改：RecordCodecBuilder.create 显式类型参数，group 改为 i.group，comapFlatMap 第二个参数改为 lambda =====
-   public static final Codec<NoiseSettings> CODEC = RecordCodecBuilder.<NoiseSettings>create(
+   public static final Codec<NoiseSettings> CODEC = RecordCodecBuilder.create(
          i -> i.group(
                Codec.intRange(DimensionType.MIN_Y, DimensionType.MAX_Y).fieldOf("min_y").forGetter(NoiseSettings::minY),
                Codec.intRange(0, DimensionType.Y_SIZE).fieldOf("height").forGetter(NoiseSettings::height),
@@ -19,11 +18,7 @@ public record NoiseSettings(int minY, int height, int noiseSizeHorizontal, int n
             )
             .apply(i, NoiseSettings::new)
       )
-      .comapFlatMap(
-         (NoiseSettings settings) -> guardY(settings),
-         (NoiseSettings settings) -> settings
-      );
-
+      .comapFlatMap(NoiseSettings::guardY, Function.identity());
    static final NoiseSettings OVERWORLD_NOISE_SETTINGS = create(-64, 384, 1, 2);
    static final NoiseSettings NETHER_NOISE_SETTINGS = create(0, 128, 1, 2);
    static final NoiseSettings END_NOISE_SETTINGS = create(0, 128, 2, 1);

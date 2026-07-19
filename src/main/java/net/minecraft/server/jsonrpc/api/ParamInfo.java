@@ -9,7 +9,6 @@ public record ParamInfo<Param>(String name, Schema<Param> schema, boolean requir
       this(name, schema, true);
    }
 
-   // ===== 修改：显式指定 RecordCodecBuilder 类型参数，并显式指定 Schema.typedCodec 的泛型 =====
    public static <Param> MapCodec<ParamInfo<Param>> typedCodec() {
       return RecordCodecBuilder.<ParamInfo<Param>>mapCodec(
          i -> i.group(

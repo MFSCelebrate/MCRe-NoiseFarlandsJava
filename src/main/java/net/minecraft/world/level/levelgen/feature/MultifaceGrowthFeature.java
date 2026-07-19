@@ -30,7 +30,6 @@ public record MultifaceGrowthFeature(
    float chanceOfSpreading,
    HolderSet<Block> canBePlacedOn
 ) implements Feature {
-   // ===== 修改：RecordCodecBuilder.<MultifaceGrowthFeature>group → i.group =====
    public static final MapCodec<MultifaceGrowthFeature> CODEC = RecordCodecBuilder.mapCodec(
       i -> i.group(
             BuiltInRegistries.BLOCK

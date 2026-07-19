@@ -73,10 +73,8 @@ public class UpgradeData {
          }
       }
 
-      // ===== 修改：将 Collection<? extends E> 改为 List<SavedTick<Block>> =====
-      tag.<List<SavedTick<Block>>>read("neighbor_block_ticks", BLOCK_TICKS_CODEC).ifPresent(this.neighborBlockTicks::addAll);
-      // ===== 修改：将 Collection<? extends E> 改为 List<SavedTick<Fluid>> =====
-      tag.<List<SavedTick<Fluid>>>read("neighbor_fluid_ticks", FLUID_TICKS_CODEC).ifPresent(this.neighborFluidTicks::addAll);
+      tag.read("neighbor_block_ticks", BLOCK_TICKS_CODEC).ifPresent(this.neighborBlockTicks::addAll);
+      tag.read("neighbor_fluid_ticks", FLUID_TICKS_CODEC).ifPresent(this.neighborFluidTicks::addAll);
    }
 
    private UpgradeData(final UpgradeData source) {

@@ -143,14 +143,10 @@ public class Climate {
       private final List<Pair<Climate.ParameterPoint, T>> values;
       private final Climate.RTree<T> index;
 
-      // ===== 修改：RecordCodecBuilder.<Pair<...>>group → i.group =====
       public static <T> Codec<Climate.ParameterList<T>> codec(final MapCodec<T> valueCodec) {
          return ExtraCodecs.nonEmptyList(
                RecordCodecBuilder.<Pair<Climate.ParameterPoint, T>>create(
-                     i -> i.group(
-                           Climate.ParameterPoint.CODEC.fieldOf("parameters").forGetter(Pair::getFirst),
-                           valueCodec.forGetter(Pair::getSecond)
-                        )
+                     i -> i.group(Climate.ParameterPoint.CODEC.fieldOf("parameters").forGetter((Pair<Climate.ParameterPoint, T> p) -> p.getFirst()), valueCodec.forGetter((Pair<Climate.ParameterPoint, T> p) -> p.getSecond()))
                         .apply(i, Pair::of)
                   )
                   .listOf()
@@ -208,7 +204,6 @@ public class Climate {
       Climate.Parameter weirdness,
       long offset
    ) {
-      // ===== 修改：RecordCodecBuilder.<Climate.ParameterPoint>group → i.group =====
       public static final Codec<Climate.ParameterPoint> CODEC = RecordCodecBuilder.create(
          i -> i.group(
                Climate.Parameter.CODEC.fieldOf("temperature").forGetter(p -> p.temperature),

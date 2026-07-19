@@ -5,7 +5,6 @@ import java.lang.StackWalker.Option;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.Set;
-import net.minecraft.SharedConstants;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.lwjgl.system.MemoryStack;
@@ -22,7 +21,7 @@ import org.slf4j.Logger;
 
 public interface VulkanDebug {
    static VulkanDebug create(final int verbosity, final boolean wantsDebugLabels, final Set<String> availableExtensions, final Set<String> enabledExtensions) {
-      if ((verbosity > 0 || wantsDebugLabels) && availableExtensions.contains("VK_EXT_debug_utils") || SharedConstants.DEBUG_FORCE_VULKAN_RENDERER) {
+      if ((verbosity > 0 || wantsDebugLabels) && availableExtensions.contains("VK_EXT_debug_utils")) {
          enabledExtensions.add("VK_EXT_debug_utils");
          return new VulkanDebug.Enabled(verbosity, wantsDebugLabels);
       } else {

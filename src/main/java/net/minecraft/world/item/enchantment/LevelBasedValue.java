@@ -48,8 +48,7 @@ public interface LevelBasedValue {
    MapCodec<? extends LevelBasedValue> codec();
 
    record Clamped(LevelBasedValue value, float min, float max) implements LevelBasedValue {
-      // ===== 修改：group 改为实例方法调用 i.group()，外层保留 RecordCodecBuilder.mapCodec =====
-      public static final MapCodec<LevelBasedValue.Clamped> CODEC = RecordCodecBuilder.mapCodec(
+      public static final MapCodec<LevelBasedValue.Clamped> CODEC = RecordCodecBuilder.<LevelBasedValue.Clamped>mapCodec(
             i -> i.group(
                   LevelBasedValue.CODEC.fieldOf("value").forGetter(LevelBasedValue.Clamped::value),
                   Codec.FLOAT.fieldOf("min").forGetter(LevelBasedValue.Clamped::min),
@@ -72,13 +71,8 @@ public interface LevelBasedValue {
 
    record Constant(float value) implements LevelBasedValue {
       public static final Codec<LevelBasedValue.Constant> CODEC = Codec.FLOAT.xmap(LevelBasedValue.Constant::new, LevelBasedValue.Constant::value);
-      
-      // ===== 修改：group 改为实例方法调用 i.group() =====
       public static final MapCodec<LevelBasedValue.Constant> TYPED_CODEC = RecordCodecBuilder.mapCodec(
-         i -> i.group(
-               Codec.FLOAT.fieldOf("value").forGetter(LevelBasedValue.Constant::value)
-            )
-            .apply(i, LevelBasedValue.Constant::new)
+         i -> i.group(Codec.FLOAT.fieldOf("value").forGetter(LevelBasedValue.Constant::value)).apply(i, LevelBasedValue.Constant::new)
       );
 
       @Override
@@ -93,7 +87,6 @@ public interface LevelBasedValue {
    }
 
    record Exponent(LevelBasedValue base, LevelBasedValue power) implements LevelBasedValue {
-      // ===== 修改：group 改为实例方法调用 i.group() =====
       public static final MapCodec<LevelBasedValue.Exponent> CODEC = RecordCodecBuilder.mapCodec(
          i -> i.group(
                LevelBasedValue.CODEC.fieldOf("base").forGetter(LevelBasedValue.Exponent::base),
@@ -114,7 +107,6 @@ public interface LevelBasedValue {
    }
 
    record Fraction(LevelBasedValue numerator, LevelBasedValue denominator) implements LevelBasedValue {
-      // ===== 修改：group 改为实例方法调用 i.group() =====
       public static final MapCodec<LevelBasedValue.Fraction> CODEC = RecordCodecBuilder.mapCodec(
          i -> i.group(
                LevelBasedValue.CODEC.fieldOf("numerator").forGetter(LevelBasedValue.Fraction::numerator),
@@ -136,12 +128,8 @@ public interface LevelBasedValue {
    }
 
    record LevelsSquared(float added) implements LevelBasedValue {
-      // ===== 修改：group 改为实例方法调用 i.group() =====
       public static final MapCodec<LevelBasedValue.LevelsSquared> CODEC = RecordCodecBuilder.mapCodec(
-         i -> i.group(
-               Codec.FLOAT.fieldOf("added").forGetter(LevelBasedValue.LevelsSquared::added)
-            )
-            .apply(i, LevelBasedValue.LevelsSquared::new)
+         i -> i.group(Codec.FLOAT.fieldOf("added").forGetter(LevelBasedValue.LevelsSquared::added)).apply(i, LevelBasedValue.LevelsSquared::new)
       );
 
       @Override
@@ -156,7 +144,6 @@ public interface LevelBasedValue {
    }
 
    record Linear(float base, float perLevelAboveFirst) implements LevelBasedValue {
-      // ===== 修改：group 改为实例方法调用 i.group() =====
       public static final MapCodec<LevelBasedValue.Linear> CODEC = RecordCodecBuilder.mapCodec(
          i -> i.group(
                Codec.FLOAT.fieldOf("base").forGetter(LevelBasedValue.Linear::base),
@@ -177,7 +164,6 @@ public interface LevelBasedValue {
    }
 
    record Lookup(List<Float> values, LevelBasedValue fallback) implements LevelBasedValue {
-      // ===== 修改：group 改为实例方法调用 i.group() =====
       public static final MapCodec<LevelBasedValue.Lookup> CODEC = RecordCodecBuilder.mapCodec(
          i -> i.group(
                Codec.FLOAT.listOf().fieldOf("values").forGetter(LevelBasedValue.Lookup::values),

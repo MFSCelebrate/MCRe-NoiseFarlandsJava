@@ -198,7 +198,7 @@ public class SavedDataStorage implements AutoCloseable {
    private <T extends SavedData> CompoundTag encodeUnchecked(final SavedDataType<T> type, final SavedData data, final RegistryOps<Tag> ops) {
       Codec<T> codec = type.codec();
       CompoundTag tag = new CompoundTag();
-      tag.put("data", (Tag)codec.encodeStart(ops, data).getOrThrow());
+      tag.put("data", (Tag)codec.encodeStart(ops, (T)data).getOrThrow());
       NbtUtils.addCurrentDataVersion(tag);
       return tag;
    }

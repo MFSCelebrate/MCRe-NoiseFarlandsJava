@@ -25,7 +25,6 @@ public record SpawnParticlesEffect(
    SpawnParticlesEffect.VelocitySource verticalVelocity,
    FloatProvider speed
 ) implements EnchantmentEntityEffect {
-   // ===== 修改：RecordCodecBuilder.<SpawnParticlesEffect>group → i.group =====
    public static final MapCodec<SpawnParticlesEffect> CODEC = RecordCodecBuilder.mapCodec(
       i -> i.group(
             ParticleTypes.CODEC.fieldOf("particle").forGetter(SpawnParticlesEffect::particle),
@@ -79,7 +78,6 @@ public record SpawnParticlesEffect(
    }
 
    public record PositionSource(SpawnParticlesEffect.PositionSourceType type, float offset, float scale) {
-      // ===== 修改：RecordCodecBuilder.<SpawnParticlesEffect.PositionSource>group → i.group =====
       public static final MapCodec<SpawnParticlesEffect.PositionSource> CODEC = RecordCodecBuilder.mapCodec(
             i -> i.group(
                   SpawnParticlesEffect.PositionSourceType.CODEC.fieldOf("type").forGetter(SpawnParticlesEffect.PositionSource::type),
@@ -89,7 +87,7 @@ public record SpawnParticlesEffect(
                .apply(i, SpawnParticlesEffect.PositionSource::new)
          )
          .validate(
-            (SpawnParticlesEffect.PositionSource positioning) -> positioning.type() == SpawnParticlesEffect.PositionSourceType.ENTITY_POSITION && positioning.scale() != 1.0F
+            positioning -> positioning.type() == SpawnParticlesEffect.PositionSourceType.ENTITY_POSITION && positioning.scale() != 1.0F
                ? DataResult.error(() -> "Cannot scale an entity position coordinate source")
                : DataResult.success(positioning)
          );
@@ -128,7 +126,6 @@ public record SpawnParticlesEffect(
    }
 
    public record VelocitySource(float movementScale, FloatProvider base) {
-      // ===== 修改：RecordCodecBuilder.<SpawnParticlesEffect.VelocitySource>group → i.group =====
       public static final MapCodec<SpawnParticlesEffect.VelocitySource> CODEC = RecordCodecBuilder.mapCodec(
          i -> i.group(
                Codec.FLOAT.optionalFieldOf("movement_scale", 0.0F).forGetter(SpawnParticlesEffect.VelocitySource::movementScale),

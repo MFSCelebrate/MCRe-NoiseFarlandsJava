@@ -23,8 +23,6 @@ public record VaultConfig(
 ) {
    public static final String TAG_NAME = "config";
    public static final VaultConfig DEFAULT = new VaultConfig();
-   
-   // ===== 修改：RecordCodecBuilder.<VaultConfig>group → i.group =====
    public static final Codec<VaultConfig> CODEC = RecordCodecBuilder.create(
          i -> i.group(
                LootTable.KEY_CODEC.lenientOptionalFieldOf("loot_table", DEFAULT.lootTable()).forGetter(VaultConfig::lootTable),
@@ -35,7 +33,7 @@ public record VaultConfig(
             )
             .apply(i, VaultConfig::new)
       )
-      .validate((VaultConfig config) -> config.validate());
+      .validate(VaultConfig::validate);
 
    private VaultConfig() {
       this(

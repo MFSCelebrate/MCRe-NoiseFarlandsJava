@@ -16,8 +16,8 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
 public interface DataComponentPredicate {
-   Codec<Map<DataComponentPredicate.Type<?>, DataComponentPredicate>> CODEC = Codec.dispatchedMap(
-      DataComponentPredicate.Type.CODEC, DataComponentPredicate.Type::codec
+   Codec<Map<DataComponentPredicate.Type<?>, DataComponentPredicate>> CODEC = Codec.<DataComponentPredicate.Type<?>, DataComponentPredicate>dispatchedMap(
+      DataComponentPredicate.Type.CODEC, t -> (Codec<? extends DataComponentPredicate>)t.codec()
    );
    StreamCodec<RegistryFriendlyByteBuf, DataComponentPredicate.Single<?>> SINGLE_STREAM_CODEC = DataComponentPredicate.Type.STREAM_CODEC
       .dispatch(DataComponentPredicate.Single::type, DataComponentPredicate.Type::singleStreamCodec);
@@ -110,7 +110,7 @@ public interface DataComponentPredicate {
       public TypeBase(final Codec<T> codec) {
          this.codec = codec;
          this.wrappedCodec = DataComponentPredicate.Single.wrapCodec(this, codec);
-         this.singleStreamCodec = ByteBufCodecs.<DataComponentPredicate>fromCodecWithRegistries(codec)
+         this.singleStreamCodec = ByteBufCodecs.fromCodecWithRegistries(codec)
             .map(v -> new DataComponentPredicate.Single<>(this, (T)v), DataComponentPredicate.Single::predicate);
       }
 

@@ -297,7 +297,7 @@ public class LevelEventHandler {
          case 2002:
             this.potionSplashParticles(ParticleTypes.EFFECT, pos, data, random);
             break;
-         case 2003:
+         case 2003: {
             double x = pos.getX() + 0.5;
             double y = pos.getY();
             double z = pos.getZ() + 0.5;
@@ -318,6 +318,7 @@ public class LevelEventHandler {
                   );
             }
             break;
+         }
          case 2004:
             for (int i = 0; i < 20; i++) {
                double x = pos.getX() + 0.5 + (random.nextDouble() - 0.5) * 2.0;

@@ -7,7 +7,7 @@ import net.minecraft.util.ExtraCodecs;
 
 public record Criterion<T extends CriterionTriggerInstance>(CriterionTrigger<T> trigger, T triggerInstance) {
    private static final MapCodec<Criterion<?>> MAP_CODEC = ExtraCodecs.dispatchOptionalValue(
-      "trigger", "conditions", (Codec<CriterionTrigger<T>>)CriteriaTriggers.CODEC, Criterion::trigger, Criterion::criterionCodec
+      "trigger", "conditions", (Codec<CriterionTrigger<?>>)CriteriaTriggers.CODEC, Criterion::trigger, Criterion::criterionCodec
    );
    public static final Codec<Criterion<?>> CODEC = MAP_CODEC.codec();
 

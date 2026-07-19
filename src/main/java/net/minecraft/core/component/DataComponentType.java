@@ -110,7 +110,7 @@ public interface DataComponentType<T> {
 
          @Override
          public String toString() {
-            return Util.getRegisteredName((Registry<DataComponentType.Builder.SimpleType<T>>)BuiltInRegistries.DATA_COMPONENT_TYPE, this);
+            return Util.getRegisteredName((Registry<DataComponentType.Builder.SimpleType<T>>)(Registry<?>)BuiltInRegistries.DATA_COMPONENT_TYPE, this);
          }
       }
    }

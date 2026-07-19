@@ -38,7 +38,7 @@ public interface Registry<T> extends IdMap<T>, Keyable, HolderLookup.RegistryLoo
       Codec<Holder.Reference<T>> referenceCodec = Identifier.CODEC
          .comapFlatMap(
             name -> this.get(name)
-               .<DataResult>map(DataResult::success)
+               .map(DataResult::success)
                .orElseGet(() -> DataResult.error(() -> "Unknown registry key in " + this.key() + ": " + name)),
             holder -> holder.key().identifier()
          );

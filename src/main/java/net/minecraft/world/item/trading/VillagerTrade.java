@@ -25,30 +25,28 @@ import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
 import org.jspecify.annotations.Nullable;
 
 public class VillagerTrade implements Validatable {
-   // ===== 修改：RecordCodecBuilder.<VillagerTrade>group → i.group =====
-   public static final Codec<VillagerTrade> CODEC = RecordCodecBuilder.create(
+   public static final Codec<VillagerTrade> CODEC = RecordCodecBuilder.<VillagerTrade>create(
          i -> i.group(
-               TradeCost.CODEC.fieldOf("wants").forGetter(villagerTrade -> villagerTrade.wants),
-               TradeCost.CODEC.optionalFieldOf("additional_wants").forGetter(villagerTrade -> villagerTrade.additionalWants),
-               ItemStackTemplate.CODEC.fieldOf("gives").forGetter(villagerTrade -> villagerTrade.gives),
-               NumberProviders.DIRECT_CODEC.lenientOptionalFieldOf("max_uses", ConstantValue.exactly(4.0F)).forGetter(villagerTrade -> villagerTrade.maxUses),
+               TradeCost.CODEC.fieldOf("wants").forGetter((VillagerTrade villagerTrade) -> villagerTrade.wants),
+               TradeCost.CODEC.optionalFieldOf("additional_wants").forGetter((VillagerTrade villagerTrade) -> villagerTrade.additionalWants),
+               ItemStackTemplate.CODEC.fieldOf("gives").forGetter((VillagerTrade villagerTrade) -> villagerTrade.gives),
+               NumberProviders.DIRECT_CODEC.lenientOptionalFieldOf("max_uses", ConstantValue.exactly(4.0F)).forGetter((VillagerTrade villagerTrade) -> villagerTrade.maxUses),
                NumberProviders.DIRECT_CODEC
                   .lenientOptionalFieldOf("reputation_discount", ConstantValue.exactly(0.0F))
-                  .forGetter(villagerTrade -> villagerTrade.reputationDiscount),
-               NumberProviders.DIRECT_CODEC.lenientOptionalFieldOf("xp", ConstantValue.exactly(1.0F)).forGetter(villagerTrade -> villagerTrade.xp),
-               LootItemCondition.DIRECT_CODEC.optionalFieldOf("merchant_predicate").forGetter(villagerTrade -> villagerTrade.merchantPredicate),
+                  .forGetter((VillagerTrade villagerTrade) -> villagerTrade.reputationDiscount),
+               NumberProviders.DIRECT_CODEC.lenientOptionalFieldOf("xp", ConstantValue.exactly(1.0F)).forGetter((VillagerTrade villagerTrade) -> villagerTrade.xp),
+               LootItemCondition.DIRECT_CODEC.optionalFieldOf("merchant_predicate").forGetter((VillagerTrade villagerTrade) -> villagerTrade.merchantPredicate),
                LootItemFunctions.ROOT_CODEC
                   .listOf()
                   .optionalFieldOf("given_item_modifiers", List.of())
-                  .forGetter(villagerTrade -> villagerTrade.givenItemModifiers),
+                  .forGetter((VillagerTrade villagerTrade) -> villagerTrade.givenItemModifiers),
                RegistryCodecs.homogeneousList(Registries.ENCHANTMENT)
                   .optionalFieldOf("double_trade_price_enchantments")
-                  .forGetter(villagerTrade -> villagerTrade.doubleTradePriceEnchantments)
+                  .forGetter((VillagerTrade villagerTrade) -> villagerTrade.doubleTradePriceEnchantments)
             )
             .apply(i, VillagerTrade::new)
       )
-      .validate((VillagerTrade trade) -> Validatable.validatorForContext(LootContextParamSets.VILLAGER_TRADE).apply(trade));
-
+      .validate(Validatable.validatorForContext(LootContextParamSets.VILLAGER_TRADE));
    private final TradeCost wants;
    private final Optional<TradeCost> additionalWants;
    private final ItemStackTemplate gives;

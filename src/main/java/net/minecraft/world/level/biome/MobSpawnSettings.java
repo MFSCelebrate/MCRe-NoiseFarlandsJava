@@ -25,8 +25,6 @@ public class MobSpawnSettings {
    private static final float DEFAULT_CREATURE_SPAWN_PROBABILITY = 0.1F;
    public static final WeightedList<MobSpawnSettings.SpawnerData> EMPTY_MOB_LIST = WeightedList.of();
    public static final MobSpawnSettings EMPTY = new MobSpawnSettings.Builder().build();
-   
-   // ===== 修改：RecordCodecBuilder.<MobSpawnSettings>group → i.group =====
    public static final MapCodec<MobSpawnSettings> CODEC = RecordCodecBuilder.mapCodec(
       i -> i.group(
             Codec.floatRange(0.0F, 0.9999999F).optionalFieldOf("creature_spawn_probability", 0.1F).forGetter(b -> b.creatureGenerationProbability),
@@ -101,28 +99,23 @@ public class MobSpawnSettings {
    }
 
    public record MobSpawnCost(double energyBudget, double charge) {
-      // ===== 修改：RecordCodecBuilder.<MobSpawnCost>group → i.group =====
       public static final Codec<MobSpawnSettings.MobSpawnCost> CODEC = RecordCodecBuilder.create(
-         i -> i.group(
-               Codec.DOUBLE.fieldOf("energy_budget").forGetter(e -> e.energyBudget),
-               Codec.DOUBLE.fieldOf("charge").forGetter(e -> e.charge)
-            )
+         i -> i.group(Codec.DOUBLE.fieldOf("energy_budget").forGetter(e -> e.energyBudget), Codec.DOUBLE.fieldOf("charge").forGetter(e -> e.charge))
             .apply(i, MobSpawnSettings.MobSpawnCost::new)
       );
    }
 
    public record SpawnerData(EntityType<?> type, int minCount, int maxCount) {
-      // ===== 修改：RecordCodecBuilder.<SpawnerData>group → i.group =====
-      public static final MapCodec<MobSpawnSettings.SpawnerData> CODEC = RecordCodecBuilder.mapCodec(
+      public static final MapCodec<MobSpawnSettings.SpawnerData> CODEC = RecordCodecBuilder.<MobSpawnSettings.SpawnerData>mapCodec(
             i -> i.group(
-                  BuiltInRegistries.ENTITY_TYPE.byNameCodec().fieldOf("type").forGetter(d -> d.type),
-                  ExtraCodecs.POSITIVE_INT.fieldOf("minCount").forGetter(e -> e.minCount),
-                  ExtraCodecs.POSITIVE_INT.fieldOf("maxCount").forGetter(e -> e.maxCount)
+                  BuiltInRegistries.ENTITY_TYPE.byNameCodec().fieldOf("type").forGetter((MobSpawnSettings.SpawnerData d) -> d.type),
+                  ExtraCodecs.POSITIVE_INT.fieldOf("minCount").forGetter((MobSpawnSettings.SpawnerData e) -> e.minCount),
+                  ExtraCodecs.POSITIVE_INT.fieldOf("maxCount").forGetter((MobSpawnSettings.SpawnerData e) -> e.maxCount)
                )
                .apply(i, MobSpawnSettings.SpawnerData::new)
          )
          .validate(
-            spawnerData -> spawnerData.minCount > spawnerData.maxCount
+            (MobSpawnSettings.SpawnerData spawnerData) -> spawnerData.minCount > spawnerData.maxCount
                ? DataResult.error(() -> "minCount needs to be smaller or equal to maxCount")
                : DataResult.success(spawnerData)
          );

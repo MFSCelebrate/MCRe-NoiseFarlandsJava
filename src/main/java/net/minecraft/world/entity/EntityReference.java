@@ -125,9 +125,15 @@ public final class EntityReference<StoredEntityType extends UniquelyIdentifyable
       final ValueInput input, final String key, final Level level
    ) {
       Optional<UUID> uuid = input.read(key, UUIDUtil.CODEC);
-      return uuid.isPresent()
-         ? of(uuid.get())
-         : input.getString(key).map(oldName -> OldUsersConverter.convertMobOwnerIfNecessary(level.getServer(), oldName)).map(EntityReference::new).orElse(null);
+      if (uuid.isPresent()) {
+         return of(uuid.get());
+      }
+      @SuppressWarnings("unchecked")
+      EntityReference<StoredEntityType> converted = input.getString(key)
+         .map(oldName -> OldUsersConverter.convertMobOwnerIfNecessary(level.getServer(), oldName))
+         .map(name -> (EntityReference<StoredEntityType>) new EntityReference<>(name))
+         .orElse(null);
+      return converted;
    }
 
    @Override

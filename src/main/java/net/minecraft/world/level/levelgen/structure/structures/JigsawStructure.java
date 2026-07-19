@@ -33,9 +33,7 @@ public final class JigsawStructure extends Structure {
    public static final int MAX_TOTAL_STRUCTURE_RANGE = 128;
    public static final int MIN_DEPTH = 0;
    public static final int MAX_DEPTH = 20;
-   
-   // ===== 修改：RecordCodecBuilder.<JigsawStructure>group → i.group =====
-   public static final MapCodec<JigsawStructure> CODEC = RecordCodecBuilder.mapCodec(
+   public static final MapCodec<JigsawStructure> CODEC = RecordCodecBuilder.<JigsawStructure>mapCodec(
          i -> i.group(
                settingsCodec(i),
                StructureTemplatePool.CODEC.fieldOf("start_pool").forGetter(j -> j.startPool),
@@ -51,8 +49,7 @@ public final class JigsawStructure extends Structure {
             )
             .apply(i, JigsawStructure::new)
       )
-      .validate((JigsawStructure structure) -> JigsawStructure.verifyRange(structure));
-
+      .validate(JigsawStructure::verifyRange);
    private final Holder<StructureTemplatePool> startPool;
    private final Optional<Identifier> startJigsawName;
    private final int maxDepth;
@@ -182,8 +179,6 @@ public final class JigsawStructure extends Structure {
 
    public record MaxDistance(int horizontal, int vertical) {
       private static final Codec<Integer> HORIZONTAL_VALUE_CODEC = Codec.intRange(1, 128);
-      
-      // ===== 修改：RecordCodecBuilder.<JigsawStructure.MaxDistance>group → i.group =====
       private static final Codec<JigsawStructure.MaxDistance> FULL_CODEC = RecordCodecBuilder.create(
          i -> i.group(
                HORIZONTAL_VALUE_CODEC.fieldOf("horizontal").forGetter(JigsawStructure.MaxDistance::horizontal),

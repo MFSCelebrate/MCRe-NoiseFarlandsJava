@@ -56,7 +56,6 @@ public class BitmapProvider implements GlyphProvider {
    }
 
    public record Definition(Identifier file, int height, int ascent, int[][] codepointGrid) implements GlyphProviderDefinition {
-      // ===== 修改：CODEPOINT_GRID_CODEC 的 validate 改为显式 lambda =====
       private static final Codec<int[][]> CODEPOINT_GRID_CODEC = Codec.STRING.listOf().xmap(input -> {
          int lineCount = input.size();
          int[][] result = new int[lineCount][];
@@ -74,9 +73,7 @@ public class BitmapProvider implements GlyphProvider {
          }
 
          return result;
-      }).validate((int[][] grid) -> BitmapProvider.Definition.validateDimensions(grid));
-
-      // ===== 修改：RecordCodecBuilder.<Definition>group → i.group，validate 改为显式 lambda =====
+      }).validate(BitmapProvider.Definition::validateDimensions);
       public static final MapCodec<BitmapProvider.Definition> CODEC = RecordCodecBuilder.mapCodec(
             i -> i.group(
                   Identifier.CODEC.fieldOf("file").forGetter(BitmapProvider.Definition::file),
@@ -86,7 +83,7 @@ public class BitmapProvider implements GlyphProvider {
                )
                .apply(i, BitmapProvider.Definition::new)
          )
-         .validate((BitmapProvider.Definition def) -> BitmapProvider.Definition.validate(def));
+         .validate(BitmapProvider.Definition::validate);
 
       private static DataResult<int[][]> validateDimensions(final int[][] grid) {
          int lineCount = grid.length;

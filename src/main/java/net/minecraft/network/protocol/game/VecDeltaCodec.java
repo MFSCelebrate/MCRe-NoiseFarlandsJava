@@ -40,13 +40,11 @@ public class VecDeltaCodec {
       return new Vec3(x, y, z);
    }
 
-   // ===== 修改：简化 Pattern Matching 分支，移除未定义变量 var14 =====
    public @Nullable VecDelta tryEncode(final PositionPath position) {
       return switch (position) {
          case PositionPath.Linear(Vec3 pos) -> this.tryEncode(pos);
-         case PositionPath.Stepped stepped -> {
-            stepped.endPosition(); // 保留原副作用调用（若存在）
-            List<PositionStep> steps = stepped.steps();
+          case PositionPath.Stepped var6 -> {
+            List<PositionStep> steps = var6.steps();
             yield VecDelta.Stepped.tryEncode(this, steps);
          }
          default -> throw new MatchException(null, null);

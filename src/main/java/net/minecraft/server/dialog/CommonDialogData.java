@@ -19,9 +19,8 @@ public record CommonDialogData(
    List<DialogBody> body,
    List<Input> inputs
 ) {
-   // ===== 修改：group 显式类型，validate lambda 显式参数类型 =====
-   public static final MapCodec<CommonDialogData> MAP_CODEC = RecordCodecBuilder.mapCodec(
-         i -> RecordCodecBuilder.<CommonDialogData>group(
+   public static final MapCodec<CommonDialogData> MAP_CODEC = RecordCodecBuilder.<CommonDialogData>mapCodec(
+         i -> i.group(
                ComponentSerialization.CODEC.fieldOf("title").forGetter(CommonDialogData::title),
                ComponentSerialization.CODEC.optionalFieldOf("external_title").forGetter(CommonDialogData::externalTitle),
                Codec.BOOL.optionalFieldOf("can_close_with_escape", true).forGetter(CommonDialogData::canCloseWithEscape),

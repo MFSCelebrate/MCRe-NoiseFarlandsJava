@@ -130,13 +130,12 @@ public class StateDefinition<O, S extends StateHolder<O, S>> {
       return (S[][])EMPTY_NEIGHBORS;
    }
 
-   // ===== 修改：修复 orElseGet 调用，删除无用的 var0 -> {} =====
    private static <S extends StateHolder<?, S>, T extends Comparable<T>> MapCodec<S> appendPropertyCodec(
       final MapCodec<S> codec, final Supplier<S> defaultSupplier, final String name, final Property<T> property
    ) {
-      return Codec.mapPair(codec, property.valueCodec().fieldOf(name).orElseGet(() -> property.value(defaultSupplier.get())))
+      return Codec.mapPair(codec, property.valueCodec().fieldOf(name).orElseGet(var0 -> {}, () -> property.value(defaultSupplier.get())))
          .xmap(
-            pair -> ((StateHolder)pair.getFirst()).setValue(property, ((Property.Value)pair.getSecond()).value()),
+            pair -> pair.getFirst().setValue(property, pair.getSecond().value()),
             state -> Pair.of(state, property.value(state))
          );
    }

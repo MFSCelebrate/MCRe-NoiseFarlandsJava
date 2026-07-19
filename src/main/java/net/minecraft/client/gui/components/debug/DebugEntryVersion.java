@@ -13,7 +13,7 @@ public class DebugEntryVersion implements DebugScreenEntry {
       final DebugScreenDisplayer displayer, final @Nullable Level level, final @Nullable LevelChunk clientChunk, final @Nullable LevelChunk serverChunk
    ) {
       displayer.addPriorityLine(
-         "Minecraft - MCRe NoiseFarlandsJava "
+         "Minecraft "
             + SharedConstants.getCurrentVersion().name()
             + " ("
             + Minecraft.getInstance().getLaunchedVersion()
