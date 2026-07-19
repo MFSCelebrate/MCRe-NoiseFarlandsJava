@@ -179,8 +179,8 @@ tasks.withType(JavaCompile) {
         '-Xlint:-unchecked',
         '-Xlint:-rawtypes',
         '-Xlint:-deprecation',
-        '-parameters',
-         '--add-modules', 'java.xml.ws.annotation'   // ← 关键行
+        '-parameters'
+     //    '--add-modules', 'java.xml.ws.annotation'   // ← 关键行
     ]
 }
 
@@ -403,6 +403,23 @@ def brokenPatterns = [
 'net/minecraft/world/level/storage/loot/predicates/EnvironmentAttributeCheck.java',
 'net/minecraft/world/level/storage/loot/predicates/LootItemBlockStatePropertyCondition.java',
 'net/minecraft/world/scores/Scoreboard.java',
+'com/mojang/authlib/services/request/AbuseReportRequest.java',
+'com/mojang/authlib/services/request/UserAttributesRequest.java',
+'com/mojang/authlib/services/response/UserAttributesResponse.java',
+'com/mojang/datafixers/FieldFinder.java',
+'com/mojang/datafixers/NamedChoiceFinder.java',
+'com/mojang/datafixers/Typed.java',
+'com/mojang/datafixers/functions/PointFreeRule.java',
+'com/mojang/datafixers/optics/Affine.java',
+'com/mojang/datafixers/optics/Optic.java',
+'com/mojang/datafixers/optics/Procompose.java',
+'com/mojang/datafixers/optics/ReForgetC.java',
+'com/mojang/datafixers/optics/ReForgetEP.java',
+'com/mojang/datafixers/optics/profunctors/TraversalP.java',
+'com/mojang/datafixers/types/templates/TaggedChoice.java',
+'com/mojang/datafixers/util/Either.java',
+'com/mojang/realmsclient/client/FileDownload.java',
+'com/mojang/serialization/Dynamic.java',
 'net/minecraft/client/renderer/blockentity/BeaconRenderer.java'
 ]
 
