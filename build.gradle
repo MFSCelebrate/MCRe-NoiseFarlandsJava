@@ -179,7 +179,8 @@ tasks.withType(JavaCompile) {
         '-Xlint:-unchecked',
         '-Xlint:-rawtypes',
         '-Xlint:-deprecation',
-        '-parameters'
+        '-parameters',
+         '--add-modules', 'java.xml.ws.annotation'   // ← 关键行
     ]
 }
 
