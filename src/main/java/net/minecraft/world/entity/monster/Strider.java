@@ -1,5 +1,7 @@
 package net.minecraft.world.entity.monster;
 
+import com.google.common.collect.Sets;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -51,6 +53,7 @@ import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.DismountHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.equipment.Equippable;
@@ -66,6 +69,7 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -208,228 +212,45 @@ public class Strider extends Animal implements ItemSteerable {
 
     @Override
     public Vec3 getDismountLocationForPassenger(final LivingEntity passenger) {
-        // $VF: Couldn't be decompiled
-        // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
-        // java.lang.OutOfMemoryError: Java heap space
-        //   at org.jetbrains.java.decompiler.util.collections.SFormsFastMapDirect.<init>(SFormsFastMapDirect.java:23)
-        //   at org.jetbrains.java.decompiler.util.collections.SFormsFastMapDirect.<init>(SFormsFastMapDirect.java:28)
-        //   at org.jetbrains.java.decompiler.modules.decompiler.sforms.SFormsConstructor.getFilteredOutMap(SFormsConstructor.java:278)
-        //   at org.jetbrains.java.decompiler.modules.decompiler.sforms.SFormsConstructor.mergeInVarMaps(SFormsConstructor.java:244)
-        //   at org.jetbrains.java.decompiler.modules.decompiler.sforms.SFormsConstructor.ssaStatements(SFormsConstructor.java:108)
-        //   at org.jetbrains.java.decompiler.modules.decompiler.sforms.SFormsConstructor.splitVariables(SFormsConstructor.java:95)
-        //   at org.jetbrains.java.decompiler.modules.decompiler.StackVarsProcessor.simplifyStackVars(StackVarsProcessor.java:54)
-        //   at org.jetbrains.java.decompiler.modules.decompiler.StackVarsProcessor.simplifyStackVars(StackVarsProcessor.java:43)
-        //   at org.jetbrains.java.decompiler.main.rels.MethodProcessor.codeToJava(MethodProcessor.java:317)
-        //
-        // Bytecode:
-        // 000: bipush 5
-        // 001: anewarray 437
-        // 004: dup
-        // 005: bipush 0
-        // 006: aload 0
-        // 007: invokevirtual net/minecraft/world/entity/monster/Strider.getBbWidth ()F
-        // 00a: f2d
-        // 00b: aload 1
-        // 00c: invokevirtual net/minecraft/world/entity/LivingEntity.getBbWidth ()F
-        // 00f: f2d
-        // 010: aload 1
-        // 011: invokevirtual net/minecraft/world/entity/LivingEntity.getYRot ()F
-        // 014: invokestatic net/minecraft/world/entity/monster/Strider.getCollisionHorizontalEscapeVector (DDF)Lnet/minecraft/world/phys/Vec3;
-        // 017: aastore
-        // 018: dup
-        // 019: bipush 1
-        // 01a: aload 0
-        // 01b: invokevirtual net/minecraft/world/entity/monster/Strider.getBbWidth ()F
-        // 01e: f2d
-        // 01f: aload 1
-        // 020: invokevirtual net/minecraft/world/entity/LivingEntity.getBbWidth ()F
-        // 023: f2d
-        // 024: aload 1
-        // 025: invokevirtual net/minecraft/world/entity/LivingEntity.getYRot ()F
-        // 028: ldc_w 22.5
-        // 02b: fsub
-        // 02c: invokestatic net/minecraft/world/entity/monster/Strider.getCollisionHorizontalEscapeVector (DDF)Lnet/minecraft/world/phys/Vec3;
-        // 02f: aastore
-        // 030: dup
-        // 031: bipush 2
-        // 032: aload 0
-        // 033: invokevirtual net/minecraft/world/entity/monster/Strider.getBbWidth ()F
-        // 036: f2d
-        // 037: aload 1
-        // 038: invokevirtual net/minecraft/world/entity/LivingEntity.getBbWidth ()F
-        // 03b: f2d
-        // 03c: aload 1
-        // 03d: invokevirtual net/minecraft/world/entity/LivingEntity.getYRot ()F
-        // 040: ldc_w 22.5
-        // 043: fadd
-        // 044: invokestatic net/minecraft/world/entity/monster/Strider.getCollisionHorizontalEscapeVector (DDF)Lnet/minecraft/world/phys/Vec3;
-        // 047: aastore
-        // 048: dup
-        // 049: bipush 3
-        // 04a: aload 0
-        // 04b: invokevirtual net/minecraft/world/entity/monster/Strider.getBbWidth ()F
-        // 04e: f2d
-        // 04f: aload 1
-        // 050: invokevirtual net/minecraft/world/entity/LivingEntity.getBbWidth ()F
-        // 053: f2d
-        // 054: aload 1
-        // 055: invokevirtual net/minecraft/world/entity/LivingEntity.getYRot ()F
-        // 058: ldc_w 45.0
-        // 05b: fsub
-        // 05c: invokestatic net/minecraft/world/entity/monster/Strider.getCollisionHorizontalEscapeVector (DDF)Lnet/minecraft/world/phys/Vec3;
-        // 05f: aastore
-        // 060: dup
-        // 061: bipush 4
-        // 062: aload 0
-        // 063: invokevirtual net/minecraft/world/entity/monster/Strider.getBbWidth ()F
-        // 066: f2d
-        // 067: aload 1
-        // 068: invokevirtual net/minecraft/world/entity/LivingEntity.getBbWidth ()F
-        // 06b: f2d
-        // 06c: aload 1
-        // 06d: invokevirtual net/minecraft/world/entity/LivingEntity.getYRot ()F
-        // 070: ldc_w 45.0
-        // 073: fadd
-        // 074: invokestatic net/minecraft/world/entity/monster/Strider.getCollisionHorizontalEscapeVector (DDF)Lnet/minecraft/world/phys/Vec3;
-        // 077: aastore
-        // 078: astore 2
-        // 079: invokestatic com/google/common/collect/Sets.newLinkedHashSet ()Ljava/util/LinkedHashSet;
-        // 07c: astore 3
-        // 07d: aload 0
-        // 07e: invokevirtual net/minecraft/world/entity/monster/Strider.getBoundingBox ()Lnet/minecraft/world/phys/AABB;
-        // 081: getfield net/minecraft/world/phys/AABB.maxY D
-        // 084: dstore 4
-        // 086: aload 0
-        // 087: invokevirtual net/minecraft/world/entity/monster/Strider.getBoundingBox ()Lnet/minecraft/world/phys/AABB;
-        // 08a: getfield net/minecraft/world/phys/AABB.minY D
-        // 08d: ldc2_w 0.5
-        // 090: dsub
-        // 091: dstore 6
-        // 093: new net/minecraft/core/BlockPos$MutableBlockPos
-        // 096: dup
-        // 097: invokespecial net/minecraft/core/BlockPos$MutableBlockPos.<init> ()V
-        // 09a: astore 8
-        // 09c: aload 2
-        // 09d: astore 9
-        // 09f: aload 9
-        // 0a1: arraylength
-        // 0a2: istore 10
-        // 0a4: bipush 0
-        // 0a5: istore 11
-        // 0a7: iload 11
-        // 0a9: iload 10
-        // 0ab: if_icmpge 101
-        // 0ae: aload 9
-        // 0b0: iload 11
-        // 0b2: aaload
-        // 0b3: astore 12
-        // 0b5: aload 8
-        // 0b7: aload 0
-        // 0b8: invokevirtual net/minecraft/world/entity/monster/Strider.getX ()D
-        // 0bb: aload 12
-        // 0bd: getfield net/minecraft/world/phys/Vec3.x D
-        // 0c0: dadd
-        // 0c1: dload 4
-        // 0c3: aload 0
-        // 0c4: invokevirtual net/minecraft/world/entity/monster/Strider.getZ ()D
-        // 0c7: aload 12
-        // 0c9: getfield net/minecraft/world/phys/Vec3.z D
-        // 0cc: dadd
-        // 0cd: invokevirtual net/minecraft/core/BlockPos$MutableBlockPos.set (DDD)Lnet/minecraft/core/BlockPos$MutableBlockPos;
-        // 0d0: pop
-        // 0d1: dload 4
-        // 0d3: dstore 13
-        // 0d5: dload 13
-        // 0d7: dload 6
-        // 0d9: dcmpl
-        // 0da: ifle 0fb
-        // 0dd: aload 3
-        // 0de: aload 8
-        // 0e0: invokevirtual net/minecraft/core/BlockPos$MutableBlockPos.immutable ()Lnet/minecraft/core/BlockPos;
-        // 0e3: invokeinterface java/util/Set.add (Ljava/lang/Object;)Z 2
-        // 0e8: pop
-        // 0e9: aload 8
-        // 0eb: getstatic net/minecraft/core/Direction.DOWN Lnet/minecraft/core/Direction;
-        // 0ee: invokevirtual net/minecraft/core/BlockPos$MutableBlockPos.move (Lnet/minecraft/core/Direction;)Lnet/minecraft/core/BlockPos$MutableBlockPos;
-        // 0f1: pop
-        // 0f2: dload 13
-        // 0f4: dconst_1
-        // 0f5: dsub
-        // 0f6: dstore 13
-        // 0f8: goto 0d5
-        // 0fb: iinc 11 1
-        // 0fe: goto 0a7
-        // 101: aload 3
-        // 102: invokeinterface java/util/Set.iterator ()Ljava/util/Iterator; 1
-        // 107: astore 9
-        // 109: aload 9
-        // 10b: invokeinterface java/util/Iterator.hasNext ()Z 1
-        // 110: ifeq 198
-        // 113: aload 9
-        // 115: invokeinterface java/util/Iterator.next ()Ljava/lang/Object; 1
-        // 11a: checkcast net/minecraft/core/BlockPos
-        // 11d: astore 10
-        // 11f: aload 0
-        // 120: invokevirtual net/minecraft/world/entity/monster/Strider.level ()Lnet/minecraft/world/level/Level;
-        // 123: aload 10
-        // 125: invokevirtual net/minecraft/world/level/Level.getFluidState (Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/material/FluidState;
-        // 128: getstatic net/minecraft/tags/FluidTags.LAVA Lnet/minecraft/tags/TagKey;
-        // 12b: invokevirtual net/minecraft/world/level/material/FluidState.is (Lnet/minecraft/tags/TagKey;)Z
-        // 12e: ifeq 134
-        // 131: goto 109
-        // 134: aload 0
-        // 135: invokevirtual net/minecraft/world/entity/monster/Strider.level ()Lnet/minecraft/world/level/Level;
-        // 138: aload 10
-        // 13a: invokevirtual net/minecraft/world/level/Level.getBlockFloorHeight (Lnet/minecraft/core/BlockPos;)D
-        // 13d: dstore 11
-        // 13f: dload 11
-        // 141: invokestatic net/minecraft/world/entity/vehicle/DismountHelper.isBlockFloorValid (D)Z
-        // 144: ifeq 195
-        // 147: aload 10
-        // 149: dload 11
-        // 14b: invokestatic net/minecraft/world/phys/Vec3.upFromBottomCenterOf (Lnet/minecraft/core/Vec3i;D)Lnet/minecraft/world/phys/Vec3;
-        // 14e: astore 13
-        // 150: aload 1
-        // 151: invokevirtual net/minecraft/world/entity/LivingEntity.getDismountPoses ()Lcom/google/common/collect/ImmutableList;
-        // 154: invokevirtual com/google/common/collect/ImmutableList.iterator ()Lcom/google/common/collect/UnmodifiableIterator;
-        // 157: astore 14
-        // 159: aload 14
-        // 15b: invokeinterface java/util/Iterator.hasNext ()Z 1
-        // 160: ifeq 195
-        // 163: aload 14
-        // 165: invokeinterface java/util/Iterator.next ()Ljava/lang/Object; 1
-        // 16a: checkcast net/minecraft/world/entity/Pose
-        // 16d: astore 15
-        // 16f: aload 1
-        // 170: aload 15
-        // 172: invokevirtual net/minecraft/world/entity/LivingEntity.getLocalBoundsForPose (Lnet/minecraft/world/entity/Pose;)Lnet/minecraft/world/phys/AABB;
-        // 175: astore 16
-        // 177: aload 0
-        // 178: invokevirtual net/minecraft/world/entity/monster/Strider.level ()Lnet/minecraft/world/level/Level;
-        // 17b: aload 1
-        // 17c: aload 16
-        // 17e: aload 13
-        // 180: invokevirtual net/minecraft/world/phys/AABB.move (Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/AABB;
-        // 183: invokestatic net/minecraft/world/entity/vehicle/DismountHelper.canDismountTo (Lnet/minecraft/world/level/CollisionGetter;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/phys/AABB;)Z
-        // 186: ifeq 192
-        // 189: aload 1
-        // 18a: aload 15
-        // 18c: invokevirtual net/minecraft/world/entity/LivingEntity.setPose (Lnet/minecraft/world/entity/Pose;)V
-        // 18f: aload 13
-        // 191: areturn
-        // 192: goto 159
-        // 195: goto 109
-        // 198: new net/minecraft/world/phys/Vec3
-        // 19b: dup
-        // 19c: aload 0
-        // 19d: invokevirtual net/minecraft/world/entity/monster/Strider.getX ()D
-        // 1a0: aload 0
-        // 1a1: invokevirtual net/minecraft/world/entity/monster/Strider.getBoundingBox ()Lnet/minecraft/world/phys/AABB;
-        // 1a4: getfield net/minecraft/world/phys/AABB.maxY D
-        // 1a7: aload 0
-        // 1a8: invokevirtual net/minecraft/world/entity/monster/Strider.getZ ()D
-        // 1ab: invokespecial net/minecraft/world/phys/Vec3.<init> (DDD)V
-        // 1ae: areturn
+        Vec3[] directions = new Vec3[]{
+            getCollisionHorizontalEscapeVector(this.getBbWidth(), passenger.getBbWidth(), passenger.getYRot()),
+            getCollisionHorizontalEscapeVector(this.getBbWidth(), passenger.getBbWidth(), passenger.getYRot() - 22.5F),
+            getCollisionHorizontalEscapeVector(this.getBbWidth(), passenger.getBbWidth(), passenger.getYRot() + 22.5F),
+            getCollisionHorizontalEscapeVector(this.getBbWidth(), passenger.getBbWidth(), passenger.getYRot() - 45.0F),
+            getCollisionHorizontalEscapeVector(this.getBbWidth(), passenger.getBbWidth(), passenger.getYRot() + 45.0F)
+        };
+        Set<BlockPos> targetBlockPositions = Sets.newLinkedHashSet();
+        double colliderTop = this.getBoundingBox().maxY;
+        double colliderBottom = this.getBoundingBox().minY - 0.5;
+        BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
+
+        for (Vec3 direction : directions) {
+            blockPos.set(this.getX() + direction.x, colliderTop, this.getZ() + direction.z);
+
+            for (double y = colliderTop; y > colliderBottom; y--) {
+                targetBlockPositions.add(blockPos.immutable());
+                blockPos.move(Direction.DOWN);
+            }
+        }
+
+        for (BlockPos targetBlockPos : targetBlockPositions) {
+            if (!this.level().getFluidState(targetBlockPos).is(FluidTags.LAVA)) {
+                double blockFloorHeight = this.level().getBlockFloorHeight(targetBlockPos);
+                if (DismountHelper.isBlockFloorValid(blockFloorHeight)) {
+                    Vec3 location = Vec3.upFromBottomCenterOf(targetBlockPos, blockFloorHeight);
+
+                    for (Pose dismountPose : passenger.getDismountPoses()) {
+                        AABB poseCollisionBox = passenger.getLocalBoundsForPose(dismountPose);
+                        if (DismountHelper.canDismountTo(this.level(), passenger, poseCollisionBox.move(location))) {
+                            passenger.setPose(dismountPose);
+                            return location;
+                        }
+                    }
+                }
+            }
+        }
+
+        return new Vec3(this.getX(), this.getBoundingBox().maxY, this.getZ());
     }
 
     @Override
@@ -570,6 +391,7 @@ public class Strider extends Animal implements ItemSteerable {
         }
     }
 
+    @Override
     public @Nullable Strider getBreedOffspring(final ServerLevel level, final AgeableMob partner) {
         return EntityTypes.STRIDER.create(level, EntitySpawnReason.BREEDING);
     }
