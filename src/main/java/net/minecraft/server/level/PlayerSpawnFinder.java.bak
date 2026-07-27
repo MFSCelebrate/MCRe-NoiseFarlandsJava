@@ -53,7 +53,7 @@ public class PlayerSpawnFinder {
         }
 
         int radius = Math.max(0, level.getGameRules().get(GameRules.RESPAWN_RADIUS));
-        int distToBorder = Mth.floor(level.getWorldBorder().getDistanceToBorder(spawnSuggestion.getX(), spawnSuggestion.getZ()));
+        int distToBorder = Mth.floor(spawnSuggestion.getX(), spawnSuggestion.getZ()));
         if (distToBorder < radius) {
             radius = distToBorder;
         }
