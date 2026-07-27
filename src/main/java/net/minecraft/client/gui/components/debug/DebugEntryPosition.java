@@ -38,8 +38,8 @@ public class DebugEntryPosition implements DebugScreenEntry {
             ChunkPos chunkPos = ChunkPos.containing(feetPos);
             Direction direction = entity.getDirection();
 
-            // ===== 获取摄像机坐标 =====
-            Camera camera = minecraft.getCamera();
+            // ===== 正确的摄像机获取方式 =====
+            Camera camera = minecraft.gameRenderer.mainCamera();
             double camX = camera.position().x;
             double camY = camera.position().y;
             double camZ = camera.position().z;
@@ -53,7 +53,7 @@ public class DebugEntryPosition implements DebugScreenEntry {
             };
             LongSet chunks = serverOrClientLevel instanceof ServerLevel serverLevel ? serverLevel.getForceLoadedChunks() : LongSets.EMPTY_SET;
 
-            // ===== 新增：计算当前精度 =====
+            // ===== 精度计算 =====
             long maxAbs = (long)Math.max(
                 Math.abs(entity.getX()),
                 Math.max(Math.abs(entity.getY()), Math.abs(entity.getZ()))
@@ -63,7 +63,6 @@ public class DebugEntryPosition implements DebugScreenEntry {
             double floatPrecision = Math.pow(2.0, (double)(shift - 24));
             String precisionString = "Current precision: §" + getColorCodeFromPrecision(doublePrecision) + doublePrecision
                                    + "§r (float: §" + getColorCodeFromPrecision(floatPrecision) + floatPrecision + "§r)";
-            // ===== 新增结束 =====
 
             displayer.addToGroup(
                 GROUP,
@@ -75,7 +74,7 @@ public class DebugEntryPosition implements DebugScreenEntry {
                         entity.getY(),
                         entity.getZ()
                     ),
-                    // ===== 新增：摄像机坐标行（放在 XYZ 下面，Chunk 上面） =====
+                    // ===== 新增摄像机坐标行 =====
                     String.format(
                         Locale.ROOT,
                         "XYZ(Camera): %.15f / %.10f / %.15f",
@@ -110,14 +109,13 @@ public class DebugEntryPosition implements DebugScreenEntry {
         }
     }
 
-    // ===== 私有辅助方法 =====
     private static char getColorCodeFromPrecision(double precision) {
         if (precision <= 0.03125) {
-            return 'a';   // 绿色（高精度）
+            return 'a';
         } else if (precision > 0.25) {
-            return 'c';   // 红色（低精度）
+            return 'c';
         } else {
-            return 'e';   // 黄色（中等精度）
+            return 'e';
         }
     }
 }
