@@ -253,7 +253,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
 
                 return deflection;
             }
-        } else if (this.shouldBounceOnWorldBorder() && hitResult instanceof BlockHitResult blockHit && blockHit.isWorldBorderHit()) {
+        } else if (hitResult instanceof BlockHitResult blockHit) {
             ProjectileDeflection deflection = ProjectileDeflection.REVERSE;
             if (this.deflect(deflection, null, this.owner, false)) {
                 this.setDeltaMovement(this.getDeltaMovement().scale(0.2));
@@ -265,9 +265,8 @@ public abstract class Projectile extends Entity implements TraceableEntity {
         return ProjectileDeflection.NONE;
     }
 
-    protected boolean shouldBounceOnWorldBorder() {
-        return false;
-    }
+    
+    
 
     public boolean deflect(
         final ProjectileDeflection deflection,

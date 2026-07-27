@@ -48,11 +48,10 @@ public class GoatAi {
     private static final UniformInt TIME_BETWEEN_RAMS = UniformInt.of(600, 6000);
     private static final UniformInt TIME_BETWEEN_RAMS_SCREAMER = UniformInt.of(100, 300);
     private static final TargetingConditions RAM_TARGET_CONDITIONS = TargetingConditions.forCombat()
-        .selector(
-            (target, level) -> !target.is(EntityTypes.GOAT)
-                && (level.getGameRules().get(GameRules.MOB_GRIEFING) || !target.is(EntityTypes.ARMOR_STAND))
-                && level.getWorldBorder().isWithinBounds(target.getBoundingBox())
-        );
+            .selector(
+                    (target, level) -> !target.is(EntityTypes.GOAT)
+                            && (level.getGameRules().get(GameRules.MOB_GRIEFING) || !target.is(EntityTypes.ARMOR_STAND))
+            );
     private static final float SPEED_MULTIPLIER_WHEN_RAMMING = 3.0F;
     public static final int RAM_MIN_DISTANCE = 4;
     public static final float ADULT_RAM_KNOCKBACK_FORCE = 2.5F;
@@ -69,101 +68,101 @@ public class GoatAi {
 
     private static ActivityData<Goat> initCoreActivity() {
         return ActivityData.<Goat>create(
-            Activity.CORE,
-            0,
-            ImmutableList.of(
-                new Swim<>(0.8F),
-                new AnimalPanic<Goat>(2.0F),
-                new LookAtTargetSink(45, 90),
-                new MoveToTargetSink(),
-                new CountDownCooldownTicks(MemoryModuleType.TEMPTATION_COOLDOWN_TICKS),
-                new CountDownCooldownTicks(MemoryModuleType.LONG_JUMP_COOLDOWN_TICKS),
-                new CountDownCooldownTicks(MemoryModuleType.RAM_COOLDOWN_TICKS)
-            )
+                Activity.CORE,
+                0,
+                ImmutableList.of(
+                        new Swim<>(0.8F),
+                        new AnimalPanic<Goat>(2.0F),
+                        new LookAtTargetSink(45, 90),
+                        new MoveToTargetSink(),
+                        new CountDownCooldownTicks(MemoryModuleType.TEMPTATION_COOLDOWN_TICKS),
+                        new CountDownCooldownTicks(MemoryModuleType.LONG_JUMP_COOLDOWN_TICKS),
+                        new CountDownCooldownTicks(MemoryModuleType.RAM_COOLDOWN_TICKS)
+                )
         );
     }
 
     private static ActivityData<Goat> initIdleActivity() {
         return ActivityData.<Goat>create(
-            Activity.IDLE,
-            ImmutableList.of(
-                Pair.of(0, SetEntityLookTargetSometimes.create(EntityTypes.PLAYER, 6.0F, UniformInt.of(30, 60))),
-                Pair.of(0, new AnimalMakeLove(EntityTypes.GOAT)),
-                Pair.of(1, new FollowTemptation(s -> 1.25F)),
-                Pair.of(2, BabyFollowAdult.create(ADULT_FOLLOW_RANGE, 1.25F)),
-                Pair.of(
-                    3,
-                    new RunOne<>(
-                        ImmutableList.of(
-                            Pair.of(RandomStroll.stroll(1.0F), 2), Pair.of(SetWalkTargetFromLookTarget.create(1.0F, 3), 2), Pair.of(new DoNothing(30, 60), 1)
+                Activity.IDLE,
+                ImmutableList.of(
+                        Pair.of(0, SetEntityLookTargetSometimes.create(EntityTypes.PLAYER, 6.0F, UniformInt.of(30, 60))),
+                        Pair.of(0, new AnimalMakeLove(EntityTypes.GOAT)),
+                        Pair.of(1, new FollowTemptation(s -> 1.25F)),
+                        Pair.of(2, BabyFollowAdult.create(ADULT_FOLLOW_RANGE, 1.25F)),
+                        Pair.of(
+                                3,
+                                new RunOne<>(
+                                ImmutableList.of(
+                                        Pair.of(RandomStroll.stroll(1.0F), 2), Pair.of(SetWalkTargetFromLookTarget.create(1.0F, 3), 2), Pair.of(new DoNothing(30, 60), 1)
+                                )
+                                )
                         )
-                    )
+                ),
+                ImmutableSet.of(
+                        Pair.of(MemoryModuleType.RAM_TARGET, MemoryStatus.VALUE_ABSENT), Pair.of(MemoryModuleType.LONG_JUMP_MID_JUMP, MemoryStatus.VALUE_ABSENT)
                 )
-            ),
-            ImmutableSet.of(
-                Pair.of(MemoryModuleType.RAM_TARGET, MemoryStatus.VALUE_ABSENT), Pair.of(MemoryModuleType.LONG_JUMP_MID_JUMP, MemoryStatus.VALUE_ABSENT)
-            )
         );
     }
 
     private static ActivityData<Goat> initLongJumpActivity() {
         return ActivityData.<Goat>create(
-            Activity.LONG_JUMP,
-            ImmutableList.of(
-                Pair.of(0, new LongJumpMidJump(TIME_BETWEEN_LONG_JUMPS, SoundEvents.GOAT_STEP)),
-                Pair.of(
-                    1,
-                    new LongJumpToRandomPos<>(
-                        TIME_BETWEEN_LONG_JUMPS,
-                        5,
-                        5,
-                        3.5714288F,
-                        goat -> goat.isScreamingGoat() ? SoundEvents.GOAT_SCREAMING_LONG_JUMP : SoundEvents.GOAT_LONG_JUMP
-                    )
+                Activity.LONG_JUMP,
+                ImmutableList.of(
+                        Pair.of(0, new LongJumpMidJump(TIME_BETWEEN_LONG_JUMPS, SoundEvents.GOAT_STEP)),
+                        Pair.of(
+                                1,
+                                new LongJumpToRandomPos<>(
+                                TIME_BETWEEN_LONG_JUMPS,
+                                5,
+                                5,
+                                3.5714288F,
+                                goat -> goat.isScreamingGoat() ? SoundEvents.GOAT_SCREAMING_LONG_JUMP : SoundEvents.GOAT_LONG_JUMP
+                                )
+                        )
+                ),
+                ImmutableSet.of(
+                        Pair.of(MemoryModuleType.TEMPTING_PLAYER, MemoryStatus.VALUE_ABSENT),
+                        Pair.of(MemoryModuleType.BREED_TARGET, MemoryStatus.VALUE_ABSENT),
+                        Pair.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT),
+                        Pair.of(MemoryModuleType.LONG_JUMP_COOLDOWN_TICKS, MemoryStatus.VALUE_ABSENT)
                 )
-            ),
-            ImmutableSet.of(
-                Pair.of(MemoryModuleType.TEMPTING_PLAYER, MemoryStatus.VALUE_ABSENT),
-                Pair.of(MemoryModuleType.BREED_TARGET, MemoryStatus.VALUE_ABSENT),
-                Pair.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT),
-                Pair.of(MemoryModuleType.LONG_JUMP_COOLDOWN_TICKS, MemoryStatus.VALUE_ABSENT)
-            )
         );
     }
 
     private static ActivityData<Goat> initRamActivity() {
         return ActivityData.<Goat>create(
-            Activity.RAM,
-            ImmutableList.of(
-                Pair.of(
-                    0,
-                    new RamTarget(
-                        goat -> goat.isScreamingGoat() ? TIME_BETWEEN_RAMS_SCREAMER : TIME_BETWEEN_RAMS,
-                        RAM_TARGET_CONDITIONS,
-                        3.0F,
-                        goat -> goat.isBaby() ? 1.0 : 2.5,
-                        goat -> goat.isScreamingGoat() ? SoundEvents.GOAT_SCREAMING_RAM_IMPACT : SoundEvents.GOAT_RAM_IMPACT,
-                        var0 -> SoundEvents.GOAT_HORN_BREAK
-                    )
+                Activity.RAM,
+                ImmutableList.of(
+                        Pair.of(
+                                0,
+                                new RamTarget(
+                                goat -> goat.isScreamingGoat() ? TIME_BETWEEN_RAMS_SCREAMER : TIME_BETWEEN_RAMS,
+                                RAM_TARGET_CONDITIONS,
+                                3.0F,
+                                goat -> goat.isBaby() ? 1.0 : 2.5,
+                                goat -> goat.isScreamingGoat() ? SoundEvents.GOAT_SCREAMING_RAM_IMPACT : SoundEvents.GOAT_RAM_IMPACT,
+                                var0 -> SoundEvents.GOAT_HORN_BREAK
+                                )
+                        ),
+                        Pair.of(
+                                1,
+                                new PrepareRamNearestTarget<>(
+                                mob -> mob.isScreamingGoat() ? TIME_BETWEEN_RAMS_SCREAMER.minInclusive() : TIME_BETWEEN_RAMS.minInclusive(),
+                                4,
+                                7,
+                                1.25F,
+                                RAM_TARGET_CONDITIONS,
+                                20,
+                                goat -> goat.isScreamingGoat() ? SoundEvents.GOAT_SCREAMING_PREPARE_RAM : SoundEvents.GOAT_PREPARE_RAM
+                                )
+                        )
                 ),
-                Pair.of(
-                    1,
-                    new PrepareRamNearestTarget<>(
-                        mob -> mob.isScreamingGoat() ? TIME_BETWEEN_RAMS_SCREAMER.minInclusive() : TIME_BETWEEN_RAMS.minInclusive(),
-                        4,
-                        7,
-                        1.25F,
-                        RAM_TARGET_CONDITIONS,
-                        20,
-                        goat -> goat.isScreamingGoat() ? SoundEvents.GOAT_SCREAMING_PREPARE_RAM : SoundEvents.GOAT_PREPARE_RAM
-                    )
+                ImmutableSet.of(
+                        Pair.of(MemoryModuleType.TEMPTING_PLAYER, MemoryStatus.VALUE_ABSENT),
+                        Pair.of(MemoryModuleType.BREED_TARGET, MemoryStatus.VALUE_ABSENT),
+                        Pair.of(MemoryModuleType.RAM_COOLDOWN_TICKS, MemoryStatus.VALUE_ABSENT)
                 )
-            ),
-            ImmutableSet.of(
-                Pair.of(MemoryModuleType.TEMPTING_PLAYER, MemoryStatus.VALUE_ABSENT),
-                Pair.of(MemoryModuleType.BREED_TARGET, MemoryStatus.VALUE_ABSENT),
-                Pair.of(MemoryModuleType.RAM_COOLDOWN_TICKS, MemoryStatus.VALUE_ABSENT)
-            )
         );
     }
 

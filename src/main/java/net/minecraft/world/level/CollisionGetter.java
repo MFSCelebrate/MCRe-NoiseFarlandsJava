@@ -8,7 +8,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -19,7 +18,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.Nullable;
 
 public interface CollisionGetter extends BlockGetter {
-    WorldBorder getWorldBorder();
 
     @Nullable BlockGetter getChunkForCollisions(int chunkX, int chunkZ);
 
@@ -105,22 +103,8 @@ public interface CollisionGetter extends BlockGetter {
         return () -> new BlockCollisions<>(this, source, box, false, (p, shape) -> shape);
     }
 
-    private @Nullable VoxelShape borderCollision(final Entity source, final AABB box) {
-        WorldBorder worldBorder = this.getWorldBorder();
-        return worldBorder.isInsideCloseToBorder(source, box) ? worldBorder.getCollisionShape() : null;
-    }
-
     default BlockHitResult clipIncludingBorder(final ClipContext c) {
-        BlockHitResult hitResult = this.clip(c);
-        WorldBorder worldBorder = this.getWorldBorder();
-        if (worldBorder.isWithinBounds(c.getFrom()) && !worldBorder.isWithinBounds(hitResult.getLocation())) {
-            Vec3 delta = hitResult.getLocation().subtract(c.getFrom());
-            Direction deltaDirection = Direction.getApproximateNearest(delta.x, delta.y, delta.z);
-            Vec3 hit = worldBorder.clampVec3ToBound(hitResult.getLocation());
-            return new BlockHitResult(hit, deltaDirection, BlockPos.containing(hit), false, true);
-        } else {
-            return hitResult;
-        }
+        return hitResult;
     }
 
     default boolean collidesWithSuffocatingBlock(final @Nullable Entity source, final AABB box) {
@@ -161,7 +145,6 @@ public interface CollisionGetter extends BlockGetter {
 
         AABB searchArea = allowedCenters.bounds().inflate(sizeX, sizeY, sizeZ);
         VoxelShape expandedCollisions = StreamSupport.stream(this.getBlockCollisions(source, searchArea).spliterator(), false)
-            .filter(shape -> this.getWorldBorder() == null || this.getWorldBorder().isWithinBounds(shape.bounds()))
             .flatMap(shape -> shape.toAabbs().stream())
             .map(aabb -> aabb.inflate(sizeX / 2.0, sizeY / 2.0, sizeZ / 2.0))
             .map(Shapes::create)

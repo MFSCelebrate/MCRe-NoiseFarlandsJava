@@ -46,7 +46,7 @@ public class DismountHelper {
             }
         }
 
-        return level.getWorldBorder().isWithinBounds(box);
+        return true;
     }
 
     public static boolean canDismountTo(final CollisionGetter level, final Vec3 location, final LivingEntity passenger, final Pose dismountPose) {
@@ -103,8 +103,8 @@ public class DismountHelper {
         }
 
         if (type != EntityTypes.PLAYER
-            || !level.getBlockState(blockPos).is(BlockTags.INVALID_SPAWN_INSIDE) && !level.getBlockState(blockPos.above()).is(BlockTags.INVALID_SPAWN_INSIDE)) {
-            return !level.getWorldBorder().isWithinBounds(aabb) ? null : position;
+            || !level.getBlockState(blockPos.above()).is(BlockTags.INVALID_SPAWN_INSIDE)) {
+            return true;
         } else {
             return null;
         }

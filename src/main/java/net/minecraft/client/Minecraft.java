@@ -1706,9 +1706,6 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
                             case ENTITY:
                                 EntityHitResult entityHit = (EntityHitResult)this.hitResult;
                                 Entity entity = entityHit.getEntity();
-                                if (!this.level.getWorldBorder().isWithinBounds(entity.blockPosition())) {
-                                    return;
-                                }
 
                                 if (this.player.isWithinEntityInteractionRange(entity, 0.0)
                                     && this.gameMode.interact(this.player, entity, entityHit, hand) instanceof InteractionResult.Success success) {

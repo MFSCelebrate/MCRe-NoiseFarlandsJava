@@ -50,10 +50,9 @@ public class NautilusAi {
     private static final double MAX_CHARGE_DISTANCE = 12.0;
     private static final double MAX_TARGET_DETECTION_DISTANCE = 11.0;
     protected static final TargetingConditions ATTACK_TARGET_CONDITIONS = TargetingConditions.forCombat()
-        .selector(
-            (target, level) -> (level.getGameRules().get(GameRules.MOB_GRIEFING) || !target.is(EntityTypes.ARMOR_STAND))
-                && level.getWorldBorder().isWithinBounds(target.getBoundingBox())
-        );
+            .selector(
+                    (target, level) -> (level.getGameRules().get(GameRules.MOB_GRIEFING) || !target.is(EntityTypes.ARMOR_STAND))
+            );
 
     protected static void initMemories(final AbstractNautilus body, final RandomSource random) {
         body.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET_COOLDOWN, TIME_BETWEEN_NON_PLAYER_ATTACKS.sample(random));
@@ -65,57 +64,60 @@ public class NautilusAi {
 
     private static ActivityData<Nautilus> initCoreActivity() {
         return ActivityData.<Nautilus>create(
-            Activity.CORE,
-            0,
-            ImmutableList.of(
-                new AnimalPanic<>(1.6F),
-                new LookAtTargetSink(45, 90),
-                new MoveToTargetSink(),
-                new CountDownCooldownTicks(MemoryModuleType.TEMPTATION_COOLDOWN_TICKS),
-                new CountDownCooldownTicks(MemoryModuleType.CHARGE_COOLDOWN_TICKS),
-                new CountDownCooldownTicks(MemoryModuleType.ATTACK_TARGET_COOLDOWN)
-            )
+                Activity.CORE,
+                0,
+                ImmutableList.of(
+                        new AnimalPanic<>(1.6F),
+                        new LookAtTargetSink(45, 90),
+                        new MoveToTargetSink(),
+                        new CountDownCooldownTicks(MemoryModuleType.TEMPTATION_COOLDOWN_TICKS),
+                        new CountDownCooldownTicks(MemoryModuleType.CHARGE_COOLDOWN_TICKS),
+                        new CountDownCooldownTicks(MemoryModuleType.ATTACK_TARGET_COOLDOWN)
+                )
         );
     }
 
     private static ActivityData<Nautilus> initIdleActivity() {
         return ActivityData.<Nautilus>create(
-            Activity.IDLE,
-            ImmutableList.of(
-                Pair.of(1, new AnimalMakeLove(EntityTypes.NAUTILUS, 0.4F, 2)),
-                Pair.of(2, new FollowTemptation(mob -> 1.3F, mob -> mob.isBaby() ? 2.5 : 3.5)),
-                Pair.of(3, StartAttacking.create(NautilusAi::findNearestValidAttackTarget)),
-                Pair.of(
-                    4,
-                    new GateBehavior<>(
-                        ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT),
-                        ImmutableSet.of(),
-                        GateBehavior.OrderPolicy.ORDERED,
-                        GateBehavior.RunningPolicy.TRY_ALL,
-                        ImmutableList.of(Pair.of(RandomStroll.swim(1.0F), 2), Pair.of(SetWalkTargetFromLookTarget.create(1.0F, 3), 3))
-                    )
+                Activity.IDLE,
+                ImmutableList.of(
+                        Pair.of(1, new AnimalMakeLove(EntityTypes.NAUTILUS, 0.4F, 2)),
+                        Pair.of(2, new FollowTemptation(mob -> 1.3F, mob -> mob.isBaby() ? 2.5 : 3.5)),
+                        Pair.of(3, StartAttacking.create(NautilusAi::findNearestValidAttackTarget)),
+                        Pair.of(
+                                4,
+                                new GateBehavior<>(
+                                ImmutableMap.of(MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT),
+                                ImmutableSet.of(),
+                                GateBehavior.OrderPolicy.ORDERED,
+                                GateBehavior.RunningPolicy.TRY_ALL,
+                                ImmutableList.of(Pair.of(RandomStroll.swim(1.0F), 2), Pair.of(SetWalkTargetFromLookTarget.create(1.0F, 3), 3))
+                                )
+                        )
                 )
-            )
         );
     }
 
     private static ActivityData<Nautilus> initFightActivity() {
         return ActivityData.create(
-            Activity.FIGHT,
-            ImmutableList.of(Pair.of(0, new ChargeAttack(80, ATTACK_TARGET_CONDITIONS, 0.6F, 2.0F, 12.0, 11.0, SoundEvents.NAUTILUS_DASH))),
-            ImmutableSet.of(
-                Pair.of(MemoryModuleType.ATTACK_TARGET, MemoryStatus.VALUE_PRESENT),
-                Pair.of(MemoryModuleType.TEMPTING_PLAYER, MemoryStatus.VALUE_ABSENT),
-                Pair.of(MemoryModuleType.BREED_TARGET, MemoryStatus.VALUE_ABSENT),
-                Pair.of(MemoryModuleType.CHARGE_COOLDOWN_TICKS, MemoryStatus.VALUE_ABSENT)
-            )
+                Activity.FIGHT,
+                ImmutableList.of(Pair.of(0, new ChargeAttack(80, ATTACK_TARGET_CONDITIONS, 0.6F, 2.0F, 12.0, 11.0, SoundEvents.NAUTILUS_DASH))),
+                ImmutableSet.of(
+                        Pair.of(MemoryModuleType.ATTACK_TARGET, MemoryStatus.VALUE_PRESENT),
+                        Pair.of(MemoryModuleType.TEMPTING_PLAYER, MemoryStatus.VALUE_ABSENT),
+                        Pair.of(MemoryModuleType.BREED_TARGET, MemoryStatus.VALUE_ABSENT),
+                        Pair.of(MemoryModuleType.CHARGE_COOLDOWN_TICKS, MemoryStatus.VALUE_ABSENT)
+                )
         );
     }
 
-    protected static Optional<? extends LivingEntity> findNearestValidAttackTarget(final ServerLevel level, final AbstractNautilus body) {
+    protected static Optional<
+                    ? extends
+                            LivingEntity> findNearestValidAttackTarget(final ServerLevel level, final AbstractNautilus body) {
         if (!BehaviorUtils.isBreeding(body) && body.isInWater() && !body.isBaby() && !body.isTame()) {
-            Optional<LivingEntity> angryAt = BehaviorUtils.getLivingEntityFromUUIDMemory(body, MemoryModuleType.ANGRY_AT)
-                .filter(entity -> entity.isInWater() && Sensor.isEntityAttackableIgnoringLineOfSight(level, body, entity));
+            Optional<
+                    LivingEntity> angryAt = BehaviorUtils.getLivingEntityFromUUIDMemory(body, MemoryModuleType.ANGRY_AT)
+                    .filter(entity -> entity.isInWater() && Sensor.isEntityAttackableIgnoringLineOfSight(level, body, entity));
             if (angryAt.isPresent()) {
                 return angryAt;
             }
@@ -127,11 +129,11 @@ public class NautilusAi {
             RandomSource random = level.getRandom();
             body.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET_COOLDOWN, TIME_BETWEEN_NON_PLAYER_ATTACKS.sample(random));
             return random.nextFloat() < 0.5F
-                ? Optional.empty()
-                : body.getBrain()
-                    .getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES)
-                    .orElse(NearestVisibleLivingEntities.empty())
-                    .findClosest(NautilusAi::isHostileTarget);
+                    ? Optional.empty()
+                    : body.getBrain()
+                            .getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES)
+                            .orElse(NearestVisibleLivingEntities.empty())
+                            .findClosest(NautilusAi::isHostileTarget);
         } else {
             return Optional.empty();
         }

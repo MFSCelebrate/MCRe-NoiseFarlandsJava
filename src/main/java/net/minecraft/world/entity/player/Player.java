@@ -132,13 +132,17 @@ public abstract class Player extends Avatar implements ContainerUser {
     public static final int CRAFTING_SLOT_OFFSET = 500;
     public static final float DEFAULT_BLOCK_INTERACTION_RANGE = 4.5F;
     public static final float DEFAULT_ENTITY_INTERACTION_RANGE = 3.0F;
-    private static final EntityDataAccessor<Float> DATA_PLAYER_ABSORPTION_ID = SynchedEntityData.defineId(Player.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Integer> DATA_SCORE_ID = SynchedEntityData.defineId(Player.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<OptionalInt> DATA_SHOULDER_PARROT_LEFT = SynchedEntityData.defineId(
-        Player.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT
+    private static final EntityDataAccessor<
+            Float> DATA_PLAYER_ABSORPTION_ID = SynchedEntityData.defineId(Player.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<
+            Integer> DATA_SCORE_ID = SynchedEntityData.defineId(Player.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<
+            OptionalInt> DATA_SHOULDER_PARROT_LEFT = SynchedEntityData.defineId(
+            Player.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT
     );
-    private static final EntityDataAccessor<OptionalInt> DATA_SHOULDER_PARROT_RIGHT = SynchedEntityData.defineId(
-        Player.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT
+    private static final EntityDataAccessor<
+            OptionalInt> DATA_SHOULDER_PARROT_RIGHT = SynchedEntityData.defineId(
+            Player.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT
     );
     private static final short DEFAULT_SLEEP_TIMER = 0;
     private static final float DEFAULT_EXPERIENCE_PROGRESS = 0.0F;
@@ -205,18 +209,18 @@ public abstract class Player extends Avatar implements ContainerUser {
 
     public static AttributeSupplier.Builder createAttributes() {
         return LivingEntity.createLivingAttributes()
-            .add(Attributes.ATTACK_DAMAGE, 1.0)
-            .add(Attributes.MOVEMENT_SPEED, 0.1F)
-            .add(Attributes.ATTACK_SPEED)
-            .add(Attributes.LUCK)
-            .add(Attributes.BLOCK_INTERACTION_RANGE)
-            .add(Attributes.BLOCK_BREAK_SPEED)
-            .add(Attributes.SUBMERGED_MINING_SPEED)
-            .add(Attributes.SNEAKING_SPEED)
-            .add(Attributes.MINING_EFFICIENCY)
-            .add(Attributes.SWEEPING_DAMAGE_RATIO)
-            .add(Attributes.WAYPOINT_TRANSMIT_RANGE, 6.0E7)
-            .add(Attributes.WAYPOINT_RECEIVE_RANGE, 6.0E7);
+                .add(Attributes.ATTACK_DAMAGE, 1.0)
+                .add(Attributes.MOVEMENT_SPEED, 0.1F)
+                .add(Attributes.ATTACK_SPEED)
+                .add(Attributes.LUCK)
+                .add(Attributes.BLOCK_INTERACTION_RANGE)
+                .add(Attributes.BLOCK_BREAK_SPEED)
+                .add(Attributes.SUBMERGED_MINING_SPEED)
+                .add(Attributes.SNEAKING_SPEED)
+                .add(Attributes.MINING_EFFICIENCY)
+                .add(Attributes.SWEEPING_DAMAGE_RATIO)
+                .add(Attributes.WAYPOINT_TRANSMIT_RANGE, 6.0E7)
+                .add(Attributes.WAYPOINT_RECEIVE_RANGE, 6.0E7);
     }
 
     @Override
@@ -246,7 +250,7 @@ public abstract class Player extends Avatar implements ContainerUser {
             }
 
             if (!this.level().isClientSide()
-                && !this.level().environmentAttributes().getValue(EnvironmentAttributes.BED_RULE, this.position()).canSleep(this.level())) {
+                    && !this.level().environmentAttributes().getValue(EnvironmentAttributes.BED_RULE, this.position()).canSleep(this.level())) {
                 this.stopSleepInBed(false, true);
             }
         } else if (this.sleepCounter > 0) {
@@ -258,9 +262,8 @@ public abstract class Player extends Avatar implements ContainerUser {
 
         this.updateIsUnderwater();
         super.tick();
-        int maxPositionOffset = 29999999;
-        double nx = Mth.clamp(this.getX(), -2.9999999E7, 2.9999999E7);
-        double nz = Mth.clamp(this.getZ(), -2.9999999E7, 2.9999999E7);
+        double nx = this.getX();
+        double nz = this.getZ();
         if (nx != this.getX() || nz != this.getZ()) {
             this.setPos(nx, this.getY(), nz);
         }
@@ -426,8 +429,7 @@ public abstract class Player extends Avatar implements ContainerUser {
         this.containerMenu = this.inventoryMenu;
     }
 
-    protected void doCloseContainer() {
-    }
+    protected void doCloseContainer() {}
 
     @Override
     public void rideTick() {
@@ -453,7 +455,7 @@ public abstract class Player extends Avatar implements ContainerUser {
         super.aiStep();
         this.updateSwingTime();
         this.yHeadRot = this.getYRot();
-        this.setSpeed((float)this.getAttributeValue(Attributes.MOVEMENT_SPEED));
+        this.setSpeed((float) this.getAttributeValue(Attributes.MOVEMENT_SPEED));
         if (this.getHealth() > 0.0F && !this.isSpectator()) {
             AABB pickupArea;
             if (this.isPassenger() && !this.getVehicle().isRemoved()) {
@@ -481,14 +483,11 @@ public abstract class Player extends Avatar implements ContainerUser {
         this.handleShoulderEntities();
     }
 
-    protected void tickRegeneration() {
-    }
+    protected void tickRegeneration() {}
 
-    public void handleShoulderEntities() {
-    }
+    public void handleShoulderEntities() {}
 
-    protected void removeEntitiesOnShoulder() {
-    }
+    protected void removeEntitiesOnShoulder() {}
 
     private void touch(final Entity entity) {
         entity.playerTouch(this);
@@ -532,9 +531,9 @@ public abstract class Player extends Avatar implements ContainerUser {
 
         if (source != null) {
             this.setDeltaMovement(
-                -Mth.cos((this.getHurtDir() + this.getYRot()) * (float) (Math.PI / 180.0)) * 0.1F,
-                0.1F,
-                -Mth.sin((this.getHurtDir() + this.getYRot()) * (float) (Math.PI / 180.0)) * 0.1F
+                    -Mth.cos((this.getHurtDir() + this.getYRot()) * (float) (Math.PI / 180.0)) * 0.1F,
+                    0.1F,
+                    -Mth.sin((this.getHurtDir() + this.getYRot()) * (float) (Math.PI / 180.0)) * 0.1F
             );
         } else {
             this.setDeltaMovement(0.0, 0.1, 0.0);
@@ -576,8 +575,7 @@ public abstract class Player extends Avatar implements ContainerUser {
         return SoundEvents.PLAYER_DEATH;
     }
 
-    public void handleCreativeModeItemDrop(final ItemStack stack) {
-    }
+    public void handleCreativeModeItemDrop(final ItemStack stack) {}
 
     public @Nullable ItemEntity drop(final ItemStack itemStack, final boolean thrownFromHand) {
         return this.drop(itemStack, false, thrownFromHand);
@@ -586,7 +584,7 @@ public abstract class Player extends Avatar implements ContainerUser {
     public float getDestroySpeed(final BlockState state) {
         float speed = this.inventory.getSelectedItem().getDestroySpeed(state);
         if (speed > 1.0F) {
-            speed += (float)this.getAttributeValue(Attributes.MINING_EFFICIENCY);
+            speed += (float) this.getAttributeValue(Attributes.MINING_EFFICIENCY);
         }
 
         if (MobEffectUtil.hasDigSpeed(this)) {
@@ -603,9 +601,9 @@ public abstract class Player extends Avatar implements ContainerUser {
             speed *= scale;
         }
 
-        speed *= (float)this.getAttributeValue(Attributes.BLOCK_BREAK_SPEED);
+        speed *= (float) this.getAttributeValue(Attributes.BLOCK_BREAK_SPEED);
         if (this.isEyeInFluid(FluidTags.WATER)) {
-            speed *= (float)this.getAttribute(Attributes.SUBMERGED_MINING_SPEED).getValue();
+            speed *= (float) this.getAttribute(Attributes.SUBMERGED_MINING_SPEED).getValue();
         }
 
         if (!this.onGround()) {
@@ -625,7 +623,7 @@ public abstract class Player extends Avatar implements ContainerUser {
         this.setUUID(this.gameProfile.id());
         this.inventory.load(input.listOrEmpty("Inventory", ItemStackWithSlot.CODEC));
         this.inventory.setSelectedSlot(input.getIntOr("SelectedItemSlot", 0));
-        this.sleepCounter = input.getShortOr("SleepTimer", (short)0);
+        this.sleepCounter = input.getShortOr("SleepTimer", (short) 0);
         this.experienceProgress = input.getFloatOr("XpP", 0.0F);
         this.experienceLevel = input.getIntOr("XpLevel", 0);
         this.totalExperience = input.getIntOr("XpTotal", 0);
@@ -648,7 +646,7 @@ public abstract class Player extends Avatar implements ContainerUser {
         NbtUtils.addCurrentDataVersion(output);
         this.inventory.save(output.list("Inventory", ItemStackWithSlot.CODEC));
         output.putInt("SelectedItemSlot", this.inventory.getSelectedSlot());
-        output.putShort("SleepTimer", (short)this.sleepCounter);
+        output.putShort("SleepTimer", (short) this.sleepCounter);
         output.putFloat("XpP", this.experienceProgress);
         output.putInt("XpLevel", this.experienceLevel);
         output.putInt("XpTotal", this.totalExperience);
@@ -774,52 +772,39 @@ public abstract class Player extends Avatar implements ContainerUser {
         return false;
     }
 
-    public void openTextEdit(final SignBlockEntity sign, final boolean isFrontText) {
-    }
+    public void openTextEdit(final SignBlockEntity sign, final boolean isFrontText) {}
 
-    public void openMinecartCommandBlock(final MinecartCommandBlock commandBlock) {
-    }
+    public void openMinecartCommandBlock(final MinecartCommandBlock commandBlock) {}
 
-    public void openCommandBlock(final CommandBlockEntity commandBlock) {
-    }
+    public void openCommandBlock(final CommandBlockEntity commandBlock) {}
 
-    public void openStructureBlock(final StructureBlockEntity structureBlock) {
-    }
+    public void openStructureBlock(final StructureBlockEntity structureBlock) {}
 
-    public void openTestBlock(final TestBlockEntity testBlock) {
-    }
+    public void openTestBlock(final TestBlockEntity testBlock) {}
 
-    public void openTestInstanceBlock(final TestInstanceBlockEntity testInstanceBlock) {
-    }
+    public void openTestInstanceBlock(final TestInstanceBlockEntity testInstanceBlock) {}
 
-    public void openJigsawBlock(final JigsawBlockEntity jigsawBlock) {
-    }
+    public void openJigsawBlock(final JigsawBlockEntity jigsawBlock) {}
 
-    public void openHorseInventory(final AbstractHorse horse, final Container container) {
-    }
+    public void openHorseInventory(final AbstractHorse horse, final Container container) {}
 
-    public void openNautilusInventory(final AbstractNautilus nautilus, final Container container) {
-    }
+    public void openNautilusInventory(final AbstractNautilus nautilus, final Container container) {}
 
     public OptionalInt openMenu(final @Nullable MenuProvider provider) {
         return OptionalInt.empty();
     }
 
-    public void openDialog(final Holder<Dialog> dialog) {
-    }
+    public void openDialog(final Holder<Dialog> dialog) {}
 
     public void sendMerchantOffers(
-        final int containerId,
-        final MerchantOffers offers,
-        final int merchantLevel,
-        final int merchantXp,
-        final boolean showProgressBar,
-        final boolean canRestock
-    ) {
-    }
+            final int containerId,
+            final MerchantOffers offers,
+            final int merchantLevel,
+            final int merchantXp,
+            final boolean showProgressBar,
+            final boolean canRestock) {}
 
-    public void openItemGui(final ItemStack itemStack, final InteractionHand hand) {
-    }
+    public void openItemGui(final ItemStack itemStack, final InteractionHand hand) {}
 
     public InteractionResult interactOn(final Entity entity, final InteractionHand hand, final Vec3 location) {
         if (this.isSpectator()) {
@@ -880,10 +865,10 @@ public abstract class Player extends Avatar implements ContainerUser {
     protected Vec3 maybeBackOffFromEdge(final Vec3 delta, final MoverType moverType) {
         float maxDownStep = this.maxUpStep();
         if (!this.abilities.flying
-            && !(delta.y > 0.0)
-            && (moverType == MoverType.SELF || moverType == MoverType.PLAYER)
-            && this.isStayingOnGroundSurface()
-            && this.isAboveGround(maxDownStep)) {
+                && !(delta.y > 0.0)
+                && (moverType == MoverType.SELF || moverType == MoverType.PLAYER)
+                && this.isStayingOnGroundSurface()
+                && this.isAboveGround(maxDownStep)) {
             double deltaX = delta.x;
             double deltaZ = delta.z;
             double step = 0.05;
@@ -935,22 +920,22 @@ public abstract class Player extends Avatar implements ContainerUser {
     private boolean canFallAtLeast(final double deltaX, final double deltaZ, final double minHeight) {
         AABB boundingBox = this.getBoundingBox();
         return this.level()
-            .noCollision(
-                this,
-                new AABB(
-                    boundingBox.minX + 1.0E-7 + deltaX,
-                    boundingBox.minY - minHeight - 1.0E-7,
-                    boundingBox.minZ + 1.0E-7 + deltaZ,
-                    boundingBox.maxX - 1.0E-7 + deltaX,
-                    boundingBox.minY,
-                    boundingBox.maxZ - 1.0E-7 + deltaZ
-                )
-            );
+                .noCollision(
+                        this,
+                        new AABB(
+                        boundingBox.minX + 1.0E-7 + deltaX,
+                        boundingBox.minY - minHeight - 1.0E-7,
+                        boundingBox.minZ + 1.0E-7 + deltaZ,
+                        boundingBox.maxX - 1.0E-7 + deltaX,
+                        boundingBox.minY,
+                        boundingBox.maxZ - 1.0E-7 + deltaZ
+                        )
+                );
     }
 
     public void attack(final Entity entity) {
         if (!this.cannotAttack(entity)) {
-            float baseDamage = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+            float baseDamage = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
             ItemStack attackingItemStack = this.getWeaponItem();
             DamageSource damageSource = this.createAttackSource(attackingItemStack);
             float attackStrengthScale = this.getAttackStrengthScale(0.5F);
@@ -968,7 +953,8 @@ public abstract class Player extends Avatar implements ContainerUser {
                         knockbackAttack = false;
                     }
 
-                    baseDamage += attackingItemStack.getItem().getAttackDamageBonus(entity, baseDamage, damageSource);
+                    baseDamage +=
+                            attackingItemStack.getItem().getAttackDamageBonus(entity, baseDamage, damageSource);
                     boolean criticalAttack = fullStrengthAttack && this.canCriticalAttack(entity);
                     if (criticalAttack) {
                         baseDamage *= 1.5F;
@@ -985,7 +971,7 @@ public abstract class Player extends Avatar implements ContainerUser {
                     boolean wasHurt = entity.hurtOrSimulate(damageSource, totalDamage);
                     if (wasHurt) {
                         this.causeExtraKnockback(
-                            entity, this.getKnockback(entity, damageSource) + (knockbackAttack ? 0.5F : 0.0F), oldMovement, damageSource, totalDamage, true
+                                entity, this.getKnockback(entity, damageSource) + (knockbackAttack ? 0.5F : 0.0F), oldMovement, damageSource, totalDamage, true
                         );
                         if (sweepAttack) {
                             this.doSweepAttack(entity, baseDamage, damageSource, attackStrengthScale);
@@ -1020,8 +1006,8 @@ public abstract class Player extends Avatar implements ContainerUser {
 
     private boolean deflectProjectile(final Entity entity) {
         if (entity.is(EntityTypeTags.REDIRECTABLE_PROJECTILE)
-            && entity instanceof Projectile projectile
-            && projectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, EntityReference.of(this), true)) {
+                && entity instanceof Projectile projectile
+                && projectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, EntityReference.of(this), true)) {
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
             return true;
         } else {
@@ -1031,13 +1017,13 @@ public abstract class Player extends Avatar implements ContainerUser {
 
     private boolean canCriticalAttack(final Entity entity) {
         return this.fallDistance > 0.0
-            && !this.onGround()
-            && !this.onClimbable()
-            && !this.isInWater()
-            && !this.isMobilityRestricted()
-            && !this.isPassenger()
-            && entity instanceof LivingEntity
-            && !this.isSprinting();
+                && !this.onGround()
+                && !this.onClimbable()
+                && !this.isInWater()
+                && !this.isMobilityRestricted()
+                && !this.isPassenger()
+                && entity instanceof LivingEntity
+                && !this.isSprinting();
     }
 
     private boolean isSweepAttack(final boolean fullStrengthAttack, final boolean criticalAttack, final boolean knockbackAttack) {
@@ -1053,13 +1039,12 @@ public abstract class Player extends Avatar implements ContainerUser {
     }
 
     private void attackVisualEffects(
-        final Entity entity,
-        final boolean criticalAttack,
-        final boolean sweepAttack,
-        final boolean fullStrengthAttack,
-        final boolean stabAttack,
-        final float magicBoost
-    ) {
+            final Entity entity,
+            final boolean criticalAttack,
+            final boolean sweepAttack,
+            final boolean fullStrengthAttack,
+            final boolean stabAttack,
+            final float magicBoost) {
         if (criticalAttack) {
             this.playServerSideSound(SoundEvents.PLAYER_ATTACK_CRIT);
             this.crit(entity);
@@ -1079,9 +1064,9 @@ public abstract class Player extends Avatar implements ContainerUser {
             float actualDamage = oldLivingEntityHealth - livingEntity.getHealth();
             this.awardStat(Stats.DAMAGE_DEALT, Math.round(actualDamage * 10.0F));
             if (this.level() instanceof ServerLevel && actualDamage > 2.0F) {
-                int count = (int)(actualDamage * 0.5);
-                ((ServerLevel)this.level())
-                    .sendParticles(ParticleTypes.DAMAGE_INDICATOR, entity.getX(), entity.getY(0.5), entity.getZ(), count, 0.1, 0.0, 0.1, 0.2);
+                int count = (int) (actualDamage * 0.5);
+                ((ServerLevel) this.level())
+                        .sendParticles(ParticleTypes.DAMAGE_INDICATOR, entity.getX(), entity.getY(0.5), entity.getZ(), count, 0.1, 0.0, 0.1, 0.2);
             }
         }
     }
@@ -1103,9 +1088,10 @@ public abstract class Player extends Avatar implements ContainerUser {
             }
         }
 
-        if (!this.level().isClientSide() && !attackingItemStack.isEmpty() && hurtTarget instanceof LivingEntity) {
+        if (!this.level().isClientSide() && !attackingItemStack.isEmpty() && hurtTarget
+                        instanceof LivingEntity) {
             if (itemHurtEnemy) {
-                attackingItemStack.postHurtEnemy((LivingEntity)hurtTarget, this);
+                attackingItemStack.postHurtEnemy((LivingEntity) hurtTarget, this);
             }
 
             if (attackingItemStack.isEmpty()) {
@@ -1120,28 +1106,27 @@ public abstract class Player extends Avatar implements ContainerUser {
 
     @Override
     public void causeExtraKnockback(
-        final Entity entity,
-        final float knockbackAmount,
-        final Vec3 oldMovement,
-        final DamageSource damageSource,
-        final float damage,
-        final boolean comesFromEffect
-    ) {
+            final Entity entity,
+            final float knockbackAmount,
+            final Vec3 oldMovement,
+            final DamageSource damageSource,
+            final float damage,
+            final boolean comesFromEffect) {
         if (knockbackAmount > 0.0F) {
             if (entity instanceof LivingEntity livingTarget) {
                 livingTarget.knockback(
-                    knockbackAmount,
-                    Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)),
-                    -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)),
-                    damageSource,
-                    damage,
-                    comesFromEffect
+                        knockbackAmount,
+                        Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)),
+                        -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)),
+                        damageSource,
+                        damage,
+                        comesFromEffect
                 );
             } else {
                 entity.push(
-                    -Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)) * knockbackAmount,
-                    0.1,
-                    Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)) * knockbackAmount
+                        -Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)) * knockbackAmount,
+                        0.1,
+                        Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)) * knockbackAmount
                 );
             }
 
@@ -1164,22 +1149,22 @@ public abstract class Player extends Avatar implements ContainerUser {
     private void doSweepAttack(final Entity entity, final float baseDamage, final DamageSource damageSource, final float attackStrengthScale) {
         this.playServerSideSound(SoundEvents.PLAYER_ATTACK_SWEEP);
         if (this.level() instanceof ServerLevel serverLevel) {
-            float var12 = 1.0F + (float)this.getAttributeValue(Attributes.SWEEPING_DAMAGE_RATIO) * baseDamage;
+            float var12 = 1.0F + (float) this.getAttributeValue(Attributes.SWEEPING_DAMAGE_RATIO) * baseDamage;
 
             for (LivingEntity nearby : this.level().getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(1.0, 0.25, 1.0))) {
                 if (nearby != this
-                    && nearby != entity
-                    && !this.isAlliedTo(nearby)
-                    && !(nearby instanceof ArmorStand armorStand && armorStand.isMarker())
-                    && this.distanceToSqr(nearby) < 9.0) {
+                        && nearby != entity
+                        && !this.isAlliedTo(nearby)
+                        && !(nearby instanceof ArmorStand armorStand && armorStand.isMarker())
+                        && this.distanceToSqr(nearby) < 9.0) {
                     float enchantedDamage = this.getEnchantedDamage(nearby, var12, damageSource) * attackStrengthScale;
                     if (nearby.hurtServer(serverLevel, damageSource, enchantedDamage)) {
                         nearby.knockback(
-                            0.4F,
-                            Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)),
-                            -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)),
-                            damageSource,
-                            enchantedDamage
+                                0.4F,
+                                Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)),
+                                -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)),
+                                damageSource,
+                                enchantedDamage
                         );
                         EnchantmentHelper.doPostAttackEffects(serverLevel, nearby, damageSource);
                     }
@@ -1201,8 +1186,7 @@ public abstract class Player extends Avatar implements ContainerUser {
         this.attack(entity);
     }
 
-    public void crit(final Entity entity) {
-    }
+    public void crit(final Entity entity) {}
 
     private float baseDamageScaleFactor() {
         float attackStrengthScale = this.getAttackStrengthScale(0.5F);
@@ -1211,8 +1195,7 @@ public abstract class Player extends Avatar implements ContainerUser {
 
     @Override
     public boolean stabAttack(
-        final EquipmentSlot slot, final Entity target, float baseDamage, final boolean dealsDamage, final boolean dealsKnockback, final boolean dismounts
-    ) {
+            final EquipmentSlot slot, final Entity target, float baseDamage, final boolean dealsDamage, final boolean dealsKnockback, final boolean dismounts) {
         if (this.cannotAttack(target)) {
             return false;
         }
@@ -1260,8 +1243,7 @@ public abstract class Player extends Avatar implements ContainerUser {
         return true;
     }
 
-    public void magicCrit(final Entity entity) {
-    }
+    public void magicCrit(final Entity entity) {}
 
     @Override
     public void remove(final Entity.RemovalReason reason) {
@@ -1321,8 +1303,7 @@ public abstract class Player extends Avatar implements ContainerUser {
         return this.abilities.instabuild;
     }
 
-    public void updateTutorialInventoryAction(final ItemStack itemCarried, final ItemStack itemInSlot, final ClickAction clickAction) {
-    }
+    public void updateTutorialInventoryAction(final ItemStack itemCarried, final ItemStack itemInSlot, final ClickAction clickAction) {}
 
     public boolean hasContainerOpen() {
         return this.containerMenu != this.inventoryMenu;
@@ -1341,7 +1322,7 @@ public abstract class Player extends Avatar implements ContainerUser {
     public void stopSleepInBed(final boolean forcefulWakeUp, final boolean updateLevelList) {
         super.stopSleeping();
         if (this.level() instanceof ServerLevel && updateLevelList) {
-            ((ServerLevel)this.level()).updateSleepingPlayerList();
+            ((ServerLevel) this.level()).updateSleepingPlayerList();
         }
 
         this.sleepCounter = forcefulWakeUp ? 0 : 100;
@@ -1360,11 +1341,9 @@ public abstract class Player extends Avatar implements ContainerUser {
         return this.sleepCounter;
     }
 
-    public void sendSystemMessage(final Component message) {
-    }
+    public void sendSystemMessage(final Component message) {}
 
-    public void sendOverlayMessage(final Component message) {
-    }
+    public void sendOverlayMessage(final Component message) {}
 
     public void awardStat(final Identifier location) {
         this.awardStat(Stats.CUSTOM.get(location));
@@ -1378,21 +1357,18 @@ public abstract class Player extends Avatar implements ContainerUser {
         this.awardStat(stat, 1);
     }
 
-    public void awardStat(final Stat<?> stat, final int count) {
-    }
+    public void awardStat(final Stat<?> stat, final int count) {}
 
-    public void resetStat(final Stat<?> stat) {
-    }
+    public void resetStat(final Stat<?> stat) {}
 
     public int awardRecipes(final Collection<RecipeHolder<?>> recipes) {
         return 0;
     }
 
-    public void triggerRecipeCrafted(final RecipeHolder<?> recipe, final List<ItemStack> itemStacks) {
-    }
+    public void triggerRecipeCrafted(final RecipeHolder<?> recipe, final List<
+                    ItemStack> itemStacks) {}
 
-    public void awardRecipesByKey(final List<ResourceKey<Recipe<?>>> recipeIds) {
-    }
+    public void awardRecipesByKey(final List<ResourceKey<Recipe<?>>> recipeIds) {}
 
     public int resetRecipes(final Collection<RecipeHolder<?>> recipe) {
         return 0;
@@ -1407,8 +1383,8 @@ public abstract class Player extends Avatar implements ContainerUser {
                 double lookAngleY = this.getLookAngle().y;
                 double multiplier = lookAngleY < -0.2 ? 0.085 : 0.06;
                 if (lookAngleY <= 0.0
-                    || this.jumping
-                    || !this.level().getFluidState(BlockPos.containing(this.getX(), this.getY() + 1.0 - 0.1, this.getZ())).isEmpty()) {
+                        || this.jumping
+                        || !this.level().getFluidState(BlockPos.containing(this.getX(), this.getY() + 1.0 - 0.1, this.getZ())).isEmpty()) {
                     Vec3 movement = this.getDeltaMovement();
                     this.setDeltaMovement(movement.add(0.0, (lookAngleY - movement.y) * multiplier, 0.0));
                 }
@@ -1444,7 +1420,7 @@ public abstract class Player extends Avatar implements ContainerUser {
 
     @Override
     public float getSpeed() {
-        return (float)this.getAttributeValue(Attributes.MOVEMENT_SPEED);
+        return (float) this.getAttributeValue(Attributes.MOVEMENT_SPEED);
     }
 
     @Override
@@ -1454,7 +1430,7 @@ public abstract class Player extends Avatar implements ContainerUser {
         }
 
         if (fallDistance >= 2.0) {
-            this.awardStat(Stats.FALL_ONE_CM, (int)Math.round(fallDistance * 100.0));
+            this.awardStat(Stats.FALL_ONE_CM, (int) Math.round(fallDistance * 100.0));
         }
 
         return super.causeFallDamage(fallDistance, damageModifier, damageSource);
@@ -1522,7 +1498,7 @@ public abstract class Player extends Avatar implements ContainerUser {
 
     public void giveExperiencePoints(final int i) {
         this.increaseScore(i);
-        this.experienceProgress = this.experienceProgress + (float)i / this.getXpNeededForNextLevel();
+        this.experienceProgress = this.experienceProgress + (float) i / this.getXpNeededForNextLevel();
         this.totalExperience = Mth.clamp(this.totalExperience + i, 0, Integer.MAX_VALUE);
 
         while (this.experienceProgress < 0.0F) {
@@ -1643,8 +1619,7 @@ public abstract class Player extends Avatar implements ContainerUser {
         return this.abilities.flying || this.onGround() && this.isDiscrete() ? Entity.MovementEmission.NONE : Entity.MovementEmission.ALL;
     }
 
-    public void onUpdateAbilities() {
-    }
+    public void onUpdateAbilities() {}
 
     @Override
     public Component getName() {
@@ -1704,7 +1679,7 @@ public abstract class Player extends Avatar implements ContainerUser {
     private MutableComponent decorateDisplayNameComponent(final MutableComponent nameComponent) {
         String name = this.getGameProfile().name();
         return nameComponent.withStyle(
-            s -> s.withClickEvent(new ClickEvent.SuggestCommand("/tell " + name + " ")).withHoverEvent(this.createHoverEvent()).withInsertion(name)
+                s -> s.withClickEvent(new ClickEvent.SuggestCommand("/tell " + name + " ")).withHoverEvent(this.createHoverEvent()).withInsertion(name)
         );
     }
 
@@ -1814,7 +1789,7 @@ public abstract class Player extends Avatar implements ContainerUser {
     }
 
     public float getCurrentItemAttackStrengthDelay() {
-        return (float)(1.0 / this.getAttributeValue(Attributes.ATTACK_SPEED) * 20.0);
+        return (float) (1.0 / this.getAttributeValue(Attributes.ATTACK_SPEED) * 20.0);
     }
 
     public boolean cannotAttackWithItem(final ItemStack itemStack, final int tolerance) {
@@ -1857,7 +1832,7 @@ public abstract class Player extends Avatar implements ContainerUser {
 
     @Override
     public float getLuck() {
-        return (float)this.getAttributeValue(Attributes.LUCK);
+        return (float) this.getAttributeValue(Attributes.LUCK);
     }
 
     public boolean canUseGameMasterBlocks() {
@@ -1879,13 +1854,14 @@ public abstract class Player extends Avatar implements ContainerUser {
             return ItemStack.EMPTY;
         }
 
-        Predicate<ItemStack> supportedProjectiles = ((ProjectileWeaponItem)heldWeapon.getItem()).getSupportedHeldProjectiles();
+        Predicate<
+                ItemStack> supportedProjectiles = ((ProjectileWeaponItem) heldWeapon.getItem()).getSupportedHeldProjectiles();
         ItemStack heldProjectile = ProjectileWeaponItem.getHeldProjectile(this, supportedProjectiles);
         if (!heldProjectile.isEmpty()) {
             return heldProjectile;
         }
 
-        supportedProjectiles = ((ProjectileWeaponItem)heldWeapon.getItem()).getAllSupportedProjectiles();
+        supportedProjectiles = ((ProjectileWeaponItem) heldWeapon.getItem()).getAllSupportedProjectiles();
 
         for (int i = 0; i < this.inventory.getContainerSize(); i++) {
             ItemStack itemStack = this.inventory.getItem(i);
@@ -1911,7 +1887,7 @@ public abstract class Player extends Avatar implements ContainerUser {
             if (speedLen > 0.0 && lookLen > 0.0) {
                 double dot = (movement.x * lookAngle.x + movement.z * lookAngle.z) / Math.sqrt(speedLen * lookLen);
                 double sign = movement.x * lookAngle.z - movement.z * lookAngle.x;
-                zRot = (float)(Math.signum(sign) * Math.acos(dot));
+                zRot = (float) (Math.signum(sign) * Math.acos(dot));
             } else {
                 zRot = 0.0F;
             }
@@ -2027,12 +2003,12 @@ public abstract class Player extends Avatar implements ContainerUser {
 
     public String debugInfo() {
         return MoreObjects.toStringHelper(this)
-            .add("name", this.getPlainTextName())
-            .add("id", this.getId())
-            .add("pos", this.position())
-            .add("mode", this.gameMode())
-            .add("permission", printPlayerPermissions(this.permissions()))
-            .toString();
+                .add("name", this.getPlainTextName())
+                .add("id", this.getId())
+                .add("pos", this.position())
+                .add("mode", this.gameMode())
+                .add("permission", printPlayerPermissions(this.permissions()))
+                .toString();
     }
 
     private static String printPlayerPermissions(final PermissionSet permissions) {

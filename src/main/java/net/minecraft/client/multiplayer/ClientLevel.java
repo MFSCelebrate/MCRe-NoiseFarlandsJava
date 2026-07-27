@@ -111,7 +111,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.FuelValues;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.border.WorldBorder;
+
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.entity.EntityTickList;
@@ -138,7 +138,8 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
-public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.Cleaner<ClientLevel> {
+public class ClientLevel extends Level
+        implements BlockAndTintGetter, CacheSlot.Cleaner<ClientLevel> {
     private static final Logger LOGGER = LogUtils.getLogger();
     public static final Component DEFAULT_QUIT_MESSAGE = Component.translatable("multiplayer.status.quitting");
     private static final double FLUID_PARTICLE_SPAWN_OFFSET = 0.05;
@@ -147,7 +148,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     private static final float RAIN_PARTICLES_PER_BLOCK = 0.225F;
     private static final int RAIN_RADIUS = 10;
     private final EntityTickList tickingEntities = new EntityTickList();
-    private final TransientEntitySectionManager<Entity> entityStorage = new TransientEntitySectionManager<>(Entity.class, new ClientLevel.EntityCallbacks());
+    private final TransientEntitySectionManager<
+            Entity> entityStorage = new TransientEntitySectionManager<>(Entity.class, new ClientLevel.EntityCallbacks());
     private final ClientPacketListener connection;
     private final LevelExtractor levelExtractor;
     private final LevelEventHandler levelEventHandler;
@@ -160,7 +162,9 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     private final Map<MapId, MapItemSavedData> mapData = Maps.newHashMap();
     private int skyFlashTime;
     private int rainSoundTime;
-    private final Object2ObjectArrayMap<ColorResolver, BlockTintCache> tintCaches = Util.make(new Object2ObjectArrayMap<>(3), cache -> {
+    private final Object2ObjectArrayMap<
+            ColorResolver,
+            BlockTintCache> tintCaches = Util.make(new Object2ObjectArrayMap<>(3), cache -> {
         cache.put(BiomeColors.GRASS_COLOR_RESOLVER, new BlockTintCache(pos -> this.calculateBlockTint(pos, BiomeColors.GRASS_COLOR_RESOLVER)));
         cache.put(BiomeColors.FOLIAGE_COLOR_RESOLVER, new BlockTintCache(pos -> this.calculateBlockTint(pos, BiomeColors.FOLIAGE_COLOR_RESOLVER)));
         cache.put(BiomeColors.DRY_FOLIAGE_COLOR_RESOLVER, new BlockTintCache(pos -> this.calculateBlockTint(pos, BiomeColors.DRY_FOLIAGE_COLOR_RESOLVER)));
@@ -172,10 +176,13 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     private final BlockStatePredictionHandler blockStatePredictionHandler = new BlockStatePredictionHandler();
     private final Set<BlockEntity> globallyRenderedBlockEntities = new ReferenceOpenHashSet<>();
     private final ClientExplosionTracker explosionTracker = new ClientExplosionTracker();
-    private final WorldBorder worldBorder = new WorldBorder();
+
     private final EnvironmentAttributeSystem environmentAttributes;
-    private final Int2ObjectMap<BlockDestructionProgress> destroyingBlocks = new Int2ObjectOpenHashMap<>();
-    private final Long2ObjectMap<SortedSet<BlockDestructionProgress>> destructionProgress = new Long2ObjectOpenHashMap<>();
+    private final Int2ObjectMap<
+            BlockDestructionProgress> destroyingBlocks = new Int2ObjectOpenHashMap<>();
+    private final Long2ObjectMap<
+            SortedSet<
+                    BlockDestructionProgress>> destructionProgress = new Long2ObjectOpenHashMap<>();
     private final int seaLevel;
     private static final Set<Item> MARKER_PARTICLE_ITEMS = Set.of(Items.BARRIER, Items.LIGHT);
 
@@ -189,7 +196,9 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
     @Override
     public void onBlockEntityAdded(final BlockEntity blockEntity) {
-        BlockEntityRenderer<BlockEntity, ?> renderer = this.minecraft.getBlockEntityRenderDispatcher().getRenderer(blockEntity);
+        BlockEntityRenderer<
+                BlockEntity,
+                ?> renderer = this.minecraft.getBlockEntityRenderDispatcher().getRenderer(blockEntity);
         if (renderer != null && renderer.shouldRenderOffScreen()) {
             this.globallyRenderedBlockEntities.add(blockEntity);
         }
@@ -205,7 +214,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
         }
     }
 
-    public void syncBlockState(final BlockPos pos, final BlockState state, final @Nullable Vec3 playerPos) {
+    public void syncBlockState(final BlockPos pos, final BlockState state, final @Nullable
+            Vec3 playerPos) {
         BlockState oldState = this.getBlockState(pos);
         if (oldState != state) {
             this.setBlock(pos, state, 19);
@@ -236,17 +246,16 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     public ClientLevel(
-        final ClientPacketListener connection,
-        final ClientLevel.ClientLevelData levelData,
-        final ResourceKey<Level> dimension,
-        final Holder<DimensionType> dimensionType,
-        final int serverChunkRadius,
-        final int serverSimulationDistance,
-        final LevelExtractor levelExtractor,
-        final boolean isDebug,
-        final long biomeZoomSeed,
-        final int seaLevel
-    ) {
+            final ClientPacketListener connection,
+            final ClientLevel.ClientLevelData levelData,
+            final ResourceKey<Level> dimension,
+            final Holder<DimensionType> dimensionType,
+            final int serverChunkRadius,
+            final int serverSimulationDistance,
+            final LevelExtractor levelExtractor,
+            final boolean isDebug,
+            final long biomeZoomSeed,
+            final int seaLevel) {
         super(levelData, dimension, connection.registryAccess(), dimensionType, true, isDebug, biomeZoomSeed, 1000000);
         this.connection = connection;
         this.chunkSource = new ClientChunkCache(this, serverChunkRadius);
@@ -266,10 +275,10 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
         environmentAttributes.addDefaultLayers(this);
         int flashColor = ARGB.color(204, 204, 255);
         environmentAttributes.addTimeBasedLayer(
-            EnvironmentAttributes.SKY_COLOR, (skyColor, cacheTickId) -> this.getSkyFlashTime() > 0 ? ARGB.srgbLerp(0.22F, skyColor, flashColor) : skyColor
+                EnvironmentAttributes.SKY_COLOR, (skyColor, cacheTickId) -> this.getSkyFlashTime() > 0 ? ARGB.srgbLerp(0.22F, skyColor, flashColor) : skyColor
         );
         environmentAttributes.addTimeBasedLayer(
-            EnvironmentAttributes.SKY_LIGHT_FACTOR, (skyFactor, cacheTickId) -> this.getSkyFlashTime() > 0 ? 1.0F : skyFactor
+                EnvironmentAttributes.SKY_LIGHT_FACTOR, (skyFactor, cacheTickId) -> this.getSkyFlashTime() > 0 ? 1.0F : skyFactor
         );
         return environmentAttributes;
     }
@@ -299,7 +308,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     public void tick(final BooleanSupplier haveTime) {
         this.updateSkyBrightness();
         if (this.tickRateManager().runsNormally()) {
-            this.getWorldBorder().tick();
+
             this.tickTime();
             this.tickWeatherEffects();
             this.removeBlockBreakingProgress();
@@ -311,20 +320,21 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
         if (this.endFlashState != null) {
             this.endFlashState.tick(this.getDefaultClockTime());
-            if (this.endFlashState.flashStartedThisTick() && !(this.minecraft.gui.screen() instanceof WinScreen)) {
+            if (this.endFlashState.flashStartedThisTick() && !(this.minecraft.gui.screen()
+                            instanceof WinScreen)) {
                 this.minecraft
-                    .getSoundManager()
-                    .playDelayed(
-                        new DirectionalSoundInstance(
-                            SoundEvents.WEATHER_END_FLASH,
-                            SoundSource.WEATHER,
-                            this.random,
-                            this.minecraft.gameRenderer.mainCamera(),
-                            this.endFlashState.getXAngle(),
-                            this.endFlashState.getYAngle()
-                        ),
-                        30
-                    );
+                        .getSoundManager()
+                        .playDelayed(
+                                new DirectionalSoundInstance(
+                                SoundEvents.WEATHER_END_FLASH,
+                                SoundSource.WEATHER,
+                                this.random,
+                                this.minecraft.gameRenderer.mainCamera(),
+                                this.endFlashState.getXAngle(),
+                                this.endFlashState.getYAngle()
+                                ),
+                                30
+                        );
             }
         }
 
@@ -348,16 +358,16 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
             BlockPos rainParticlePosition = null;
             int weatherDiameter = 2 * weatherRadius + 1;
             int weatherArea = weatherDiameter * weatherDiameter;
-            int rainParticles = (int)(0.225F * weatherArea * rainLevel * rainLevel) / (particleStatus == ParticleStatus.DECREASED ? 2 : 1);
+            int rainParticles = (int) (0.225F * weatherArea * rainLevel * rainLevel) / (particleStatus == ParticleStatus.DECREASED ? 2 : 1);
 
             for (int ii = 0; ii < rainParticles; ii++) {
                 int x = random.nextInt(weatherDiameter) - weatherRadius;
                 int z = random.nextInt(weatherDiameter) - weatherRadius;
                 BlockPos heightmapPosition = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, cameraPosition.offset(x, 0, z));
                 if (heightmapPosition.getY() > this.getMinY()
-                    && heightmapPosition.getY() <= cameraPosition.getY() + 10
-                    && heightmapPosition.getY() >= cameraPosition.getY() - 10
-                    && this.getPrecipitationAt(heightmapPosition) == Biome.Precipitation.RAIN) {
+                        && heightmapPosition.getY() <= cameraPosition.getY() + 10
+                        && heightmapPosition.getY() >= cameraPosition.getY() - 10
+                        && this.getPrecipitationAt(heightmapPosition) == Biome.Precipitation.RAIN) {
                     rainParticlePosition = heightmapPosition.below();
                     if (particleStatus == ParticleStatus.MINIMAL) {
                         break;
@@ -372,16 +382,16 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
                     double fluidTop = fluid.getHeight(this, rainParticlePosition);
                     double particleY = Math.max(blockTop, fluidTop);
                     ParticleOptions particleType = !fluid.is(FluidTags.LAVA) && !block.is(Blocks.MAGMA_BLOCK) && !CampfireBlock.isLitCampfire(block)
-                        ? ParticleTypes.RAIN
-                        : ParticleTypes.SMOKE;
+                            ? ParticleTypes.RAIN
+                            : ParticleTypes.SMOKE;
                     this.addParticle(
-                        particleType,
-                        rainParticlePosition.getX() + blockX,
-                        rainParticlePosition.getY() + particleY,
-                        rainParticlePosition.getZ() + blockZ,
-                        0.0,
-                        0.0,
-                        0.0
+                            particleType,
+                            rainParticlePosition.getX() + blockX,
+                            rainParticlePosition.getY() + particleY,
+                            rainParticlePosition.getZ() + blockZ,
+                            0.0,
+                            0.0,
+                            0.0
                     );
                 }
             }
@@ -389,7 +399,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
             if (rainParticlePosition != null && random.nextInt(3) < this.rainSoundTime++) {
                 this.rainSoundTime = 0;
                 if (rainParticlePosition.getY() > cameraPosition.getY() + 1
-                    && this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, cameraPosition).getY() > Mth.floor(cameraPosition.getY())) {
+                        && this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, cameraPosition).getY() > Mth.floor(cameraPosition.getY())) {
                     this.playLocalSound(rainParticlePosition, SoundEvents.WEATHER_RAIN_ABOVE, SoundSource.WEATHER, 0.1F, 0.5F, false);
                 } else {
                     this.playLocalSound(rainParticlePosition, SoundEvents.WEATHER_RAIN, SoundSource.WEATHER, 0.2F, 1.0F, false);
@@ -543,8 +553,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     public List<Entity> getPushableEntities(final Entity pusher, final AABB boundingBox) {
         LocalPlayer player = this.minecraft.player;
         return player != null && player != pusher && player.getBoundingBox().intersects(boundingBox) && EntitySelector.pushableBy(pusher).test(player)
-            ? List.of(player)
-            : List.of();
+                ? List.of(player)
+                : List.of();
     }
 
     @Override
@@ -573,7 +583,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
         if (this.minecraft.gameMode.getPlayerMode() == GameType.CREATIVE) {
             ItemStack carriedItemStack = this.minecraft.player.getMainHandItem();
             Item carriedItem = carriedItemStack.getItem();
-            if (MARKER_PARTICLE_ITEMS.contains(carriedItem) && carriedItem instanceof BlockItem blockItem) {
+            if (MARKER_PARTICLE_ITEMS.contains(carriedItem) && carriedItem
+                            instanceof BlockItem blockItem) {
                 return blockItem.getBlock();
             }
         }
@@ -582,14 +593,13 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     public void doAnimateTick(
-        final int xt,
-        final int yt,
-        final int zt,
-        final int r,
-        final RandomSource animateRandom,
-        final @Nullable Block markerParticleTarget,
-        final BlockPos.MutableBlockPos pos
-    ) {
+            final int xt,
+            final int yt,
+            final int zt,
+            final int r,
+            final RandomSource animateRandom,
+            final @Nullable Block markerParticleTarget,
+            final BlockPos.MutableBlockPos pos) {
         int x = xt + this.random.nextInt(r) - this.random.nextInt(r);
         int y = yt + this.random.nextInt(r) - this.random.nextInt(r);
         int z = zt + this.random.nextInt(r) - this.random.nextInt(r);
@@ -615,13 +625,13 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
             for (AmbientParticle particle : this.environmentAttributes().getValue(EnvironmentAttributes.AMBIENT_PARTICLES, pos)) {
                 if (particle.canSpawn(this.random)) {
                     this.addParticle(
-                        particle.particle(),
-                        pos.getX() + this.random.nextDouble(),
-                        pos.getY() + this.random.nextDouble(),
-                        pos.getZ() + this.random.nextDouble(),
-                        0.0,
-                        0.0,
-                        0.0
+                            particle.particle(),
+                            pos.getX() + this.random.nextDouble(),
+                            pos.getY() + this.random.nextDouble(),
+                            pos.getZ() + this.random.nextDouble(),
+                            0.0,
+                            0.0,
+                            0.0
                     );
                 }
             }
@@ -655,12 +665,12 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
     private void spawnParticle(final BlockPos pos, final ParticleOptions dripParticle, final VoxelShape dripShape, final double height) {
         this.spawnFluidParticle(
-            pos.getX() + dripShape.min(Direction.Axis.X),
-            pos.getX() + dripShape.max(Direction.Axis.X),
-            pos.getZ() + dripShape.min(Direction.Axis.Z),
-            pos.getZ() + dripShape.max(Direction.Axis.Z),
-            height,
-            dripParticle
+                pos.getX() + dripShape.min(Direction.Axis.X),
+                pos.getX() + dripShape.max(Direction.Axis.X),
+                pos.getZ() + dripShape.min(Direction.Axis.Z),
+                pos.getZ() + dripShape.max(Direction.Axis.Z),
+                height,
+                dripParticle
         );
     }
 
@@ -673,7 +683,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
         CrashReportCategory category = super.fillReportDetails(report);
         category.setDetail("Server brand", () -> this.minecraft.player.connection.serverBrand());
         category.setDetail(
-            "Server type", () -> this.minecraft.getSingleplayerServer() == null ? "Non-integrated multiplayer server" : "Integrated singleplayer server"
+                "Server type", () -> this.minecraft.getSingleplayerServer() == null ? "Non-integrated multiplayer server" : "Integrated singleplayer server"
         );
         category.setDetail("Tracked entity count", () -> String.valueOf(this.getEntityCount()));
         category.setDetail("Client weather", () -> String.format(Locale.ROOT, "Raining: %b, thundering: %b", this.isRaining(), this.isThundering()));
@@ -682,16 +692,15 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
     @Override
     public void playSeededSound(
-        final @Nullable Entity except,
-        final double x,
-        final double y,
-        final double z,
-        final Holder<SoundEvent> sound,
-        final SoundSource source,
-        final float volume,
-        final float pitch,
-        final long seed
-    ) {
+            final @Nullable Entity except,
+            final double x,
+            final double y,
+            final double z,
+            final Holder<SoundEvent> sound,
+            final SoundSource source,
+            final float volume,
+            final float pitch,
+            final long seed) {
         if (except == this.minecraft.player) {
             this.playSound(x, y, z, sound.value(), source, volume, pitch, false, seed);
         }
@@ -699,14 +708,13 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
     @Override
     public void playSeededSound(
-        final @Nullable Entity except,
-        final Entity sourceEntity,
-        final Holder<SoundEvent> sound,
-        final SoundSource source,
-        final float volume,
-        final float pitch,
-        final long seed
-    ) {
+            final @Nullable Entity except,
+            final Entity sourceEntity,
+            final Holder<SoundEvent> sound,
+            final SoundSource source,
+            final float volume,
+            final float pitch,
+            final long seed) {
         if (except == this.minecraft.player) {
             this.minecraft.getSoundManager().play(new EntityBoundSoundInstance(sound.value(), source, volume, pitch, sourceEntity, seed));
         }
@@ -726,34 +734,32 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
     @Override
     public void playLocalSound(
-        final double x,
-        final double y,
-        final double z,
-        final SoundEvent sound,
-        final SoundSource source,
-        final float volume,
-        final float pitch,
-        final boolean distanceDelay
-    ) {
+            final double x,
+            final double y,
+            final double z,
+            final SoundEvent sound,
+            final SoundSource source,
+            final float volume,
+            final float pitch,
+            final boolean distanceDelay) {
         this.playSound(x, y, z, sound, source, volume, pitch, distanceDelay, this.random.nextLong());
     }
 
     private void playSound(
-        final double x,
-        final double y,
-        final double z,
-        final SoundEvent sound,
-        final SoundSource source,
-        final float volume,
-        final float pitch,
-        final boolean distanceDelay,
-        final long seed
-    ) {
+            final double x,
+            final double y,
+            final double z,
+            final SoundEvent sound,
+            final SoundSource source,
+            final float volume,
+            final float pitch,
+            final boolean distanceDelay,
+            final long seed) {
         double distanceToSqr = this.minecraft.gameRenderer.mainCamera().position().distanceToSqr(x, y, z);
         SimpleSoundInstance instance = new SimpleSoundInstance(sound, source, volume, pitch, RandomSource.create(seed), x, y, z);
         if (distanceDelay && distanceToSqr > 100.0) {
             double delayInSeconds = Math.sqrt(distanceToSqr) / 40.0;
-            this.minecraft.getSoundManager().playDelayed(instance, (int)(delayInSeconds * 20.0));
+            this.minecraft.getSoundManager().playDelayed(instance, (int) (delayInSeconds * 20.0));
         } else {
             this.minecraft.getSoundManager().play(instance);
         }
@@ -761,8 +767,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
     @Override
     public void createFireworks(
-        final double x, final double y, final double z, final double xd, final double yd, final double zd, final List<FireworkExplosion> explosions
-    ) {
+            final double x, final double y, final double z, final double xd, final double yd, final double zd, final List<
+                    FireworkExplosion> explosions) {
         if (explosions.isEmpty()) {
             for (int i = 0; i < this.random.nextInt(3) + 2; i++) {
                 this.addParticle(ParticleTypes.POOF, x, y, z, this.random.nextGaussian() * 0.05, 0.005, this.random.nextGaussian() * 0.05);
@@ -775,11 +781,6 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     @Override
     public void sendPacketToServer(final Packet<?> packet) {
         this.connection.send(packet);
-    }
-
-    @Override
-    public WorldBorder getWorldBorder() {
-        return this.worldBorder;
     }
 
     @Override
@@ -844,8 +845,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     public void setSectionRangeDirty(
-        final int minSectionX, final int minSectionY, final int minSectionZ, final int maxSectionX, final int maxSectionY, final int maxSectionZ
-    ) {
+            final int minSectionX, final int minSectionY, final int minSectionZ, final int maxSectionX, final int maxSectionY, final int maxSectionZ) {
         this.levelExtractor.setSectionRangeDirty(minSectionX, minSectionY, minSectionZ, maxSectionX, maxSectionY, maxSectionZ);
     }
 
@@ -879,7 +879,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     @Override
-    public void levelEvent(final @Nullable Entity source, final int type, final BlockPos pos, final int data) {
+    public void levelEvent(final @Nullable
+            Entity source, final int type, final BlockPos pos, final int data) {
         try {
             this.levelEventHandler.levelEvent(type, pos, data);
         } catch (Throwable t) {
@@ -900,51 +901,47 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
     @Override
     public void addParticle(
-        final ParticleOptions particle,
-        final boolean overrideLimiter,
-        final boolean alwaysShow,
-        final double x,
-        final double y,
-        final double z,
-        final double xd,
-        final double yd,
-        final double zd
-    ) {
+            final ParticleOptions particle,
+            final boolean overrideLimiter,
+            final boolean alwaysShow,
+            final double x,
+            final double y,
+            final double z,
+            final double xd,
+            final double yd,
+            final double zd) {
         this.doAddParticle(particle, particle.getType().getOverrideLimiter() || overrideLimiter, alwaysShow, x, y, z, xd, yd, zd);
     }
 
     @Override
     public void addAlwaysVisibleParticle(
-        final ParticleOptions particle, final double x, final double y, final double z, final double xd, final double yd, final double zd
-    ) {
+            final ParticleOptions particle, final double x, final double y, final double z, final double xd, final double yd, final double zd) {
         this.doAddParticle(particle, false, true, x, y, z, xd, yd, zd);
     }
 
     @Override
     public void addAlwaysVisibleParticle(
-        final ParticleOptions particle,
-        final boolean overrideLimiter,
-        final double x,
-        final double y,
-        final double z,
-        final double xd,
-        final double yd,
-        final double zd
-    ) {
+            final ParticleOptions particle,
+            final boolean overrideLimiter,
+            final double x,
+            final double y,
+            final double z,
+            final double xd,
+            final double yd,
+            final double zd) {
         this.doAddParticle(particle, particle.getType().getOverrideLimiter() || overrideLimiter, true, x, y, z, xd, yd, zd);
     }
 
     private void doAddParticle(
-        final ParticleOptions particle,
-        final boolean overrideLimiter,
-        final boolean alwaysShowParticles,
-        final double x,
-        final double y,
-        final double z,
-        final double xd,
-        final double yd,
-        final double zd
-    ) {
+            final ParticleOptions particle,
+            final boolean overrideLimiter,
+            final boolean alwaysShowParticles,
+            final double x,
+            final double y,
+            final double z,
+            final double xd,
+            final double yd,
+            final double zd) {
         try {
             Camera camera = this.minecraft.gameRenderer.mainCamera();
             ParticleStatus particleLevel = this.calculateParticleLevel(alwaysShowParticles);
@@ -960,7 +957,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
             CrashReportCategory category = report.addCategory("Particle being added");
             category.setDetail("ID", BuiltInRegistries.PARTICLE_TYPE.getKey(particle.getType()));
             category.setDetail(
-                "Parameters", () -> ParticleTypes.CODEC.encodeStart(this.registryAccess().createSerializationContext(NbtOps.INSTANCE), particle).toString()
+                    "Parameters", () -> ParticleTypes.CODEC.encodeStart(this.registryAccess().createSerializationContext(NbtOps.INSTANCE), particle).toString()
             );
             category.setDetail("Position", () -> CrashReportCategory.formatLocation(this, x, y, z));
             throw new ReportedException(report);
@@ -990,7 +987,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     @Override
-    public Holder<Biome> getUncachedNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+    public Holder<
+                    Biome> getUncachedNoiseBiome(final int quartX, final int quartY, final int quartZ) {
         return this.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.PLAINS);
     }
 
@@ -1040,7 +1038,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
     @Override
     public void setRespawnData(final LevelData.RespawnData respawnData) {
-        this.levelData.setSpawn(this.getWorldBorderAdjustedRespawnData(respawnData));
+        this.levelData.setSpawn(respawnData);
     }
 
     @Override
@@ -1058,8 +1056,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     @Override
-    public void gameEvent(final Holder<GameEvent> gameEvent, final Vec3 pos, final GameEvent.Context context) {
-    }
+    public void gameEvent(final Holder<
+                    GameEvent> gameEvent, final Vec3 pos, final GameEvent.Context context) {}
 
     protected Map<MapId, MapItemSavedData> getAllMapData() {
         return ImmutableMap.copyOf(this.mapData);
@@ -1085,34 +1083,34 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
             VoxelShape shape = blockState.getShape(this, pos);
             double density = 0.25;
             shape.forAllBoxes(
-                (x1, y1, z1, x2, y2, z2) -> {
-                    double widthX = Math.min(1.0, x2 - x1);
-                    double widthY = Math.min(1.0, y2 - y1);
-                    double widthZ = Math.min(1.0, z2 - z1);
-                    int countX = Math.max(2, Mth.ceil(widthX / 0.25));
-                    int countY = Math.max(2, Mth.ceil(widthY / 0.25));
-                    int countZ = Math.max(2, Mth.ceil(widthZ / 0.25));
+                    (x1, y1, z1, x2, y2, z2) -> {
+                        double widthX = Math.min(1.0, x2 - x1);
+                        double widthY = Math.min(1.0, y2 - y1);
+                        double widthZ = Math.min(1.0, z2 - z1);
+                        int countX = Math.max(2, Mth.ceil(widthX / 0.25));
+                        int countY = Math.max(2, Mth.ceil(widthY / 0.25));
+                        int countZ = Math.max(2, Mth.ceil(widthZ / 0.25));
 
-                    for (int xx = 0; xx < countX; xx++) {
-                        for (int yy = 0; yy < countY; yy++) {
-                            for (int zz = 0; zz < countZ; zz++) {
-                                double relX = (xx + 0.5) / countX;
-                                double relY = (yy + 0.5) / countY;
-                                double relZ = (zz + 0.5) / countZ;
-                                double x = relX * widthX + x1;
-                                double y = relY * widthY + y1;
-                                double z = relZ * widthZ + z1;
-                                this.minecraft
-                                    .particleEngine
-                                    .add(
-                                        new TerrainParticle(
+                        for (int xx = 0; xx < countX; xx++) {
+                            for (int yy = 0; yy < countY; yy++) {
+                                for (int zz = 0; zz < countZ; zz++) {
+                                    double relX = (xx + 0.5) / countX;
+                                    double relY = (yy + 0.5) / countY;
+                                    double relZ = (zz + 0.5) / countZ;
+                                    double x = relX * widthX + x1;
+                                    double y = relY * widthY + y1;
+                                    double z = relZ * widthZ + z1;
+                                    this.minecraft
+                                            .particleEngine
+                                            .add(
+                                            new TerrainParticle(
                                             this, pos.getX() + x, pos.getY() + y, pos.getZ() + z, relX - 0.5, relY - 0.5, relZ - 0.5, blockState, pos
-                                        )
+                                            )
                                     );
+                                }
                             }
                         }
                     }
-                }
             );
         }
     }
@@ -1181,21 +1179,19 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
     @Override
     public void explode(
-        final @Nullable Entity source,
-        final @Nullable DamageSource damageSource,
-        final @Nullable ExplosionDamageCalculator damageCalculator,
-        final double x,
-        final double y,
-        final double z,
-        final float r,
-        final boolean fire,
-        final Level.ExplosionInteraction interactionType,
-        final ParticleOptions smallExplosionParticles,
-        final ParticleOptions largeExplosionParticles,
-        final WeightedList<ExplosionParticleInfo> secondaryParticles,
-        final Holder<SoundEvent> explosionSound
-    ) {
-    }
+            final @Nullable Entity source,
+            final @Nullable DamageSource damageSource,
+            final @Nullable ExplosionDamageCalculator damageCalculator,
+            final double x,
+            final double y,
+            final double z,
+            final float r,
+            final boolean fire,
+            final Level.ExplosionInteraction interactionType,
+            final ParticleOptions smallExplosionParticles,
+            final ParticleOptions largeExplosionParticles,
+            final WeightedList<ExplosionParticleInfo> secondaryParticles,
+            final Holder<SoundEvent> explosionSound) {}
 
     @Override
     public int getSeaLevel() {
@@ -1214,7 +1210,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
         this.connection.registerForCleaning(slot);
     }
 
-    public void trackExplosionEffects(final Vec3 center, final float radius, final int blockCount, final WeightedList<ExplosionParticleInfo> blockParticles) {
+    public void trackExplosionEffects(final Vec3 center, final float radius, final int blockCount, final WeightedList<
+                    ExplosionParticleInfo> blockParticles) {
         this.explosionTracker.track(center, radius, blockCount, blockParticles);
     }
 
@@ -1291,11 +1288,9 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
     @OnlyIn(Dist.CLIENT)
     private final class EntityCallbacks implements LevelCallback<Entity> {
-        public void onCreated(final Entity entity) {
-        }
+        public void onCreated(final Entity entity) {}
 
-        public void onDestroyed(final Entity entity) {
-        }
+        public void onDestroyed(final Entity entity) {}
 
         public void onTickingStart(final Entity entity) {
             ClientLevel.this.tickingEntities.add(entity);
@@ -1330,7 +1325,6 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
             }
         }
 
-        public void onSectionChange(final Entity entity) {
-        }
+        public void onSectionChange(final Entity entity) {}
     }
 }

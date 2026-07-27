@@ -59,18 +59,7 @@ public class LevelDatToSavedDataFileFix extends FileFix {
                 FileAccess<SavedDataNbt> scheduledEvents = files.getFileAccess(
                     FileResourceTypes.savedData(References.SAVED_DATA_SCHEDULED_EVENTS), FileRelation.DATA.forFile("minecraft/scheduled_events.dat")
                 );
-                FileAccess<SavedDataNbt> worldBorderOverworld = files.getFileAccess(
-                    FileResourceTypes.savedData(References.SAVED_DATA_WORLD_BORDER),
-                    FileRelation.forDataFileInDimension("overworld", "minecraft/world_border.dat")
-                );
-                FileAccess<SavedDataNbt> worldBorderNether = files.getFileAccess(
-                    FileResourceTypes.savedData(References.SAVED_DATA_WORLD_BORDER),
-                    FileRelation.forDataFileInDimension("the_nether", "minecraft/world_border.dat")
-                );
-                FileAccess<SavedDataNbt> worldBorderEnd = files.getFileAccess(
-                    FileResourceTypes.savedData(References.SAVED_DATA_WORLD_BORDER),
-                    FileRelation.forDataFileInDimension("the_end", "minecraft/world_border.dat")
-                );
+
                 FileAccess<SavedDataNbt> gameRules = files.getFileAccess(
                     FileResourceTypes.savedData(References.SAVED_DATA_GAME_RULES), FileRelation.DATA.forFile("minecraft/game_rules.dat")
                 );
@@ -92,7 +81,7 @@ public class LevelDatToSavedDataFileFix extends FileFix {
                         content = extractToFile(customBossEvents, content, "CustomBossEvents");
                         content = extractToFile(weatherData, content, "weather_data");
                         content = extractToFile(scheduledEvents, content, "scheduled_events");
-                        content = extractWorldBorderToFiles(worldBorderOverworld, worldBorderNether, worldBorderEnd, content);
+                        
                         content = extractToFile(gameRules, content, "game_rules");
                         content = this.extractWorldGenSettingsToFile(worldGenSettings, content);
                         content = extractToFile(worldClocks, content, "world_clocks");
@@ -135,28 +124,7 @@ public class LevelDatToSavedDataFileFix extends FileFix {
         return content.remove("Player").set("singleplayer_uuid", usedUuid);
     }
 
-    private static Dynamic<?> extractWorldBorderToFiles(
-        final FileAccess<? extends CompressedNbt> worldBorderOverworld,
-        final FileAccess<? extends CompressedNbt> worldBorderNether,
-        final FileAccess<? extends CompressedNbt> worldBorderEnd,
-        final Dynamic<?> content
-    ) {
-        extractWorldBorderToFile(worldBorderOverworld, content, 1.0);
-        extractWorldBorderToFile(worldBorderNether, content, 8.0);
-        extractWorldBorderToFile(worldBorderEnd, content, 1.0);
-        return content.remove("world_border");
-    }
-
-    private static void extractWorldBorderToFile(final FileAccess<? extends CompressedNbt> targetFile, final Dynamic<?> content, final double divider) {
-        OptionalDynamic<?> worldBorderTagOpt = content.get("world_border");
-        if (!worldBorderTagOpt.result().isEmpty()) {
-            Dynamic<?> worldBorderTag = worldBorderTagOpt.result()
-                .get()
-                .update("center_x", x -> x.createDouble(x.asDouble(0.0) / divider))
-                .update("center_z", z -> z.createDouble(z.asDouble(0.0) / divider));
-            targetFile.getOnlyFile().write(worldBorderTag);
-        }
-    }
+    
 
     private Dynamic<?> extractWorldGenSettingsToFile(final FileAccess<? extends CompressedNbt> targetFile, final Dynamic<?> content) {
         OptionalDynamic<?> worldGenSettingsTagOpt = content.get("world_gen_settings");

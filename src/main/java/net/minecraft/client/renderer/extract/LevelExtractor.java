@@ -152,18 +152,16 @@ public class LevelExtractor implements ResourceManagerReloadListener {
             for (SectionRenderDispatcher.RenderSection section : this.levelRenderer.visibleSections()) {
                 SectionUpdateTracker.SectionDirtyState dirtyState = this.sectionUpdateTracker.getDirtyState(section.getSectionNode());
                 if (dirtyState != null
-                    && dirtyState.isDirty()
-                    && (
-                        section.sectionMesh.get() != CompiledSectionMesh.UNCOMPILED
-                            || this.sectionUpdateTracker.hasAllNeighbors(this.level, section.getSectionNode())
-                    )) {
+                        && dirtyState.isDirty()
+                        && (section.sectionMesh.get() != CompiledSectionMesh.UNCOMPILED
+                                || this.sectionUpdateTracker.hasAllNeighbors(this.level, section.getSectionNode()))) {
                     this.levelRenderState
-                        .sectionUpdateRenderStates
-                        .add(
+                            .sectionUpdateRenderStates
+                            .add(
                             new SectionUpdateRenderState(
-                                section.getSectionNode(), dirtyState.isDirtyFromPlayer(), cache.createRegion(this.level, section.getSectionNode())
+                            section.getSectionNode(), dirtyState.isDirtyFromPlayer(), cache.createRegion(this.level, section.getSectionNode())
                             )
-                        );
+                    );
                     dirtyState.setNotDirty();
                 }
             }
@@ -185,16 +183,6 @@ public class LevelExtractor implements ResourceManagerReloadListener {
             skyRenderer.extractRenderState(this.level, deltaPartialTick, camera, this.levelRenderState.skyRenderState);
         }
 
-        profiler.popPush("border");
-        this.levelRenderer
-            .worldBorderRenderer()
-            .extract(
-                this.level.getWorldBorder(),
-                deltaPartialTick,
-                cameraPos,
-                this.minecraft.options.getEffectiveRenderDistance() * 16,
-                this.levelRenderState.worldBorderRenderState
-            );
         profiler.popPush("particles");
         this.minecraft.particleEngine.extract(this.levelRenderState.particlesRenderState, new Frustum(cullFrustum).offset(-3.0F), camera, deltaPartialTick);
         profiler.popPush("cloud");
@@ -225,14 +213,16 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         double camZ = cameraPos.z();
         TickRateManager tickRateManager = this.minecraft.level.tickRateManager();
         Entity.setViewScale(
-            Mth.clamp(this.minecraft.options.getEffectiveRenderDistance() / 8.0, 1.0, 2.5) * this.minecraft.options.entityDistanceScaling().get()
+                Mth.clamp(this.minecraft.options.getEffectiveRenderDistance() / 8.0, 1.0, 2.5) * this.minecraft.options.entityDistanceScaling().get()
         );
         EntityRenderDispatcher entityRenderDispatcher = this.levelRenderer.entityRenderDispatcher();
 
         for (Entity entity : this.level.entitiesForRendering()) {
             if (this.isEntityVisible(entity, frustum, camX, camY, camZ)
-                && (entity != camera.entity() || camera.isDetached() || camera.entity() instanceof LivingEntity && ((LivingEntity)camera.entity()).isSleeping())
-                && (!(entity instanceof LocalPlayer) || camera.entity() == entity)) {
+                    && (entity != camera.entity() || camera.isDetached() || camera.entity()
+                                            instanceof
+                                            LivingEntity && ((LivingEntity) camera.entity()).isSleeping())
+                    && (!(entity instanceof LocalPlayer) || camera.entity() == entity)) {
                 if (entity.tickCount == 0) {
                     entity.xOld = entity.getX();
                     entity.yOld = entity.getY();
@@ -252,7 +242,7 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         if (this.level == null) {
             return false;
         } else if (this.levelRenderer.entityRenderDispatcher().shouldRender(entity, frustum, camX, camY, camZ)
-            || this.minecraft.player != null && entity.hasIndirectPassenger(this.minecraft.player)) {
+                || this.minecraft.player != null && entity.hasIndirectPassenger(this.minecraft.player)) {
             BlockPos blockPos = entity.blockPosition();
             return this.level.isOutsideBuildHeight(blockPos.getY()) || this.levelRenderer.isSectionCompiledAndVisible(blockPos);
         } else {
@@ -272,11 +262,13 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         PoseStack poseStack = new PoseStack();
 
         for (SectionRenderDispatcher.RenderSection section : this.levelRenderer.visibleSections()) {
-            List<BlockEntity> renderableBlockEntities = section.getSectionMesh().getRenderableBlockEntities();
+            List<
+                    BlockEntity> renderableBlockEntities = section.getSectionMesh().getRenderableBlockEntities();
             if (!renderableBlockEntities.isEmpty() && !(section.getVisibility(Util.getMillis()) < 0.3F)) {
                 for (BlockEntity blockEntity : renderableBlockEntities) {
                     BlockPos blockPos = blockEntity.getBlockPos();
-                    SortedSet<BlockDestructionProgress> progresses = this.level.destructionProgress().get(blockPos.asLong());
+                    SortedSet<
+                            BlockDestructionProgress> progresses = this.level.destructionProgress().get(blockPos.asLong());
                     ModelFeatureRenderer.CrumblingOverlay breakProgress;
                     if (progresses != null && !progresses.isEmpty()) {
                         poseStack.pushPose();
@@ -288,8 +280,8 @@ public class LevelExtractor implements ResourceManagerReloadListener {
                     }
 
                     BlockEntityRenderState state = this.levelRenderer
-                        .blockEntityRenderDispatcher()
-                        .tryExtractRenderState(blockEntity, deltaPartialTick, breakProgress, false);
+                            .blockEntityRenderDispatcher()
+                            .tryExtractRenderState(blockEntity, deltaPartialTick, breakProgress, false);
                     if (state != null) {
                         levelRenderState.blockEntityRenderStates.add(state);
                     }
@@ -305,8 +297,8 @@ public class LevelExtractor implements ResourceManagerReloadListener {
                 iterator.remove();
             } else {
                 BlockEntityRenderState state = this.levelRenderer
-                    .blockEntityRenderDispatcher()
-                    .tryExtractRenderState(blockEntity, deltaPartialTick, null, true);
+                        .blockEntityRenderDispatcher()
+                        .tryExtractRenderState(blockEntity, deltaPartialTick, null, true);
                 if (state != null) {
                     levelRenderState.blockEntityRenderStates.add(state);
                 }
@@ -321,7 +313,9 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         double camZ = cameraPos.z();
         levelRenderState.blockBreakingRenderStates.clear();
 
-        for (Entry<SortedSet<BlockDestructionProgress>> entry : this.level.destructionProgress().long2ObjectEntrySet()) {
+        for (Entry<
+                SortedSet<
+                        BlockDestructionProgress>> entry : this.level.destructionProgress().long2ObjectEntrySet()) {
             BlockPos pos = BlockPos.of(entry.getLongKey());
             if (!(pos.distToCenterSqr(camX, camY, camZ) > 1024.0)) {
                 SortedSet<BlockDestructionProgress> progresses = entry.getValue();
@@ -350,7 +344,7 @@ public class LevelExtractor implements ResourceManagerReloadListener {
                         VoxelShape occlusionShape = state.getOcclusionShape();
                         VoxelShape interactionShape = state.getInteractionShape(this.level, pos);
                         levelRenderState.blockOutlineRenderState = new BlockOutlineRenderState(
-                            pos, isBlockTranslucent, highContrast, shape, collisionShape, occlusionShape, interactionShape
+                        pos, isBlockTranslucent, highContrast, shape, collisionShape, occlusionShape, interactionShape
                         );
                     } else {
                         levelRenderState.blockOutlineRenderState = new BlockOutlineRenderState(pos, isBlockTranslucent, highContrast, shape);
@@ -377,8 +371,8 @@ public class LevelExtractor implements ResourceManagerReloadListener {
 
         this.levelRenderer.clearVisibleSections();
         this.levelRenderer
-            .sectionOcclusionGraph()
-            .addSectionsInFrustum(frustum, this.levelRenderer.visibleSections(), this.levelRenderer.nearbyVisibleSections());
+                .sectionOcclusionGraph()
+                .addSectionsInFrustum(frustum, this.levelRenderer.visibleSections(), this.levelRenderer.nearbyVisibleSections());
     }
 
     private boolean shouldShowEntityOutlines(final Camera camera) {
@@ -455,8 +449,7 @@ public class LevelExtractor implements ResourceManagerReloadListener {
     }
 
     public void setSectionRangeDirty(
-        final int minSectionX, final int minSectionY, final int minSectionZ, final int maxSectionX, final int maxSectionY, final int maxSectionZ
-    ) {
+            final int minSectionX, final int minSectionY, final int minSectionZ, final int maxSectionX, final int maxSectionY, final int maxSectionZ) {
         for (int z = minSectionZ; z <= maxSectionZ; z++) {
             for (int x = minSectionX; x <= maxSectionX; x++) {
                 for (int y = minSectionY; y <= maxSectionY; y++) {
@@ -501,26 +494,26 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         int rendered = this.countRenderedSections();
         SectionRenderDispatcher sectionRenderDispatcher = this.levelRenderer.sectionRenderDispatcher();
         return String.format(
-            Locale.ROOT,
-            "C: %d/%d %sD: %d, %s",
-            rendered,
-            totalSections,
-            this.minecraft.smartCull ? "(s) " : "",
-            this.lastViewDistance,
-            sectionRenderDispatcher == null ? "null" : sectionRenderDispatcher.getStats()
+                Locale.ROOT,
+                "C: %d/%d %sD: %d, %s",
+                rendered,
+                totalSections,
+                this.minecraft.smartCull ? "(s) " : "",
+                this.lastViewDistance,
+                sectionRenderDispatcher == null ? "null" : sectionRenderDispatcher.getStats()
         );
     }
 
     @VisibleForDebug
     public @Nullable String entityStatistics() {
         return this.level == null
-            ? null
-            : "E: "
-                + this.levelRenderState.lastEntityRenderStateCount
-                + "/"
-                + this.level.getEntityCount()
-                + ", SD: "
-                + this.level.getServerSimulationDistance();
+                ? null
+                : "E: "
+                        + this.levelRenderState.lastEntityRenderStateCount
+                        + "/"
+                        + this.level.getEntityCount()
+                        + ", SD: "
+                        + this.level.getServerSimulationDistance();
     }
 
     @VisibleForDebug

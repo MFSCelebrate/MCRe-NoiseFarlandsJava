@@ -318,7 +318,7 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.minecraft.world.level.block.entity.FuelValues;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
-import net.minecraft.world.level.border.WorldBorder;
+
 import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
@@ -1870,53 +1870,6 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
         if (entity != null) {
             this.minecraft.setCameraEntity(entity);
         }
-    }
-
-    @Override
-    public void handleInitializeBorder(final ClientboundInitializeBorderPacket packet) {
-        PacketUtils.ensureRunningOnSameThread(packet, this, this.minecraft.packetProcessor());
-        WorldBorder border = this.level.getWorldBorder();
-        border.setCenter(packet.getNewCenterX(), packet.getNewCenterZ());
-        long lerpTime = packet.getLerpTime();
-        if (lerpTime > 0L) {
-            border.lerpSizeBetween(packet.getOldSize(), packet.getNewSize(), lerpTime, this.level.getGameTime());
-        } else {
-            border.setSize(packet.getNewSize());
-        }
-
-        border.setAbsoluteMaxSize(packet.getNewAbsoluteMaxSize());
-        border.setWarningBlocks(packet.getWarningBlocks());
-        border.setWarningTime(packet.getWarningTime());
-    }
-
-    @Override
-    public void handleSetBorderCenter(final ClientboundSetBorderCenterPacket packet) {
-        PacketUtils.ensureRunningOnSameThread(packet, this, this.minecraft.packetProcessor());
-        this.level.getWorldBorder().setCenter(packet.getNewCenterX(), packet.getNewCenterZ());
-    }
-
-    @Override
-    public void handleSetBorderLerpSize(final ClientboundSetBorderLerpSizePacket packet) {
-        PacketUtils.ensureRunningOnSameThread(packet, this, this.minecraft.packetProcessor());
-        this.level.getWorldBorder().lerpSizeBetween(packet.getOldSize(), packet.getNewSize(), packet.getLerpTime(), this.level.getGameTime());
-    }
-
-    @Override
-    public void handleSetBorderSize(final ClientboundSetBorderSizePacket packet) {
-        PacketUtils.ensureRunningOnSameThread(packet, this, this.minecraft.packetProcessor());
-        this.level.getWorldBorder().setSize(packet.getSize());
-    }
-
-    @Override
-    public void handleSetBorderWarningDistance(final ClientboundSetBorderWarningDistancePacket packet) {
-        PacketUtils.ensureRunningOnSameThread(packet, this, this.minecraft.packetProcessor());
-        this.level.getWorldBorder().setWarningBlocks(packet.getWarningBlocks());
-    }
-
-    @Override
-    public void handleSetBorderWarningDelay(final ClientboundSetBorderWarningDelayPacket packet) {
-        PacketUtils.ensureRunningOnSameThread(packet, this, this.minecraft.packetProcessor());
-        this.level.getWorldBorder().setWarningTime(packet.getWarningDelay());
     }
 
     @Override

@@ -136,7 +136,6 @@ import net.minecraft.server.commands.WardenSpawnTrackerCommand;
 import net.minecraft.server.commands.WaypointCommand;
 import net.minecraft.server.commands.WeatherCommand;
 import net.minecraft.server.commands.WhitelistCommand;
-import net.minecraft.server.commands.WorldBorderCommand;
 import net.minecraft.server.commands.data.DataCommands;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionCheck;
@@ -261,7 +260,7 @@ public class Commands {
         TriggerCommand.register(this.dispatcher);
         WaypointCommand.register(this.dispatcher, context);
         WeatherCommand.register(this.dispatcher);
-        WorldBorderCommand.register(this.dispatcher);
+        
         if (JvmProfiler.INSTANCE.isAvailable()) {
             JfrCommand.register(this.dispatcher);
         }

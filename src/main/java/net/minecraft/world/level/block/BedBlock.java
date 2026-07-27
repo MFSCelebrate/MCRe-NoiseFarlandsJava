@@ -179,7 +179,7 @@ public class BedBlock extends HorizontalDirectionalBlock {
         BlockPos pos = context.getClickedPos();
         BlockPos relative = pos.relative(facing);
         Level level = context.getLevel();
-        return level.getBlockState(relative).canBeReplaced(context) && level.getWorldBorder().isWithinBounds(relative)
+        return level.getBlockState(relative).canBeReplaced(context)
             ? this.defaultBlockState().setValue(FACING, facing)
             : null;
     }
