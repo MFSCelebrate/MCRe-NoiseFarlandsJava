@@ -25,11 +25,7 @@ import com.mojang.blaze3d.vulkan.glsl.IntermediaryShaderModule;
 import com.mojang.blaze3d.vulkan.glsl.ShaderCompileException;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,18 +40,12 @@ import net.minecraft.resources.Identifier;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.Vma;
 import org.lwjgl.vulkan.VK12;
 import org.lwjgl.vulkan.VkDevice;
 import org.lwjgl.vulkan.VkPhysicalDeviceLimits;
 import org.lwjgl.vulkan.VkPhysicalDeviceVulkan11Properties;
-import org.lwjgl.vulkan.VkPipelineCacheCreateInfo;
 import org.slf4j.Logger;
-import java.nio.LongBuffer;
-import org.lwjgl.PointerBuffer;  // 如果已经用了 PointerBuffer 也需要（虽然该文件没用，但为了保险）
 
 @OnlyIn(Dist.CLIENT)
 public class VulkanDevice implements GpuDeviceBackend {
@@ -74,11 +64,6 @@ public class VulkanDevice implements GpuDeviceBackend {
     private final boolean isIntegratedIntelMoltenVK;
     private final VulkanCommandEncoder commandEncoder;
     private final CheckpointExtension checkpointExtension;
-
-    // ===== 优化 5：Pipeline 缓存 =====
-    private final long vkPipelineCache;
-    private final Path pipelineCachePath;
-    private boolean pipelineCacheDirty = false;
 
     public VulkanDevice(
         final ShaderSource defaultShaderSource,
@@ -150,94 +135,6 @@ public class VulkanDevice implements GpuDeviceBackend {
             && physicalDevice.vkPhysicalDeviceDriverProperties().driverID() == 14;
         physicalDevice.close();
         this.commandEncoder = new VulkanCommandEncoder(this);
-
-        // ===== 初始化 Pipeline 缓存 =====
-        this.pipelineCachePath = Path.of("vulkan_pipeline.cache");
-        this.vkPipelineCache = this.createPipelineCache();
-    }
-
-    private long createPipelineCache() {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            ByteBuffer initialData = null;
-            if (Files.exists(this.pipelineCachePath)) {
-                try {
-                    byte[] bytes = Files.readAllBytes(this.pipelineCachePath);
-                    if (bytes.length > 0 && bytes.length < 1024 * 1024 * 64) { // 最大 64MB，防止异常文件
-                        initialData = MemoryUtil.memAlloc(bytes.length);
-                        initialData.put(bytes).flip();
-                        LOGGER.info("Loaded Vulkan pipeline cache ({} bytes)", bytes.length);
-                    } else if (bytes.length > 0) {
-                        LOGGER.warn("Vulkan pipeline cache file too large ({} bytes), ignoring", bytes.length);
-                    }
-                } catch (IOException e) {
-                    LOGGER.warn("Failed to read Vulkan pipeline cache: {}", e.getMessage());
-                }
-            }
-
-            VkPipelineCacheCreateInfo createInfo = VkPipelineCacheCreateInfo.calloc(stack).sType$Default();
-            if (initialData != null && initialData.hasRemaining()) {
-                createInfo.pInitialData(initialData);
-            }
-
-            LongBuffer pCache = stack.callocLong(1);
-int result = VK12.vkCreatePipelineCache(this.vkDevice, createInfo, null, pCache);
-            if (result != 0) {
-                LOGGER.error("Failed to create VkPipelineCache: {}", VulkanUtils.resultToString(result));
-                return 0L;
-            }
-
-            if (initialData != null) {
-                MemoryUtil.memFree(initialData);
-            }
-            return pCache.get(0);
-        }
-    }
-
-    private void savePipelineCache() {
-        if (this.vkPipelineCache == 0L) {
-            return;
-        }
-
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer pSize = stack.callocPointer(1);
-            int result = VK12.vkGetPipelineCacheData(this.vkDevice, this.vkPipelineCache, pSize, null);
-            if (result != 0) {
-                LOGGER.warn("Failed to get pipeline cache size: {}", VulkanUtils.resultToString(result));
-                return;
-            }
-
-            long size = pSize.get(0);
-            if (size == 0L) {
-                LOGGER.debug("Vulkan pipeline cache is empty, skipping save");
-                return;
-            }
-            if (size > 1024 * 1024 * 64) {
-                LOGGER.warn("Pipeline cache too large ({} bytes), skipping save", size);
-                return;
-            }
-
-            ByteBuffer buffer = MemoryUtil.memAlloc((int)size);
-            try {
-                result = VK12.vkGetPipelineCacheData(this.vkDevice, this.vkPipelineCache, pSize, buffer);
-                if (result != 0) {
-                    LOGGER.warn("Failed to get pipeline cache data: {}", VulkanUtils.resultToString(result));
-                    return;
-                }
-                buffer.flip();
-                byte[] bytes = new byte[buffer.remaining()];
-                buffer.get(bytes);
-                Files.write(this.pipelineCachePath, bytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-                LOGGER.info("Saved Vulkan pipeline cache ({} bytes)", bytes.length);
-            } finally {
-                MemoryUtil.memFree(buffer);
-            }
-        } catch (IOException e) {
-            LOGGER.warn("Failed to save Vulkan pipeline cache: {}", e.getMessage());
-        }
-    }
-
-    public long pipelineCache() {
-        return this.vkPipelineCache;
     }
 
     @Override
@@ -245,15 +142,10 @@ int result = VK12.vkCreatePipelineCache(this.vkDevice, createInfo, null, pCache)
         this.checkpointExtension.close();
         this.commandEncoder.destroy();
         this.clearPipelineCache();
-        // 在销毁设备前保存缓存
-        this.savePipelineCache();
         Vma.vmaDestroyAllocator(this.vma);
         VK12.vkDestroyDevice(this.vkDevice, null);
         this.instance.close();
         this.glslCompiler.close();
-        if (this.vkPipelineCache != 0L) {
-            VK12.vkDestroyPipelineCache(this.vkDevice, this.vkPipelineCache, null);
-        }
     }
 
     @Override

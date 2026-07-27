@@ -9,8 +9,6 @@ import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderPassBackend;
 import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import com.mojang.blaze3d.systems.TransientMemory;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.vulkan.VkCommandBufferInheritanceInfo;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vulkan.checkpoints.CheckpointExtension;
@@ -51,8 +49,7 @@ import org.lwjgl.vulkan.VkMemoryBarrier2.Buffer;
 
 @OnlyIn(Dist.CLIENT)
 public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable {
-    // ===== 优化 1：飞行帧数 3 =====
-    public static final int MAX_SUBMITS_IN_FLIGHT = 3;
+    public static final int MAX_SUBMITS_IN_FLIGHT = 2;
     private final VulkanDevice device;
     private final VulkanTransientMemory transientMemory;
     private final long submitSemaphore;
@@ -60,15 +57,8 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
     private long completedSubmitIndex = 0L;
     private final CheckpointExtension.CheckpointStorage checkpointStorage;
     private VulkanQueue.Submission submissionBuilder;
-    private final DestructionQueue<
-            Destroyable> destroyQueue = new DestructionQueue<>(MAX_SUBMITS_IN_FLIGHT, Destroyable
-            ::destroy);
-    private final VulkanCommandPool[] commandPools = new VulkanCommandPool[MAX_SUBMITS_IN_FLIGHT];
-    // ===== 优化 4：传输队列专用资源 =====
-    private final VulkanCommandPool transferCommandPool;
-    private final long transferCompleteSemaphore;
-    private boolean hasPendingTransfer = false;
-
+    private final DestructionQueue<Destroyable> destroyQueue = new DestructionQueue<>(2, Destroyable::destroy);
+    private final VulkanCommandPool[] commandPools = new VulkanCommandPool[2];
     private @Nullable VkCommandBuffer currentCommandBuffer;
     private @Nullable VulkanRenderPass currentRenderPass;
 
@@ -78,7 +68,6 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         MemoryStack baseStack = MemoryStack.stackGet();
 
         try (MemoryStack stack = baseStack.push()) {
-            // 图形队列时间线信号量
             VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = VkSemaphoreTypeCreateInfo.calloc(stack).sType$Default();
             semaphoreTypeCreateInfo.semaphoreType(1);
             semaphoreTypeCreateInfo.initialValue(this.currentSubmitIndex - 1L);
@@ -86,26 +75,16 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             semaphoreCreateInfo.pNext(semaphoreTypeCreateInfo);
             LongBuffer semaphoreHandlePtr = stack.callocLong(1);
             VulkanUtils.crashIfFailure(
-                    device, VK12.vkCreateSemaphore(device.vkDevice(), semaphoreCreateInfo, null, semaphoreHandlePtr), "Failed to create submit VkSemaphore"
+                device, VK12.vkCreateSemaphore(device.vkDevice(), semaphoreCreateInfo, null, semaphoreHandlePtr), "Failed to create submit VkSemaphore"
             );
             this.submitSemaphore = semaphoreHandlePtr.get(0);
-
-            // 传输队列二进制信号量
-            VkSemaphoreCreateInfo transferSemCreateInfo = VkSemaphoreCreateInfo.calloc(stack).sType$Default();
-            LongBuffer transferSemPtr = stack.callocLong(1);
-            VulkanUtils.crashIfFailure(
-                    device, VK12.vkCreateSemaphore(device.vkDevice(), transferSemCreateInfo, null, transferSemPtr), "Failed to create transfer VkSemaphore"
-            );
-            this.transferCompleteSemaphore = transferSemPtr.get(0);
         }
 
-        for (int i = 0; i < MAX_SUBMITS_IN_FLIGHT; i++) {
+        for (int i = 0; i < 2; i++) {
             this.commandPools[i] = new VulkanCommandPool(device, device.graphicsQueue());
         }
-        // 传输队列使用独立的命令池
-        this.transferCommandPool = new VulkanCommandPool(device, device.transferQueue());
 
-        this.checkpointStorage = device.checkpointExtension().createStorage(device, device.graphicsQueue(), MAX_SUBMITS_IN_FLIGHT);
+        this.checkpointStorage = device.checkpointExtension().createStorage(device, device.graphicsQueue(), 2);
         this.submissionBuilder = device.graphicsQueue().beginSubmit();
         this.transientMemory.beginSubmit();
     }
@@ -119,13 +98,11 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         this.transientMemory.destroy();
         this.destroyQueue.close();
 
-        for (int i = 0; i < MAX_SUBMITS_IN_FLIGHT; i++) {
+        for (int i = 0; i < 2; i++) {
             this.commandPools[i].destroy();
         }
-        this.transferCommandPool.destroy();
 
         VK12.vkDestroySemaphore(this.device.vkDevice(), this.submitSemaphore, null);
-        VK12.vkDestroySemaphore(this.device.vkDevice(), this.transferCompleteSemaphore, null);
     }
 
     public void queueForDestroy(final Destroyable destroyable) {
@@ -133,7 +110,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
     }
 
     private VulkanCommandPool currentCommandPool() {
-        return this.commandPools[(int) (this.currentSubmitIndex % MAX_SUBMITS_IN_FLIGHT)];
+        return this.commandPools[(int)(this.currentSubmitIndex % 2L)];
     }
 
     public VkCommandBuffer allocateAndBeginTransientCommandBuffer() {
@@ -202,27 +179,16 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         this.submissionBuilder.signalSemaphore(vkSemaphore, value, stageMask);
     }
 
-    // ===== 优化 4：提交传输命令到传输队列 =====
-    private void submitTransfer(VkCommandBuffer cmd) {
-        VulkanUtils.crashIfFailure(this.device, VK12.vkEndCommandBuffer(cmd), "Failed to end transfer command buffer");
-        try (VulkanQueue.Submission sub = this.device.transferQueue().beginSubmit()) {
-            sub.signalSemaphore(this.transferCompleteSemaphore, 0L, 0x04000000L); // TRANSFER stage
-            sub.executeCommands(cmd);
-        }
-        this.hasPendingTransfer = true;
-    }
-
-    // ===== 优化 2：缩小 barrier 阶段掩码 =====
     private void memoryBarrier(final MemoryStack stack) {
         memoryBarrier(this.commandBuffer(), stack);
     }
 
     public static void memoryBarrier(final VkCommandBuffer commandBuffer, final MemoryStack stack) {
         Buffer memoryBarrier = VkMemoryBarrier2.calloc(1, stack).sType$Default();
-        memoryBarrier.srcStageMask(0x04000000L);
-        memoryBarrier.srcAccessMask(0x0000C000L);
-        memoryBarrier.dstStageMask(0x00010000L);
-        memoryBarrier.dstAccessMask(0x00018000L);
+        memoryBarrier.srcStageMask(65536L);
+        memoryBarrier.srcAccessMask(98304L);
+        memoryBarrier.dstStageMask(65536L);
+        memoryBarrier.dstAccessMask(98304L);
         VkDependencyInfo depInfo = VkDependencyInfo.calloc(stack).sType$Default();
         depInfo.pMemoryBarriers(memoryBarrier);
         KHRSynchronization2.vkCmdPipelineBarrier2KHR(commandBuffer, depInfo);
@@ -232,21 +198,12 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
     public void submit() {
         this.endCommandBuffer();
         this.transientMemory.endSubmit();
-
-        // ===== 优化 4：图形队列等待传输完成 =====
-        if (this.hasPendingTransfer) {
-            this.submissionBuilder.waitSemaphore(this.transferCompleteSemaphore, 0L, 0x00010000L); // ALL_COMMANDS 阶段等待
-            this.hasPendingTransfer = false;
-        }
-
         this.signalSemaphore(this.submitSemaphore, this.currentSubmitIndex, 65536L);
         this.submissionBuilder.close();
         this.submissionBuilder = this.device.graphicsQueue().beginSubmit();
         this.currentSubmitIndex++;
-        // 等待更早的一帧，保持飞行帧数不超过 MAX_SUBMITS_IN_FLIGHT
-        if (!this.awaitSubmitCompletion(this.currentSubmitIndex - MAX_SUBMITS_IN_FLIGHT, 5000000000L)) {
-            List<
-                    CheckpointExtension.QueueCheckpoints> checkpoints = this.device.checkpointExtension().retrieveCheckpoints(false);
+        if (!this.awaitSubmitCompletion(this.currentSubmitIndex - 2L, 5000000000L)) {
+            List<CheckpointExtension.QueueCheckpoints> checkpoints = this.device.checkpointExtension().retrieveCheckpoints(false);
             throw new IllegalStateException("5s timeout reached when waiting for VK semaphore: " + VulkanUtils.formatCheckpoints(checkpoints));
         }
 
@@ -263,20 +220,15 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
 
     @Override
     public RenderPassBackend createRenderPass(final RenderPassDescriptor descriptor) {
-        List<
-                RenderPassDescriptor.Attachment<
-                        Optional<Vector4fc>>> colorAttachments = descriptor.colorAttachments();
+        List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments = descriptor.colorAttachments();
         VulkanGpuTextureView[] colorTextures = new VulkanGpuTextureView[colorAttachments.size()];
 
         for (int i = 0; i < colorAttachments.size(); i++) {
-            RenderPassDescriptor.Attachment<
-                    Optional<Vector4fc>> attachment = colorAttachments.get(i);
-            colorTextures[
-            i] = attachment != null ? (VulkanGpuTextureView) attachment.textureView() : null;
+            RenderPassDescriptor.Attachment<Optional<Vector4fc>> attachment = colorAttachments.get(i);
+            colorTextures[i] = attachment != null ? (VulkanGpuTextureView)attachment.textureView() : null;
         }
 
-        RenderPassDescriptor.Attachment<
-                OptionalDouble> depthAttachment = descriptor.depthAttachment();
+        RenderPassDescriptor.Attachment<OptionalDouble> depthAttachment = descriptor.depthAttachment();
         this.device.instance().debug().beginDebugGroup(this.commandBuffer(), descriptor.label());
         this.checkpointStorage.recordCheckpoint(this.commandBuffer(), CheckpointExtension.CheckpointType.BEGIN_RENDER_PASS, descriptor.label());
 
@@ -284,8 +236,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             int width = 0;
             int height = 0;
             if (!colorAttachments.isEmpty()) {
-                for (RenderPassDescriptor.Attachment<
-                        Optional<Vector4fc>> colorAttachment : colorAttachments) {
+                for (RenderPassDescriptor.Attachment<Optional<Vector4fc>> colorAttachment : colorAttachments) {
                     if (colorAttachment != null) {
                         GpuTextureView colorTexture = colorAttachment.textureView();
                         width = colorTexture.getWidth(0);
@@ -310,8 +261,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
                     colorAttachmentInfo.imageView(colorTexture.vkImageView());
                     colorAttachmentInfo.imageLayout(1);
                     colorAttachmentInfo.storeOp(0);
-                    RenderPassDescriptor.Attachment<
-                            Optional<Vector4fc>> attachment = colorAttachments.get(i);
+                    RenderPassDescriptor.Attachment<Optional<Vector4fc>> attachment = colorAttachments.get(i);
                     Optional<Vector4fc> clearValue = attachment.clearValue();
                     if (clearValue.isPresent()) {
                         Vector4fc color = clearValue.get();
@@ -337,14 +287,14 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             renderingInfo.pColorAttachments(colorAttachmentInfo);
             if (depthAttachment != null) {
                 VkRenderingAttachmentInfo depthAttachmentInfo = VkRenderingAttachmentInfo.calloc(stack).sType$Default();
-                VulkanGpuTextureView vulkanDepthAttachment = (VulkanGpuTextureView) depthAttachment.textureView();
+                VulkanGpuTextureView vulkanDepthAttachment = (VulkanGpuTextureView)depthAttachment.textureView();
                 depthAttachmentInfo.imageView(vulkanDepthAttachment.vkImageView());
                 depthAttachmentInfo.imageLayout(1);
                 depthAttachmentInfo.storeOp(0);
                 OptionalDouble clearValue = depthAttachment.clearValue();
                 if (clearValue.isPresent()) {
                     double color = clearValue.getAsDouble();
-                    VkClearDepthStencilValue vkClearColor = VkClearDepthStencilValue.calloc(stack).depth((float) color);
+                    VkClearDepthStencilValue vkClearColor = VkClearDepthStencilValue.calloc(stack).depth((float)color);
                     depthAttachmentInfo.loadOp(1);
                     depthAttachmentInfo.clearValue(VkClearValue.calloc(stack).depthStencil(vkClearColor));
                 } else {
@@ -356,15 +306,15 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
 
             KHRDynamicRendering.vkCmdBeginRenderingKHR(this.commandBuffer(), renderingInfo);
             this.currentRenderPass = new VulkanRenderPass(
-            this.device,
-            this,
-            this.commandBuffer(),
-            this.checkpointStorage,
-            descriptor.renderArea,
-            width,
-            height,
-            depthAttachment != null,
-            descriptor.label()
+                this.device,
+                this,
+                this.commandBuffer(),
+                this.checkpointStorage,
+                descriptor.renderArea,
+                width,
+                height,
+                depthAttachment != null,
+                descriptor.label()
             );
         }
 
@@ -395,18 +345,18 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         subresourceRange.baseArrayLayer(0);
         subresourceRange.layerCount(1);
         subresourceRange.aspectMask(1);
-        VK12.vkCmdClearColorImage(this.commandBuffer(), ((VulkanGpuTexture) colorTexture).vkImage(), 1, vkClearColor, subresourceRange);
+        VK12.vkCmdClearColorImage(this.commandBuffer(), ((VulkanGpuTexture)colorTexture).vkImage(), 1, vkClearColor, subresourceRange);
     }
 
     public void clearDepthTextureUnsynced(final MemoryStack stack, final GpuTexture depthTexture, final double clearDepth) {
-        VkClearDepthStencilValue vkClearDepth = VkClearDepthStencilValue.calloc(stack).depth((float) clearDepth);
+        VkClearDepthStencilValue vkClearDepth = VkClearDepthStencilValue.calloc(stack).depth((float)clearDepth);
         VkImageSubresourceRange subresourceRange = VkImageSubresourceRange.calloc(stack);
         subresourceRange.baseMipLevel(0);
         subresourceRange.levelCount(depthTexture.getMipLevels());
         subresourceRange.baseArrayLayer(0);
         subresourceRange.layerCount(1);
         subresourceRange.aspectMask(2);
-        VK12.vkCmdClearDepthStencilImage(this.commandBuffer(), ((VulkanGpuTexture) depthTexture).vkImage(), 1, vkClearDepth, subresourceRange);
+        VK12.vkCmdClearDepthStencilImage(this.commandBuffer(), ((VulkanGpuTexture)depthTexture).vkImage(), 1, vkClearDepth, subresourceRange);
     }
 
     @Override
@@ -428,22 +378,25 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
 
     @Override
     public void clearColorAndDepthTextures(
-            final GpuTexture colorTexture,
-            final Vector4fc clearColor,
-            final GpuTexture depthTexture,
-            final double clearDepth,
-            final int regionX,
-            final int regionY,
-            final int regionWidth,
-            final int regionHeight) {
-        try (GpuTextureView colorTextureView = this.device.createTextureView(colorTexture);
-                GpuTextureView depthTextureView = this.device.createTextureView(depthTexture);
-                MemoryStack stack = MemoryStack.stackPush(); ) {
+        final GpuTexture colorTexture,
+        final Vector4fc clearColor,
+        final GpuTexture depthTexture,
+        final double clearDepth,
+        final int regionX,
+        final int regionY,
+        final int regionWidth,
+        final int regionHeight
+    ) {
+        try (
+            GpuTextureView colorTextureView = this.device.createTextureView(colorTexture);
+            GpuTextureView depthTextureView = this.device.createTextureView(depthTexture);
+            MemoryStack stack = MemoryStack.stackPush();
+        ) {
             this.createRenderPass(
-                    RenderPassDescriptor.create(() -> "ClearColorDepthTextures")
-                            .withColorAttachment(colorTextureView)
-                            .withDepthAttachment(depthTextureView)
-                            .withRenderArea(new RenderPass.RenderArea(0, 0, colorTexture.getWidth(0), colorTexture.getHeight(0)))
+                RenderPassDescriptor.create(() -> "ClearColorDepthTextures")
+                    .withColorAttachment(colorTextureView)
+                    .withDepthAttachment(depthTextureView)
+                    .withRenderArea(new RenderPass.RenderArea(0, 0, colorTexture.getWidth(0), colorTexture.getHeight(0)))
             );
             assert this.currentRenderPass != null;
             org.lwjgl.vulkan.VkClearRect.Buffer rects = VkClearRect.calloc(1, stack);
@@ -458,7 +411,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             attachments.clearValue(colorClearValue);
             VkClearValue depthClearValue = VkClearValue.calloc(stack);
             VkClearDepthStencilValue clearValue = depthClearValue.depthStencil();
-            clearValue.depth((float) clearDepth);
+            clearValue.depth((float)clearDepth);
             attachments.position(1);
             attachments.aspectMask(2);
             attachments.clearValue(depthClearValue);
@@ -478,15 +431,15 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
 
     @Override
     public void writeToBuffer(final GpuBufferSlice destination, final ByteBuffer data) {
-        VulkanGpuBuffer destBuffer = (VulkanGpuBuffer) destination.buffer();
+        VulkanGpuBuffer destBuffer = (VulkanGpuBuffer)destination.buffer();
         GpuBufferSlice stagingBuffer = this.transientMemory.uploadStaging(data, 1L, 16);
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             org.lwjgl.vulkan.VkBufferCopy.Buffer regions = VkBufferCopy.calloc(1, stack)
-                    .srcOffset(stagingBuffer.offset())
-                    .dstOffset(destination.offset())
-                    .size(data.remaining());
-            VK12.vkCmdCopyBuffer(this.commandBuffer(), ((VulkanGpuBuffer) stagingBuffer.buffer()).vkBuffer(), destBuffer.vkBuffer(), regions);
+                .srcOffset(stagingBuffer.offset())
+                .dstOffset(destination.offset())
+                .size(data.remaining());
+            VK12.vkCmdCopyBuffer(this.commandBuffer(), ((VulkanGpuBuffer)stagingBuffer.buffer()).vkBuffer(), destBuffer.vkBuffer(), regions);
             this.memoryBarrier(stack);
         }
     }
@@ -498,56 +451,25 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             copyInfo.srcOffset(source.offset());
             copyInfo.dstOffset(target.offset());
             copyInfo.size(source.length());
-            VK12.vkCmdCopyBuffer(this.commandBuffer(), ((VulkanGpuBuffer) source.buffer()).vkBuffer(), ((VulkanGpuBuffer) target.buffer()).vkBuffer(), copyInfo);
+            VK12.vkCmdCopyBuffer(this.commandBuffer(), ((VulkanGpuBuffer)source.buffer()).vkBuffer(), ((VulkanGpuBuffer)target.buffer()).vkBuffer(), copyInfo);
             this.memoryBarrier(stack);
         }
     }
 
-    // ===== 优化 6：二级命令缓冲执行支持 =====
-
-/** 在主命令缓冲中执行一组二级命令缓冲（多线程录制的命令） 注意：此方法必须在 beginRenderPass 之后、endRenderPass 之前调用 */
-    public void executeSecondaryCommands(VkCommandBuffer primary, VkCommandBuffer... secondaries) {
-        if (secondaries == null || secondaries.length == 0) {
-            return;
-        }
-        // 检查是否在 RenderPass 内（二级缓冲只能在 RenderPass 中执行）
-        if (this.currentRenderPass == null) {
-            throw new IllegalStateException("Secondary command buffers can only be executed inside a render pass");
-        }
-
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer bufferPtr = stack.callocPointer(secondaries.length);
-            for (int i = 0; i < secondaries.length; i++) {
-                bufferPtr.put(i, secondaries[i].address());
-            }
-            bufferPtr.flip();
-            VK12.vkCmdExecuteCommands(primary, bufferPtr);
-        }
-    }
-
-/** 分配一个二级命令缓冲（工作线程可调用） 返回的缓冲需要由调用者负责结束（vkEndCommandBuffer）并传给 executeSecondaryCommands */
-    public VkCommandBuffer allocateSecondaryBuffer(VkCommandBufferInheritanceInfo inheritanceInfo) {
-        return this.currentCommandPool().allocateSecondaryBuffer(inheritanceInfo);
-    }
-
-    // ===== 优化 4：writeToTexture 使用传输队列 =====
     @Override
     public void writeToTexture(
-            final GpuTexture destination,
-            final ByteBuffer source,
-            final int mipLevel,
-            final int depthOrLayer,
-            final int destX,
-            final int destY,
-            final int width,
-            final int height) {
+        final GpuTexture destination,
+        final ByteBuffer source,
+        final int mipLevel,
+        final int depthOrLayer,
+        final int destX,
+        final int destY,
+        final int width,
+        final int height
+    ) {
         GpuBufferSlice stagingBuffer = this.transientMemory.uploadStaging(source, 1L, 16);
-        VkCommandBuffer transferCmd = this.transferCommandPool.allocateBuffer();
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack).sType$Default().flags(1);
-            VulkanUtils.crashIfFailure(this.device, VK12.vkBeginCommandBuffer(transferCmd, beginInfo), "Failed to begin transfer command buffer");
-
             org.lwjgl.vulkan.VkBufferImageCopy.Buffer region = VkBufferImageCopy.calloc(1, stack);
             region.bufferOffset(stagingBuffer.offset());
             region.bufferRowLength(width);
@@ -560,38 +482,32 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             region.imageOffset().set(destX, destY, 0);
             region.imageExtent().set(width, height, 1);
             VK12.vkCmdCopyBufferToImage(
-                    transferCmd, ((VulkanGpuBuffer) stagingBuffer.buffer()).vkBuffer(), ((VulkanGpuTexture) destination).vkImage(), 1, region
+                this.commandBuffer(), ((VulkanGpuBuffer)stagingBuffer.buffer()).vkBuffer(), ((VulkanGpuTexture)destination).vkImage(), 1, region
             );
+            this.memoryBarrier(stack);
         }
-
-        this.submitTransfer(transferCmd);
-        // 注意：此处不再调用 memoryBarrier，由图形队列等待信号量来保证同步
     }
 
-    // ===== 优化 4：copyBufferToTexture 使用传输队列 =====
     @Override
     public void copyBufferToTexture(
-            final GpuBufferSlice source,
-            final int sourceX,
-            final int sourceY,
-            final int sourceWidth,
-            final int sourceHeight,
-            final GpuTexture destination,
-            final int destinationX,
-            final int destinationY,
-            final int copyWidth,
-            final int copyHeight,
-            final int mipLevel,
-            final int arrayLayer) {
+        final GpuBufferSlice source,
+        final int sourceX,
+        final int sourceY,
+        final int sourceWidth,
+        final int sourceHeight,
+        final GpuTexture destination,
+        final int destinationX,
+        final int destinationY,
+        final int copyWidth,
+        final int copyHeight,
+        final int mipLevel,
+        final int arrayLayer
+    ) {
         int texelSize = destination.getFormat().blockSize();
-        long skipTexels = sourceX + (long) sourceY * sourceWidth;
+        long skipTexels = sourceX + (long)sourceY * sourceWidth;
         long skipBytes = skipTexels * texelSize;
-        VkCommandBuffer transferCmd = this.transferCommandPool.allocateBuffer();
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack).sType$Default().flags(1);
-            VulkanUtils.crashIfFailure(this.device, VK12.vkBeginCommandBuffer(transferCmd, beginInfo), "Failed to begin transfer command buffer");
-
             org.lwjgl.vulkan.VkBufferImageCopy.Buffer region = VkBufferImageCopy.calloc(1, stack);
             region.bufferOffset(source.offset() + skipBytes);
             region.bufferRowLength(sourceWidth);
@@ -604,12 +520,10 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             region.imageOffset().set(destinationX, destinationY, 0);
             region.imageExtent().set(copyWidth, copyHeight, 1);
             VK12.vkCmdCopyBufferToImage(
-                    transferCmd, ((VulkanGpuBuffer) source.buffer()).vkBuffer(), ((VulkanGpuTexture) destination).vkImage(), 1, region
+                this.commandBuffer(), ((VulkanGpuBuffer)source.buffer()).vkBuffer(), ((VulkanGpuTexture)destination).vkImage(), 1, region
             );
+            this.memoryBarrier(stack);
         }
-
-        this.submitTransfer(transferCmd);
-        // 注意：此处不再调用 memoryBarrier，由图形队列等待信号量来保证同步
     }
 
     @Override
@@ -619,15 +533,16 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
 
     @Override
     public void copyTextureToBuffer(
-            final GpuTexture source,
-            final GpuBuffer destination,
-            final long offset,
-            final Runnable callback,
-            final int mipLevel,
-            final int x,
-            final int y,
-            final int width,
-            final int height) {
+        final GpuTexture source,
+        final GpuBuffer destination,
+        final long offset,
+        final Runnable callback,
+        final int mipLevel,
+        final int x,
+        final int y,
+        final int width,
+        final int height
+    ) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             org.lwjgl.vulkan.VkBufferImageCopy.Buffer copy = VkBufferImageCopy.calloc(1, stack);
             copy.bufferOffset(offset);
@@ -640,7 +555,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             copy.imageExtent().set(width, height, 1);
             copy.bufferRowLength(width);
             copy.bufferImageHeight(height);
-            VK12.vkCmdCopyImageToBuffer(this.commandBuffer(), ((VulkanGpuTexture) source).vkImage(), 1, ((VulkanGpuBuffer) destination).vkBuffer(), copy);
+            VK12.vkCmdCopyImageToBuffer(this.commandBuffer(), ((VulkanGpuTexture)source).vkImage(), 1, ((VulkanGpuBuffer)destination).vkBuffer(), copy);
             this.memoryBarrier(stack);
         }
 
@@ -649,17 +564,18 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
 
     @Override
     public void copyTextureToTexture(
-            final GpuTexture source,
-            final GpuTexture destination,
-            final int mipLevel,
-            final int destX,
-            final int destY,
-            final int sourceX,
-            final int sourceY,
-            final int width,
-            final int height) {
-        VulkanGpuTexture vulkanSrc = (VulkanGpuTexture) source;
-        VulkanGpuTexture vulkanDst = (VulkanGpuTexture) destination;
+        final GpuTexture source,
+        final GpuTexture destination,
+        final int mipLevel,
+        final int destX,
+        final int destY,
+        final int sourceX,
+        final int sourceY,
+        final int width,
+        final int height
+    ) {
+        VulkanGpuTexture vulkanSrc = (VulkanGpuTexture)source;
+        VulkanGpuTexture vulkanDst = (VulkanGpuTexture)destination;
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkImageSubresourceLayers subresourceLayers = VkImageSubresourceLayers.calloc(stack);
@@ -690,9 +606,6 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
                 throw new IllegalStateException("Cannot wait on a fence for the current submit");
             }
         } else {
-            if (this.currentSubmitIndex > submitIndex + MAX_SUBMITS_IN_FLIGHT) {
-                return true;
-            }
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 VkSemaphoreWaitInfo waitInfo = VkSemaphoreWaitInfo.calloc(stack).sType$Default();
                 waitInfo.pSemaphores(stack.longs(this.submitSemaphore));
@@ -734,14 +647,16 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
 
     @Override
     public void writeTimestamp(final GpuQueryPool pool, final int index) {
-        long queryPool = ((VulkanQueryPool) pool).vkQueryPool();
+        long queryPool = ((VulkanQueryPool)pool).vkQueryPool();
         VK12.vkResetQueryPool(this.device.vkDevice(), queryPool, index, 1);
         KHRSynchronization2.vkCmdWriteTimestamp2KHR(this.commandBuffer(), 65536L, queryPool, index);
     }
 
     public long getTimestampNow() {
-        try (MemoryStack stack = MemoryStack.stackPush();
-                VulkanQueryPool queryPool = (VulkanQueryPool) this.device.createTimestampQueryPool(1); ) {
+        try (
+            MemoryStack stack = MemoryStack.stackPush();
+            VulkanQueryPool queryPool = (VulkanQueryPool)this.device.createTimestampQueryPool(1);
+        ) {
             VkCommandBuffer commandBuffer = this.allocateAndBeginTransientCommandBuffer();
             KHRSynchronization2.vkCmdWriteTimestamp2KHR(commandBuffer, 0L, queryPool.vkQueryPool(), 0);
             VulkanUtils.crashIfFailure(this.device, VK12.vkEndCommandBuffer(commandBuffer), "Failed to end VkCommandBuffer");
@@ -752,9 +667,9 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
 
             LongBuffer timestampPtr = stack.callocLong(1);
             VulkanUtils.crashIfFailure(
-                    this.device,
-                    VK12.vkGetQueryPoolResults(this.device.vkDevice(), queryPool.vkQueryPool(), 0, 1, timestampPtr, 0L, 3),
-                    "Cannot fetch current timestamp"
+                this.device,
+                VK12.vkGetQueryPoolResults(this.device.vkDevice(), queryPool.vkQueryPool(), 0, 1, timestampPtr, 0L, 3),
+                "Cannot fetch current timestamp"
             );
             return timestampPtr.get(0);
         }
