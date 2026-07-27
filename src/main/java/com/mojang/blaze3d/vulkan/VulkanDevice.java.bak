@@ -177,8 +177,8 @@ public class VulkanDevice implements GpuDeviceBackend {
                 createInfo.pInitialData(initialData);
             }
 
-            PointerBuffer pCache = stack.callocPointer(1);
-            int result = VK12.vkCreatePipelineCache(this.vkDevice, createInfo, null, pCache);
+            LongBuffer pCache = stack.callocLong(1);
+int result = VK12.vkCreatePipelineCache(this.vkDevice, createInfo, null, pCache);
             if (result != 0) {
                 LOGGER.error("Failed to create VkPipelineCache: {}", VulkanUtils.resultToString(result));
                 return 0L;

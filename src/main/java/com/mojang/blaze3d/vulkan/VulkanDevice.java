@@ -54,6 +54,8 @@ import org.lwjgl.vulkan.VkPhysicalDeviceLimits;
 import org.lwjgl.vulkan.VkPhysicalDeviceVulkan11Properties;
 import org.lwjgl.vulkan.VkPipelineCacheCreateInfo;
 import org.slf4j.Logger;
+import java.nio.LongBuffer;
+import org.lwjgl.PointerBuffer;  // 如果已经用了 PointerBuffer 也需要（虽然该文件没用，但为了保险）
 
 @OnlyIn(Dist.CLIENT)
 public class VulkanDevice implements GpuDeviceBackend {
