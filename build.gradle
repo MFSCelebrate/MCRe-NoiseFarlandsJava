@@ -3,6 +3,7 @@ plugins {
     id 'java'
     id 'application'
     id 'net.fabricmc.fabric-loom' version '1.17.9'
+    
 }
 
 group = 'net.minecraft'
@@ -36,14 +37,20 @@ repositories {
     mavenCentral()
     maven { url 'https://libraries.minecraft.net/' }
     maven { url 'https://maven.fabricmc.net/' } // Loom 需要
+    maven { url 'https://maven.minecraftforge.net/' }   // ← 加这一行
 }
 
 def lwjglVersion = '3.4.1'
 def nettyVersion = '4.2.15.Final'
 
+ext {
+    spi_version = '8.0.0'
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     // ===== 你原有的 131 个库（略，保持你提供的列表） =====
+    implementation 'net.minecraftforge:forgespi:' + spi_version
     implementation "com.mojang:authlib:10.0.76"
     implementation "com.mojang:brigadier:1.3.10"
     implementation "com.mojang:datafixerupper:10.0.21"
