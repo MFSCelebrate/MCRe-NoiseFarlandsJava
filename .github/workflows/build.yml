@@ -1,0 +1,103 @@
+name: Build Minecraft 26.2 (Unobfuscated)
+
+on:
+  push:
+    branches: [ "main", "26.2-Permanent" ]   # 可选分支名
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # ===== 修改：Java 版本升到 25 =====
+  JAVA_VERSION: 25
+  JAVA_DISTRIBUTION: temurin
+  # ===== 修改：Minecraft 版本号同步 =====
+  MINECRAFT_VERSION: 26.2
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 配置 JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: 下载原版 Minecraft ${{ env.MINECRAFT_VERSION }} client jar
+        run: |
+          # 注意：对快照版本，Mojang manifest 可能包含，如果失败可改用固定 URL
+          curl -s -o version_manifest.json https://launchermeta.mojang.com/mc/game/version_manifest.json
+          VERSION_URL=$(cat version_manifest.json | jq -r --arg VERSION "${{ env.MINECRAFT_VERSION }}" '.versions[] | select(.id==$VERSION) | .url')
+          if [ -z "$VERSION_URL" ]; then
+            echo "❌ 未找到版本 ${{ env.MINECRAFT_VERSION }}，尝试使用最新快照..."
+            # 备用：获取最新快照
+            VERSION_URL=$(cat version_manifest.json | jq -r '.latest.snapshot.url')
+          fi
+          curl -s -o version.json $VERSION_URL
+          CLIENT_URL=$(cat version.json | jq -r '.downloads.client.url')
+          wget -O original.jar $CLIENT_URL
+
+      - name: 给 gradlew 加执行权限
+        run: chmod +x ./gradlew
+
+      - name: 编译并 remap（生成 modified.jar）
+        run: |
+          ./gradlew clean build --no-daemon 2>&1 | tee full.log
+          grep -B 2 -A 5 "error:" full.log > compile_errors.log || true
+          rm -f full.log
+        continue-on-error: true
+
+      - name: 上传编译错误日志
+        uses: actions/upload-artifact@v4
+        with:
+          name: CompileErrors
+          path: compile_errors.log
+          if-no-files-found: warn
+
+      - name: 查看 modified.jar 内容
+        run: |
+          echo "===== modified.jar 中的类（已去混淆） ====="
+          jar tf build/libs/modified.jar | grep -E "\.class$" | head -30
+
+      - name: 解压原版 jar
+        run: |
+          rm -rf extracted
+          mkdir -p extracted
+          cd extracted
+          jar xf ../original.jar
+          cd ..
+
+      - name: 用 modified.jar 覆盖原版
+        run: |
+          cd extracted
+          jar xf ../build/libs/modified.jar
+          rm -f META-INF/*.SF META-INF/*.RSA META-INF/*.DSA
+          cd ..
+
+      - name: 重新打包完整 jar
+        run: |
+          cd extracted
+          jar cfm ../26.3-snapshot-3.jar META-INF/MANIFEST.MF .
+          cd ..
+
+      - name: 验证关键类
+        run: |
+          jar tf minecraft-${{ env.MINECRAFT_VERSION }}-custom-full.jar | grep -E "Minecraft\.class$" || echo "⚠️ 未找到 Minecraft.class，可能类名不同。"
+          echo "===== 列出前 20 个类 ====="
+          jar tf minecraft-${{ env.MINECRAFT_VERSION }}-custom-full.jar | grep -E "\.class$" | head -20
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: 26.3-snapshot-3
+          path: 26.3-snapshot-3.jar
+          if-no-files-found: error
