@@ -128,7 +128,7 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-jemalloc:${lwjglVersion}:natives-windows"
 }
 
-def brokenPatterns = ["**/*.bak"]
+def brokenPatterns = []
 
 sourceSets {
     main {

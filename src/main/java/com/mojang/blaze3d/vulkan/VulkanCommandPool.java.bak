@@ -10,7 +10,6 @@ import org.lwjgl.vulkan.VK12;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkCommandBufferAllocateInfo;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
-import org.lwjgl.vulkan.VkCommandBufferInheritanceInfo;
 
 @OnlyIn(Dist.CLIENT)
 public class VulkanCommandPool implements Destroyable {
@@ -62,7 +61,7 @@ public class VulkanCommandPool implements Destroyable {
         this.allocatedBuffers.rewind();
     }
 
-    private void allocateMoreBuffers(int level) {
+    private void allocateMoreBuffers() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             if (this.allocatedBuffers.capacity() - this.allocatedBuffers.limit() < 32) {
                 PointerBuffer newBuffer = MemoryUtil.memRealloc(this.allocatedBuffers, this.allocatedBuffers.capacity() + 512);
@@ -72,7 +71,7 @@ public class VulkanCommandPool implements Destroyable {
 
             VkCommandBufferAllocateInfo allocateInfo = VkCommandBufferAllocateInfo.calloc(stack).sType$Default();
             allocateInfo.commandPool(this.commandPool);
-            allocateInfo.level(level); // 0 = PRIMARY, 1 = SECONDARY
+            allocateInfo.level(0);
             allocateInfo.commandBufferCount(32);
             this.allocatedBuffers.limit(this.allocatedBuffers.limit() + 32);
             PointerBuffer buffers = this.allocatedBuffers.slice(0, 32);
@@ -82,31 +81,11 @@ public class VulkanCommandPool implements Destroyable {
         }
     }
 
-    // ===== 原有方法：分配一级命令缓冲（用于主缓冲） =====
     public VkCommandBuffer allocateBuffer() {
-        return this.allocateBuffer(0);
-    }
-
-    // ===== 优化 6：支持二级命令缓冲（用于多线程记录） =====
-    public VkCommandBuffer allocateBuffer(int level) {
-        if (level != 0 && level != 1) {
-            throw new IllegalArgumentException("Command buffer level must be 0 (PRIMARY) or 1 (SECONDARY)");
-        }
         if (!this.allocatedBuffers.hasRemaining()) {
-            this.allocateMoreBuffers(level);
+            this.allocateMoreBuffers();
         }
-        return new VkCommandBuffer(this.allocatedBuffers.get(), this.device.vkDevice());
-    }
 
-    // ===== 便捷方法：分配带继承信息的二级缓冲（用于 RenderPass 内） =====
-    public VkCommandBuffer allocateSecondaryBuffer(VkCommandBufferInheritanceInfo inheritanceInfo) {
-        VkCommandBuffer cmd = this.allocateBuffer(1);
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            org.lwjgl.vulkan.VkCommandBufferBeginInfo beginInfo = org.lwjgl.vulkan.VkCommandBufferBeginInfo.calloc(stack).sType$Default();
-            beginInfo.flags(org.lwjgl.vulkan.VK11.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | org.lwjgl.vulkan.VK11.VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT);
-            beginInfo.pInheritanceInfo(inheritanceInfo);
-            VulkanUtils.crashIfFailure(this.device, VK12.vkBeginCommandBuffer(cmd, beginInfo), "Failed to begin secondary VkCommandBuffer");
-        }
-        return cmd;
+        return new VkCommandBuffer(this.allocatedBuffers.get(), this.device.vkDevice());
     }
 }

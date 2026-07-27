@@ -299,9 +299,6 @@ public class Commands {
             TransferCommand.register(this.dispatcher);
             WhitelistCommand.register(this.dispatcher);
         }
-        
-        // Mojang 内部测试命令
-        TestCommand.register(this.dispatcher);
 
         if (commandSelection.includeIntegrated) {
             PublishCommand.register(this.dispatcher);
