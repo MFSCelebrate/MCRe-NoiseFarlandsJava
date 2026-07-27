@@ -1599,7 +1599,7 @@ public class DataFixers {
         fixerUpper.addFixer(new AddNewChoices(v4656, "Added Parched and Camel Husk", References.ENTITY));
         Schema v4657 = fixerUpper.addSchema(4657, SAME_NAMESPACED);
         
-        fixerUpper.addFixer(new GameRuleRegistryFix(v4658));
+        
         Schema v4661 = fixerUpper.addSchema(4661, SAME_NAMESPACED);
         fixerUpper.addFixer(new OptionsMusicToastFix(v4661, false));
         Schema v4763 = fixerUpper.addSchema(4763, SAME_NAMESPACED);

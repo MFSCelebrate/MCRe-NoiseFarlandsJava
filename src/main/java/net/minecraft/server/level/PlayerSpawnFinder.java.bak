@@ -42,18 +42,19 @@ public class PlayerSpawnFinder {
         this.spawnSuggestion = spawnSuggestion;
         this.radius = radius;
         long squareSide = radius * 2L + 1L;
-        this.candidateCount = (int)Math.min(1024L, squareSide * squareSide);
+        this.candidateCount = (int) Math.min(1024L, squareSide * squareSide);
         this.coprime = getCoprime(this.candidateCount);
         this.offset = RandomSource.createThreadLocalInstance().nextInt(this.candidateCount);
     }
 
-    public static CompletableFuture<Vec3> findSpawn(final ServerLevel level, final BlockPos spawnSuggestion) {
+    public static CompletableFuture<
+                    Vec3> findSpawn(final ServerLevel level, final BlockPos spawnSuggestion) {
         if (level.getServer().getWorldData().getGameType() == GameType.ADVENTURE) {
             return CompletableFuture.completedFuture(fixupSpawnHeight(level, spawnSuggestion));
         }
 
         int radius = Math.max(0, level.getGameRules().get(GameRules.RESPAWN_RADIUS));
-        int distToBorder = Mth.floor(spawnSuggestion.getX(), spawnSuggestion.getZ()));
+        int distToBorder = Mth.floor(spawnSuggestion.getX(), spawnSuggestion.getZ());
         if (distToBorder < radius) {
             radius = distToBorder;
         }
@@ -81,7 +82,7 @@ public class PlayerSpawnFinder {
             });
         } else {
             this.scheduleCandidate(
-                this.spawnSuggestion.getX(), this.spawnSuggestion.getZ(), candidateIndex, () -> Optional.of(fixupSpawnHeight(this.level, this.spawnSuggestion))
+                    this.spawnSuggestion.getX(), this.spawnSuggestion.getZ(), candidateIndex, () -> Optional.of(fixupSpawnHeight(this.level, this.spawnSuggestion))
             );
         }
     }
@@ -111,37 +112,38 @@ public class PlayerSpawnFinder {
         return possibleOrigins <= 16 ? possibleOrigins - 1 : 17;
     }
 
-    private void scheduleCandidate(final int candidateX, final int candidateZ, final int candidateIndex, final Supplier<Optional<Vec3>> candidateChecker) {
+    private void scheduleCandidate(final int candidateX, final int candidateZ, final int candidateIndex, final Supplier<
+                    Optional<Vec3>> candidateChecker) {
         if (!this.finishedFuture.isDone()) {
             int chunkX = SectionPos.blockToSectionCoord(candidateX);
             int chunkZ = SectionPos.blockToSectionCoord(candidateZ);
             this.level
-                .getChunkSource()
-                .addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, new ChunkPos(chunkX, chunkZ), 0)
-                .whenCompleteAsync((ignored, throwable) -> {
-                    if (throwable == null) {
-                        try {
-                            Optional<Vec3> spawnPos = candidateChecker.get();
-                            if (spawnPos.isPresent()) {
-                                this.finishedFuture.complete(spawnPos.get());
-                            } else {
-                                this.scheduleNext();
+                    .getChunkSource()
+                    .addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, new ChunkPos(chunkX, chunkZ), 0)
+                    .whenCompleteAsync((ignored, throwable) -> {
+                        if (throwable == null) {
+                            try {
+                                Optional<Vec3> spawnPos = candidateChecker.get();
+                                if (spawnPos.isPresent()) {
+                                    this.finishedFuture.complete(spawnPos.get());
+                                } else {
+                                    this.scheduleNext();
+                                }
+                            } catch (Throwable t) {
+                                throwable = t;
                             }
-                        } catch (Throwable t) {
-                            throwable = t;
                         }
-                    }
 
-                    if (throwable != null) {
-                        CrashReport report = CrashReport.forThrowable(throwable, "Searching for spawn");
-                        CrashReportCategory details = report.addCategory("Spawn Lookup");
-                        details.setDetail("Origin", this.spawnSuggestion::toString);
-                        details.setDetail("Radius", () -> Integer.toString(this.radius));
-                        details.setDetail("Candidate", () -> "[" + candidateX + "," + candidateZ + "]");
-                        details.setDetail("Progress", () -> candidateIndex + " out of " + this.candidateCount);
-                        this.finishedFuture.completeExceptionally(new ReportedException(report));
-                    }
-                }, this.level.getServer());
+                        if (throwable != null) {
+                            CrashReport report = CrashReport.forThrowable(throwable, "Searching for spawn");
+                            CrashReportCategory details = report.addCategory("Spawn Lookup");
+                            details.setDetail("Origin", this.spawnSuggestion::toString);
+                            details.setDetail("Radius", () -> Integer.toString(this.radius));
+                            details.setDetail("Candidate", () -> "[" + candidateX + "," + candidateZ + "]");
+                            details.setDetail("Progress", () -> candidateIndex + " out of " + this.candidateCount);
+                            this.finishedFuture.completeExceptionally(new ReportedException(report));
+                        }
+                    }, this.level.getServer());
         }
     }
 

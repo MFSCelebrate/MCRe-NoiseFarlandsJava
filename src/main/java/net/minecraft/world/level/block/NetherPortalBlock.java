@@ -142,7 +142,6 @@ public class NetherPortalBlock extends Block implements Portal {
 
         boolean toNether = newLevel.dimension() == Level.NETHER;
         double teleportationScale = DimensionType.getTeleportationScale(currentLevel.dimensionType(), newLevel.dimensionType());
-        // 直接计算目标位置，不再受世界边界限制
         BlockPos approximateExitPos = BlockPos.containing(
             entity.getX() * teleportationScale,
             entity.getY(),
@@ -158,7 +157,8 @@ public class NetherPortalBlock extends Block implements Portal {
         final BlockPos approximateExitPos,
         final boolean toNether
     ) {
-        Optional<BlockPos> exitPortalPos = newLevel.getPortalForcer().findClosestPortalPosition(approximateExitPos, toNether, null);
+        // 修复：findClosestPortalPosition 只有两个参数，删除多余的 null
+        Optional<BlockPos> exitPortalPos = newLevel.getPortalForcer().findClosestPortalPosition(approximateExitPos, toNether);
         BlockUtil.FoundRectangle exitPortal;
         TeleportTransition.PostTeleportTransition post;
         if (exitPortalPos.isPresent()) {

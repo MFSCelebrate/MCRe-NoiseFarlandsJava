@@ -2847,4 +2847,34 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
         SIGNATURE_REQUIRED,
         PERMISSIONS_REQUIRED;
     }
+    
+    @Override
+public void handleInitializeBorder(final ClientboundInitializeBorderPacket packet) {
+    // 世界边界已移除，忽略此包
+}
+
+@Override
+public void handleSetBorderCenter(final ClientboundSetBorderCenterPacket packet) {
+    // 世界边界已移除，忽略此包
+}
+
+@Override
+public void handleSetBorderLerpSize(final ClientboundSetBorderLerpSizePacket packet) {
+    // 世界边界已移除，忽略此包
+}
+
+@Override
+public void handleSetBorderSize(final ClientboundSetBorderSizePacket packet) {
+    // 世界边界已移除，忽略此包
+}
+
+@Override
+public void handleSetBorderWarningDelay(final ClientboundSetBorderWarningDelayPacket packet) {
+    // 世界边界已移除，忽略此包
+}
+
+@Override
+public void handleSetBorderWarningDistance(final ClientboundSetBorderWarningDistancePacket packet) {
+    // 世界边界已移除，忽略此包
+}
 }

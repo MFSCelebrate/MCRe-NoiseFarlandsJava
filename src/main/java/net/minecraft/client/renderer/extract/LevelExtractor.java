@@ -333,7 +333,7 @@ public class LevelExtractor implements ResourceManagerReloadListener {
             if (blockHitResult.getType() != HitResult.Type.MISS) {
                 BlockPos pos = blockHitResult.getBlockPos();
                 BlockState state = this.level.getBlockState(pos);
-                if (!state.isAir() && this.level.getWorldBorder().isWithinBounds(pos)) {
+                if (!state.isAir()) {
                     BlockStateModel blockStateModel = this.minecraft.getModelManager().getBlockStateModelSet().get(state);
                     boolean isBlockTranslucent = blockStateModel.hasMaterialFlag(1);
                     boolean highContrast = this.minecraft.options.highContrastBlockOutline().get();

@@ -47,21 +47,13 @@ public class PlayerSpawnFinder {
         this.offset = RandomSource.createThreadLocalInstance().nextInt(this.candidateCount);
     }
 
-    public static CompletableFuture<
-                    Vec3> findSpawn(final ServerLevel level, final BlockPos spawnSuggestion) {
+    public static CompletableFuture<Vec3> findSpawn(final ServerLevel level, final BlockPos spawnSuggestion) {
         if (level.getServer().getWorldData().getGameType() == GameType.ADVENTURE) {
             return CompletableFuture.completedFuture(fixupSpawnHeight(level, spawnSuggestion));
         }
 
+        // ===== 移除世界边界限制，直接使用游戏规则中的重生半径 =====
         int radius = Math.max(0, level.getGameRules().get(GameRules.RESPAWN_RADIUS));
-        int distToBorder = Mth.floor(spawnSuggestion.getX(), spawnSuggestion.getZ());
-        if (distToBorder < radius) {
-            radius = distToBorder;
-        }
-
-        if (distToBorder <= 1) {
-            radius = 1;
-        }
 
         PlayerSpawnFinder finder = new PlayerSpawnFinder(level, spawnSuggestion, radius);
         finder.scheduleNext();
@@ -112,8 +104,7 @@ public class PlayerSpawnFinder {
         return possibleOrigins <= 16 ? possibleOrigins - 1 : 17;
     }
 
-    private void scheduleCandidate(final int candidateX, final int candidateZ, final int candidateIndex, final Supplier<
-                    Optional<Vec3>> candidateChecker) {
+    private void scheduleCandidate(final int candidateX, final int candidateZ, final int candidateIndex, final Supplier<Optional<Vec3>> candidateChecker) {
         if (!this.finishedFuture.isDone()) {
             int chunkX = SectionPos.blockToSectionCoord(candidateX);
             int chunkZ = SectionPos.blockToSectionCoord(candidateZ);

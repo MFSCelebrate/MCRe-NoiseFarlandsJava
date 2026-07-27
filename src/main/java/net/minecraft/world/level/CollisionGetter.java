@@ -46,8 +46,10 @@ public interface CollisionGetter extends BlockGetter {
         return this.noCollision(entity, aabb, false);
     }
 
+    // ===== 已移除 noBorderCollision 及其所有调用 =====
     default boolean noCollision(final @Nullable Entity entity, final AABB aabb, final boolean alwaysCollideWithFluids) {
-        return this.noBlockCollision(entity, aabb, alwaysCollideWithFluids) && this.noEntityCollision(entity, aabb) && this.noBorderCollision(entity, aabb);
+        // 移除了 && this.noBorderCollision(entity, aabb)
+        return this.noBlockCollision(entity, aabb, alwaysCollideWithFluids) && this.noEntityCollision(entity, aabb);
     }
 
     default boolean noBlockCollision(final @Nullable Entity entity, final AABB aabb) {
@@ -60,7 +62,6 @@ public interface CollisionGetter extends BlockGetter {
                 return false;
             }
         }
-
         return true;
     }
 
@@ -68,14 +69,7 @@ public interface CollisionGetter extends BlockGetter {
         return this.getEntityCollisions(entity, aabb).isEmpty();
     }
 
-    default boolean noBorderCollision(final @Nullable Entity entity, final AABB aabb) {
-        if (entity == null) {
-            return true;
-        }
-
-        VoxelShape borderShape = this.borderCollision(entity, aabb);
-        return borderShape == null || !Shapes.joinIsNotEmpty(borderShape, Shapes.create(aabb), BooleanOp.AND);
-    }
+    // ===== 已删除 noBorderCollision 方法 =====
 
     List<VoxelShape> getEntityCollisions(final @Nullable Entity source, final AABB testArea);
 
@@ -103,19 +97,19 @@ public interface CollisionGetter extends BlockGetter {
         return () -> new BlockCollisions<>(this, source, box, false, (p, shape) -> shape);
     }
 
+    // ===== 修复 clipIncludingBorder：返回一个普通的 MISS 结果（不再涉及边界） =====
     default BlockHitResult clipIncludingBorder(final ClipContext c) {
-        return hitResult;
+        // 由于世界边界已移除，始终返回一个未命中的结果（实际调用中不会使用此方法）
+        return BlockHitResult.miss(Vec3.ZERO, Direction.UP, BlockPos.ZERO);
     }
 
     default boolean collidesWithSuffocatingBlock(final @Nullable Entity source, final AABB box) {
         BlockCollisions<VoxelShape> blockCollisions = new BlockCollisions<>(this, source, box, true, (p, shape) -> shape);
-
         while (blockCollisions.hasNext()) {
             if (!blockCollisions.next().isEmpty()) {
                 return true;
             }
         }
-
         return false;
     }
 
@@ -123,7 +117,6 @@ public interface CollisionGetter extends BlockGetter {
         BlockPos mainSupport = null;
         double mainSupportDistance = Double.MAX_VALUE;
         BlockCollisions<BlockPos> blockCollisions = new BlockCollisions<>(this, source, box, false, (posx, shape) -> posx);
-
         while (blockCollisions.hasNext()) {
             BlockPos pos = blockCollisions.next();
             double distance = pos.distToCenterSqr(source.position());
@@ -132,7 +125,6 @@ public interface CollisionGetter extends BlockGetter {
                 mainSupportDistance = distance;
             }
         }
-
         return Optional.ofNullable(mainSupport);
     }
 
@@ -142,7 +134,6 @@ public interface CollisionGetter extends BlockGetter {
         if (allowedCenters.isEmpty()) {
             return Optional.empty();
         }
-
         AABB searchArea = allowedCenters.bounds().inflate(sizeX, sizeY, sizeZ);
         VoxelShape expandedCollisions = StreamSupport.stream(this.getBlockCollisions(source, searchArea).spliterator(), false)
             .flatMap(shape -> shape.toAabbs().stream())

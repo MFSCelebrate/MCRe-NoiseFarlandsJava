@@ -32,11 +32,11 @@ public class BlockHitResult extends HitResult {
     }
 
     public BlockHitResult withDirection(final Direction direction) {
-        return new BlockHitResult(this.miss, this.location, direction, this.blockPos, this.inside, this.worldBorderHit);
+        return new BlockHitResult(this.miss, this.location, direction, this.blockPos, this.inside);
     }
 
     public BlockHitResult withPosition(final BlockPos blockPos) {
-        return new BlockHitResult(this.miss, this.location, this.direction, blockPos, this.inside, this.worldBorderHit);
+        return new BlockHitResult(this.miss, this.location, this.direction, blockPos, this.inside);
     }
 
     public BlockHitResult hitBorder() {
@@ -58,9 +58,5 @@ public class BlockHitResult extends HitResult {
 
     public boolean isInside() {
         return this.inside;
-    }
-
-    public boolean isWorldBorderHit() {
-        return this.worldBorderHit;
     }
 }
