@@ -62,7 +62,8 @@ public class VulkanRenderPass implements RenderPassBackend {
     private final VkCommandBuffer commandBuffer;
     protected @Nullable VulkanRenderPipeline pipeline;
     protected final HashMap<String, GpuBufferSlice> uniforms = new HashMap<>();
-    protected final HashMap<String, VulkanRenderPass.TextureViewAndSampler> textures = new HashMap<>();
+    protected final HashMap<
+            String, VulkanRenderPass.TextureViewAndSampler> textures = new HashMap<>();
 
     // ===== 优化 7：增量描述符缓存 =====
     private static class DescriptorCache {
@@ -115,30 +116,38 @@ public class VulkanRenderPass implements RenderPassBackend {
             return a.buffer() == b.buffer() && a.offset() == b.offset() && a.length() == b.length();
         }
 
-        private boolean equals(@Nullable TextureViewAndSampler a, @Nullable TextureViewAndSampler b) {
+        private boolean equals(@Nullable TextureViewAndSampler a, @Nullable
+                TextureViewAndSampler b) {
             if (a == b) return true;
             if (a == null || b == null) return false;
             return a.view.texture() == b.view.texture() && a.sampler == b.sampler;
         }
 
-        public boolean isDirty() { return this.hasChanges; }
-        public void markClean() { this.hasChanges = false; }
-        public void markDirty() { this.hasChanges = true; }
+        public boolean isDirty() {
+            return this.hasChanges;
+        }
+
+        public void markClean() {
+            this.hasChanges = false;
+        }
+
+        public void markDirty() {
+            this.hasChanges = true;
+        }
     }
 
     private final DescriptorCache descriptorCache = new DescriptorCache();
 
     public VulkanRenderPass(
-        final VulkanDevice device,
-        final VulkanCommandEncoder encoder,
-        final VkCommandBuffer commandBuffer,
-        final CheckpointExtension.CheckpointStorage checkpointStorage,
-        final RenderPass.RenderArea renderArea,
-        final int outputWidth,
-        final int outputHeight,
-        final boolean hasDepth,
-        final Supplier<String> label
-    ) {
+            final VulkanDevice device,
+            final VulkanCommandEncoder encoder,
+            final VkCommandBuffer commandBuffer,
+            final CheckpointExtension.CheckpointStorage checkpointStorage,
+            final RenderPass.RenderArea renderArea,
+            final int outputWidth,
+            final int outputHeight,
+            final boolean hasDepth,
+            final Supplier<String> label) {
         this.device = device;
         this.encoder = encoder;
         this.commandBuffer = commandBuffer;
@@ -193,9 +202,10 @@ public class VulkanRenderPass implements RenderPassBackend {
     }
 
     @Override
-    public void bindTexture(final String name, final @Nullable GpuTextureView textureView, final @Nullable GpuSampler sampler) {
+    public void bindTexture(final String name, final @Nullable
+            GpuTextureView textureView, final @Nullable GpuSampler sampler) {
         if (textureView != null && sampler != null) {
-            this.textures.put(name, new VulkanRenderPass.TextureViewAndSampler((VulkanGpuTextureView)textureView, (VulkanGpuSampler)sampler));
+            this.textures.put(name, new VulkanRenderPass.TextureViewAndSampler((VulkanGpuTextureView) textureView, (VulkanGpuSampler) sampler));
         } else if (textureView == null && sampler == null) {
             this.textures.remove(name);
         } else {
@@ -242,7 +252,7 @@ public class VulkanRenderPass implements RenderPassBackend {
     @Override
     public void setVertexBuffer(final int slot, final @Nullable GpuBufferSlice vertexBuffer) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            long buffer = vertexBuffer != null ? ((VulkanGpuBuffer)vertexBuffer.buffer()).vkBuffer() : 0L;
+            long buffer = vertexBuffer != null ? ((VulkanGpuBuffer) vertexBuffer.buffer()).vkBuffer() : 0L;
             long offset = vertexBuffer != null ? vertexBuffer.offset() : 0L;
             VK12.vkCmdBindVertexBuffers(this.commandBuffer(), slot, stack.longs(buffer), stack.longs(offset));
         }
@@ -254,7 +264,7 @@ public class VulkanRenderPass implements RenderPassBackend {
             case SHORT -> 0;
             case INT -> 1;
         };
-        VK12.vkCmdBindIndexBuffer(this.commandBuffer(), ((VulkanGpuBuffer)indexBuffer).vkBuffer(), 0L, type);
+        VK12.vkCmdBindIndexBuffer(this.commandBuffer(), ((VulkanGpuBuffer) indexBuffer).vkBuffer(), 0L, type);
     }
 
     @Override
@@ -272,7 +282,7 @@ public class VulkanRenderPass implements RenderPassBackend {
         if (this.pipeline != null && this.pipeline.isValid()) {
             this.pushDescriptors();
             EXTMultiDraw.nvkCmdDrawMultiIndexedEXT(
-                this.commandBuffer(), drawCount, MemoryUtil.memAddress(drawParameters), instanceCount, firstInstance, VkMultiDrawIndexedInfoEXT.SIZEOF, 0L
+                    this.commandBuffer(), drawCount, MemoryUtil.memAddress(drawParameters), instanceCount, firstInstance, VkMultiDrawIndexedInfoEXT.SIZEOF, 0L
             );
         } else {
             throw new IllegalStateException("Pipeline is missing or not valid");
@@ -289,7 +299,7 @@ public class VulkanRenderPass implements RenderPassBackend {
         if (this.pipeline != null && this.pipeline.isValid()) {
             this.pushDescriptors();
             VK12.vkCmdDrawIndexedIndirect(
-                this.commandBuffer(), ((VulkanGpuBuffer)commands.buffer()).vkBuffer(), commands.offset(), drawCount, VkDrawIndexedIndirectCommand.SIZEOF
+                    this.commandBuffer(), ((VulkanGpuBuffer) commands.buffer()).vkBuffer(), commands.offset(), drawCount, VkDrawIndexedIndirectCommand.SIZEOF
             );
         } else {
             throw new IllegalStateException("Pipeline is missing or not valid");
@@ -299,12 +309,11 @@ public class VulkanRenderPass implements RenderPassBackend {
     // ===== 优化 3（保留）：Multi-Draw 合并 =====
     @Override
     public <T> void drawMultipleIndexed(
-        final Collection<RenderPass.Draw<T>> draws,
-        final @Nullable GpuBuffer defaultIndexBuffer,
-        final @Nullable IndexType defaultIndexType,
-        final Collection<String> dynamicUniforms,
-        final T uniformArgument
-    ) {
+            final Collection<RenderPass.Draw<T>> draws,
+            final @Nullable GpuBuffer defaultIndexBuffer,
+            final @Nullable IndexType defaultIndexType,
+            final Collection<String> dynamicUniforms,
+            final T uniformArgument) {
         boolean multiDrawSupported = this.device.getDeviceInfo().underlyingExtensions().contains("VK_EXT_multi_draw");
 
         if (!multiDrawSupported) {
@@ -334,7 +343,7 @@ public class VulkanRenderPass implements RenderPassBackend {
             int uniformHash = this.uniforms.hashCode();
             int textureHash = this.textures.hashCode();
             String key = System.identityHashCode(vtxBuf) + "|" + slot + "|" + System.identityHashCode(idxBuf)
-                       + "|U" + uniformHash + "|T" + textureHash;
+                    + "|U" + uniformHash + "|T" + textureHash;
             groups.computeIfAbsent(key, k -> new ArrayList<>()).add(draw);
         }
 
@@ -375,14 +384,14 @@ public class VulkanRenderPass implements RenderPassBackend {
                     info.get(i).indexCount(draw.indexCount());
                     info.get(i).vertexOffset(draw.baseVertex());
                 }
-                EXTMultiDraw.vkCmdDrawMultiIndexedEXT(
-                    this.commandBuffer(),
-                    group.size(),
-                    info.address0(),
-                    1,
-                    0,
-                    VkMultiDrawIndexedInfoEXT.SIZEOF,
-                    0L
+                EXTMultiDraw.nvkCmdDrawMultiIndexedEXT(
+                        this.commandBuffer(),
+                        group.size(),
+                        MemoryUtil.memAddress(info),
+                        1,
+                        0,
+                        VkMultiDrawIndexedInfoEXT.SIZEOF,
+                        0L
                 );
             }
         }
@@ -401,7 +410,7 @@ public class VulkanRenderPass implements RenderPassBackend {
         if (this.pipeline != null && this.pipeline.isValid()) {
             this.pushDescriptors();
             EXTMultiDraw.nvkCmdDrawMultiEXT(
-                this.commandBuffer(), drawCount, MemoryUtil.memAddress(drawParameters), instanceCount, firstInstance, VkMultiDrawInfoEXT.SIZEOF
+                    this.commandBuffer(), drawCount, MemoryUtil.memAddress(drawParameters), instanceCount, firstInstance, VkMultiDrawInfoEXT.SIZEOF
             );
         } else {
             throw new IllegalStateException("Pipeline is missing or not valid");
@@ -418,7 +427,7 @@ public class VulkanRenderPass implements RenderPassBackend {
         if (this.pipeline != null && this.pipeline.isValid()) {
             this.pushDescriptors();
             VK12.vkCmdDrawIndirect(
-                this.commandBuffer(), ((VulkanGpuBuffer)commands.buffer()).vkBuffer(), commands.offset(), drawCount, VkDrawIndirectCommand.SIZEOF
+                    this.commandBuffer(), ((VulkanGpuBuffer) commands.buffer()).vkBuffer(), commands.offset(), drawCount, VkDrawIndirectCommand.SIZEOF
             );
         } else {
             throw new IllegalStateException("Pipeline is missing or not valid");
@@ -488,7 +497,7 @@ public class VulkanRenderPass implements RenderPassBackend {
                     }
                     if (needsWrite) {
                         org.lwjgl.vulkan.VkDescriptorBufferInfo.Buffer bufferInfo = VkDescriptorBufferInfo.calloc(1, stack);
-                        bufferInfo.buffer(((VulkanGpuBuffer)buffer.buffer()).vkBuffer());
+                        bufferInfo.buffer(((VulkanGpuBuffer) buffer.buffer()).vkBuffer());
                         bufferInfo.offset(buffer.offset());
                         bufferInfo.range(buffer.length());
                         VkWriteDescriptorSet set = writes.get(writeCount++).sType$Default();
@@ -533,14 +542,14 @@ public class VulkanRenderPass implements RenderPassBackend {
                         try (MemoryStack var9 = stack.push()) {
                             assert entry.texelBufferFormat() != null;
                             VkBufferViewCreateInfo viewCreateInfo = VkBufferViewCreateInfo.calloc(stack).sType$Default();
-                            viewCreateInfo.buffer(((VulkanGpuBuffer)value.buffer()).vkBuffer());
+                            viewCreateInfo.buffer(((VulkanGpuBuffer) value.buffer()).vkBuffer());
                             viewCreateInfo.offset(value.offset());
                             viewCreateInfo.range(value.length());
                             viewCreateInfo.format(VulkanConst.toVk(entry.texelBufferFormat()));
                             VulkanUtils.crashIfFailure(
-                                this.device,
-                                VK12.vkCreateBufferView(this.device.vkDevice(), viewCreateInfo, null, bufferViewPtr),
-                                "Couldn't create buffer view for texel buffer"
+                                    this.device,
+                                    VK12.vkCreateBufferView(this.device.vkDevice(), viewCreateInfo, null, bufferViewPtr),
+                                    "Couldn't create buffer view for texel buffer"
                             );
                             long bufferViewHandle = bufferViewPtr.get(0);
                             this.encoder.queueForDestroy(() -> VK12.vkDestroyBufferView(this.device.vkDevice(), bufferViewHandle, null));
@@ -565,7 +574,7 @@ public class VulkanRenderPass implements RenderPassBackend {
 
     @Override
     public void writeTimestamp(final GpuQueryPool pool, final int index) {
-        long queryPool = ((VulkanQueryPool)pool).vkQueryPool();
+        long queryPool = ((VulkanQueryPool) pool).vkQueryPool();
         VK12.vkResetQueryPool(this.device.vkDevice(), queryPool, index, 1);
         KHRSynchronization2.vkCmdWriteTimestamp2KHR(this.commandBuffer(), 65536L, queryPool, index);
     }
@@ -575,6 +584,5 @@ public class VulkanRenderPass implements RenderPassBackend {
     }
 
     @OnlyIn(Dist.CLIENT)
-    protected record TextureViewAndSampler(VulkanGpuTextureView view, VulkanGpuSampler sampler) {
-    }
+    protected record TextureViewAndSampler(VulkanGpuTextureView view, VulkanGpuSampler sampler) {}
 }

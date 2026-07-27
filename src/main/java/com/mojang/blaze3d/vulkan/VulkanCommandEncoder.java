@@ -9,6 +9,8 @@ import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderPassBackend;
 import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import com.mojang.blaze3d.systems.TransientMemory;
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.vulkan.VkCommandBufferInheritanceInfo;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vulkan.checkpoints.CheckpointExtension;
