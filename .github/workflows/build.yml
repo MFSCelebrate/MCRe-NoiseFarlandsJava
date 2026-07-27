@@ -86,7 +86,7 @@ jobs:
       - name: 重新打包完整 jar
         run: |
           cd extracted
-          jar cfm ../26.3-snapshot-3.jar META-INF/MANIFEST.MF .
+          jar cfm ../26.2.jar META-INF/MANIFEST.MF .
           cd ..
 
       - name: 验证关键类
@@ -98,6 +98,6 @@ jobs:
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: 26.3-snapshot-3
-          path: 26.3-snapshot-3.jar
+          name: 26.2
+          path: 26.2.jar
           if-no-files-found: error
