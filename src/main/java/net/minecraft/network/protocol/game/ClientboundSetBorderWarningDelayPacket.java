@@ -7,8 +7,7 @@ import net.minecraft.network.protocol.PacketType;
 import net.minecraft.resources.Identifier;
 
 public class ClientboundSetBorderWarningDelayPacket implements Packet<ClientGamePacketListener> {
-    public ClientboundSetBorderWarningDelayPacket() {
-    }
+    public ClientboundSetBorderWarningDelayPacket() {}
 
     public ClientboundSetBorderWarningDelayPacket(final FriendlyByteBuf buf) {
         // 不读取
@@ -25,17 +24,7 @@ public class ClientboundSetBorderWarningDelayPacket implements Packet<ClientGame
 
     @Override
     public PacketType<ClientboundSetBorderWarningDelayPacket> type() {
-        return new PacketType<>() {
-            @Override
-            public Identifier id() {
-                return Identifier.withDefaultNamespace("set_border_warning_delay");
-            }
-
-            @Override
-            public Flow flow() {
-                return Flow.PLAY;
-            }
-        };
+        return new PacketType<>(Identifier.withDefaultNamespace("set_border_warning_delay"), PacketType.Flow.PLAY);
     }
 
     public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderWarningDelayPacket> STREAM_CODEC =

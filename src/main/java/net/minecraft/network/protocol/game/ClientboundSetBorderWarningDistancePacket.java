@@ -7,8 +7,7 @@ import net.minecraft.network.protocol.PacketType;
 import net.minecraft.resources.Identifier;
 
 public class ClientboundSetBorderWarningDistancePacket implements Packet<ClientGamePacketListener> {
-    public ClientboundSetBorderWarningDistancePacket() {
-    }
+    public ClientboundSetBorderWarningDistancePacket() {}
 
     public ClientboundSetBorderWarningDistancePacket(final FriendlyByteBuf buf) {
         // 不读取
@@ -25,17 +24,7 @@ public class ClientboundSetBorderWarningDistancePacket implements Packet<ClientG
 
     @Override
     public PacketType<ClientboundSetBorderWarningDistancePacket> type() {
-        return new PacketType<>() {
-            @Override
-            public Identifier id() {
-                return Identifier.withDefaultNamespace("set_border_warning_distance");
-            }
-
-            @Override
-            public Flow flow() {
-                return Flow.PLAY;
-            }
-        };
+        return new PacketType<>(Identifier.withDefaultNamespace("set_border_warning_distance"), PacketType.Flow.PLAY);
     }
 
     public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderWarningDistancePacket> STREAM_CODEC =

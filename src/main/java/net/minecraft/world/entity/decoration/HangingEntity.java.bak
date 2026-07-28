@@ -104,11 +104,9 @@ public abstract class HangingEntity extends BlockAttachedEntity {
         return !this.level().hasEntities(EntityTypeTest.forClass(HangingEntity.class), this.getPopBox(), nonIntersectable);
     }
 
-    // ===== 修复：移除 noBorderCollision 调用 =====
     protected boolean hasLevelCollision(final AABB popBox) {
         Level level = this.level();
-        // 世界边界已移除，不再需要边界碰撞检查
-        return !level.noBlockCollision(this, popBox);
+        return !level.noBlockCollision(this, popBox) || !level.noBorderCollision(this, popBox);
     }
 
     protected AABB getPopBox() {
