@@ -22,10 +22,10 @@ public class ClientboundSetBorderWarningDelayPacket implements Packet<ClientGame
         // 忽略
     }
 
-    @Override
-    public PacketType<ClientboundSetBorderWarningDelayPacket> type() {
-        return new PacketType<>(Identifier.withDefaultNamespace("set_border_warning_delay"), PacketType.Flow.PLAY);
-    }
+@Override
+public PacketType<YourClass> type() {
+    return new PacketType<>(PacketFlow.PLAY, Identifier.withDefaultNamespace("set_border_warning_delay"));
+}
 
     public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderWarningDelayPacket> STREAM_CODEC =
         Packet.codec(ClientboundSetBorderWarningDelayPacket::write, ClientboundSetBorderWarningDelayPacket::new);

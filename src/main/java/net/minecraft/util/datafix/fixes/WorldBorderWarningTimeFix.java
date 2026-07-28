@@ -12,11 +12,11 @@ public class WorldBorderWarningTimeFix extends DataFix {
 
     @Override
     protected TypeRewriteRule makeRule() {
-        // 空操作，直接返回原数据
-        return this.fixTypeEverywhereTyped(
+        // 空操作
+        return this.fixTypeEverywhere(
             "WorldBorderWarningTimeFix",
-            this.getInputSchema().getType(DSL.remainderType()),
-            typed -> typed
+            DSL.remainderType(),
+            dynamic -> dynamic
         );
     }
 }

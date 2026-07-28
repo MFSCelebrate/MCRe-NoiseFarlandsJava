@@ -7,15 +7,14 @@ import net.minecraft.network.protocol.PacketType;
 import net.minecraft.resources.Identifier;
 
 public class ClientboundSetBorderSizePacket implements Packet<ClientGamePacketListener> {
-    public ClientboundSetBorderSizePacket() {
-    }
+    public ClientboundSetBorderSizePacket() {}
 
     public ClientboundSetBorderSizePacket(final FriendlyByteBuf buf) {
-        // 世界边界已移除，不读取任何数据
+        // 不读取
     }
 
     public void write(final FriendlyByteBuf buf) {
-        // 不写入任何数据
+        // 不写入
     }
 
     @Override
@@ -25,17 +24,7 @@ public class ClientboundSetBorderSizePacket implements Packet<ClientGamePacketLi
 
     @Override
     public PacketType<ClientboundSetBorderSizePacket> type() {
-        return new PacketType<>() {
-            @Override
-            public Identifier id() {
-                return Identifier.withDefaultNamespace("set_border_size");
-            }
-
-            @Override
-            public Flow flow() {
-                return Flow.PLAY;
-            }
-        };
+        return new PacketType<>(Identifier.withDefaultNamespace("set_border_size"), PacketType.Flow.PLAY);
     }
 
     public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderSizePacket> STREAM_CODEC =

@@ -22,10 +22,10 @@ public class ClientboundSetBorderCenterPacket implements Packet<ClientGamePacket
         // 忽略
     }
 
-    @Override
-    public PacketType<ClientboundSetBorderCenterPacket> type() {
-        return new PacketType<>(Identifier.withDefaultNamespace("set_border_center"), PacketType.Flow.PLAY);
-    }
+@Override
+public PacketType<YourClass> type() {
+    return new PacketType<>(PacketFlow.PLAY, Identifier.withDefaultNamespace("set_border_center"));
+}
 
     public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderCenterPacket> STREAM_CODEC =
         Packet.codec(ClientboundSetBorderCenterPacket::write, ClientboundSetBorderCenterPacket::new);

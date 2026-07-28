@@ -10,11 +10,11 @@ public class ClientboundInitializeBorderPacket implements Packet<ClientGamePacke
     public ClientboundInitializeBorderPacket() {}
 
     public ClientboundInitializeBorderPacket(final FriendlyByteBuf buf) {
-        // 世界边界已移除，不读取任何数据
+        // 不读取
     }
 
     public void write(final FriendlyByteBuf buf) {
-        // 不写入任何数据
+        // 不写入
     }
 
     @Override
@@ -24,21 +24,9 @@ public class ClientboundInitializeBorderPacket implements Packet<ClientGamePacke
 
     @Override
     public PacketType<ClientboundInitializeBorderPacket> type() {
-        return new PacketType<>() {
-            @Override
-            public Identifier id() {
-                return Identifier.withDefaultNamespace("initialize_border");
-            }
-
-            @Override
-            public Flow flow() {
-                return Flow.PLAY;
-            }
-        };
+        return new PacketType<>(Identifier.withDefaultNamespace("initialize_border"), PacketType.Flow.PLAY);
     }
 
-    public static final StreamCodec<
-            FriendlyByteBuf,
-            ClientboundInitializeBorderPacket> STREAM_CODEC = Packet.codec(ClientboundInitializeBorderPacket
-            ::write, ClientboundInitializeBorderPacket::new);
+    public static final StreamCodec<FriendlyByteBuf, ClientboundInitializeBorderPacket> STREAM_CODEC =
+        Packet.codec(ClientboundInitializeBorderPacket::write, ClientboundInitializeBorderPacket::new);
 }

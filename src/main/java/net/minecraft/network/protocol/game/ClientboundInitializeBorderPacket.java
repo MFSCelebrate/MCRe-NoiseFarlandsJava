@@ -22,10 +22,10 @@ public class ClientboundInitializeBorderPacket implements Packet<ClientGamePacke
         // 忽略
     }
 
-    @Override
-    public PacketType<ClientboundInitializeBorderPacket> type() {
-        return new PacketType<>(Identifier.withDefaultNamespace("initialize_border"), PacketType.Flow.PLAY);
-    }
+@Override
+public PacketType<YourClass> type() {
+    return new PacketType<>(PacketFlow.PLAY, Identifier.withDefaultNamespace("initialize_border"));
+}
 
     public static final StreamCodec<FriendlyByteBuf, ClientboundInitializeBorderPacket> STREAM_CODEC =
         Packet.codec(ClientboundInitializeBorderPacket::write, ClientboundInitializeBorderPacket::new);

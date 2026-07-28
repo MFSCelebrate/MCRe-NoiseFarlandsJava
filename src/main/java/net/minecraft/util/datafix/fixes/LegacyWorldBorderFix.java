@@ -12,12 +12,11 @@ public class LegacyWorldBorderFix extends DataFix {
 
     @Override
     protected TypeRewriteRule makeRule() {
-        // 世界边界已被移除，此修复不再需要执行任何操作
-        // 返回一个空规则，直接传递数据而不做修改
-        return this.fixTypeEverywhereTyped(
+        // 空操作
+        return this.fixTypeEverywhere(
             "LegacyWorldBorderFix",
-            this.getInputSchema().getType(DSL.remainderType()),
-            typed -> typed
+            DSL.remainderType(),
+            dynamic -> dynamic
         );
     }
 }

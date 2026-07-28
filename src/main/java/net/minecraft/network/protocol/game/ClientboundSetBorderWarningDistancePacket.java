@@ -22,10 +22,10 @@ public class ClientboundSetBorderWarningDistancePacket implements Packet<ClientG
         // 忽略
     }
 
-    @Override
-    public PacketType<ClientboundSetBorderWarningDistancePacket> type() {
-        return new PacketType<>(Identifier.withDefaultNamespace("set_border_warning_distance"), PacketType.Flow.PLAY);
-    }
+@Override
+public PacketType<YourClass> type() {
+    return new PacketType<>(PacketFlow.PLAY, Identifier.withDefaultNamespace("set_border_warning_distance"));
+}
 
     public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderWarningDistancePacket> STREAM_CODEC =
         Packet.codec(ClientboundSetBorderWarningDistancePacket::write, ClientboundSetBorderWarningDistancePacket::new);

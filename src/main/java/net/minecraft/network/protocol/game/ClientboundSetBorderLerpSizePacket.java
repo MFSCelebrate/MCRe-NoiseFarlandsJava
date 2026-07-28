@@ -23,9 +23,9 @@ public class ClientboundSetBorderLerpSizePacket implements Packet<ClientGamePack
     }
 
     @Override
-    public PacketType<ClientboundSetBorderLerpSizePacket> type() {
-        return new PacketType<>(Identifier.withDefaultNamespace("set_border_lerp_size"), PacketType.Flow.PLAY);
-    }
+public PacketType<YourClass> type() {
+    return new PacketType<>(PacketFlow.PLAY, Identifier.withDefaultNamespace("set_border_lerp_size"));
+}
 
     public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderLerpSizePacket> STREAM_CODEC =
         Packet.codec(ClientboundSetBorderLerpSizePacket::write, ClientboundSetBorderLerpSizePacket::new);

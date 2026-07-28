@@ -22,10 +22,10 @@ public class ClientboundSetBorderSizePacket implements Packet<ClientGamePacketLi
         // 忽略
     }
 
-    @Override
-    public PacketType<ClientboundSetBorderSizePacket> type() {
-        return new PacketType<>(Identifier.withDefaultNamespace("set_border_size"), PacketType.Flow.PLAY);
-    }
+@Override
+public PacketType<YourClass> type() {
+    return new PacketType<>(PacketFlow.PLAY, Identifier.withDefaultNamespace("set_border_size"));
+}
 
     public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderSizePacket> STREAM_CODEC =
         Packet.codec(ClientboundSetBorderSizePacket::write, ClientboundSetBorderSizePacket::new);

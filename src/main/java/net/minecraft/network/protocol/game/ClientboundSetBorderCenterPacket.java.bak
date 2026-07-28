@@ -7,8 +7,7 @@ import net.minecraft.network.protocol.PacketType;
 import net.minecraft.resources.Identifier;
 
 public class ClientboundSetBorderCenterPacket implements Packet<ClientGamePacketListener> {
-    public ClientboundSetBorderCenterPacket() {
-    }
+    public ClientboundSetBorderCenterPacket() {}
 
     public ClientboundSetBorderCenterPacket(final FriendlyByteBuf buf) {
         // 不读取
@@ -25,17 +24,7 @@ public class ClientboundSetBorderCenterPacket implements Packet<ClientGamePacket
 
     @Override
     public PacketType<ClientboundSetBorderCenterPacket> type() {
-        return new PacketType<>() {
-            @Override
-            public Identifier id() {
-                return Identifier.withDefaultNamespace("set_border_center");
-            }
-
-            @Override
-            public Flow flow() {
-                return Flow.PLAY;
-            }
-        };
+        return new PacketType<>(Identifier.withDefaultNamespace("set_border_center"), PacketType.Flow.PLAY);
     }
 
     public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderCenterPacket> STREAM_CODEC =
