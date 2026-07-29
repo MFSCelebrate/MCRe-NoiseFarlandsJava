@@ -1,11 +1,10 @@
 package net.minecraft.world.ticks;
 
-import it.unimi.dsi.fastutil.longs.Long2LongMap;
-import it.unimi.dsi.fastutil.longs.Long2LongMaps;
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2LongMap.Entry;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongMaps;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 import java.util.ArrayDeque;
@@ -31,8 +30,9 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 public class LevelTicks<T> implements LevelTickAccess<T> {
     private static final Comparator<LevelChunkTicks<?>> CONTAINER_DRAIN_ORDER = (o1, o2) -> ScheduledTick.INTRA_TICK_DRAIN_ORDER.compare(o1.peek(), o2.peek());
     private final LongPredicate tickCheck;
-    private final Long2ObjectMap<LevelChunkTicks<T>> allContainers = new Long2ObjectOpenHashMap<>();
-    private final Long2LongMap nextTickForContainer = Util.make(new Long2LongOpenHashMap(), m -> m.defaultReturnValue(Long.MAX_VALUE));
+    // ===== 修改：键类型 long -> ChunkPos =====
+    private final Object2ObjectMap<ChunkPos, LevelChunkTicks<T>> allContainers = new Object2ObjectOpenHashMap<>();
+    private final Object2LongMap<ChunkPos> nextTickForContainer = Util.make(new Object2LongOpenHashMap<>(), m -> m.defaultReturnValue(Long.MAX_VALUE));
     private final Queue<LevelChunkTicks<T>> containersToTick = new PriorityQueue<>(CONTAINER_DRAIN_ORDER);
     private final Queue<ScheduledTick<T>> toRunThisTick = new ArrayDeque<>();
     private final List<ScheduledTick<T>> alreadyRunThisTick = new ArrayList<>();
@@ -48,20 +48,19 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
     }
 
     public void addContainer(final ChunkPos pos, final LevelChunkTicks<T> container) {
-        long posKey = pos.pack();
-        this.allContainers.put(posKey, container);
+        // ===== 直接使用 ChunkPos 对象作为键 =====
+        this.allContainers.put(pos, container);
         ScheduledTick<T> nextTick = container.peek();
         if (nextTick != null) {
-            this.nextTickForContainer.put(posKey, nextTick.triggerTick());
+            this.nextTickForContainer.put(pos, nextTick.triggerTick());
         }
 
         container.setOnTickAdded(this.chunkScheduleUpdater);
     }
 
     public void removeContainer(final ChunkPos pos) {
-        long chunkKey = pos.pack();
-        LevelChunkTicks<T> removedContainer = this.allContainers.remove(chunkKey);
-        this.nextTickForContainer.remove(chunkKey);
+        LevelChunkTicks<T> removedContainer = this.allContainers.remove(pos);
+        this.nextTickForContainer.removeLong(pos);
         if (removedContainer != null) {
             removedContainer.setOnTickAdded(null);
         }
@@ -69,8 +68,9 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
 
     @Override
     public void schedule(final ScheduledTick<T> tick) {
-        long chunkKey = ChunkPos.pack(tick.pos());
-        LevelChunkTicks<T> tickContainer = this.allContainers.get(chunkKey);
+        // ===== 使用 new ChunkPos(tick.pos()) 替代 ChunkPos.pack =====
+        ChunkPos chunkPos = new ChunkPos(tick.pos());
+        LevelChunkTicks<T> tickContainer = this.allContainers.get(chunkPos);
         if (tickContainer == null) {
             Util.logAndPauseIfInIde("Trying to schedule tick in not loaded position " + tick.pos());
         } else {
@@ -98,11 +98,12 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
     }
 
     private void sortContainersToTick(final long currentTick) {
-        ObjectIterator<Entry> it = Long2LongMaps.fastIterator(this.nextTickForContainer);
+        // ===== 使用 Object2LongMap 的迭代方式 =====
+        ObjectIterator<Object2LongMap.Entry<ChunkPos>> it = Object2LongMaps.fastIterator(this.nextTickForContainer);
 
         while (it.hasNext()) {
-            Entry entry = it.next();
-            long chunkPos = entry.getLongKey();
+            Object2LongMap.Entry<ChunkPos> entry = it.next();
+            ChunkPos chunkPos = entry.getKey();
             long nextTick = entry.getLongValue();
             if (nextTick <= currentTick) {
                 LevelChunkTicks<T> candidateContainer = this.allContainers.get(chunkPos);
@@ -114,7 +115,7 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
                         it.remove();
                     } else if (scheduledTick.triggerTick() > currentTick) {
                         entry.setValue(scheduledTick.triggerTick());
-                    } else if (this.tickCheck.test(chunkPos)) {
+                    } else if (this.tickCheck.test(chunkPos.pack())) { // 外部 API 仍用 long，保留 pack()
                         it.remove();
                         this.containersToTick.add(candidateContainer);
                     }
@@ -147,7 +148,8 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
     }
 
     private void updateContainerScheduling(final ScheduledTick<T> nextTick) {
-        this.nextTickForContainer.put(ChunkPos.pack(nextTick.pos()), nextTick.triggerTick());
+        // ===== 使用 new ChunkPos 替代 ChunkPos.pack =====
+        this.nextTickForContainer.put(new ChunkPos(nextTick.pos()), nextTick.triggerTick());
     }
 
     private void drainFromCurrentContainer(
@@ -200,7 +202,8 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
 
     @Override
     public boolean hasScheduledTick(final BlockPos pos, final T block) {
-        LevelChunkTicks<T> tickContainer = this.allContainers.get(ChunkPos.pack(pos));
+        // ===== 使用 new ChunkPos(pos) 替代 ChunkPos.pack =====
+        LevelChunkTicks<T> tickContainer = this.allContainers.get(new ChunkPos(pos));
         return tickContainer != null && tickContainer.hasScheduledTick(pos, block);
     }
 
@@ -216,7 +219,7 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
         }
     }
 
-    private void forContainersInArea(final BoundingBox bb, final LevelTicks.PosAndContainerConsumer<T> ouput) {
+    private void forContainersInArea(final BoundingBox bb, final LevelTicks.PosAndContainerConsumer<T> output) {
         int xMin = SectionPos.posToSectionCoord(bb.minX());
         int zMin = SectionPos.posToSectionCoord(bb.minZ());
         int xMax = SectionPos.posToSectionCoord(bb.maxX());
@@ -224,10 +227,11 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
 
         for (int x = xMin; x <= xMax; x++) {
             for (int z = zMin; z <= zMax; z++) {
-                long containerPos = ChunkPos.pack(x, z);
+                // ===== 使用 new ChunkPos(x, z) 替代 ChunkPos.pack =====
+                ChunkPos containerPos = new ChunkPos(x, z);
                 LevelChunkTicks<T> container = this.allContainers.get(containerPos);
                 if (container != null) {
-                    ouput.accept(containerPos, container);
+                    output.accept(containerPos, container);
                 }
             }
         }
@@ -243,7 +247,7 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
                 if (newTop != null) {
                     this.updateContainerScheduling(newTop);
                 } else {
-                    this.nextTickForContainer.remove(pos);
+                    this.nextTickForContainer.removeLong(pos);
                 }
             }
         });
@@ -278,8 +282,9 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
         return this.allContainers.values().stream().mapToInt(TickAccess::count).sum();
     }
 
+    // ===== 修改：内部接口参数改为 ChunkPos =====
     @FunctionalInterface
     private interface PosAndContainerConsumer<T> {
-        void accept(long pos, LevelChunkTicks<T> container);
+        void accept(ChunkPos pos, LevelChunkTicks<T> container);
     }
 }

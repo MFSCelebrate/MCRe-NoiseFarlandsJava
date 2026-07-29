@@ -289,7 +289,8 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
         boolean isEmpty = section.hasOnlyAir();
         if (wasEmpty != isEmpty) {
             this.level.getChunkSource().getLightEngine().updateSectionStatus(pos, isEmpty);
-            this.level.getChunkSource().onSectionEmptinessChanged(this.chunkPos.x(), SectionPos.blockToSectionCoord(y), this.chunkPos.z(), isEmpty);
+            // ===== 修改：使用 this.chunkPos.x / .z 字段 =====
+            this.level.getChunkSource().onSectionEmptinessChanged(this.chunkPos.x, SectionPos.blockToSectionCoord(y), this.chunkPos.z, isEmpty);
         }
 
         if (LightEngine.hasDifferentLightProperties(oldState, state)) {
@@ -412,9 +413,10 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
         if (!this.level.getWorldBorder().isWithinBounds(pos)) {
             return false;
         } else {
+            // ===== 修改：使用 ChunkPos.containing(pos) 替代 ChunkPos.pack(pos) =====
             return !(this.level instanceof ServerLevel serverLevel)
                 ? true
-                : this.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING) && serverLevel.areEntitiesLoaded(ChunkPos.pack(pos));
+                : this.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING) && serverLevel.areEntitiesLoaded(ChunkPos.containing(pos));
         }
     }
 

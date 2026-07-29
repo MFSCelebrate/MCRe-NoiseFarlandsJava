@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import it.unimi.dsi.fastutil.longs.Long2FloatLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2FloatLinkedOpenHashMap;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -70,8 +70,9 @@ public final class Biome {
     private final MobSpawnSettings mobSettings;
     private final EnvironmentAttributeMap attributes;
     private final BiomeSpecialEffects specialEffects;
-    private final ThreadLocal<Long2FloatLinkedOpenHashMap> temperatureCache = ThreadLocal.withInitial(() -> {
-        Long2FloatLinkedOpenHashMap map = new Long2FloatLinkedOpenHashMap(1024, 0.25F) {
+    // ===== 修改：使用 BlockPos 作为键 =====
+    private final ThreadLocal<Object2FloatLinkedOpenHashMap<BlockPos>> temperatureCache = ThreadLocal.withInitial(() -> {
+        Object2FloatLinkedOpenHashMap<BlockPos> map = new Object2FloatLinkedOpenHashMap<>(1024, 0.25F) {
             @Override
             protected void rehash(final int newN) {
             }
@@ -123,9 +124,10 @@ public final class Biome {
 
     @Deprecated
     private float getTemperature(final BlockPos pos, final int seaLevel) {
-        long key = pos.asLong();
-        Long2FloatLinkedOpenHashMap cache = this.temperatureCache.get();
-        float cached = cache.get(key);
+        // ===== 修改：使用 BlockPos 对象作为键 =====
+        BlockPos key = pos.immutable();
+        Object2FloatLinkedOpenHashMap<BlockPos> cache = this.temperatureCache.get();
+        float cached = cache.getFloat(key);
         if (!Float.isNaN(cached)) {
             return cached;
         }
@@ -407,7 +409,6 @@ public final class Biome {
                         return 0.2F;
                     }
                 }
-
                 return baseTemperature;
             }
         };

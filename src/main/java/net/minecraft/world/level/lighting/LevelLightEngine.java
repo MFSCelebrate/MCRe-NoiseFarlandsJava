@@ -33,7 +33,6 @@ public class LevelLightEngine implements LightEventListener {
         if (this.blockEngine != null) {
             this.blockEngine.checkBlock(pos);
         }
-
         if (this.skyEngine != null) {
             this.skyEngine.checkBlock(pos);
         }
@@ -50,11 +49,9 @@ public class LevelLightEngine implements LightEventListener {
         if (this.blockEngine != null) {
             count += this.blockEngine.runLightUpdates();
         }
-
         if (this.skyEngine != null) {
             count += this.skyEngine.runLightUpdates();
         }
-
         return count;
     }
 
@@ -63,7 +60,6 @@ public class LevelLightEngine implements LightEventListener {
         if (this.blockEngine != null) {
             this.blockEngine.updateSectionStatus(pos, sectionEmpty);
         }
-
         if (this.skyEngine != null) {
             this.skyEngine.updateSectionStatus(pos, sectionEmpty);
         }
@@ -74,7 +70,6 @@ public class LevelLightEngine implements LightEventListener {
         if (this.blockEngine != null) {
             this.blockEngine.setLightEnabled(pos, enable);
         }
-
         if (this.skyEngine != null) {
             this.skyEngine.setLightEnabled(pos, enable);
         }
@@ -85,7 +80,6 @@ public class LevelLightEngine implements LightEventListener {
         if (this.blockEngine != null) {
             this.blockEngine.propagateLightSources(pos);
         }
-
         if (this.skyEngine != null) {
             this.skyEngine.propagateLightSources(pos);
         }
@@ -99,45 +93,46 @@ public class LevelLightEngine implements LightEventListener {
         }
     }
 
+    // ===== getDebugData 使用 SectionPos 对象 =====
     public String getDebugData(final LightLayer layer, final SectionPos pos) {
         if (layer == LightLayer.BLOCK) {
             if (this.blockEngine != null) {
-                return this.blockEngine.getDebugData(pos.asLong());
+                return this.blockEngine.getDebugData(pos);
             }
         } else if (this.skyEngine != null) {
-            return this.skyEngine.getDebugData(pos.asLong());
+            return this.skyEngine.getDebugData(pos);
         }
-
         return "n/a";
     }
 
+    // ===== getDebugSectionType 使用 SectionPos 对象 =====
     public LayerLightSectionStorage.SectionType getDebugSectionType(final LightLayer layer, final SectionPos pos) {
         if (layer == LightLayer.BLOCK) {
             if (this.blockEngine != null) {
-                return this.blockEngine.getDebugSectionType(pos.asLong());
+                return this.blockEngine.getDebugSectionType(pos);
             }
         } else if (this.skyEngine != null) {
-            return this.skyEngine.getDebugSectionType(pos.asLong());
+            return this.skyEngine.getDebugSectionType(pos);
         }
-
         return LayerLightSectionStorage.SectionType.EMPTY;
     }
 
+    // ===== queueSectionData 使用 SectionPos 对象 =====
     public void queueSectionData(final LightLayer layer, final SectionPos pos, final @Nullable DataLayer data) {
         if (layer == LightLayer.BLOCK) {
             if (this.blockEngine != null) {
-                this.blockEngine.queueSectionData(pos.asLong(), data);
+                this.blockEngine.queueSectionData(pos, data);
             }
         } else if (this.skyEngine != null) {
-            this.skyEngine.queueSectionData(pos.asLong(), data);
+            this.skyEngine.queueSectionData(pos, data);
         }
     }
 
+    // ===== retainData 使用 ChunkPos 对象 =====
     public void retainData(final ChunkPos pos, final boolean retain) {
         if (this.blockEngine != null) {
             this.blockEngine.retainData(pos, retain);
         }
-
         if (this.skyEngine != null) {
             this.skyEngine.retainData(pos, retain);
         }
@@ -149,7 +144,9 @@ public class LevelLightEngine implements LightEventListener {
         return Math.max(blockLight, skyLight);
     }
 
-    public boolean lightOnInColumn(final long sectionZeroNode) {
+    // ===== lightOnInColumn 使用 ChunkPos 对象 =====
+    public boolean lightOnInColumn(final ChunkPos pos) {
+        long sectionZeroNode = SectionPos.getZeroNode(pos.x(), pos.z());
         return this.blockEngine == null
             || this.blockEngine.storage.lightOnInColumn(sectionZeroNode) && (this.skyEngine == null || this.skyEngine.storage.lightOnInColumn(sectionZeroNode));
     }

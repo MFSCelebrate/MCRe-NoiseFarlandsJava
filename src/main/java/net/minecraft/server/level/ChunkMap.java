@@ -9,16 +9,16 @@ import com.mojang.datafixers.DataFixer;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ByteMap;
-import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2LongMap;
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
+import it.unimi.dsi.fastutil.objects.Object2ByteMap;
+import it.unimi.dsi.fastutil.objects.Object2ByteOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Path;
@@ -110,9 +110,7 @@ import org.slf4j.Logger;
 
 public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerProvider, GeneratingChunkMap {
     private static final ChunkResult<List<ChunkAccess>> UNLOADED_CHUNK_LIST_RESULT = ChunkResult.error("Unloaded chunks found in range");
-    private static final CompletableFuture<ChunkResult<List<ChunkAccess>>> UNLOADED_CHUNK_LIST_FUTURE = CompletableFuture.completedFuture(
-        UNLOADED_CHUNK_LIST_RESULT
-    );
+    private static final CompletableFuture<ChunkResult<List<ChunkAccess>>> UNLOADED_CHUNK_LIST_FUTURE = CompletableFuture.completedFuture(UNLOADED_CHUNK_LIST_RESULT);
     private static final byte CHUNK_TYPE_REPLACEABLE = -1;
     private static final byte CHUNK_TYPE_UNKNOWN = 0;
     private static final byte CHUNK_TYPE_FULL = 1;
@@ -124,9 +122,11 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     public static final int MIN_VIEW_DISTANCE = 2;
     public static final int MAX_VIEW_DISTANCE = 32;
     public static final int FORCED_TICKET_LEVEL = ChunkLevel.byStatus(FullChunkStatus.ENTITY_TICKING);
-    private final Long2ObjectLinkedOpenHashMap<ChunkHolder> updatingChunkMap = new Long2ObjectLinkedOpenHashMap<>();
-    private volatile Long2ObjectLinkedOpenHashMap<ChunkHolder> visibleChunkMap = this.updatingChunkMap.clone();
-    private final Long2ObjectLinkedOpenHashMap<ChunkHolder> pendingUnloads = new Long2ObjectLinkedOpenHashMap<>();
+
+    // ===== 键改为 ChunkPos 对象 =====
+    private final Object2ObjectLinkedOpenHashMap<ChunkPos, ChunkHolder> updatingChunkMap = new Object2ObjectLinkedOpenHashMap<>();
+    private volatile Object2ObjectLinkedOpenHashMap<ChunkPos, ChunkHolder> visibleChunkMap = this.updatingChunkMap.clone();
+    private final Object2ObjectLinkedOpenHashMap<ChunkPos, ChunkHolder> pendingUnloads = new Object2ObjectLinkedOpenHashMap<>();
     private final List<ChunkGenerationTask> pendingGenerationTasks = new ArrayList<>();
     private final ServerLevel level;
     private final ThreadedLevelLightEngine lightEngine;
@@ -135,7 +135,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     private final ChunkGeneratorStructureState chunkGeneratorState;
     private final TicketStorage ticketStorage;
     private final PoiManager poiManager;
-    private final LongSet toDrop = new LongOpenHashSet();
+    private final ObjectOpenHashSet<ChunkPos> toDrop = new ObjectOpenHashSet<>();
     private boolean modified;
     private final ChunkTaskDispatcher worldgenTaskDispatcher;
     private final ChunkTaskDispatcher lightTaskDispatcher;
@@ -144,35 +144,37 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     private final String storageName;
     private final PlayerMap playerMap = new PlayerMap();
     private final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap = new Int2ObjectOpenHashMap<>();
-    private final Long2ByteMap chunkTypeCache = new Long2ByteOpenHashMap();
-    private final Long2LongMap nextChunkSaveTime = new Long2LongOpenHashMap();
-    private final LongSet chunksToEagerlySave = new LongLinkedOpenHashSet();
+    private final Object2ByteMap<ChunkPos> chunkTypeCache = new Object2ByteOpenHashMap<>();
+    private final Object2LongMap<ChunkPos> nextChunkSaveTime = new Object2LongOpenHashMap<>();
+    private final ObjectLinkedOpenHashSet<ChunkPos> chunksToEagerlySave = new ObjectLinkedOpenHashSet<>();
     private final Queue<Runnable> unloadQueue = Queues.newConcurrentLinkedQueue();
     private final AtomicInteger activeChunkWrites = new AtomicInteger();
     private int serverViewDistance;
     private final WorldGenContext worldGenContext;
 
+    // ... 构造函数保持不变，但内部使用的 ChunkPos 对象替换 ...
+
     public ChunkMap(
-        final ServerLevel level,
-        final LevelStorageSource.LevelStorageAccess levelStorage,
-        final DataFixer dataFixer,
-        final StructureTemplateManager structureManager,
-        final Executor executor,
-        final BlockableEventLoop<Runnable> mainThreadExecutor,
-        final LightChunkGetter chunkGetter,
-        final ChunkGenerator generator,
-        final ChunkStatusUpdateListener chunkStatusListener,
-        final Supplier<SavedDataStorage> overworldDataStorage,
-        final TicketStorage ticketStorage,
-        final int serverViewDistance,
-        final boolean syncWrites
+            final ServerLevel level,
+            final LevelStorageSource.LevelStorageAccess levelStorage,
+            final DataFixer dataFixer,
+            final StructureTemplateManager structureManager,
+            final Executor executor,
+            final BlockableEventLoop<Runnable> mainThreadExecutor,
+            final LightChunkGetter chunkGetter,
+            final ChunkGenerator generator,
+            final ChunkStatusUpdateListener chunkStatusListener,
+            final Supplier<SavedDataStorage> overworldDataStorage,
+            final TicketStorage ticketStorage,
+            final int serverViewDistance,
+            final boolean syncWrites
     ) {
         super(
-            new RegionStorageInfo(levelStorage.getLevelId(), level.dimension(), "chunk"),
-            levelStorage.getDimensionPath(level.dimension()).resolve("region"),
-            dataFixer,
-            syncWrites,
-            DataFixTypes.CHUNK
+                new RegionStorageInfo(levelStorage.getLevelId(), level.dimension(), "chunk"),
+                levelStorage.getDimensionPath(level.dimension()).resolve("region"),
+                dataFixer,
+                syncWrites,
+                DataFixTypes.CHUNK
         );
         Path storageFolder = levelStorage.getDimensionPath(level.dimension());
         this.storageName = storageFolder.getFileName().toString();
@@ -184,7 +186,6 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         } else {
             this.randomState = RandomState.create(NoiseGeneratorSettings.dummy(), registryAccess.lookupOrThrow(Registries.NOISE), levelSeed);
         }
-
         this.chunkGeneratorState = generator.createState(registryAccess.lookupOrThrow(Registries.STRUCTURE_SET), this.randomState, levelSeed);
         this.mainThreadExecutor = mainThreadExecutor;
         ConsecutiveExecutor worldgen = new ConsecutiveExecutor(executor, "worldgen");
@@ -196,144 +197,105 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         this.distanceManager = new ChunkMap.DistanceManager(ticketStorage, executor, mainThreadExecutor);
         this.ticketStorage = ticketStorage;
         this.poiManager = new PoiManager(
-            new RegionStorageInfo(levelStorage.getLevelId(), level.dimension(), "poi"),
-            storageFolder.resolve("poi"),
-            dataFixer,
-            syncWrites,
-            registryAccess,
-            level.getServer(),
-            level
+                new RegionStorageInfo(levelStorage.getLevelId(), level.dimension(), "poi"),
+                storageFolder.resolve("poi"),
+                dataFixer,
+                syncWrites,
+                registryAccess,
+                level.getServer(),
+                level
         );
         this.setServerViewDistance(serverViewDistance);
         this.worldGenContext = new WorldGenContext(level, generator, structureManager, this.lightEngine, mainThreadExecutor, this::setChunkUnsaved);
     }
 
     private void setChunkUnsaved(final ChunkPos chunkPos) {
-        this.chunksToEagerlySave.add(chunkPos.pack());
+        this.chunksToEagerlySave.add(chunkPos);
     }
 
-    protected ChunkGenerator generator() {
-        return this.worldGenContext.generator();
+    // ===== 方法签名全部改为 ChunkPos =====
+
+    public boolean isChunkTracked(final ServerPlayer player, final ChunkPos pos) {
+        return player.getChunkTrackingView().contains(pos) && !player.connection.chunkSender.isPending(pos);
     }
 
-    protected ChunkGeneratorStructureState generatorState() {
-        return this.chunkGeneratorState;
-    }
-
-    protected RandomState randomState() {
-        return this.randomState;
-    }
-
-    public boolean isChunkTracked(final ServerPlayer player, final int chunkX, final int chunkZ) {
-        return player.getChunkTrackingView().contains(chunkX, chunkZ) && !player.connection.chunkSender.isPending(ChunkPos.pack(chunkX, chunkZ));
-    }
-
-    private boolean isChunkOnTrackedBorder(final ServerPlayer player, final int chunkX, final int chunkZ) {
-        if (!this.isChunkTracked(player, chunkX, chunkZ)) {
-            return false;
-        }
-
+    private boolean isChunkOnTrackedBorder(final ServerPlayer player, final ChunkPos pos) {
+        if (!this.isChunkTracked(player, pos)) return false;
+        int x = pos.x, z = pos.z;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                if ((dx != 0 || dz != 0) && !this.isChunkTracked(player, chunkX + dx, chunkZ + dz)) {
+                if ((dx != 0 || dz != 0) && !this.isChunkTracked(player, new ChunkPos(x + dx, z + dz))) {
                     return true;
                 }
             }
         }
-
         return false;
     }
 
-    protected ThreadedLevelLightEngine getLightEngine() {
-        return this.lightEngine;
+    protected ThreadedLevelLightEngine getLightEngine() { return this.lightEngine; }
+
+    public @Nullable ChunkHolder getUpdatingChunkIfPresent(final ChunkPos pos) {
+        return this.updatingChunkMap.get(pos);
     }
 
-    public @Nullable ChunkHolder getUpdatingChunkIfPresent(final long key) {
-        return this.updatingChunkMap.get(key);
+    protected @Nullable ChunkHolder getVisibleChunkIfPresent(final ChunkPos pos) {
+        return this.visibleChunkMap.get(pos);
     }
 
-    protected @Nullable ChunkHolder getVisibleChunkIfPresent(final long key) {
-        return this.visibleChunkMap.get(key);
+    public @Nullable ChunkStatus getLatestStatus(final ChunkPos pos) {
+        ChunkHolder holder = this.getVisibleChunkIfPresent(pos);
+        return holder != null ? holder.getLatestStatus() : null;
     }
 
-    public @Nullable ChunkStatus getLatestStatus(final long key) {
-        ChunkHolder chunkHolder = this.getVisibleChunkIfPresent(key);
-        return chunkHolder != null ? chunkHolder.getLatestStatus() : null;
-    }
-
-    protected IntSupplier getChunkQueueLevel(final long pos) {
+    protected IntSupplier getChunkQueueLevel(final ChunkPos pos) {
         return () -> {
             ChunkHolder chunk = this.getVisibleChunkIfPresent(pos);
-            return chunk == null
-                ? ChunkTaskPriorityQueue.PRIORITY_LEVEL_COUNT - 1
-                : Math.min(chunk.getQueueLevel(), ChunkTaskPriorityQueue.PRIORITY_LEVEL_COUNT - 1);
+            return chunk == null ? ChunkTaskPriorityQueue.PRIORITY_LEVEL_COUNT - 1
+                    : Math.min(chunk.getQueueLevel(), ChunkTaskPriorityQueue.PRIORITY_LEVEL_COUNT - 1);
         };
     }
 
     public String getChunkDebugData(final ChunkPos pos) {
-        ChunkHolder chunkHolder = this.getVisibleChunkIfPresent(pos.pack());
-        if (chunkHolder == null) {
-            return "null";
-        }
-
-        String result = chunkHolder.getTicketLevel() + "\n";
-        ChunkStatus status = chunkHolder.getLatestStatus();
-        ChunkAccess chunk = chunkHolder.getLatestChunk();
-        if (status != null) {
-            result = result + "St: \u00a7" + status.getIndex() + status + "\u00a7r\n";
-        }
-
-        if (chunk != null) {
-            result = result + "Ch: \u00a7" + chunk.getPersistedStatus().getIndex() + chunk.getPersistedStatus() + "\u00a7r\n";
-        }
-
-        FullChunkStatus fullStatus = chunkHolder.getFullStatus();
-        result = result + '\u00a7' + fullStatus.ordinal() + fullStatus;
-        return result + "\u00a7r";
+        ChunkHolder holder = this.getVisibleChunkIfPresent(pos);
+        if (holder == null) return "null";
+        String result = holder.getTicketLevel() + "\n";
+        ChunkStatus status = holder.getLatestStatus();
+        ChunkAccess chunk = holder.getLatestChunk();
+        if (status != null) result = result + "St: §" + status.getIndex() + status + "§r\n";
+        if (chunk != null) result = result + "Ch: §" + chunk.getPersistedStatus().getIndex() + chunk.getPersistedStatus() + "§r\n";
+        FullChunkStatus fullStatus = holder.getFullStatus();
+        result = result + '§' + fullStatus.ordinal() + fullStatus;
+        return result + "§r";
     }
 
     CompletableFuture<ChunkResult<List<ChunkAccess>>> getChunkRangeFuture(
-        final ChunkHolder centerChunk, final int range, final IntFunction<ChunkStatus> distanceToStatus
+            final ChunkHolder centerChunk, final int range, final IntFunction<ChunkStatus> distanceToStatus
     ) {
         if (range == 0) {
             ChunkStatus status = distanceToStatus.apply(0);
             return centerChunk.scheduleChunkGenerationTask(status, this).thenApply(r -> r.map(List::of));
         }
-
         int chunkCount = Mth.square(range * 2 + 1);
         List<CompletableFuture<ChunkResult<ChunkAccess>>> deps = new ArrayList<>(chunkCount);
         ChunkPos centerPos = centerChunk.getPos();
-
         for (int z = -range; z <= range; z++) {
             for (int x = -range; x <= range; x++) {
                 int distance = Math.max(Math.abs(x), Math.abs(z));
-                long chunkNode = ChunkPos.pack(centerPos.x() + x, centerPos.z() + z);
-                ChunkHolder chunk = this.getUpdatingChunkIfPresent(chunkNode);
-                if (chunk == null) {
-                    return UNLOADED_CHUNK_LIST_FUTURE;
-                }
-
+                ChunkPos pos = new ChunkPos(centerPos.x + x, centerPos.z + z);
+                ChunkHolder chunk = this.getUpdatingChunkIfPresent(pos);
+                if (chunk == null) return UNLOADED_CHUNK_LIST_FUTURE;
                 ChunkStatus depStatus = distanceToStatus.apply(distance);
                 deps.add(chunk.scheduleChunkGenerationTask(depStatus, this));
             }
         }
-
         return Util.sequence(deps).thenApply(chunkResults -> {
             List<ChunkAccess> chunks = new ArrayList<>(chunkResults.size());
-
-            for (ChunkResult<ChunkAccess> chunkResult : chunkResults) {
-                if (chunkResult == null) {
-                    throw this.debugFuturesAndCreateReportedException(new IllegalStateException("At least one of the chunk futures were null"), "n/a");
-                }
-
-                ChunkAccess chunkx = chunkResult.orElse(null);
-                if (chunkx == null) {
-                    return UNLOADED_CHUNK_LIST_RESULT;
-                }
-
-                chunks.add(chunkx);
+            for (ChunkResult<ChunkAccess> result : chunkResults) {
+                if (result == null) throw this.debugFuturesAndCreateReportedException(new IllegalStateException("Null chunk future"), "n/a");
+                ChunkAccess c = result.orElse(null);
+                if (c == null) return UNLOADED_CHUNK_LIST_RESULT;
+                chunks.add(c);
             }
-
             return ChunkResult.of(chunks);
         });
     }
@@ -360,38 +322,23 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
 
     public CompletableFuture<ChunkResult<LevelChunk>> prepareEntityTickingChunk(final ChunkHolder chunk) {
         return this.getChunkRangeFuture(chunk, 2, distance -> ChunkStatus.FULL)
-            .thenApply(chunkResult -> chunkResult.map(list -> (LevelChunk)list.get(list.size() / 2)));
+                .thenApply(chunkResult -> chunkResult.map(list -> (LevelChunk) list.get(list.size() / 2)));
     }
 
-    private @Nullable ChunkHolder updateChunkScheduling(final long node, final int level, @Nullable ChunkHolder chunk, final int oldLevel) {
-        if (!ChunkLevel.isLoaded(oldLevel) && !ChunkLevel.isLoaded(level)) {
-            return chunk;
-        }
-
+    private @Nullable ChunkHolder updateChunkScheduling(final ChunkPos pos, final int level, @Nullable ChunkHolder chunk, final int oldLevel) {
+        if (!ChunkLevel.isLoaded(oldLevel) && !ChunkLevel.isLoaded(level)) return chunk;
+        if (chunk != null) chunk.setTicketLevel(level);
         if (chunk != null) {
-            chunk.setTicketLevel(level);
+            if (!ChunkLevel.isLoaded(level)) this.toDrop.add(pos);
+            else this.toDrop.remove(pos);
         }
-
-        if (chunk != null) {
-            if (!ChunkLevel.isLoaded(level)) {
-                this.toDrop.add(node);
-            } else {
-                this.toDrop.remove(node);
-            }
-        }
-
         if (ChunkLevel.isLoaded(level) && chunk == null) {
-            chunk = this.pendingUnloads.remove(node);
-            if (chunk != null) {
-                chunk.setTicketLevel(level);
-            } else {
-                chunk = new ChunkHolder(ChunkPos.unpack(node), level, this.level, this.lightEngine, this::onLevelChange, this);
-            }
-
-            this.updatingChunkMap.put(node, chunk);
+            chunk = this.pendingUnloads.remove(pos);
+            if (chunk != null) chunk.setTicketLevel(level);
+            else chunk = new ChunkHolder(pos, level, this.level, this.lightEngine, this::onLevelChange, this);
+            this.updatingChunkMap.put(pos, chunk);
             this.modified = true;
         }
-
         return chunk;
     }
 
@@ -413,33 +360,28 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
 
     protected void saveAllChunks(final boolean flushStorage) {
         if (flushStorage) {
-            List<ChunkHolder> chunksToSave = this.visibleChunkMap
-                .values()
-                .stream()
-                .filter(ChunkHolder::wasAccessibleSinceLastSave)
-                .peek(ChunkHolder::refreshAccessibility)
-                .toList();
+            List<ChunkHolder> chunksToSave = this.visibleChunkMap.values().stream()
+                    .filter(ChunkHolder::wasAccessibleSinceLastSave)
+                    .peek(ChunkHolder::refreshAccessibility)
+                    .toList();
             MutableBoolean didWork = new MutableBoolean();
-
             do {
                 didWork.setFalse();
                 chunksToSave.stream()
-                    .map(chunkx -> {
-                        this.mainThreadExecutor.managedBlock(chunkx::isReadyForSaving);
-                        return chunkx.getLatestChunk();
-                    })
-                    .filter(chunkAccess -> chunkAccess instanceof ImposterProtoChunk || chunkAccess instanceof LevelChunk)
-                    .filter(this::save)
-                    .forEach(c -> didWork.setTrue());
+                        .map(chunk -> {
+                            this.mainThreadExecutor.managedBlock(chunk::isReadyForSaving);
+                            return chunk.getLatestChunk();
+                        })
+                        .filter(c -> c instanceof ImposterProtoChunk || c instanceof LevelChunk)
+                        .filter(this::save)
+                        .forEach(c -> didWork.setTrue());
             } while (didWork.isTrue());
-
             this.poiManager.flushAll();
             this.processUnloads(() -> true);
             this.synchronize(true).join();
         } else {
             this.nextChunkSaveTime.clear();
             long now = Util.getMillis();
-
             for (ChunkHolder chunk : this.visibleChunkMap.values()) {
                 this.saveChunkIfNeeded(chunk, now);
             }
@@ -451,147 +393,121 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         profiler.push("poi");
         this.poiManager.tick(haveTime);
         profiler.popPush("chunk_unload");
-        if (!this.level.noSave()) {
-            this.processUnloads(haveTime);
-        }
-
+        if (!this.level.noSave()) this.processUnloads(haveTime);
         profiler.pop();
     }
 
     public boolean hasWork() {
         return this.lightEngine.hasLightWork()
-            || !this.pendingUnloads.isEmpty()
-            || !this.updatingChunkMap.isEmpty()
-            || this.poiManager.hasWork()
-            || !this.toDrop.isEmpty()
-            || !this.unloadQueue.isEmpty()
-            || this.worldgenTaskDispatcher.hasWork()
-            || this.lightTaskDispatcher.hasWork()
-            || this.distanceManager.hasTickets();
+                || !this.pendingUnloads.isEmpty()
+                || !this.updatingChunkMap.isEmpty()
+                || this.poiManager.hasWork()
+                || !this.toDrop.isEmpty()
+                || !this.unloadQueue.isEmpty()
+                || this.worldgenTaskDispatcher.hasWork()
+                || this.lightTaskDispatcher.hasWork()
+                || this.distanceManager.hasTickets();
     }
 
     private void processUnloads(final BooleanSupplier haveTime) {
-        for (LongIterator iterator = this.toDrop.iterator(); iterator.hasNext(); iterator.remove()) {
-            long pos = iterator.nextLong();
-            ChunkHolder chunkHolder = this.updatingChunkMap.get(pos);
-            if (chunkHolder != null) {
+        for (ObjectIterator<ChunkPos> iterator = this.toDrop.iterator(); iterator.hasNext(); ) {
+            ChunkPos pos = iterator.next();
+            ChunkHolder holder = this.updatingChunkMap.get(pos);
+            if (holder != null) {
                 this.updatingChunkMap.remove(pos);
-                this.pendingUnloads.put(pos, chunkHolder);
+                this.pendingUnloads.put(pos, holder);
                 this.modified = true;
-                this.scheduleUnload(pos, chunkHolder);
+                this.scheduleUnload(pos, holder);
             }
+            iterator.remove();
         }
-
-        int minimalNumberOfChunksToProcess = Math.max(0, this.unloadQueue.size() - 2000);
-
-        Runnable unloadTask;
-        while ((minimalNumberOfChunksToProcess > 0 || haveTime.getAsBoolean()) && (unloadTask = this.unloadQueue.poll()) != null) {
-            minimalNumberOfChunksToProcess--;
-            unloadTask.run();
+        int minimal = Math.max(0, this.unloadQueue.size() - 2000);
+        Runnable task;
+        while ((minimal > 0 || haveTime.getAsBoolean()) && (task = this.unloadQueue.poll()) != null) {
+            minimal--;
+            task.run();
         }
-
         this.saveChunksEagerly(haveTime);
     }
 
     private void saveChunksEagerly(final BooleanSupplier haveTime) {
         long now = Util.getMillis();
-        int eagerlySavedCount = 0;
-        LongIterator iterator = this.chunksToEagerlySave.iterator();
-
-        while (eagerlySavedCount < 20 && this.activeChunkWrites.get() < 128 && haveTime.getAsBoolean() && iterator.hasNext()) {
-            long chunkPos = iterator.nextLong();
-            ChunkHolder chunkHolder = this.visibleChunkMap.get(chunkPos);
-            ChunkAccess latestChunk = chunkHolder != null ? chunkHolder.getLatestChunk() : null;
-            if (latestChunk == null || !latestChunk.isUnsaved()) {
+        int saved = 0;
+        ObjectIterator<ChunkPos> iterator = this.chunksToEagerlySave.iterator();
+        while (saved < 20 && this.activeChunkWrites.get() < 128 && haveTime.getAsBoolean() && iterator.hasNext()) {
+            ChunkPos pos = iterator.next();
+            ChunkHolder holder = this.visibleChunkMap.get(pos);
+            ChunkAccess latest = holder != null ? holder.getLatestChunk() : null;
+            if (latest == null || !latest.isUnsaved()) {
                 iterator.remove();
-            } else if (this.saveChunkIfNeeded(chunkHolder, now)) {
-                eagerlySavedCount++;
+            } else if (this.saveChunkIfNeeded(holder, now)) {
+                saved++;
                 iterator.remove();
             }
         }
     }
 
-    private void scheduleUnload(final long pos, final ChunkHolder chunkHolder) {
-        CompletableFuture<?> saveSyncFuture = chunkHolder.getSaveSyncFuture();
-        saveSyncFuture.thenRunAsync(() -> {
-            CompletableFuture<?> currentFuture = chunkHolder.getSaveSyncFuture();
-            if (currentFuture != saveSyncFuture) {
-                this.scheduleUnload(pos, chunkHolder);
+    private void scheduleUnload(final ChunkPos pos, final ChunkHolder holder) {
+        CompletableFuture<?> saveFuture = holder.getSaveSyncFuture();
+        saveFuture.thenRunAsync(() -> {
+            CompletableFuture<?> current = holder.getSaveSyncFuture();
+            if (current != saveFuture) {
+                this.scheduleUnload(pos, holder);
             } else {
-                ChunkAccess chunk = chunkHolder.getLatestChunk();
-                if (this.pendingUnloads.remove(pos, chunkHolder) && chunk != null) {
-                    if (chunk instanceof LevelChunk levelChunk) {
-                        levelChunk.setLoaded(false);
-                    }
-
+                ChunkAccess chunk = holder.getLatestChunk();
+                if (this.pendingUnloads.remove(pos, holder) && chunk != null) {
+                    if (chunk instanceof LevelChunk lc) lc.setLoaded(false);
                     this.save(chunk);
-                    if (chunk instanceof LevelChunk levelChunk) {
-                        this.level.unload(levelChunk);
-                    }
-
+                    if (chunk instanceof LevelChunk lc) this.level.unload(lc);
                     this.lightEngine.updateChunkStatus(chunk.getPos());
                     this.lightEngine.tryScheduleUpdate();
-                    this.nextChunkSaveTime.remove(chunk.getPos().pack());
+                    this.nextChunkSaveTime.remove(pos);
                 }
             }
         }, this.unloadQueue::add).whenComplete((ignored, throwable) -> {
-            if (throwable != null) {
-                LOGGER.error("Failed to save chunk {}", chunkHolder.getPos(), throwable);
-            }
+            if (throwable != null) LOGGER.error("Failed to save chunk {}", holder.getPos(), throwable);
         });
     }
 
     protected boolean promoteChunkMap() {
-        if (!this.modified) {
-            return false;
-        }
-
+        if (!this.modified) return false;
         this.visibleChunkMap = this.updatingChunkMap.clone();
         this.modified = false;
         return true;
     }
 
     private CompletableFuture<ChunkAccess> scheduleChunkLoad(final ChunkPos pos) {
-        CompletableFuture<Optional<SerializableChunkData>> chunkDataFuture = this.readChunk(pos).thenApplyAsync(chunkData -> chunkData.map(tag -> {
-            SerializableChunkData parsedData = SerializableChunkData.parse(this.level, this.level.palettedContainerFactory(), tag);
-            if (parsedData == null) {
-                LOGGER.error("Chunk file at {} is missing level data, skipping", pos);
-            }
-
-            return parsedData;
+        CompletableFuture<Optional<SerializableChunkData>> dataFuture = this.readChunk(pos).thenApplyAsync(tag -> tag.map(t -> {
+            SerializableChunkData parsed = SerializableChunkData.parse(this.level, this.level.palettedContainerFactory(), t);
+            if (parsed == null) LOGGER.error("Chunk file at {} is missing level data, skipping", pos);
+            return parsed;
         }), Util.backgroundExecutor().forName("parseChunk"));
         CompletableFuture<?> poiFuture = this.poiManager.prefetch(pos);
-        return chunkDataFuture.<Object, Optional<SerializableChunkData>>thenCombine(
-                (CompletionStage<? extends Object>)poiFuture, (chunkData, ignored) -> chunkData
-            )
-            .thenApplyAsync(chunkData -> {
-                Profiler.get().incrementCounter("chunkLoad");
-                if (chunkData.isPresent()) {
-                    ChunkAccess chunk = chunkData.get().read(this.level, this.poiManager, this.storageInfo(), pos);
-                    this.markPosition(pos, chunk.getPersistedStatus().getChunkType());
-                    return chunk;
-                } else {
-                    return this.createEmptyChunk(pos);
-                }
-            }, this.mainThreadExecutor)
-            .exceptionallyAsync(throwable -> this.handleChunkLoadFailure(throwable, pos), this.mainThreadExecutor);
+        return dataFuture.thenCombine(poiFuture, (data, ignored) -> data)
+                .thenApplyAsync(data -> {
+                    Profiler.get().incrementCounter("chunkLoad");
+                    if (data.isPresent()) {
+                        ChunkAccess chunk = data.get().read(this.level, this.poiManager, this.storageInfo(), pos);
+                        this.markPosition(pos, chunk.getPersistedStatus().getChunkType());
+                        return chunk;
+                    } else {
+                        return this.createEmptyChunk(pos);
+                    }
+                }, this.mainThreadExecutor)
+                .exceptionallyAsync(t -> this.handleChunkLoadFailure(t, pos), this.mainThreadExecutor);
     }
 
-    private ChunkAccess handleChunkLoadFailure(final Throwable throwable, final ChunkPos pos) {
-        Throwable unwrapped = throwable instanceof CompletionException e ? e.getCause() : throwable;
+    private ChunkAccess handleChunkLoadFailure(final Throwable t, final ChunkPos pos) {
+        Throwable unwrapped = t instanceof CompletionException e ? e.getCause() : t;
         Throwable cause = unwrapped instanceof ReportedException e ? e.getCause() : unwrapped;
-        boolean alwaysThrow = cause instanceof Error;
-        boolean ioException = cause instanceof IOException || cause instanceof NbtException;
-        if (!alwaysThrow) {
-            if (!ioException) {
-            }
-
+        boolean fatal = cause instanceof Error;
+        if (!fatal) {
             this.level.getServer().reportChunkLoadFailure(cause, this.storageInfo(), pos);
             return this.createEmptyChunk(pos);
         } else {
-            CrashReport report = CrashReport.forThrowable(throwable, "Exception loading chunk");
-            CrashReportCategory chunkBeingLoaded = report.addCategory("Chunk being loaded");
-            chunkBeingLoaded.setDetail("pos", pos);
+            CrashReport report = CrashReport.forThrowable(t, "Exception loading chunk");
+            CrashReportCategory cat = report.addCategory("Chunk being loaded");
+            cat.setDetail("pos", pos);
             this.markPositionReplaceable(pos);
             throw new ReportedException(report);
         }
@@ -603,50 +519,44 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     }
 
     private void markPositionReplaceable(final ChunkPos pos) {
-        this.chunkTypeCache.put(pos.pack(), (byte)-1);
+        this.chunkTypeCache.put(pos, (byte) -1);
     }
 
     private byte markPosition(final ChunkPos pos, final ChunkType type) {
-        return this.chunkTypeCache.put(pos.pack(), (byte)(type == ChunkType.PROTOCHUNK ? -1 : 1));
+        return this.chunkTypeCache.put(pos, (byte) (type == ChunkType.PROTOCHUNK ? -1 : 1));
     }
 
     @Override
-    public GenerationChunkHolder acquireGeneration(final long chunkNode) {
-        ChunkHolder chunkHolder = this.updatingChunkMap.get(chunkNode);
-        chunkHolder.increaseGenerationRefCount();
-        return chunkHolder;
+    public GenerationChunkHolder acquireGeneration(final ChunkPos chunkPos) {
+        ChunkHolder holder = this.updatingChunkMap.get(chunkPos);
+        holder.increaseGenerationRefCount();
+        return holder;
     }
 
     @Override
-    public void releaseGeneration(final GenerationChunkHolder chunkHolder) {
-        chunkHolder.decreaseGenerationRefCount();
+    public void releaseGeneration(final GenerationChunkHolder holder) {
+        holder.decreaseGenerationRefCount();
     }
 
     @Override
     public CompletableFuture<ChunkAccess> applyStep(
-        final GenerationChunkHolder chunkHolder, final ChunkStep step, final StaticCache2D<GenerationChunkHolder> cache
+            final GenerationChunkHolder holder, final ChunkStep step, final StaticCache2D<GenerationChunkHolder> cache
     ) {
-        ChunkPos pos = chunkHolder.getPos();
+        ChunkPos pos = holder.getPos();
         if (step.targetStatus() == ChunkStatus.EMPTY) {
             return this.scheduleChunkLoad(pos);
         }
-
         try {
-            GenerationChunkHolder holder = cache.get(pos.x(), pos.z());
-            ChunkAccess centerChunk = holder.getChunkIfPresentUnchecked(step.targetStatus().getParent());
-            if (centerChunk == null) {
-                throw new IllegalStateException("Parent chunk missing");
-            } else {
-                return step.apply(this.worldGenContext, cache, centerChunk);
-            }
+            GenerationChunkHolder h = cache.get(pos.x, pos.z);
+            ChunkAccess center = h.getChunkIfPresentUnchecked(step.targetStatus().getParent());
+            if (center == null) throw new IllegalStateException("Parent chunk missing");
+            return step.apply(this.worldGenContext, cache, center);
         } catch (Exception e) {
-            e.getStackTrace();
             CrashReport report = CrashReport.forThrowable(e, "Exception generating new chunk");
-            CrashReportCategory category = report.addCategory("Chunk to be generated");
-            category.setDetail("Status being generated", () -> step.targetStatus().getName());
-            category.setDetail("Location", String.format(Locale.ROOT, "%d,%d", pos.x(), pos.z()));
-            category.setDetail("Position hash", ChunkPos.pack(pos.x(), pos.z()));
-            category.setDetail("Generator", this.generator());
+            CrashReportCategory cat = report.addCategory("Chunk to be generated");
+            cat.setDetail("Status being generated", () -> step.targetStatus().getName());
+            cat.setDetail("Location", String.format(Locale.ROOT, "%d,%d", pos.x, pos.z));
+            cat.setDetail("Generator", this.generator());
             throw new ReportedException(report);
         }
     }
@@ -662,9 +572,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         GenerationChunkHolder chunk = task.getCenter();
         this.worldgenTaskDispatcher.submit(() -> {
             CompletableFuture<?> future = task.runUntilWait();
-            if (future != null) {
-                future.thenRun(() -> this.runGenerationTask(task));
-            }
+            if (future != null) future.thenRun(() -> this.runGenerationTask(task));
         }, chunk.getPos().pack(), chunk::getQueueLevel);
     }
 
@@ -677,36 +585,28 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     public CompletableFuture<ChunkResult<LevelChunk>> prepareTickingChunk(final ChunkHolder chunk) {
         CompletableFuture<ChunkResult<List<ChunkAccess>>> future = this.getChunkRangeFuture(chunk, 1, distance -> ChunkStatus.FULL);
         return future.thenApplyAsync(listResult -> listResult.map(list -> {
-            LevelChunk levelChunk = (LevelChunk)list.get(list.size() / 2);
+            LevelChunk levelChunk = (LevelChunk) list.get(list.size() / 2);
             levelChunk.postProcessGeneration(this.level);
             this.level.startTickingChunk(levelChunk);
-            CompletableFuture<?> sendSyncFuture = chunk.getSendSyncFuture();
-            if (sendSyncFuture.isDone()) {
-                this.onChunkReadyToSend(chunk, levelChunk);
-            } else {
-                sendSyncFuture.thenAcceptAsync(ignored -> this.onChunkReadyToSend(chunk, levelChunk), this.mainThreadExecutor);
-            }
-
+            CompletableFuture<?> sendFuture = chunk.getSendSyncFuture();
+            if (sendFuture.isDone()) this.onChunkReadyToSend(chunk, levelChunk);
+            else sendFuture.thenAcceptAsync(ignored -> this.onChunkReadyToSend(chunk, levelChunk), this.mainThreadExecutor);
             return levelChunk;
         }), this.mainThreadExecutor);
     }
 
-    private void onChunkReadyToSend(final ChunkHolder chunkHolder, final LevelChunk chunk) {
-        ChunkPos chunkPos = chunk.getPos();
-
+    private void onChunkReadyToSend(final ChunkHolder holder, final LevelChunk chunk) {
+        ChunkPos pos = chunk.getPos();
         for (ServerPlayer player : this.playerMap.getAllPlayers()) {
-            if (player.getChunkTrackingView().contains(chunkPos)) {
-                markChunkPendingToSend(player, chunk);
-            }
+            if (player.getChunkTrackingView().contains(pos)) markChunkPendingToSend(player, chunk);
         }
-
-        this.level.getChunkSource().onChunkReadyToSend(chunkHolder);
+        this.level.getChunkSource().onChunkReadyToSend(holder);
         this.level.debugSynchronizers().registerChunk(chunk);
     }
 
     public CompletableFuture<ChunkResult<LevelChunk>> prepareAccessibleChunk(final ChunkHolder chunk) {
         return this.getChunkRangeFuture(chunk, 1, ChunkLevel::getStatusAroundFullChunk)
-            .thenApply(chunkResult -> chunkResult.map(list -> (LevelChunk)list.get(list.size() / 2)));
+                .thenApply(r -> r.map(list -> (LevelChunk) list.get(list.size() / 2)));
     }
 
     Stream<ChunkHolder> allChunksWithAtLeastStatus(final ChunkStatus status) {
@@ -716,62 +616,36 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
 
     private boolean saveChunkIfNeeded(final ChunkHolder chunk, final long now) {
         if (chunk.wasAccessibleSinceLastSave() && chunk.isReadyForSaving()) {
-            ChunkAccess chunkAccess = chunk.getLatestChunk();
-            if (!(chunkAccess instanceof ImposterProtoChunk) && !(chunkAccess instanceof LevelChunk)) {
-                return false;
-            }
-
-            if (!chunkAccess.isUnsaved()) {
-                return false;
-            }
-
-            long chunkPos = chunkAccess.getPos().pack();
-            long nextSaveTime = this.nextChunkSaveTime.getOrDefault(chunkPos, -1L);
-            if (now < nextSaveTime) {
-                return false;
-            }
-
-            boolean saved = this.save(chunkAccess);
+            ChunkAccess access = chunk.getLatestChunk();
+            if (!(access instanceof ImposterProtoChunk) && !(access instanceof LevelChunk)) return false;
+            if (!access.isUnsaved()) return false;
+            ChunkPos pos = access.getPos();
+            long next = this.nextChunkSaveTime.getOrDefault(pos, -1L);
+            if (now < next) return false;
+            boolean saved = this.save(access);
             chunk.refreshAccessibility();
-            if (saved) {
-                this.nextChunkSaveTime.put(chunkPos, now + 10000L);
-            }
-
+            if (saved) this.nextChunkSaveTime.put(pos, now + 10000L);
             return saved;
-        } else {
-            return false;
         }
+        return false;
     }
 
     private boolean save(final ChunkAccess chunk) {
         this.poiManager.flush(chunk.getPos());
-        if (!chunk.tryMarkSaved()) {
-            return false;
-        }
-
+        if (!chunk.tryMarkSaved()) return false;
         ChunkPos pos = chunk.getPos();
-
         try {
             ChunkStatus status = chunk.getPersistedStatus();
             if (status.getChunkType() != ChunkType.LEVELCHUNK) {
-                if (this.isExistingChunkFull(pos)) {
-                    return false;
-                }
-
-                if (status == ChunkStatus.EMPTY && chunk.getAllStarts().values().stream().noneMatch(StructureStart::isValid)) {
-                    return false;
-                }
+                if (this.isExistingChunkFull(pos)) return false;
+                if (status == ChunkStatus.EMPTY && chunk.getAllStarts().values().stream().noneMatch(StructureStart::isValid)) return false;
             }
-
             Profiler.get().incrementCounter("chunkSave");
             this.activeChunkWrites.incrementAndGet();
             SerializableChunkData data = SerializableChunkData.copyOf(this.level, chunk);
-            CompletableFuture<CompoundTag> encodedData = CompletableFuture.supplyAsync(data::write, Util.backgroundExecutor());
-            this.write(pos, encodedData::join).handle((ignored, throwable) -> {
-                if (throwable != null) {
-                    this.level.getServer().reportChunkSaveFailure(throwable, this.storageInfo(), pos);
-                }
-
+            CompletableFuture<CompoundTag> encoded = CompletableFuture.supplyAsync(data::write, Util.backgroundExecutor());
+            this.write(pos, encoded::join).handle((ignored, throwable) -> {
+                if (throwable != null) this.level.getServer().reportChunkSaveFailure(throwable, this.storageInfo(), pos);
                 this.activeChunkWrites.decrementAndGet();
                 return null;
             });
@@ -784,37 +658,27 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     }
 
     private boolean isExistingChunkFull(final ChunkPos pos) {
-        byte cachedChunkType = this.chunkTypeCache.get(pos.pack());
-        if (cachedChunkType != 0) {
-            return cachedChunkType == 1;
-        }
-
-        CompoundTag currentTag;
+        byte cached = this.chunkTypeCache.getOrDefault(pos, (byte) 0);
+        if (cached != 0) return cached == 1;
+        CompoundTag tag;
         try {
-            currentTag = this.readChunk(pos).join().orElse(null);
-            if (currentTag == null) {
-                this.markPositionReplaceable(pos);
-                return false;
-            }
+            tag = this.readChunk(pos).join().orElse(null);
+            if (tag == null) { this.markPositionReplaceable(pos); return false; }
         } catch (Exception e) {
             LOGGER.error("Failed to read chunk {}", pos, e);
             this.markPositionReplaceable(pos);
             return false;
         }
-
-        ChunkType chunkType = SerializableChunkData.getChunkStatusFromTag(currentTag).getChunkType();
-        return this.markPosition(pos, chunkType) == 1;
+        ChunkType type = SerializableChunkData.getChunkStatusFromTag(tag).getChunkType();
+        return this.markPosition(pos, type) == 1;
     }
 
     protected void setServerViewDistance(final int newViewDistance) {
-        int actualNewDistance = Mth.clamp(newViewDistance, 2, 32);
-        if (actualNewDistance != this.serverViewDistance) {
-            this.serverViewDistance = actualNewDistance;
+        int actual = Mth.clamp(newViewDistance, 2, 32);
+        if (actual != this.serverViewDistance) {
+            this.serverViewDistance = actual;
             this.distanceManager.updatePlayerTickets(this.serverViewDistance);
-
-            for (ServerPlayer player : this.playerMap.getAllPlayers()) {
-                this.updateChunkTracking(player);
-            }
+            for (ServerPlayer player : this.playerMap.getAllPlayers()) this.updateChunkTracking(player);
         }
     }
 
@@ -823,10 +687,8 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     }
 
     private void markChunkPendingToSend(final ServerPlayer player, final ChunkPos pos) {
-        LevelChunk chunk = this.getChunkToSend(pos.pack());
-        if (chunk != null) {
-            markChunkPendingToSend(player, chunk);
-        }
+        LevelChunk chunk = this.getChunkToSend(pos);
+        if (chunk != null) markChunkPendingToSend(player, chunk);
     }
 
     private static void markChunkPendingToSend(final ServerPlayer player, final LevelChunk chunk) {
@@ -837,9 +699,9 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         player.connection.chunkSender.dropChunk(player, pos);
     }
 
-    public @Nullable LevelChunk getChunkToSend(final long key) {
-        ChunkHolder chunkHolder = this.getVisibleChunkIfPresent(key);
-        return chunkHolder == null ? null : chunkHolder.getChunkToSend();
+    public @Nullable LevelChunk getChunkToSend(final ChunkPos pos) {
+        ChunkHolder holder = this.getVisibleChunkIfPresent(pos);
+        return holder == null ? null : holder.getChunkToSend();
     }
 
     public int size() {
@@ -851,50 +713,34 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     }
 
     void dumpChunks(final Writer output) throws IOException {
-        CsvOutput csvOutput = CsvOutput.builder()
-            .addColumn("x")
-            .addColumn("z")
-            .addColumn("level")
-            .addColumn("in_memory")
-            .addColumn("status")
-            .addColumn("full_status")
-            .addColumn("accessible_ready")
-            .addColumn("ticking_ready")
-            .addColumn("entity_ticking_ready")
-            .addColumn("ticket")
-            .addColumn("spawning")
-            .addColumn("block_entity_count")
-            .addColumn("ticking_ticket")
-            .addColumn("ticking_level")
-            .addColumn("block_ticks")
-            .addColumn("fluid_ticks")
-            .build(output);
-
-        for (Entry<ChunkHolder> entry : this.visibleChunkMap.long2ObjectEntrySet()) {
-            long posKey = entry.getLongKey();
-            ChunkPos pos = ChunkPos.unpack(posKey);
+        CsvOutput csv = CsvOutput.builder()
+                .addColumn("x").addColumn("z").addColumn("level").addColumn("in_memory")
+                .addColumn("status").addColumn("full_status").addColumn("accessible_ready")
+                .addColumn("ticking_ready").addColumn("entity_ticking_ready")
+                .addColumn("ticket").addColumn("spawning").addColumn("block_entity_count")
+                .addColumn("ticking_ticket").addColumn("ticking_level")
+                .addColumn("block_ticks").addColumn("fluid_ticks")
+                .build(output);
+        for (Object2ObjectMap.Entry<ChunkPos, ChunkHolder> entry : this.visibleChunkMap.object2ObjectEntrySet()) {
+            ChunkPos pos = entry.getKey();
             ChunkHolder holder = entry.getValue();
             Optional<ChunkAccess> chunk = Optional.ofNullable(holder.getLatestChunk());
-            Optional<LevelChunk> fullChunk = chunk.flatMap(
-                chunkAccess -> chunkAccess instanceof LevelChunk levelChunk ? Optional.of(levelChunk) : Optional.empty()
-            );
-            csvOutput.writeRow(
-                pos.x(),
-                pos.z(),
-                holder.getTicketLevel(),
-                chunk.isPresent(),
-                chunk.map(ChunkAccess::getPersistedStatus).orElse(null),
-                fullChunk.map(LevelChunk::getFullStatus).orElse(null),
-                printFuture(holder.getFullChunkFuture()),
-                printFuture(holder.getTickingChunkFuture()),
-                printFuture(holder.getEntityTickingChunkFuture()),
-                this.ticketStorage.getTicketDebugString(posKey, false),
-                this.anyPlayerCloseEnoughForSpawning(pos),
-                fullChunk.<Integer>map(c -> c.getBlockEntities().size()).orElse(0),
-                this.ticketStorage.getTicketDebugString(posKey, true),
-                this.distanceManager.getChunkLevel(posKey, true),
-                fullChunk.<Integer>map(levelChunk -> levelChunk.getBlockTicks().count()).orElse(0),
-                fullChunk.<Integer>map(levelChunk -> levelChunk.getFluidTicks().count()).orElse(0)
+            Optional<LevelChunk> full = chunk.flatMap(c -> c instanceof LevelChunk lc ? Optional.of(lc) : Optional.empty());
+            csv.writeRow(
+                    pos.x, pos.z, holder.getTicketLevel(),
+                    chunk.isPresent(),
+                    chunk.map(ChunkAccess::getPersistedStatus).orElse(null),
+                    full.map(LevelChunk::getFullStatus).orElse(null),
+                    printFuture(holder.getFullChunkFuture()),
+                    printFuture(holder.getTickingChunkFuture()),
+                    printFuture(holder.getEntityTickingChunkFuture()),
+                    this.ticketStorage.getTicketDebugString(pos, false),
+                    this.anyPlayerCloseEnoughForSpawning(pos),
+                    full.map(c -> c.getBlockEntities().size()).orElse(0),
+                    this.ticketStorage.getTicketDebugString(pos, true),
+                    this.distanceManager.getChunkLevel(pos, true),
+                    full.map(c -> c.getBlockTicks().count()).orElse(0),
+                    full.map(c -> c.getFluidTicks().count()).orElse(0)
             );
         }
     }
@@ -902,43 +748,33 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     private static String printFuture(final CompletableFuture<ChunkResult<LevelChunk>> future) {
         try {
             ChunkResult<LevelChunk> result = future.getNow(null);
-            if (result != null) {
-                return result.isSuccess() ? "done" : "unloaded";
-            } else {
-                return "not completed";
-            }
-        } catch (CompletionException e) {
-            return "failed " + e.getCause().getMessage();
-        } catch (CancellationException e) {
-            return "cancelled";
-        }
+            if (result != null) return result.isSuccess() ? "done" : "unloaded";
+            return "not completed";
+        } catch (CompletionException e) { return "failed " + e.getCause().getMessage(); }
+        catch (CancellationException e) { return "cancelled"; }
     }
 
     private CompletableFuture<Optional<CompoundTag>> readChunk(final ChunkPos pos) {
-        return this.read(pos).thenApplyAsync(chunkTag -> chunkTag.map(this::upgradeChunkTag), Util.backgroundExecutor().forName("upgradeChunk"));
+        return this.read(pos).thenApplyAsync(tag -> tag.map(this::upgradeChunkTag), Util.backgroundExecutor().forName("upgradeChunk"));
     }
 
     private CompoundTag upgradeChunkTag(final CompoundTag tag) {
-        return this.upgradeChunkTag(
-            tag,
-            -1,
-            getChunkDataFixContextTag(this.level.dimension(), this.generator().getTypeNameForDataFixer()),
-            SharedConstants.getCurrentVersion().dataVersion().version()
-        );
+        return this.upgradeChunkTag(tag, -1, getChunkDataFixContextTag(this.level.dimension(), this.generator().getTypeNameForDataFixer()),
+                SharedConstants.getCurrentVersion().dataVersion().version());
     }
 
     public static CompoundTag getChunkDataFixContextTag(final ResourceKey<Level> dimension, final Optional<Identifier> generatorIdentifier) {
-        CompoundTag contextTag = new CompoundTag();
-        contextTag.putString("dimension", dimension.identifier().toString());
-        generatorIdentifier.ifPresent(identifier -> contextTag.putString("generator", identifier.toString()));
-        return contextTag;
+        CompoundTag context = new CompoundTag();
+        context.putString("dimension", dimension.identifier().toString());
+        generatorIdentifier.ifPresent(id -> context.putString("generator", id.toString()));
+        return context;
     }
 
     public void collectSpawningChunks(final List<LevelChunk> output) {
-        LongIterator spawnCandidateChunks = this.distanceManager.getSpawnCandidateChunks();
-
-        while (spawnCandidateChunks.hasNext()) {
-            ChunkHolder holder = this.visibleChunkMap.get(spawnCandidateChunks.nextLong());
+        ObjectIterator<ChunkPos> iter = this.distanceManager.getSpawnCandidateChunks();
+        while (iter.hasNext()) {
+            ChunkPos pos = iter.next();
+            ChunkHolder holder = this.visibleChunkMap.get(pos);
             if (holder != null) {
                 LevelChunk chunk = holder.getTickingChunk();
                 if (chunk != null && this.anyPlayerCloseEnoughForSpawningInternal(holder.getPos())) {
@@ -948,90 +784,65 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         }
     }
 
-    public void forEachBlockTickingChunk(final Consumer<LevelChunk> tickingChunkConsumer) {
-        this.distanceManager.forEachEntityTickingChunk(chunkPos -> {
-            ChunkHolder holder = this.visibleChunkMap.get(chunkPos);
+    public void forEachBlockTickingChunk(final Consumer<LevelChunk> consumer) {
+        this.distanceManager.forEachEntityTickingChunk(pos -> {
+            ChunkHolder holder = this.visibleChunkMap.get(pos);
             if (holder != null) {
                 LevelChunk chunk = holder.getTickingChunk();
-                if (chunk != null) {
-                    tickingChunkConsumer.accept(chunk);
-                }
+                if (chunk != null) consumer.accept(chunk);
             }
         });
     }
 
     public boolean anyPlayerCloseEnoughForSpawning(final ChunkPos pos) {
-        TriState triState = this.distanceManager.hasPlayersNearby(pos.pack());
-        return triState == TriState.DEFAULT ? this.anyPlayerCloseEnoughForSpawningInternal(pos) : triState.toBoolean(true);
+        TriState state = this.distanceManager.hasPlayersNearby(pos);
+        return state == TriState.DEFAULT ? this.anyPlayerCloseEnoughForSpawningInternal(pos) : state.toBoolean(true);
     }
 
     public boolean anyPlayerCloseEnoughTo(final BlockPos pos, final int maxDistance) {
         Vec3 target = new Vec3(pos);
-
         for (ServerPlayer player : this.playerMap.getAllPlayers()) {
-            if (this.playerIsCloseEnoughTo(player, target, maxDistance)) {
-                return true;
-            }
+            if (this.playerIsCloseEnoughTo(player, target, maxDistance)) return true;
         }
-
         return false;
     }
 
     private boolean anyPlayerCloseEnoughForSpawningInternal(final ChunkPos pos) {
         for (ServerPlayer player : this.playerMap.getAllPlayers()) {
-            if (this.playerIsCloseEnoughForSpawning(player, pos)) {
-                return true;
-            }
+            if (this.playerIsCloseEnoughForSpawning(player, pos)) return true;
         }
-
         return false;
     }
 
     public List<ServerPlayer> getPlayersCloseForSpawning(final ChunkPos pos) {
-        long key = pos.pack();
-        if (!this.distanceManager.hasPlayersNearby(key).toBoolean(true)) {
-            return List.of();
-        }
-
+        if (!this.distanceManager.hasPlayersNearby(pos).toBoolean(true)) return List.of();
         Builder<ServerPlayer> builder = ImmutableList.builder();
-
         for (ServerPlayer player : this.playerMap.getAllPlayers()) {
-            if (this.playerIsCloseEnoughForSpawning(player, pos)) {
-                builder.add(player);
-            }
+            if (this.playerIsCloseEnoughForSpawning(player, pos)) builder.add(player);
         }
-
         return builder.build();
     }
 
     private boolean playerIsCloseEnoughForSpawning(final ServerPlayer player, final ChunkPos pos) {
-        if (player.isSpectator()) {
-            return false;
-        }
-
-        double distanceToChunk = euclideanDistanceSquared(pos, player.position());
-        return distanceToChunk < 16384.0;
+        if (player.isSpectator()) return false;
+        double dist = euclideanDistanceSquared(pos, player.position());
+        return dist < 16384.0;
     }
 
     private boolean playerIsCloseEnoughTo(final ServerPlayer player, final Vec3 pos, final int maxDistance) {
-        if (player.isSpectator()) {
-            return false;
-        }
-
-        double distanceToPos = player.position().distanceTo(pos);
-        return distanceToPos < maxDistance;
+        if (player.isSpectator()) return false;
+        return player.position().distanceTo(pos) < maxDistance;
     }
 
     private static double euclideanDistanceSquared(final ChunkPos chunkPos, final Vec3 pos) {
-        double xPos = SectionPos.sectionToBlockCoord(chunkPos.x(), 8);
-        double zPos = SectionPos.sectionToBlockCoord(chunkPos.z(), 8);
-        double xd = xPos - pos.x;
-        double zd = zPos - pos.z;
-        return xd * xd + zd * zd;
+        double x = SectionPos.sectionToBlockCoord(chunkPos.x, 8);
+        double z = SectionPos.sectionToBlockCoord(chunkPos.z, 8);
+        double dx = x - pos.x, dz = z - pos.z;
+        return dx * dx + dz * dz;
     }
 
     private boolean skipPlayer(final ServerPlayer player) {
-        return player.isSpectator() && !this.level.getGameRules().get(GameRules.SPECTATORS_GENERATE_CHUNKS);
+        return player.isSpectator() && !this.level.getGameRules().getBoolean(GameRules.SPECTATORS_GENERATE_CHUNKS);
     }
 
     private void updatePlayerStatus(final ServerPlayer player, final boolean added) {
@@ -1040,129 +851,92 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         if (added) {
             this.playerMap.addPlayer(player, ignored);
             this.updatePlayerPos(player);
-            if (!ignored) {
-                this.distanceManager.addPlayer(SectionPos.of(player), player);
-            }
-
+            if (!ignored) this.distanceManager.addPlayer(SectionPos.of(player), player);
             player.setChunkTrackingView(ChunkTrackingView.EMPTY);
             this.updateChunkTracking(player);
         } else {
-            SectionPos lastPos = player.getLastSectionPos();
+            SectionPos last = player.getLastSectionPos();
             this.playerMap.removePlayer(player);
-            if (!wasIgnored) {
-                this.distanceManager.removePlayer(lastPos, player);
-            }
-
+            if (!wasIgnored) this.distanceManager.removePlayer(last, player);
             this.applyChunkTrackingView(player, ChunkTrackingView.EMPTY);
         }
     }
 
     private void updatePlayerPos(final ServerPlayer player) {
-        SectionPos pos = SectionPos.of(player);
-        player.setLastSectionPos(pos);
+        player.setLastSectionPos(SectionPos.of(player));
     }
 
     public void move(final ServerPlayer player) {
-        for (ChunkMap.TrackedEntity trackedEntity : this.entityMap.values()) {
-            if (trackedEntity.entity == player) {
-                trackedEntity.updatePlayers(this.level.players());
-            } else {
-                trackedEntity.updatePlayer(player);
-            }
+        for (TrackedEntity tracked : this.entityMap.values()) {
+            if (tracked.entity == player) tracked.updatePlayers(this.level.players());
+            else tracked.updatePlayer(player);
         }
-
-        SectionPos oldSection = player.getLastSectionPos();
-        SectionPos newSection = SectionPos.of(player);
+        SectionPos old = player.getLastSectionPos();
+        SectionPos now = SectionPos.of(player);
         boolean wasIgnored = this.playerMap.ignored(player);
         boolean ignored = this.skipPlayer(player);
-        boolean positionChanged = oldSection.asLong() != newSection.asLong();
-        if (positionChanged || wasIgnored != ignored) {
+        boolean posChanged = !old.equals(now);
+        if (posChanged || wasIgnored != ignored) {
             this.updatePlayerPos(player);
-            if (!wasIgnored) {
-                this.distanceManager.removePlayer(oldSection, player);
-            }
-
-            if (!ignored) {
-                this.distanceManager.addPlayer(newSection, player);
-            }
-
-            if (!wasIgnored && ignored) {
-                this.playerMap.ignorePlayer(player);
-            }
-
-            if (wasIgnored && !ignored) {
-                this.playerMap.unIgnorePlayer(player);
-            }
-
+            if (!wasIgnored) this.distanceManager.removePlayer(old, player);
+            if (!ignored) this.distanceManager.addPlayer(now, player);
+            if (!wasIgnored && ignored) this.playerMap.ignorePlayer(player);
+            if (wasIgnored && !ignored) this.playerMap.unIgnorePlayer(player);
             this.updateChunkTracking(player);
         }
     }
 
     private void updateChunkTracking(final ServerPlayer player) {
-        ChunkPos chunkPos = player.chunkPosition();
-        int playerViewDistance = this.getPlayerViewDistance(player);
-        if (!(
-            player.getChunkTrackingView() instanceof ChunkTrackingView.Positioned view
-                && view.center().equals(chunkPos)
-                && view.viewDistance() == playerViewDistance
-        )) {
-            this.applyChunkTrackingView(player, ChunkTrackingView.of(chunkPos, playerViewDistance));
+        ChunkPos center = player.chunkPosition();
+        int dist = this.getPlayerViewDistance(player);
+        if (!(player.getChunkTrackingView() instanceof ChunkTrackingView.Positioned view
+                && view.center().equals(center) && view.viewDistance() == dist)) {
+            this.applyChunkTrackingView(player, ChunkTrackingView.of(center, dist));
         }
     }
 
     private void applyChunkTrackingView(final ServerPlayer player, final ChunkTrackingView next) {
-        if (player.level() == this.level) {
-            ChunkTrackingView previous = player.getChunkTrackingView();
-            if (next instanceof ChunkTrackingView.Positioned to
-                && !(previous instanceof ChunkTrackingView.Positioned from && from.center().equals(to.center()))) {
-                player.connection.send(new ClientboundSetChunkCacheCenterPacket(to.center().x(), to.center().z()));
-            }
-
-            ChunkTrackingView.difference(previous, next, pos -> this.markChunkPendingToSend(player, pos), pos -> dropChunk(player, pos));
-            player.setChunkTrackingView(next);
+        if (player.level() != this.level) return;
+        ChunkTrackingView prev = player.getChunkTrackingView();
+        if (next instanceof ChunkTrackingView.Positioned to
+                && !(prev instanceof ChunkTrackingView.Positioned from && from.center().equals(to.center()))) {
+            player.connection.send(new ClientboundSetChunkCacheCenterPacket(to.center().x(), to.center().z()));
         }
+        ChunkTrackingView.difference(prev, next,
+                pos -> this.markChunkPendingToSend(player, pos),
+                pos -> dropChunk(player, pos));
+        player.setChunkTrackingView(next);
     }
 
     @Override
     public List<ServerPlayer> getPlayers(final ChunkPos pos, final boolean borderOnly) {
-        Set<ServerPlayer> allPlayers = this.playerMap.getAllPlayers();
-        Builder<ServerPlayer> result = ImmutableList.builder();
-
-        for (ServerPlayer player : allPlayers) {
-            if (borderOnly && this.isChunkOnTrackedBorder(player, pos.x(), pos.z()) || !borderOnly && this.isChunkTracked(player, pos.x(), pos.z())) {
-                result.add(player);
+        Set<ServerPlayer> all = this.playerMap.getAllPlayers();
+        Builder<ServerPlayer> builder = ImmutableList.builder();
+        for (ServerPlayer player : all) {
+            if (borderOnly ? this.isChunkOnTrackedBorder(player, pos) : this.isChunkTracked(player, pos)) {
+                builder.add(player);
             }
         }
-
-        return result.build();
+        return builder.build();
     }
 
-    public boolean hasEntityWithId(final int id) {
-        return this.entityMap.containsKey(id);
-    }
+    public boolean hasEntityWithId(final int id) { return this.entityMap.containsKey(id); }
 
     protected void addEntity(final Entity entity) {
-        if (!(entity instanceof EnderDragonPart)) {
-            EntityType<?> type = entity.getType();
-            int range = type.clientTrackingRange() * 16;
-            if (range != 0) {
-                int updateInterval = type.updateInterval();
-                if (this.entityMap.containsKey(entity.getId())) {
-                    throw (IllegalStateException)Util.pauseInIde(new IllegalStateException("Entity is already tracked!"));
-                }
-
-                ChunkMap.TrackedEntity trackedEntity = new ChunkMap.TrackedEntity(entity, range, updateInterval, type.trackDeltas());
-                this.entityMap.put(entity.getId(), trackedEntity);
-                trackedEntity.updatePlayers(this.level.players());
-                if (entity instanceof ServerPlayer player) {
-                    this.updatePlayerStatus(player, true);
-
-                    for (ChunkMap.TrackedEntity e : this.entityMap.values()) {
-                        if (e.entity != player) {
-                            e.updatePlayer(player);
-                        }
-                    }
-                }
+        if (entity instanceof EnderDragonPart) return;
+        int range = entity.getType().clientTrackingRange() * 16;
+        if (range == 0) return;
+        int interval = entity.getType().updateInterval();
+        if (this.entityMap.containsKey(entity.getId())) {
+            throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("Entity is already tracked!"));
+        }
+        TrackedEntity tracked = new TrackedEntity(entity, range, interval, entity.getType().trackDeltas());
+        this.entityMap.put(entity.getId(), tracked);
+        tracked.updatePlayers(this.level.players());
+        if (entity instanceof ServerPlayer player) {
+            this.updatePlayerStatus(player, true);
+            for (TrackedEntity e : this.entityMap.values()) {
+                if (e.entity != player) e.updatePlayer(player);
             }
         }
     }
@@ -1170,159 +944,122 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     protected void removeEntity(final Entity entity) {
         if (entity instanceof ServerPlayer player) {
             this.updatePlayerStatus(player, false);
-
-            for (ChunkMap.TrackedEntity trackedEntity : this.entityMap.values()) {
-                trackedEntity.removePlayer(player);
-            }
+            for (TrackedEntity e : this.entityMap.values()) e.removePlayer(player);
         }
-
-        ChunkMap.TrackedEntity trackedEntity = this.entityMap.remove(entity.getId());
-        if (trackedEntity != null) {
-            trackedEntity.broadcastRemoved();
-        }
+        TrackedEntity removed = this.entityMap.remove(entity.getId());
+        if (removed != null) removed.broadcastRemoved();
     }
 
     protected void tick() {
-        for (ServerPlayer player : this.playerMap.getAllPlayers()) {
-            this.updateChunkTracking(player);
-        }
-
-        List<ServerPlayer> movedPlayers = Lists.newArrayList();
+        for (ServerPlayer player : this.playerMap.getAllPlayers()) this.updateChunkTracking(player);
+        List<ServerPlayer> moved = Lists.newArrayList();
         List<ServerPlayer> players = this.level.players();
-
-        for (ChunkMap.TrackedEntity trackedEntity : this.entityMap.values()) {
-            SectionPos oldPos = trackedEntity.lastSectionPos;
-            SectionPos newPos = SectionPos.of(trackedEntity.entity);
-            boolean sectionPosChanged = !Objects.equals(oldPos, newPos);
-            if (sectionPosChanged) {
-                trackedEntity.updatePlayers(players);
-                if (trackedEntity.entity instanceof ServerPlayer serverPlayer) {
-                    movedPlayers.add(serverPlayer);
-                }
-
-                trackedEntity.lastSectionPos = newPos;
+        for (TrackedEntity tracked : this.entityMap.values()) {
+            SectionPos old = tracked.lastSectionPos;
+            SectionPos now = SectionPos.of(tracked.entity);
+            if (!Objects.equals(old, now)) {
+                tracked.updatePlayers(players);
+                if (tracked.entity instanceof ServerPlayer sp) moved.add(sp);
+                tracked.lastSectionPos = now;
             }
-
-            if (sectionPosChanged || trackedEntity.entity.needsSync || this.distanceManager.inEntityTickingRange(newPos.chunk().pack())) {
-                trackedEntity.serverEntity.sendChanges();
+            if (!Objects.equals(old, now) || tracked.entity.needsSync
+                    || this.distanceManager.inEntityTickingRange(now.chunk())) {
+                tracked.serverEntity.sendChanges();
             }
         }
-
-        if (!movedPlayers.isEmpty()) {
-            for (ChunkMap.TrackedEntity trackedEntity : this.entityMap.values()) {
-                trackedEntity.updatePlayers(movedPlayers);
-            }
+        if (!moved.isEmpty()) {
+            for (TrackedEntity e : this.entityMap.values()) e.updatePlayers(moved);
         }
     }
 
     public void sendToTrackingPlayers(final Entity entity, final Packet<? super ClientGamePacketListener> packet) {
-        ChunkMap.TrackedEntity trackedEntity = this.entityMap.get(entity.getId());
-        if (trackedEntity != null) {
-            trackedEntity.sendToTrackingPlayers(packet);
-        }
+        TrackedEntity tracked = this.entityMap.get(entity.getId());
+        if (tracked != null) tracked.sendToTrackingPlayers(packet);
     }
 
-    public void sendToTrackingPlayersFiltered(
-        final Entity entity, final Packet<? super ClientGamePacketListener> packet, final Predicate<ServerPlayer> targetPredicate
-    ) {
-        ChunkMap.TrackedEntity trackedEntity = this.entityMap.get(entity.getId());
-        if (trackedEntity != null) {
-            trackedEntity.sendToTrackingPlayersFiltered(packet, targetPredicate);
-        }
+    public void sendToTrackingPlayersFiltered(final Entity entity, final Packet<? super ClientGamePacketListener> packet,
+                                              final Predicate<ServerPlayer> predicate) {
+        TrackedEntity tracked = this.entityMap.get(entity.getId());
+        if (tracked != null) tracked.sendToTrackingPlayersFiltered(packet, predicate);
     }
 
     protected void sendToTrackingPlayersAndSelf(final Entity entity, final Packet<? super ClientGamePacketListener> packet) {
-        ChunkMap.TrackedEntity trackedEntity = this.entityMap.get(entity.getId());
-        if (trackedEntity != null) {
-            trackedEntity.sendToTrackingPlayersAndSelf(packet);
-        }
+        TrackedEntity tracked = this.entityMap.get(entity.getId());
+        if (tracked != null) tracked.sendToTrackingPlayersAndSelf(packet);
     }
 
     public boolean isTrackedByAnyPlayer(final Entity entity) {
-        ChunkMap.TrackedEntity trackedEntity = this.entityMap.get(entity.getId());
-        return trackedEntity != null ? !trackedEntity.seenBy.isEmpty() : false;
+        TrackedEntity tracked = this.entityMap.get(entity.getId());
+        return tracked != null && !tracked.seenBy.isEmpty();
     }
 
     public void forEachEntityTrackedBy(final ServerPlayer player, final Consumer<Entity> consumer) {
-        for (ChunkMap.TrackedEntity entity : this.entityMap.values()) {
-            if (entity.seenBy.contains(player.connection)) {
-                consumer.accept(entity.entity);
-            }
+        for (TrackedEntity tracked : this.entityMap.values()) {
+            if (tracked.seenBy.contains(player.connection)) consumer.accept(tracked.entity);
         }
     }
 
     public void resendBiomesForChunks(final List<ChunkAccess> chunks) {
-        Map<ServerPlayer, List<LevelChunk>> chunksForPlayers = new HashMap<>();
-
-        for (ChunkAccess chunkAccess : chunks) {
-            ChunkPos pos = chunkAccess.getPos();
-            LevelChunk chunk;
-            if (chunkAccess instanceof LevelChunk levelChunk) {
-                chunk = levelChunk;
-            } else {
-                chunk = this.level.getChunk(pos.x(), pos.z());
-            }
-
+        Map<ServerPlayer, List<LevelChunk>> map = new HashMap<>();
+        for (ChunkAccess access : chunks) {
+            ChunkPos pos = access.getPos();
+            LevelChunk chunk = access instanceof LevelChunk lc ? lc : this.level.getChunk(pos.x, pos.z);
             for (ServerPlayer player : this.getPlayers(pos, false)) {
-                chunksForPlayers.computeIfAbsent(player, p -> new ArrayList<>()).add(chunk);
+                map.computeIfAbsent(player, p -> new ArrayList<>()).add(chunk);
             }
         }
-
-        chunksForPlayers.forEach((playerx, chunkList) -> playerx.connection.send(ClientboundChunksBiomesPacket.forChunks((List<LevelChunk>)chunkList)));
+        map.forEach((player, list) -> player.connection.send(ClientboundChunksBiomesPacket.forChunks(list)));
     }
 
-    protected PoiManager getPoiManager() {
-        return this.poiManager;
-    }
+    protected PoiManager getPoiManager() { return this.poiManager; }
 
-    public String getStorageName() {
-        return this.storageName;
-    }
+    public String getStorageName() { return this.storageName; }
 
     void onFullChunkStatusChange(final ChunkPos pos, final FullChunkStatus status) {
         this.chunkStatusListener.onChunkStatusChange(pos, status);
     }
 
-    public void waitForLightBeforeSending(final ChunkPos centerChunk, final int chunkRadius) {
-        int affectedLightChunkRadius = chunkRadius + 1;
-        ChunkPos.rangeClosed(centerChunk, affectedLightChunkRadius).forEach(chunkPos -> {
-            ChunkHolder chunkHolder = this.getVisibleChunkIfPresent(chunkPos.pack());
-            if (chunkHolder != null) {
-                chunkHolder.addSendDependency(this.lightEngine.waitForPendingTasks(chunkPos.x(), chunkPos.z()));
+    public void waitForLightBeforeSending(final ChunkPos center, final int radius) {
+        int r = radius + 1;
+        ChunkPos.rangeClosed(center, r).forEach(pos -> {
+            ChunkHolder holder = this.getVisibleChunkIfPresent(pos);
+            if (holder != null) {
+                holder.addSendDependency(this.lightEngine.waitForPendingTasks(pos.x, pos.z));
             }
         });
     }
 
     public void forEachReadyToSendChunk(final Consumer<LevelChunk> consumer) {
-        for (ChunkHolder chunkHolder : this.visibleChunkMap.values()) {
-            LevelChunk chunk = chunkHolder.getChunkToSend();
-            if (chunk != null) {
-                consumer.accept(chunk);
-            }
+        for (ChunkHolder holder : this.visibleChunkMap.values()) {
+            LevelChunk chunk = holder.getChunkToSend();
+            if (chunk != null) consumer.accept(chunk);
         }
     }
 
+    // ===== 内部类 DistanceManager =====
     private class DistanceManager extends net.minecraft.server.level.DistanceManager {
-        protected DistanceManager(final TicketStorage ticketStorage, final Executor executor, final Executor mainThreadExecutor) {
+        protected DistanceManager(TicketStorage ticketStorage, Executor executor, Executor mainThreadExecutor) {
             super(ticketStorage, executor, mainThreadExecutor);
         }
 
         @Override
-        protected boolean isChunkToRemove(final long node) {
-            return ChunkMap.this.toDrop.contains(node);
+        protected boolean isChunkToRemove(final ChunkPos pos) {
+            return ChunkMap.this.toDrop.contains(pos);
         }
 
         @Override
-        protected @Nullable ChunkHolder getChunk(final long node) {
-            return ChunkMap.this.getUpdatingChunkIfPresent(node);
+        protected @Nullable ChunkHolder getChunk(final ChunkPos pos) {
+            return ChunkMap.this.getUpdatingChunkIfPresent(pos);
         }
 
         @Override
-        protected @Nullable ChunkHolder updateChunkScheduling(final long node, final int level, final @Nullable ChunkHolder chunk, final int oldLevel) {
-            return ChunkMap.this.updateChunkScheduling(node, level, chunk, oldLevel);
+        protected @Nullable ChunkHolder updateChunkScheduling(final ChunkPos pos, final int level,
+                                                              final @Nullable ChunkHolder chunk, final int oldLevel) {
+            return ChunkMap.this.updateChunkScheduling(pos, level, chunk, oldLevel);
         }
     }
 
+    // ===== TrackedEntity (内部类，基本不变，但里面用到 ChunkPos 的地方已适配) =====
     private class TrackedEntity implements ServerEntity.Synchronizer {
         private final ServerEntity serverEntity;
         private final Entity entity;
@@ -1338,100 +1075,77 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         }
 
         @Override
-        public boolean equals(final Object obj) {
-            return obj instanceof ChunkMap.TrackedEntity trackedEntity ? trackedEntity.entity.getId() == this.entity.getId() : false;
+        public boolean equals(Object obj) {
+            return obj instanceof TrackedEntity other && other.entity.getId() == this.entity.getId();
         }
 
         @Override
-        public int hashCode() {
-            return this.entity.getId();
+        public int hashCode() { return this.entity.getId(); }
+
+        @Override
+        public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {
+            for (ServerPlayerConnection conn : this.seenBy) conn.send(packet);
         }
 
         @Override
-        public void sendToTrackingPlayers(final Packet<? super ClientGamePacketListener> packet) {
-            for (ServerPlayerConnection connection : this.seenBy) {
-                connection.send(packet);
-            }
-        }
-
-        @Override
-        public void sendToTrackingPlayersAndSelf(final Packet<? super ClientGamePacketListener> packet) {
+        public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {
             this.sendToTrackingPlayers(packet);
-            if (this.entity instanceof ServerPlayer player) {
-                player.connection.send(packet);
-            }
+            if (this.entity instanceof ServerPlayer sp) sp.connection.send(packet);
         }
 
         @Override
-        public void sendToTrackingPlayersFiltered(final Packet<? super ClientGamePacketListener> packet, final Predicate<ServerPlayer> targetPredicate) {
-            for (ServerPlayerConnection connection : this.seenBy) {
-                if (targetPredicate.test(connection.getPlayer())) {
-                    connection.send(packet);
-                }
+        public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> predicate) {
+            for (ServerPlayerConnection conn : this.seenBy) {
+                if (predicate.test(conn.getPlayer())) conn.send(packet);
             }
         }
 
         public void broadcastRemoved() {
-            for (ServerPlayerConnection connection : this.seenBy) {
-                this.serverEntity.removePairing(connection.getPlayer());
-            }
+            for (ServerPlayerConnection conn : this.seenBy) this.serverEntity.removePairing(conn.getPlayer());
         }
 
         public void removePlayer(final ServerPlayer player) {
             if (this.seenBy.remove(player.connection)) {
                 this.serverEntity.removePairing(player);
-                if (this.seenBy.isEmpty()) {
-                    ChunkMap.this.level.debugSynchronizers().dropEntity(this.entity);
-                }
+                if (this.seenBy.isEmpty()) ChunkMap.this.level.debugSynchronizers().dropEntity(this.entity);
             }
         }
 
         public void updatePlayer(final ServerPlayer player) {
-            if (player != this.entity) {
-                Vec3 deltaToPlayer = player.position().subtract(this.entity.position());
-                int playerViewDistance = ChunkMap.this.getPlayerViewDistance(player);
-                double visibleRange = Math.min(this.getEffectiveRange(), playerViewDistance * 16);
-                double distanceSquared = deltaToPlayer.x * deltaToPlayer.x + deltaToPlayer.z * deltaToPlayer.z;
-                double rangeSquared = visibleRange * visibleRange;
-                boolean visibleToPlayer = distanceSquared <= rangeSquared
+            if (player == this.entity) return;
+            Vec3 delta = player.position().subtract(this.entity.position());
+            int viewDist = ChunkMap.this.getPlayerViewDistance(player);
+            double maxRange = Math.min(this.getEffectiveRange(), viewDist * 16);
+            double distSq = delta.x * delta.x + delta.z * delta.z;
+            boolean visible = distSq <= maxRange * maxRange
                     && this.entity.broadcastToPlayer(player)
-                    && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x(), this.entity.chunkPosition().z());
-                if (visibleToPlayer) {
-                    if (this.seenBy.add(player.connection)) {
-                        this.serverEntity.addPairing(player);
-                        if (this.seenBy.size() == 1) {
-                            ChunkMap.this.level.debugSynchronizers().registerEntity(this.entity);
-                        }
-
-                        ChunkMap.this.level.debugSynchronizers().startTrackingEntity(player, this.entity);
-                    }
-                } else {
-                    this.removePlayer(player);
+                    && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition());
+            if (visible) {
+                if (this.seenBy.add(player.connection)) {
+                    this.serverEntity.addPairing(player);
+                    if (this.seenBy.size() == 1) ChunkMap.this.level.debugSynchronizers().registerEntity(this.entity);
+                    ChunkMap.this.level.debugSynchronizers().startTrackingEntity(player, this.entity);
                 }
+            } else {
+                this.removePlayer(player);
             }
         }
 
-        private int scaledRange(final int range) {
+        private int scaledRange(int range) {
             return ChunkMap.this.level.getServer().getScaledTrackingDistance(range);
         }
 
         private int getEffectiveRange() {
-            int effectiveRange = this.range;
-
+            int eff = this.range;
             for (Entity passenger : this.entity.getIndirectPassengers()) {
-                int passengerRange = passenger.getType().clientTrackingRange() * 16;
-                if (passengerRange > effectiveRange) {
-                    effectiveRange = passengerRange;
-                }
+                int pr = passenger.getType().clientTrackingRange() * 16;
+                if (pr > eff) eff = pr;
             }
-
-            return this.scaledRange(effectiveRange);
+            return this.scaledRange(eff);
         }
 
         public void updatePlayers(final List<ServerPlayer> players) {
-            for (ServerPlayer player : players) {
-                this.updatePlayer(player);
-            }
+            for (ServerPlayer player : players) this.updatePlayer(player);
         }
     }
 }

@@ -302,7 +302,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             thread.setPriority(8);
         }
 
-        S server = (S)factory.apply(thread);
+        S server = (S) factory.apply(thread);
         serverReference.set(server);
         thread.start();
         return server;
@@ -375,15 +375,21 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             public void moveTo(final ResourceKey<Level> dimension, final ChunkPos centerChunk) {
                 ServerLevel level = MinecraftServer.this.getLevel(dimension);
                 this.chunkMap = level != null ? level.getChunkSource().chunkMap : null;
-                this.centerChunkX = centerChunk.x();
-                this.centerChunkZ = centerChunk.z();
+                this.centerChunkX = (int) centerChunk.x;
+                this.centerChunkZ = (int) centerChunk.z;
             }
 
             @Override
             public @Nullable ChunkStatus get(final int x, final int z) {
-                return this.chunkMap == null
-                    ? null
-                    : this.chunkMap.getLatestStatus(ChunkPos.pack(x + this.centerChunkX - radius, z + this.centerChunkZ - radius));
+                if (this.chunkMap == null) {
+                    return null;
+                }
+                // ===== 修改：直接构造 ChunkPos 替代 pack =====
+                ChunkPos pos = new ChunkPos(
+                    (long) x + this.centerChunkX - radius,
+                    (long) z + this.centerChunkZ - radius
+                );
+                return this.chunkMap.getLatestStatus(pos);
             }
 
             @Override
@@ -509,7 +515,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
             for (int i = 0; i < Mth.square(11); i++) {
                 if (xChunkOffset >= -5 && xChunkOffset <= 5 && zChunkOffset >= -5 && zChunkOffset <= 5) {
-                    BlockPos testedPos = PlayerSpawnFinder.getSpawnPosInChunk(level, new ChunkPos(spawnChunk.x() + xChunkOffset, spawnChunk.z() + zChunkOffset));
+                    BlockPos testedPos = PlayerSpawnFinder.getSpawnPosInChunk(level, new ChunkPos(spawnChunk.x + xChunkOffset, spawnChunk.z + zChunkOffset));
                     if (testedPos != null) {
                         levelData.setSpawn(LevelData.RespawnData.of(level.dimension(), testedPos, 0.0F, 0.0F));
                         break;
@@ -1000,7 +1006,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         this.aggregatedTickTimesNanos = this.aggregatedTickTimesNanos - this.tickTimesNanos[tickIndex];
         this.aggregatedTickTimesNanos += tickTime;
         this.tickTimesNanos[tickIndex] = tickTime;
-        this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float)tickTime / (float)TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
+        this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float) tickTime / (float) TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
         this.logTickMethodTime(nano);
         profiler.pop();
     }
@@ -1037,13 +1043,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         float ticksPerSecond;
         if (this.tickRateManager.isSprinting()) {
             long estimatedTickTimeNanos = this.getAverageTickTimeNanos() + 1L;
-            ticksPerSecond = (float)TimeUtil.NANOSECONDS_PER_SECOND / (float)estimatedTickTimeNanos;
+            ticksPerSecond = (float) TimeUtil.NANOSECONDS_PER_SECOND / (float) estimatedTickTimeNanos;
         } else {
             ticksPerSecond = this.tickRateManager.tickrate();
         }
 
         int intendedIntervalInSeconds = 300;
-        return Math.max(100, (int)(ticksPerSecond * 300.0F));
+        return Math.max(100, (int) (ticksPerSecond * 300.0F));
     }
 
     public void onTickRateChanged() {
@@ -2111,7 +2117,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     public <T> void onGameRuleChanged(final GameRule<T> rule, final T value) {
         this.notificationManager().onGameRuleChanged(rule, value);
         if (rule == GameRules.REDUCED_DEBUG_INFO) {
-            byte event = (byte)((Boolean)value ? 22 : 23);
+            byte event = (byte) ((Boolean) value ? 22 : 23);
 
             for (ServerPlayer player : this.getPlayerList().getPlayers()) {
                 player.connection.send(new ClientboundEntityEventPacket(player, event));
@@ -2120,12 +2126,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             ClientboundGameEventPacket.Type eventType = rule == GameRules.LIMITED_CRAFTING
                 ? ClientboundGameEventPacket.LIMITED_CRAFTING
                 : ClientboundGameEventPacket.IMMEDIATE_RESPAWN;
-            ClientboundGameEventPacket packet = new ClientboundGameEventPacket(eventType, (Boolean)value ? 1.0F : 0.0F);
+            ClientboundGameEventPacket packet = new ClientboundGameEventPacket(eventType, (Boolean) value ? 1.0F : 0.0F);
             this.getPlayerList().getPlayers().forEach(playerx -> playerx.connection.send(packet));
         } else if (rule == GameRules.LOCATOR_BAR) {
             this.getAllLevels().forEach(level -> {
                 ServerWaypointManager waypointManager = level.getWaypointManager();
-                if ((Boolean)value) {
+                if ((Boolean) value) {
                     level.players().forEach(waypointManager::updatePlayer);
                 } else {
                     waypointManager.breakAllConnections();
@@ -2319,4 +2325,4 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             };
         }
     }
-}
+}/

@@ -12,6 +12,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.LightChunkGetter;
@@ -37,7 +38,7 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
         this.updatingSectionData = initialMap;
         this.visibleSectionData = initialMap.copy();
         this.visibleSectionData.disableCache();
-        this.sectionStates.defaultReturnValue((byte)0);
+        this.sectionStates.defaultReturnValue((byte) 0);
     }
 
     protected boolean storingLightForSection(final long sectionNode) {
@@ -57,22 +58,26 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
         if (dataLayer == null) {
             return null;
         }
-
         if (this.changedSections.add(sectionNode)) {
             dataLayer = dataLayer.copy();
             this.updatingSectionData.setLayer(sectionNode, dataLayer);
             this.updatingSectionData.clearCache();
         }
-
         return dataLayer;
     }
 
-    public @Nullable DataLayer getDataLayerData(final long sectionNode) {
+    // ===== 对外 API：使用 SectionPos 对象 =====
+    public @Nullable DataLayer getDataLayerData(final SectionPos pos) {
+        long sectionNode = pos.asLong();
         DataLayer layer = this.queuedSections.get(sectionNode);
         return layer != null ? layer : this.getDataLayer(sectionNode, false);
     }
 
     protected abstract int getLightValue(final long blockNode);
+
+    public int getLightValue(final BlockPos pos) {
+        return this.getLightValue(pos.asLong());
+    }
 
     protected int getStoredLevel(final long blockNode) {
         long sectionNode = SectionPos.blockToSection(blockNode);
@@ -92,7 +97,6 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
         } else {
             layer = this.getDataLayer(sectionNode, true);
         }
-
         layer.set(
             SectionPos.sectionRelative(BlockPos.getX(blockNode)),
             SectionPos.sectionRelative(BlockPos.getY(blockNode)),
@@ -106,7 +110,6 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
         int x = SectionPos.x(sectionNode);
         int y = SectionPos.y(sectionNode);
         int z = SectionPos.z(sectionNode);
-
         for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
             for (int offsetX = -1; offsetX <= 1; offsetX++) {
                 for (int offsetY = -1; offsetY <= 1; offsetY++) {
@@ -128,7 +131,6 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
     protected void markNewInconsistencies(final LightEngine<M, ?> engine) {
         if (this.hasInconsistencies) {
             this.hasInconsistencies = false;
-
             for (long node : this.toRemove) {
                 DataLayer queued = this.queuedSections.remove(node);
                 DataLayer stored = this.updatingSectionData.removeLayer(node);
@@ -140,17 +142,13 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
                     }
                 }
             }
-
             this.updatingSectionData.clearCache();
-
             for (long node : this.toRemove) {
                 this.onNodeRemoved(node);
                 this.changedSections.add(node);
             }
-
             this.toRemove.clear();
             ObjectIterator<Entry<DataLayer>> iterator = Long2ObjectMaps.fastIterator(this.queuedSections);
-
             while (iterator.hasNext()) {
                 Entry<DataLayer> entry = iterator.next();
                 long sectionNode = entry.getLongKey();
@@ -160,11 +158,9 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
                         this.updatingSectionData.setLayer(sectionNode, data);
                         this.changedSections.add(sectionNode);
                     }
-
                     iterator.remove();
                 }
             }
-
             this.updatingSectionData.clearCache();
         }
     }
@@ -175,12 +171,17 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
     protected void onNodeRemoved(final long sectionNode) {
     }
 
+    // ===== setLightEnabled 内部使用 long，但可通过 ChunkPos 调用 =====
     protected void setLightEnabled(final long zeroNode, final boolean enable) {
         if (enable) {
             this.columnsWithSources.add(zeroNode);
         } else {
             this.columnsWithSources.remove(zeroNode);
         }
+    }
+
+    public void setLightEnabled(final ChunkPos pos, final boolean enable) {
+        this.setLightEnabled(SectionPos.getZeroNode(pos.x(), pos.z()), enable);
     }
 
     protected boolean lightOnInSection(final long sectionNode) {
@@ -192,7 +193,13 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
         return this.columnsWithSources.contains(sectionZeroNode);
     }
 
-    public void retainData(final long zeroNode, final boolean retain) {
+    public boolean lightOnInColumn(final ChunkPos pos) {
+        return this.lightOnInColumn(SectionPos.getZeroNode(pos.x(), pos.z()));
+    }
+
+    // ===== retainData 使用 ChunkPos =====
+    public void retainData(final ChunkPos pos, final boolean retain) {
+        long zeroNode = SectionPos.getZeroNode(pos.x(), pos.z());
         if (retain) {
             this.columnsToRetainQueuedDataFor.add(zeroNode);
         } else {
@@ -200,7 +207,9 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
         }
     }
 
-    protected void queueSectionData(final long sectionNode, final @Nullable DataLayer data) {
+    // ===== queueSectionData 使用 SectionPos =====
+    public void queueSectionData(final SectionPos pos, final @Nullable DataLayer data) {
+        long sectionNode = pos.asLong();
         if (data != null) {
             this.queuedSections.put(sectionNode, data);
             this.hasInconsistencies = true;
@@ -209,13 +218,14 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
         }
     }
 
-    protected void updateSectionStatus(final long sectionNode, final boolean sectionEmpty) {
+    // ===== updateSectionStatus 使用 SectionPos =====
+    public void updateSectionStatus(final SectionPos pos, final boolean sectionEmpty) {
+        long sectionNode = pos.asLong();
         byte state = this.sectionStates.get(sectionNode);
         byte newState = LayerLightSectionStorage.SectionState.hasData(state, !sectionEmpty);
         if (state != newState) {
             this.putSectionState(sectionNode, newState);
             int neighborIncrement = sectionEmpty ? -1 : 1;
-
             for (int offsetX = -1; offsetX <= 1; offsetX++) {
                 for (int offsetY = -1; offsetY <= 1; offsetY++) {
                     for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
@@ -267,21 +277,24 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
             this.visibleSectionData = copy;
             this.changedSections.clear();
         }
-
         if (!this.sectionsAffectedByLightUpdates.isEmpty()) {
             LongIterator iterator = this.sectionsAffectedByLightUpdates.iterator();
-
             while (iterator.hasNext()) {
                 long sectionNode = iterator.nextLong();
                 this.chunkSource.onLightUpdate(this.layer, SectionPos.of(sectionNode));
             }
-
             this.sectionsAffectedByLightUpdates.clear();
         }
     }
 
-    public LayerLightSectionStorage.SectionType getDebugSectionType(final long sectionNode) {
-        return LayerLightSectionStorage.SectionState.type(this.sectionStates.get(sectionNode));
+    // ===== getDebugSectionType 使用 SectionPos =====
+    public LayerLightSectionStorage.SectionType getDebugSectionType(final SectionPos pos) {
+        return LayerLightSectionStorage.SectionState.type(this.sectionStates.get(pos.asLong()));
+    }
+
+    // ===== getDebugData 使用 SectionPos =====
+    public String getDebugData(final SectionPos pos) {
+        return this.getDebugSectionType(pos).display();
     }
 
     protected static class SectionState {
@@ -292,12 +305,12 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
         private static final byte NEIGHBOR_COUNT_BITS = 31;
 
         public static byte hasData(final byte state, final boolean hasData) {
-            return (byte)(hasData ? state | 32 : state & -33);
+            return (byte) (hasData ? state | 32 : state & -33);
         }
 
         public static byte neighborCount(final byte state, final int neighborCount) {
             if (neighborCount >= 0 && neighborCount <= 26) {
-                return (byte)(state & -32 | neighborCount & 31);
+                return (byte) (state & -32 | neighborCount & 31);
             } else {
                 throw new IllegalArgumentException("Neighbor count was not within range [0; 26]");
             }

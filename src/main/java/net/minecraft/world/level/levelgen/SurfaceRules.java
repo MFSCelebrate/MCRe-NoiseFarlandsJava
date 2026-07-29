@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
@@ -294,7 +295,8 @@ public class SurfaceRules {
         private final Function<BlockPos, Holder<Biome>> biomeGetter;
         private final WorldGenerationContext context;
         private final @Nullable Set<Holder<Biome>> possibleBiomes;
-        private long lastPreliminarySurfaceCellOrigin = Long.MAX_VALUE;
+        // ===== 修改：缓存键从 long 改为 ChunkPos =====
+        private @Nullable ChunkPos lastPreliminarySurfaceCellOrigin = null;
         private final int[] preliminarySurfaceCache = new int[4];
         private final Map<ResourceKey<NormalNoise.NoiseParameters>, DoubleSupplier> noiseSamplers2d = new IdentityHashMap<>();
         private final Map<ResourceKey<NormalNoise.NoiseParameters>, DoubleSupplier> noiseSamplers3d = new IdentityHashMap<>();
@@ -383,8 +385,9 @@ public class SurfaceRules {
                 this.lastMinSurfaceLevelUpdate = this.lastUpdateXZ;
                 int cornerCellX = blockCoordToSurfaceCell(this.blockX);
                 int cornerCellZ = blockCoordToSurfaceCell(this.blockZ);
-                long preliminarySurfaceCellOrigin = ChunkPos.pack(cornerCellX, cornerCellZ);
-                if (this.lastPreliminarySurfaceCellOrigin != preliminarySurfaceCellOrigin) {
+                // ===== 修改：使用 ChunkPos 对象作为缓存键 =====
+                ChunkPos preliminarySurfaceCellOrigin = new ChunkPos(cornerCellX, cornerCellZ);
+                if (!Objects.equals(this.lastPreliminarySurfaceCellOrigin, preliminarySurfaceCellOrigin)) {
                     this.lastPreliminarySurfaceCellOrigin = preliminarySurfaceCellOrigin;
                     this.preliminarySurfaceCache[0] = this.noiseChunk
                         .preliminarySurfaceLevel(surfaceCellToBlockCoord(cornerCellX), surfaceCellToBlockCoord(cornerCellZ));

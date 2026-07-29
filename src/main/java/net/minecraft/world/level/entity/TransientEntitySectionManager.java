@@ -1,8 +1,8 @@
 package net.minecraft.world.level.entity;
 
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.util.VisibleForDebug;
@@ -15,20 +15,21 @@ public class TransientEntitySectionManager<T extends EntityAccess> {
     private final LevelCallback<T> callbacks;
     private final EntityLookup<T> entityStorage;
     private final EntitySectionStorage<T> sectionStorage;
-    private final LongSet tickingChunks = new LongOpenHashSet();
+    // ===== 修改：使用 ChunkPos 作为键 =====
+    private final Set<ChunkPos> tickingChunks = new ObjectOpenHashSet<>();
     private final LevelEntityGetter<T> entityGetter;
 
     public TransientEntitySectionManager(final Class<T> entityClass, final LevelCallback<T> callbacks) {
         this.entityStorage = new EntityLookup<>();
-        this.sectionStorage = new EntitySectionStorage<>(entityClass, key -> this.tickingChunks.contains(key) ? Visibility.TICKING : Visibility.TRACKED);
+        // ===== 构造 EntitySectionStorage 时使用 ChunkPos 作为键 =====
+        this.sectionStorage = new EntitySectionStorage<>(entityClass, chunkPos -> this.tickingChunks.contains(chunkPos) ? Visibility.TICKING : Visibility.TRACKED);
         this.callbacks = callbacks;
         this.entityGetter = new LevelEntityGetterAdapter<>(this.entityStorage, this.sectionStorage);
     }
 
     public void startTicking(final ChunkPos pos) {
-        long chunkKey = pos.pack();
-        this.tickingChunks.add(chunkKey);
-        this.sectionStorage.getExistingSectionsInChunk(chunkKey).forEach(section -> {
+        this.tickingChunks.add(pos);
+        this.sectionStorage.getExistingSectionsInChunk(pos).forEach(section -> {
             Visibility previousStatus = section.updateChunkStatus(Visibility.TICKING);
             if (!previousStatus.isTicking()) {
                 section.getEntities().filter(e -> !e.isAlwaysTicking()).forEach(this.callbacks::onTickingStart);
@@ -37,9 +38,8 @@ public class TransientEntitySectionManager<T extends EntityAccess> {
     }
 
     public void stopTicking(final ChunkPos pos) {
-        long chunkKey = pos.pack();
-        this.tickingChunks.remove(chunkKey);
-        this.sectionStorage.getExistingSectionsInChunk(chunkKey).forEach(section -> {
+        this.tickingChunks.remove(pos);
+        this.sectionStorage.getExistingSectionsInChunk(pos).forEach(section -> {
             Visibility previousStatus = section.updateChunkStatus(Visibility.TRACKED);
             if (previousStatus.isTicking()) {
                 section.getEntities().filter(e -> !e.isAlwaysTicking()).forEach(this.callbacks::onTickingEnd);
@@ -53,7 +53,8 @@ public class TransientEntitySectionManager<T extends EntityAccess> {
 
     public void addEntity(final T entity) {
         this.entityStorage.add(entity);
-        long sectionKey = SectionPos.asLong(entity.blockPosition());
+        // ===== 使用 SectionPos.of 替代 asLong =====
+        SectionPos sectionKey = SectionPos.of(entity.blockPosition());
         EntitySection<T> entitySection = this.sectionStorage.getOrCreateSection(sectionKey);
         entitySection.add(entity);
         entity.setLevelCallback(new TransientEntitySectionManager.Callback(entity, sectionKey, entitySection));
@@ -69,7 +70,8 @@ public class TransientEntitySectionManager<T extends EntityAccess> {
         return this.entityStorage.count();
     }
 
-    private void removeSectionIfEmpty(final long sectionPos, final EntitySection<T> section) {
+    // ===== 参数改为 SectionPos =====
+    private void removeSectionIfEmpty(final SectionPos sectionPos, final EntitySection<T> section) {
         if (section.isEmpty()) {
             this.sectionStorage.remove(sectionPos);
         }
@@ -80,12 +82,14 @@ public class TransientEntitySectionManager<T extends EntityAccess> {
         return this.entityStorage.count() + "," + this.sectionStorage.count() + "," + this.tickingChunks.size();
     }
 
+    // ===== 内部类 Callback =====
     private class Callback implements EntityInLevelCallback {
         private final T entity;
-        private long currentSectionKey;
+        // ===== 改为 SectionPos =====
+        private SectionPos currentSectionKey;
         private EntitySection<T> currentSection;
 
-        private Callback(final T entity, final long currentSectionKey, final EntitySection<T> currentSection) {
+        private Callback(final T entity, final SectionPos currentSectionKey, final EntitySection<T> currentSection) {
             this.entity = entity;
             this.currentSectionKey = currentSectionKey;
             this.currentSection = currentSection;
@@ -94,12 +98,13 @@ public class TransientEntitySectionManager<T extends EntityAccess> {
         @Override
         public void onMove() {
             BlockPos pos = this.entity.blockPosition();
-            long newSectionPos = SectionPos.asLong(pos);
-            if (newSectionPos != this.currentSectionKey) {
+            // ===== 使用 SectionPos.of 替代 asLong =====
+            SectionPos newSectionPos = SectionPos.of(pos);
+            if (!newSectionPos.equals(this.currentSectionKey)) {
                 Visibility previousStatus = this.currentSection.getStatus();
                 if (!this.currentSection.remove(this.entity)) {
                     TransientEntitySectionManager.LOGGER
-                        .warn("Entity {} wasn't found in section {} (moving to {})", this.entity, SectionPos.of(this.currentSectionKey), newSectionPos);
+                        .warn("Entity {} wasn't found in section {} (moving to {})", this.entity, this.currentSectionKey, newSectionPos);
                 }
 
                 TransientEntitySectionManager.this.removeSectionIfEmpty(this.currentSectionKey, this.currentSection);
@@ -124,7 +129,7 @@ public class TransientEntitySectionManager<T extends EntityAccess> {
         public void onRemove(final Entity.RemovalReason reason) {
             if (!this.currentSection.remove(this.entity)) {
                 TransientEntitySectionManager.LOGGER
-                    .warn("Entity {} wasn't found in section {} (destroying due to {})", this.entity, SectionPos.of(this.currentSectionKey), reason);
+                    .warn("Entity {} wasn't found in section {} (destroying due to {})", this.entity, this.currentSectionKey, reason);
             }
 
             Visibility status = this.currentSection.getStatus();

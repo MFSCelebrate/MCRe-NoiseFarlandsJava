@@ -3,18 +3,18 @@ package net.minecraft.client.renderer;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongCollection;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongList;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.longs.LongSets;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -56,8 +56,11 @@ public class SectionOcclusionGraph {
     private @Nullable ViewArea viewArea;
     private final AtomicReference<SectionOcclusionGraph.@Nullable GraphState> currentGraph = new AtomicReference<>();
     private final AtomicBoolean needsFrustumUpdate = new AtomicBoolean(false);
-    private final LongOpenHashSet emptySections = new LongOpenHashSet();
-    private final LongOpenHashSet loadedChunks = new LongOpenHashSet();
+
+    // ===== 改为对象集合 =====
+    private final ObjectOpenHashSet<SectionPos> emptySections = new ObjectOpenHashSet<>();
+    private final ObjectOpenHashSet<ChunkPos> loadedChunks = new ObjectOpenHashSet<>();
+
     private volatile @Nullable BlockingQueue<SectionRenderDispatcher.RenderSection> nextSectionsToPropagateFrom;
     private double prevCamX = Double.MIN_VALUE;
     private double prevCamY = Double.MIN_VALUE;
@@ -74,7 +77,6 @@ public class SectionOcclusionGraph {
                 LOGGER.warn("Full update failed", e);
             }
         }
-
         this.viewArea = viewArea;
         if (viewArea != null) {
             this.currentGraph.set(new SectionOcclusionGraph.GraphState(viewArea));
@@ -86,9 +88,13 @@ public class SectionOcclusionGraph {
         }
     }
 
-    public LongCollection expectedChunks() {
+    // ===== 返回 ChunkPos 集合 =====
+    public Set<ChunkPos> expectedChunks() {
         SectionOcclusionGraph.GraphState graphState = this.currentGraph.get();
-        return graphState != null ? graphState.storage.sectionsWaitingForChunkLoads.keySet() : LongSets.EMPTY_SET;
+        if (graphState != null) {
+            return graphState.storage.sectionsWaitingForChunkLoads.keySet();
+        }
+        return Collections.emptySet();
     }
 
     public void invalidate() {
@@ -103,7 +109,6 @@ public class SectionOcclusionGraph {
         if (camX != this.prevCamX || camY != this.prevCamY || camZ != this.prevCamZ || this.prevFov != fov || this.lastSmartCull != camera.smartCull) {
             this.invalidate();
         }
-
         this.prevCamX = camX;
         this.prevCamY = camY;
         this.prevCamZ = camZ;
@@ -137,7 +142,6 @@ public class SectionOcclusionGraph {
         if (nextSectionsToPropagateFrom != null) {
             nextSectionsToPropagateFrom.add(section);
         }
-
         BlockingQueue<SectionRenderDispatcher.RenderSection> sectionsToPropagateFrom = this.currentGraph.get().sectionsToPropagateFrom;
         if (sectionsToPropagateFrom != nextSectionsToPropagateFrom) {
             sectionsToPropagateFrom.add(section);
@@ -145,22 +149,24 @@ public class SectionOcclusionGraph {
     }
 
     public void update(final CameraRenderState camera, final int fov, final ChunkLoadingRenderState chunkLoadingRenderState) {
+        // ===== 参数仍为 LongOpenHashSet，内部转换为对象 =====
         this.updateLoadedChunks(chunkLoadingRenderState.addedLoadedChunks, chunkLoadingRenderState.removedLoadedChunks);
         this.updateEmptySections(chunkLoadingRenderState.addedEmptySections, chunkLoadingRenderState.removedEmptySections);
+
         if (!camera.isFrustumCaptured) {
             this.invalidateIfNeeded(camera, fov);
             if (this.needsFullUpdate && (this.fullUpdateTask == null || this.fullUpdateTask.isDone())) {
                 this.scheduleFullUpdate(camera);
             }
-
             this.runPartialUpdate(camera, chunkLoadingRenderState.loadedExpectedChunks);
         }
     }
 
     private void scheduleFullUpdate(final CameraRenderState camera) {
         this.needsFullUpdate = false;
-        LongOpenHashSet clonedEmptySections = this.emptySections.clone();
-        LongOpenHashSet clonedLoadedChunks = this.loadedChunks.clone();
+        // ===== 克隆对象集合 =====
+        ObjectOpenHashSet<SectionPos> clonedEmptySections = this.emptySections.clone();
+        ObjectOpenHashSet<ChunkPos> clonedLoadedChunks = this.loadedChunks.clone();
         this.fullUpdateTask = CompletableFuture.runAsync(() -> {
             SectionOcclusionGraph.GraphState newState = new SectionOcclusionGraph.GraphState(this.viewArea);
             this.nextSectionsToPropagateFrom = newState.sectionsToPropagateFrom;
@@ -174,22 +180,22 @@ public class SectionOcclusionGraph {
         }, Util.backgroundExecutor());
     }
 
-    private void runPartialUpdate(final CameraRenderState camera, final LongSet loadedExpectedChunks) {
+    private void runPartialUpdate(final CameraRenderState camera, final ObjectOpenHashSet<ChunkPos> loadedExpectedChunks) {
         SectionOcclusionGraph.GraphState state = this.currentGraph.get();
-        loadedExpectedChunks.forEach(chunkNode -> {
-            LongList waitingSections = state.storage.sectionsWaitingForChunkLoads.remove(chunkNode);
+        // ===== 遍历 ChunkPos =====
+        for (ChunkPos chunkPos : loadedExpectedChunks) {
+            List<SectionPos> waitingSections = state.storage.sectionsWaitingForChunkLoads.remove(chunkPos);
             if (waitingSections != null) {
-                waitingSections.forEach(sectionNode -> {
-                    SectionRenderDispatcher.RenderSection section = this.viewArea.getRenderSection(sectionNode);
+                for (SectionPos sectionPos : waitingSections) {
+                    SectionRenderDispatcher.RenderSection section = this.viewArea.getRenderSection(sectionPos);
                     if (section != null) {
                         this.schedulePropagationFrom(section);
                     }
-                });
+                }
             }
-        });
+        }
         if (!state.sectionsToPropagateFrom.isEmpty()) {
             Queue<SectionOcclusionGraph.Node> queue = Queues.newArrayDeque();
-
             while (!state.sectionsToPropagateFrom.isEmpty()) {
                 SectionRenderDispatcher.RenderSection renderSection = state.sectionsToPropagateFrom.poll();
                 SectionOcclusionGraph.Node node = state.storage.sectionToNodeMap.get(renderSection);
@@ -197,7 +203,6 @@ public class SectionOcclusionGraph {
                     queue.add(node);
                 }
             }
-
             Frustum offsetFrustum = offsetFrustum(camera.cullFrustum);
             Consumer<SectionRenderDispatcher.RenderSection> onSectionAdded = section -> {
                 if (offsetFrustum.isVisible(section.getBoundingBox())) {
@@ -209,22 +214,23 @@ public class SectionOcclusionGraph {
     }
 
     private void initializeQueueForFullUpdate(final BlockPos cameraPosition, final Queue<SectionOcclusionGraph.Node> queue) {
-        long cameraSectionNode = SectionPos.asLong(cameraPosition);
-        int cameraSectionY = SectionPos.y(cameraSectionNode);
-        SectionRenderDispatcher.RenderSection cameraSection = this.viewArea.getRenderSection(cameraSectionNode);
+        // ===== 使用 SectionPos 对象 =====
+        SectionPos cameraSectionPos = SectionPos.of(cameraPosition);
+        int cameraSectionY = cameraSectionPos.getY();
+        SectionRenderDispatcher.RenderSection cameraSection = this.viewArea.getRenderSection(cameraSectionPos);
         if (cameraSection == null) {
             boolean isBelowTheWorld = cameraSectionY < this.viewArea.minSectionY();
             int sectionY = isBelowTheWorld ? this.viewArea.minSectionY() : this.viewArea.maxSectionY();
             int viewDistance = this.viewArea.getViewDistance();
             List<SectionOcclusionGraph.Node> toAdd = Lists.newArrayList();
-            int cameraSectionX = SectionPos.x(cameraSectionNode);
-            int cameraSectionZ = SectionPos.z(cameraSectionNode);
+            int cameraSectionX = cameraSectionPos.getX();
+            int cameraSectionZ = cameraSectionPos.getZ();
 
             for (int sectionX = -viewDistance; sectionX <= viewDistance; sectionX++) {
                 for (int sectionZ = -viewDistance; sectionZ <= viewDistance; sectionZ++) {
-                    SectionRenderDispatcher.RenderSection renderSectionAt = this.viewArea
-                        .getRenderSection(SectionPos.asLong(sectionX + cameraSectionX, sectionY, sectionZ + cameraSectionZ));
-                    if (renderSectionAt != null && this.isInViewDistance(cameraSectionNode, renderSectionAt.getSectionNode())) {
+                    SectionPos sectionPos = SectionPos.of(sectionX + cameraSectionX, sectionY, sectionZ + cameraSectionZ);
+                    SectionRenderDispatcher.RenderSection renderSectionAt = this.viewArea.getRenderSection(sectionPos);
+                    if (renderSectionAt != null && this.isInViewDistance(cameraSectionPos, renderSectionAt.getSectionPos())) {
                         Direction sourceDirection = isBelowTheWorld ? Direction.UP : Direction.DOWN;
                         SectionOcclusionGraph.Node node = new SectionOcclusionGraph.Node(renderSectionAt, sourceDirection, 0);
                         node.setDirections(node.directions, sourceDirection);
@@ -233,19 +239,17 @@ public class SectionOcclusionGraph {
                         } else if (sectionX < 0) {
                             node.setDirections(node.directions, Direction.WEST);
                         }
-
                         if (sectionZ > 0) {
                             node.setDirections(node.directions, Direction.SOUTH);
                         } else if (sectionZ < 0) {
                             node.setDirections(node.directions, Direction.NORTH);
                         }
-
                         toAdd.add(node);
                     }
                 }
             }
 
-            toAdd.sort(Comparator.comparingDouble(c -> cameraPosition.distSqr(SectionPos.of(c.section.getSectionNode()).center())));
+            toAdd.sort(Comparator.comparingDouble(c -> cameraPosition.distSqr(sectionPos.center())));
             queue.addAll(toAdd);
         } else {
             queue.add(new SectionOcclusionGraph.Node(cameraSection, null, 0));
@@ -258,56 +262,54 @@ public class SectionOcclusionGraph {
         final Queue<SectionOcclusionGraph.Node> queue,
         final boolean smartCull,
         final Consumer<SectionRenderDispatcher.RenderSection> onSectionAdded,
-        final LongOpenHashSet emptySections,
-        final LongOpenHashSet loadedChunks
+        final ObjectOpenHashSet<SectionPos> emptySections,
+        final ObjectOpenHashSet<ChunkPos> loadedChunks
     ) {
         SectionPos cameraSectionPos = SectionPos.of(cameraPos);
-        long cameraSectionNode = cameraSectionPos.asLong();
         BlockPos cameraSectionCenter = cameraSectionPos.center();
 
         while (!queue.isEmpty()) {
             SectionOcclusionGraph.Node node = queue.poll();
             SectionRenderDispatcher.RenderSection currentSection = node.section;
-            long sectionNode = currentSection.getSectionNode();
-            long chunkNode = ChunkPos.fromSectionNode(sectionNode);
-            if (!loadedChunks.contains(chunkNode)) {
-                storage.sectionsWaitingForChunkLoads.computeIfAbsent(chunkNode, var0 -> new LongArrayList()).add(sectionNode);
+            SectionPos sectionPos = currentSection.getSectionPos();
+            ChunkPos chunkPos = sectionPos.chunk();
+
+            if (!loadedChunks.contains(chunkPos)) {
+                storage.sectionsWaitingForChunkLoads.computeIfAbsent(chunkPos, k -> new ArrayList<>()).add(sectionPos);
             } else {
-                if (!emptySections.contains(node.section.getSectionNode())) {
-                    if (storage.sectionTree.add(node.section)) {
-                        onSectionAdded.accept(node.section);
+                if (!emptySections.contains(sectionPos)) {
+                    if (storage.sectionTree.add(currentSection)) {
+                        onSectionAdded.accept(currentSection);
                     }
                 } else {
-                    node.section.sectionMesh.compareAndSet(CompiledSectionMesh.UNCOMPILED, CompiledSectionMesh.EMPTY);
+                    currentSection.sectionMesh.compareAndSet(CompiledSectionMesh.UNCOMPILED, CompiledSectionMesh.EMPTY);
                 }
 
-                boolean distantFromCamera = Math.abs(SectionPos.x(sectionNode) - cameraSectionPos.x()) > MINIMUM_ADVANCED_CULLING_SECTION_DISTANCE
-                    || Math.abs(SectionPos.y(sectionNode) - cameraSectionPos.y()) > MINIMUM_ADVANCED_CULLING_SECTION_DISTANCE
-                    || Math.abs(SectionPos.z(sectionNode) - cameraSectionPos.z()) > MINIMUM_ADVANCED_CULLING_SECTION_DISTANCE;
+                boolean distantFromCamera = Math.abs(sectionPos.getX() - cameraSectionPos.getX()) > MINIMUM_ADVANCED_CULLING_SECTION_DISTANCE
+                    || Math.abs(sectionPos.getY() - cameraSectionPos.getY()) > MINIMUM_ADVANCED_CULLING_SECTION_DISTANCE
+                    || Math.abs(sectionPos.getZ() - cameraSectionPos.getZ()) > MINIMUM_ADVANCED_CULLING_SECTION_DISTANCE;
 
                 for (Direction direction : DIRECTIONS) {
-                    SectionRenderDispatcher.RenderSection renderSectionAt = this.getRelativeFrom(cameraSectionNode, currentSection, direction);
+                    SectionRenderDispatcher.RenderSection renderSectionAt = this.getRelativeFrom(cameraSectionPos, currentSection, direction);
                     if (renderSectionAt != null && (!smartCull || !node.hasDirection(direction.getOpposite()))) {
                         if (smartCull && node.hasSourceDirections()) {
                             SectionMesh sectionMesh = currentSection.getSectionMesh();
                             boolean visible = false;
-
                             for (int i = 0; i < DIRECTIONS.length; i++) {
                                 if (node.hasSourceDirection(i) && sectionMesh.facesCanSeeEachother(DIRECTIONS[i].getOpposite(), direction)) {
                                     visible = true;
                                     break;
                                 }
                             }
-
                             if (!visible) {
                                 continue;
                             }
                         }
 
                         if (smartCull && distantFromCamera) {
-                            int renderSectionOriginX = SectionPos.sectionToBlockCoord(SectionPos.x(sectionNode));
-                            int renderSectionOriginY = SectionPos.sectionToBlockCoord(SectionPos.y(sectionNode));
-                            int renderSectionOriginZ = SectionPos.sectionToBlockCoord(SectionPos.z(sectionNode));
+                            int renderSectionOriginX = SectionPos.sectionToBlockCoord(sectionPos.getX());
+                            int renderSectionOriginY = SectionPos.sectionToBlockCoord(sectionPos.getY());
+                            int renderSectionOriginZ = SectionPos.sectionToBlockCoord(sectionPos.getZ());
                             boolean maxX = direction.getAxis() == Direction.Axis.X
                                 ? cameraSectionCenter.getX() > renderSectionOriginX
                                 : cameraSectionCenter.getX() < renderSectionOriginX;
@@ -322,13 +324,11 @@ public class SectionOcclusionGraph {
                             );
                             Vector3d step = new Vector3d(cameraPos.x, cameraPos.y, cameraPos.z).sub(checkPos).normalize().mul(CEILED_SECTION_DIAGONAL);
                             boolean visible = true;
-
                             while (checkPos.distanceSquared(cameraPos.x, cameraPos.y, cameraPos.z) > 3600.0) {
                                 checkPos.add(step);
                                 if (checkPos.y > this.viewArea.maxY() || checkPos.y < this.viewArea.minY()) {
                                     break;
                                 }
-
                                 SectionRenderDispatcher.RenderSection checkSection = this.viewArea
                                     .getRenderSectionAt(BlockPos.containing(checkPos.x, checkPos.y, checkPos.z));
                                 if (checkSection == null || storage.sectionToNodeMap.get(checkSection) == null) {
@@ -336,7 +336,6 @@ public class SectionOcclusionGraph {
                                     break;
                                 }
                             }
-
                             if (!visible) {
                                 continue;
                             }
@@ -361,42 +360,40 @@ public class SectionOcclusionGraph {
         return new Frustum(frustum).offsetToFullyIncludeCameraCube(8);
     }
 
-    private boolean isInViewDistance(final long cameraSectionNode, final long sectionNode) {
+    private boolean isInViewDistance(final SectionPos cameraSectionPos, final SectionPos sectionPos) {
         return ChunkTrackingView.isInViewDistance(
-            SectionPos.x(cameraSectionNode),
-            SectionPos.z(cameraSectionNode),
+            cameraSectionPos.getX(),
+            cameraSectionPos.getZ(),
             this.viewArea.getViewDistance(),
-            SectionPos.x(sectionNode),
-            SectionPos.z(sectionNode)
+            sectionPos.getX(),
+            sectionPos.getZ()
         );
     }
 
     private SectionRenderDispatcher.@Nullable RenderSection getRelativeFrom(
-        final long cameraSectionNode, final SectionRenderDispatcher.RenderSection renderSection, final Direction direction
+        final SectionPos cameraSectionPos,
+        final SectionRenderDispatcher.RenderSection renderSection,
+        final Direction direction
     ) {
-        long relative = renderSection.getNeighborSectionNode(direction);
-        if (!this.isInViewDistance(cameraSectionNode, relative)) {
+        SectionPos relativePos = renderSection.getNeighborSectionPos(direction);
+        if (!this.isInViewDistance(cameraSectionPos, relativePos)) {
             return null;
-        } else {
-            return Mth.abs(SectionPos.y(cameraSectionNode) - SectionPos.y(relative)) > this.viewArea.getViewDistance()
-                ? null
-                : this.viewArea.getRenderSection(relative);
         }
+        if (Mth.abs(cameraSectionPos.getY() - relativePos.getY()) > this.viewArea.getViewDistance()) {
+            return null;
+        }
+        return this.viewArea.getRenderSection(relativePos);
     }
 
-    @VisibleForDebug
-    public SectionOcclusionGraph.@Nullable Node getNode(final SectionRenderDispatcher.RenderSection section) {
-        return this.currentGraph.get().storage.sectionToNodeMap.get(section);
-    }
-
-    public void updateEmptySections(final LongOpenHashSet added, final LongOpenHashSet removed) {
-        this.emptySections.addAll(added);
-        LongIterator iter = removed.longIterator();
-
-        while (iter.hasNext()) {
-            long sectionNode = iter.nextLong();
-            if (this.emptySections.remove(sectionNode)) {
-                SectionRenderDispatcher.RenderSection section = this.viewArea.getRenderSection(sectionNode);
+    // ===== updateEmptySections 参数仍为 LongOpenHashSet，内部转换 =====
+    public void updateEmptySections(final it.unimi.dsi.fastutil.longs.LongOpenHashSet added, final it.unimi.dsi.fastutil.longs.LongOpenHashSet removed) {
+        for (long node : added) {
+            this.emptySections.add(SectionPos.of(node));
+        }
+        for (long node : removed) {
+            SectionPos sectionPos = SectionPos.of(node);
+            if (this.emptySections.remove(sectionPos)) {
+                SectionRenderDispatcher.RenderSection section = this.viewArea.getRenderSection(sectionPos);
                 if (section != null) {
                     this.schedulePropagationFrom(section);
                     section.setWasPreviouslyEmpty(true);
@@ -405,14 +402,26 @@ public class SectionOcclusionGraph {
         }
     }
 
-    public void updateLoadedChunks(final LongOpenHashSet added, final LongOpenHashSet removed) {
-        this.loadedChunks.addAll(added);
-        this.loadedChunks.removeAll(removed);
+    // ===== updateLoadedChunks 参数仍为 LongOpenHashSet，内部转换 =====
+    public void updateLoadedChunks(final it.unimi.dsi.fastutil.longs.LongOpenHashSet added, final it.unimi.dsi.fastutil.longs.LongOpenHashSet removed) {
+        for (long node : added) {
+            this.loadedChunks.add(ChunkPos.unpack(node));
+        }
+        for (long node : removed) {
+            this.loadedChunks.remove(ChunkPos.unpack(node));
+        }
     }
 
     public Octree getOctree() {
         return this.currentGraph.get().storage.sectionTree;
     }
+
+    @VisibleForDebug
+    public SectionOcclusionGraph.@Nullable Node getNode(final SectionRenderDispatcher.RenderSection section) {
+        return this.currentGraph.get().storage.sectionToNodeMap.get(section);
+    }
+
+    // ==================== 内部类 ====================
 
     @OnlyIn(Dist.CLIENT)
     private record GraphState(SectionOcclusionGraph.GraphStorage storage, BlockingQueue<SectionRenderDispatcher.RenderSection> sectionsToPropagateFrom) {
@@ -425,12 +434,13 @@ public class SectionOcclusionGraph {
     private static class GraphStorage {
         public final SectionOcclusionGraph.SectionToNodeMap sectionToNodeMap;
         public final Octree sectionTree;
-        public final Long2ObjectMap<LongList> sectionsWaitingForChunkLoads;
+        // ===== 改为 ChunkPos -> List<SectionPos> =====
+        public final Object2ObjectMap<ChunkPos, List<SectionPos>> sectionsWaitingForChunkLoads;
 
         public GraphStorage(final ViewArea viewArea) {
             this.sectionToNodeMap = new SectionOcclusionGraph.SectionToNodeMap(viewArea.size());
             this.sectionTree = new Octree(viewArea.getCameraSectionPos(), viewArea.getViewDistance(), viewArea.sectionCount(), viewArea.minY());
-            this.sectionsWaitingForChunkLoads = new Long2ObjectOpenHashMap<>();
+            this.sectionsWaitingForChunkLoads = new Object2ObjectOpenHashMap<>();
         }
     }
 
@@ -449,7 +459,6 @@ public class SectionOcclusionGraph {
             if (sourceDirection != null) {
                 this.addSourceDirection(sourceDirection);
             }
-
             this.step = step;
         }
 
@@ -476,12 +485,15 @@ public class SectionOcclusionGraph {
 
         @Override
         public int hashCode() {
-            return Long.hashCode(this.section.getSectionNode());
+            return Long.hashCode(this.section.getSectionPos().asLong());
         }
 
         @Override
         public boolean equals(final Object obj) {
-            return obj instanceof SectionOcclusionGraph.Node other ? this.section.getSectionNode() == other.section.getSectionNode() : false;
+            if (obj instanceof SectionOcclusionGraph.Node other) {
+                return this.section.getSectionPos().equals(other.section.getSectionPos());
+            }
+            return false;
         }
     }
 

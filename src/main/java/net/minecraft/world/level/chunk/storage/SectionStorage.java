@@ -10,14 +10,12 @@ import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.OptionalDynamic;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -44,8 +42,10 @@ public class SectionStorage<R, P> implements AutoCloseable {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String SECTIONS_TAG = "Sections";
     private final SimpleRegionStorage simpleRegionStorage;
-    private final Long2ObjectMap<Optional<R>> storage = new Long2ObjectOpenHashMap<>();
-    private final LongLinkedOpenHashSet dirtyChunks = new LongLinkedOpenHashSet();
+    // ===== 修改：使用 SectionPos 作为键 =====
+    private final Object2ObjectMap<SectionPos, Optional<R>> storage = new Object2ObjectOpenHashMap<>();
+    // ===== 修改：使用 ChunkPos 作为键 =====
+    private final ObjectLinkedOpenHashSet<ChunkPos> dirtyChunks = new ObjectLinkedOpenHashSet<>();
     private final Codec<P> codec;
     private final Function<R, P> packer;
     private final BiFunction<P, Runnable, R> unpacker;
@@ -53,8 +53,9 @@ public class SectionStorage<R, P> implements AutoCloseable {
     private final RegistryAccess registryAccess;
     private final ChunkIOErrorReporter errorReporter;
     protected final LevelHeightAccessor levelHeightAccessor;
-    private final LongSet loadedChunks = new LongOpenHashSet();
-    private final Long2ObjectMap<CompletableFuture<Optional<SectionStorage.PackedChunk<P>>>> pendingLoads = new Long2ObjectOpenHashMap<>();
+    // ===== 修改：使用 ChunkPos 作为键 =====
+    private final ObjectOpenHashSet<ChunkPos> loadedChunks = new ObjectOpenHashSet<>();
+    private final Object2ObjectMap<ChunkPos, CompletableFuture<Optional<SectionStorage.PackedChunk<P>>>> pendingLoads = new Object2ObjectOpenHashMap<>();
     private final Object loadLock = new Object();
 
     public SectionStorage(
@@ -78,10 +79,11 @@ public class SectionStorage<R, P> implements AutoCloseable {
     }
 
     protected void tick(final BooleanSupplier haveTime) {
-        LongIterator iterator = this.dirtyChunks.iterator();
+        // ===== 使用对象迭代 =====
+        Iterator<ChunkPos> iterator = this.dirtyChunks.iterator();
 
         while (iterator.hasNext() && haveTime.getAsBoolean()) {
-            ChunkPos chunkPos = ChunkPos.unpack(iterator.nextLong());
+            ChunkPos chunkPos = iterator.next();
             iterator.remove();
             this.writeChunk(chunkPos);
         }
@@ -91,16 +93,18 @@ public class SectionStorage<R, P> implements AutoCloseable {
 
     private void unpackPendingLoads() {
         synchronized (this.loadLock) {
-            Iterator<Entry<CompletableFuture<Optional<SectionStorage.PackedChunk<P>>>>> iterator = Long2ObjectMaps.fastIterator(this.pendingLoads);
+            // ===== 使用 ObjectIterator =====
+            ObjectIterator<Object2ObjectMap.Entry<ChunkPos, CompletableFuture<Optional<SectionStorage.PackedChunk<P>>>>> iterator =
+                Object2ObjectMaps.fastIterator(this.pendingLoads);
 
             while (iterator.hasNext()) {
-                Entry<CompletableFuture<Optional<SectionStorage.PackedChunk<P>>>> entry = iterator.next();
+                Object2ObjectMap.Entry<ChunkPos, CompletableFuture<Optional<SectionStorage.PackedChunk<P>>>> entry = iterator.next();
                 Optional<SectionStorage.PackedChunk<P>> chunk = entry.getValue().getNow(null);
                 if (chunk != null) {
-                    long chunkKey = entry.getLongKey();
-                    this.unpackChunk(ChunkPos.unpack(chunkKey), chunk.orElse(null));
+                    ChunkPos chunkPos = entry.getKey();
+                    this.unpackChunk(chunkPos, chunk.orElse(null));
                     iterator.remove();
-                    this.loadedChunks.add(chunkKey);
+                    this.loadedChunks.add(chunkPos);
                 }
             }
         }
@@ -108,7 +112,7 @@ public class SectionStorage<R, P> implements AutoCloseable {
 
     public void flushAll() {
         if (!this.dirtyChunks.isEmpty()) {
-            this.dirtyChunks.forEach(pos -> this.writeChunk(ChunkPos.unpack(pos)));
+            this.dirtyChunks.forEach(this::writeChunk);
             this.dirtyChunks.clear();
         }
     }
@@ -117,11 +121,12 @@ public class SectionStorage<R, P> implements AutoCloseable {
         return !this.dirtyChunks.isEmpty();
     }
 
-    protected @Nullable Optional<R> get(final long sectionPos) {
+    // ===== 参数改为 SectionPos =====
+    protected @Nullable Optional<R> get(final SectionPos sectionPos) {
         return this.storage.get(sectionPos);
     }
 
-    protected Optional<R> getOrLoad(final long sectionPos) {
+    protected Optional<R> getOrLoad(final SectionPos sectionPos) {
         if (this.outsideStoredRange(sectionPos)) {
             return Optional.empty();
         } else {
@@ -129,10 +134,10 @@ public class SectionStorage<R, P> implements AutoCloseable {
             if (r != null) {
                 return r;
             } else {
-                this.unpackChunk(SectionPos.of(sectionPos).chunk());
+                this.unpackChunk(sectionPos.chunk());
                 r = this.get(sectionPos);
                 if (r == null) {
-                    throw (IllegalStateException)Util.pauseInIde(new IllegalStateException());
+                    throw (IllegalStateException) Util.pauseInIde(new IllegalStateException());
                 } else {
                     return r;
                 }
@@ -140,14 +145,16 @@ public class SectionStorage<R, P> implements AutoCloseable {
         }
     }
 
-    protected boolean outsideStoredRange(final long sectionPos) {
-        int y = SectionPos.sectionToBlockCoord(SectionPos.y(sectionPos));
+    // ===== 参数改为 SectionPos =====
+    protected boolean outsideStoredRange(final SectionPos sectionPos) {
+        int y = SectionPos.sectionToBlockCoord(sectionPos.getY());
         return this.levelHeightAccessor.isOutsideBuildHeight(y);
     }
 
-    protected R getOrCreate(final long sectionPos) {
+    // ===== 参数改为 SectionPos =====
+    protected R getOrCreate(final SectionPos sectionPos) {
         if (this.outsideStoredRange(sectionPos)) {
-            throw (IllegalArgumentException)Util.pauseInIde(new IllegalArgumentException("sectionPos out of bounds"));
+            throw (IllegalArgumentException) Util.pauseInIde(new IllegalArgumentException("sectionPos out of bounds"));
         }
 
         Optional<R> r = this.getOrLoad(sectionPos);
@@ -162,27 +169,26 @@ public class SectionStorage<R, P> implements AutoCloseable {
 
     public CompletableFuture<?> prefetch(final ChunkPos chunkPos) {
         synchronized (this.loadLock) {
-            long chunkKey = chunkPos.pack();
-            return this.loadedChunks.contains(chunkKey)
+            return this.loadedChunks.contains(chunkPos)
                 ? CompletableFuture.completedFuture(null)
-                : this.pendingLoads.computeIfAbsent(chunkKey, k -> this.tryRead(chunkPos));
+                : this.pendingLoads.computeIfAbsent(chunkPos, k -> this.tryRead(chunkPos));
         }
     }
 
+    // ===== 参数改为 ChunkPos =====
     private void unpackChunk(final ChunkPos chunkPos) {
-        long chunkKey = chunkPos.pack();
         CompletableFuture<Optional<SectionStorage.PackedChunk<P>>> future;
         synchronized (this.loadLock) {
-            if (!this.loadedChunks.add(chunkKey)) {
+            if (!this.loadedChunks.add(chunkPos)) {
                 return;
             }
 
-            future = this.pendingLoads.computeIfAbsent(chunkKey, k -> this.tryRead(chunkPos));
+            future = this.pendingLoads.computeIfAbsent(chunkPos, k -> this.tryRead(chunkPos));
         }
 
         this.unpackChunk(chunkPos, future.join().orElse(null));
         synchronized (this.loadLock) {
-            this.pendingLoads.remove(chunkKey);
+            this.pendingLoads.remove(chunkPos);
         }
     }
 
@@ -209,29 +215,32 @@ public class SectionStorage<R, P> implements AutoCloseable {
             });
     }
 
+    // ===== 参数改为 ChunkPos，内部使用 SectionPos =====
     private void unpackChunk(final ChunkPos pos, final SectionStorage.@Nullable PackedChunk<P> packedChunk) {
         if (packedChunk == null) {
             for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
-                this.storage.put(getKey(pos, sectionY), Optional.empty());
+                SectionPos sectionPos = SectionPos.of(pos.x(), sectionY, pos.z());
+                this.storage.put(sectionPos, Optional.empty());
             }
         } else {
             boolean versionChanged = packedChunk.versionChanged();
 
             for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
-                long key = getKey(pos, sectionY);
+                SectionPos sectionPos = SectionPos.of(pos.x(), sectionY, pos.z());
                 Optional<R> section = Optional.ofNullable(packedChunk.sectionsByY.get(sectionY))
-                    .map(packed -> this.unpacker.apply((P)packed, () -> this.setDirty(key)));
-                this.storage.put(key, section);
+                    .map(packed -> this.unpacker.apply((P) packed, () -> this.setDirty(sectionPos)));
+                this.storage.put(sectionPos, section);
                 section.ifPresent(s -> {
-                    this.onSectionLoad(key);
+                    this.onSectionLoad(sectionPos);
                     if (versionChanged) {
-                        this.setDirty(key);
+                        this.setDirty(sectionPos);
                     }
                 });
             }
         }
     }
 
+    // ===== 参数改为 ChunkPos =====
     private void writeChunk(final ChunkPos chunkPos) {
         RegistryOps<Tag> registryOps = this.registryAccess.createSerializationContext(NbtOps.INSTANCE);
         Dynamic<Tag> tag = this.writeChunk(chunkPos, registryOps);
@@ -250,12 +259,12 @@ public class SectionStorage<R, P> implements AutoCloseable {
         Map<T, T> sections = Maps.newHashMap();
 
         for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
-            long key = getKey(chunkPos, sectionY);
-            Optional<R> r = this.storage.get(key);
+            SectionPos sectionPos = SectionPos.of(chunkPos.x(), sectionY, chunkPos.z());
+            Optional<R> r = this.storage.get(sectionPos);
             if (r != null && !r.isEmpty()) {
                 DataResult<T> serializedSection = this.codec.encodeStart(ops, this.packer.apply(r.get()));
                 String yName = Integer.toString(sectionY);
-                serializedSection.resultOrPartial(LOGGER::error).ifPresent(s -> sections.put(ops.createString(yName), (T)s));
+                serializedSection.resultOrPartial(LOGGER::error).ifPresent(s -> sections.put(ops.createString(yName), (T) s));
             }
         }
 
@@ -272,24 +281,24 @@ public class SectionStorage<R, P> implements AutoCloseable {
         );
     }
 
-    private static long getKey(final ChunkPos chunkPos, final int sectionY) {
-        return SectionPos.asLong(chunkPos.x(), sectionY, chunkPos.z());
+    // ===== 移除 getKey 方法，直接使用 SectionPos =====
+
+    // ===== 参数改为 SectionPos =====
+    protected void onSectionLoad(final SectionPos sectionPos) {
     }
 
-    protected void onSectionLoad(final long sectionPos) {
-    }
-
-    protected void setDirty(final long sectionPos) {
+    // ===== 参数改为 SectionPos =====
+    protected void setDirty(final SectionPos sectionPos) {
         Optional<R> r = this.storage.get(sectionPos);
         if (r != null && !r.isEmpty()) {
-            this.dirtyChunks.add(ChunkPos.pack(SectionPos.x(sectionPos), SectionPos.z(sectionPos)));
+            this.dirtyChunks.add(sectionPos.chunk());
         } else {
-            LOGGER.warn("No data for position: {}", SectionPos.of(sectionPos));
+            LOGGER.warn("No data for position: {}", sectionPos);
         }
     }
 
     public void flush(final ChunkPos chunkPos) {
-        if (this.dirtyChunks.remove(chunkPos.pack())) {
+        if (this.dirtyChunks.remove(chunkPos)) {
             this.writeChunk(chunkPos);
         }
     }
@@ -316,7 +325,7 @@ public class SectionStorage<R, P> implements AutoCloseable {
             for (int sectionY = levelHeightAccessor.getMinSectionY(); sectionY <= levelHeightAccessor.getMaxSectionY(); sectionY++) {
                 Optional<T> section = sections.get(Integer.toString(sectionY))
                     .result()
-                    .flatMap(sectionData -> codec.parse((Dynamic<Tag>)sectionData).resultOrPartial(SectionStorage.LOGGER::error));
+                    .flatMap(sectionData -> codec.parse((Dynamic<Tag>) sectionData).resultOrPartial(SectionStorage.LOGGER::error));
                 if (section.isPresent()) {
                     sectionsByY.put(sectionY, section.get());
                 }

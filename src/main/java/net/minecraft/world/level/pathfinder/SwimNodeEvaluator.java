@@ -1,8 +1,8 @@
 package net.minecraft.world.level.pathfinder;
 
 import com.google.common.collect.Maps;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -16,7 +16,8 @@ import org.jspecify.annotations.Nullable;
 
 public class SwimNodeEvaluator extends NodeEvaluator {
     private final boolean allowBreaching;
-    private final Long2ObjectMap<PathType> pathTypesByPosCache = new Long2ObjectOpenHashMap<>();
+    // ===== 修改：使用 BlockPos 作为键 =====
+    private final Object2ObjectMap<BlockPos, PathType> pathTypesByPosCache = new Object2ObjectOpenHashMap<>();
 
     public SwimNodeEvaluator(final boolean allowBreaching) {
         this.allowBreaching = allowBreaching;
@@ -100,8 +101,9 @@ public class SwimNodeEvaluator extends NodeEvaluator {
         return best;
     }
 
+    // ===== 修改：使用 BlockPos 作为键 =====
     protected PathType getCachedBlockType(final int x, final int y, final int z) {
-        return this.pathTypesByPosCache.computeIfAbsent(BlockPos.asLong(x, y, z), k -> this.getPathType(this.currentContext, x, y, z));
+        return this.pathTypesByPosCache.computeIfAbsent(new BlockPos(x, y, z), k -> this.getPathType(this.currentContext, x, y, z));
     }
 
     @Override

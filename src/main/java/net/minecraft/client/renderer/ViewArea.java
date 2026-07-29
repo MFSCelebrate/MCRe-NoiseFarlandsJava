@@ -32,8 +32,10 @@ public class ViewArea {
             throw new IllegalStateException("createSections called from wrong thread: " + Thread.currentThread().getName());
         }
 
+        // ===== 修改点：ValueCreator 现在接收 SectionPos 而不是 long =====
         this.sections = new RotatingSectionStorage<>(
-            renderDistance, minSectionY, maxSectionY, (index, sectionNode) -> sectionRenderDispatcher.new RenderSection(index, sectionNode)
+            renderDistance, minSectionY, maxSectionY,
+            (index, sectionPos) -> sectionRenderDispatcher.new RenderSection(index, sectionPos)
         );
     }
 
@@ -76,7 +78,6 @@ public class ViewArea {
         if (result) {
             this.sectionOcclusionGraph.invalidate();
         }
-
         return result;
     }
 
@@ -88,7 +89,8 @@ public class ViewArea {
         return this.sections.getValueAt(pos);
     }
 
-    protected SectionRenderDispatcher.@Nullable RenderSection getRenderSection(final long sectionNode) {
-        return this.sections.getValue(sectionNode);
+    // ===== 修改点：参数改为 SectionPos =====
+    protected SectionRenderDispatcher.@Nullable RenderSection getRenderSection(final SectionPos sectionPos) {
+        return this.sections.getValue(sectionPos);
     }
 }

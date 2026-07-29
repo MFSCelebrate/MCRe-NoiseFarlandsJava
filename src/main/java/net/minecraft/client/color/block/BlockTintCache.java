@@ -1,7 +1,7 @@
 package net.minecraft.client.color.block;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.ToIntFunction;
@@ -17,7 +17,8 @@ import org.jspecify.annotations.Nullable;
 public class BlockTintCache {
     private static final int MAX_CACHE_ENTRIES = 256;
     private final ThreadLocal<BlockTintCache.LatestCacheInfo> latestChunkOnThread = ThreadLocal.withInitial(BlockTintCache.LatestCacheInfo::new);
-    private final Long2ObjectLinkedOpenHashMap<BlockTintCache.CacheData> cache = new Long2ObjectLinkedOpenHashMap<>(256, 0.25F);
+    // ===== 修改：键类型 long -> ChunkPos =====
+    private final Object2ObjectLinkedOpenHashMap<ChunkPos, BlockTintCache.CacheData> cache = new Object2ObjectLinkedOpenHashMap<>(256, 0.25F);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ToIntFunction<BlockPos> source;
 
@@ -55,7 +56,8 @@ public class BlockTintCache {
 
             for (int offsetX = -1; offsetX <= 1; offsetX++) {
                 for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-                    long key = ChunkPos.pack(chunkX + offsetX, chunkZ + offsetZ);
+                    // ===== 使用 new ChunkPos 替代 ChunkPos.pack =====
+                    ChunkPos key = new ChunkPos(chunkX + offsetX, chunkZ + offsetZ);
                     BlockTintCache.CacheData removed = this.cache.remove(key);
                     if (removed != null) {
                         removed.invalidate();
@@ -78,7 +80,8 @@ public class BlockTintCache {
     }
 
     private BlockTintCache.CacheData findOrCreateChunkCache(final int x, final int z) {
-        long key = ChunkPos.pack(x, z);
+        // ===== 使用 new ChunkPos 替代 pack =====
+        ChunkPos key = new ChunkPos(x, z);
         this.lock.readLock().lock();
 
         try {

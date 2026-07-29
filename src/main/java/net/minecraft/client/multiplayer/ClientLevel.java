@@ -8,8 +8,8 @@ import com.google.common.collect.Sets;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import java.util.Arrays;
@@ -175,7 +175,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     private final WorldBorder worldBorder = new WorldBorder();
     private final EnvironmentAttributeSystem environmentAttributes;
     private final Int2ObjectMap<BlockDestructionProgress> destroyingBlocks = new Int2ObjectOpenHashMap<>();
-    private final Long2ObjectMap<SortedSet<BlockDestructionProgress>> destructionProgress = new Long2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<SectionPos, SortedSet<BlockDestructionProgress>> destructionProgress = new Object2ObjectOpenHashMap<>();
     private final int seaLevel;
     private static final Set<Item> MARKER_PARTICLE_ITEMS = Set.of(Items.BARRIER, Items.LIGHT);
 
@@ -424,17 +424,17 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     private void removeProgress(final BlockDestructionProgress block) {
-        long pos = block.getPos().asLong();
-        Set<BlockDestructionProgress> progresses = this.destructionProgress.get(pos);
-        progresses.remove(block);
-        if (progresses.isEmpty()) {
-            this.destructionProgress.remove(pos);
-        }
+    SectionPos pos = SectionPos.of(block.getPos());
+    SortedSet<BlockDestructionProgress> progresses = this.destructionProgress.get(pos);
+    progresses.remove(block);
+    if (progresses.isEmpty()) {
+        this.destructionProgress.remove(pos);
     }
+}
 
-    public Long2ObjectMap<SortedSet<BlockDestructionProgress>> destructionProgress() {
-        return this.destructionProgress;
-    }
+    public Object2ObjectMap<SectionPos, SortedSet<BlockDestructionProgress>> destructionProgress() {
+    return this.destructionProgress;
+}
 
     private void tickTime() {
         long gameTime = this.clientLevelData.getGameTime() + 1L;
@@ -864,7 +864,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
             entry.setProgress(progress);
             entry.updateTick(this.getGameTime());
-            this.destructionProgress.computeIfAbsent(entry.getPos().asLong(), k -> Sets.newTreeSet()).add(entry);
+            this.destructionProgress.computeIfAbsent(SectionPos.of(entry.getPos()), k -> Sets.newTreeSet()).add(entry);
         } else {
             BlockDestructionProgress removed = this.destroyingBlocks.remove(id);
             if (removed != null) {

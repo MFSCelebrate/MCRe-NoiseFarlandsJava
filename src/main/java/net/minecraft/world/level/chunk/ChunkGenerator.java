@@ -617,12 +617,14 @@ public abstract class ChunkGenerator {
 
         for (int sourceX = targetX - 8; sourceX <= targetX + 8; sourceX++) {
             for (int sourceZ = targetZ - 8; sourceZ <= targetZ + 8; sourceZ++) {
-                long sourceChunkKey = ChunkPos.pack(sourceX, sourceZ);
+                // ===== 修改：使用 ChunkPos 对象替代 pack =====
+                ChunkPos sourceChunkPos = new ChunkPos(sourceX, sourceZ);
 
                 for (StructureStart start : level.getChunk(sourceX, sourceZ).getAllStarts().values()) {
                     try {
                         if (start.isValid() && start.getBoundingBox().intersects(targetBlockX, targetBlockZ, targetBlockX + 15, targetBlockZ + 15)) {
-                            structureManager.addReferenceForStructure(pos, start.getStructure(), sourceChunkKey, centerChunk);
+                            // ===== 修改：传对象而非 long =====
+                            structureManager.addReferenceForStructure(pos, start.getStructure(), sourceChunkPos, centerChunk);
                         }
                     } catch (Exception e) {
                         CrashReport report = CrashReport.forThrowable(e, "Generating structure reference");

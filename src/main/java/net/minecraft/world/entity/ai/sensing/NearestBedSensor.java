@@ -2,8 +2,8 @@ package net.minecraft.world.entity.ai.sensing;
 
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
-import it.unimi.dsi.fastutil.longs.Long2LongMap;
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -23,7 +23,8 @@ public class NearestBedSensor extends Sensor<Mob> {
     private static final int CACHE_TIMEOUT = 40;
     private static final int BATCH_SIZE = 5;
     private static final int RATE = 20;
-    private final Long2LongMap batchCache = new Long2LongOpenHashMap();
+    // ===== 修改：使用 BlockPos 作为键 =====
+    private final Object2LongMap<BlockPos> batchCache = new Object2LongOpenHashMap<>();
     private int triedCount;
     private long lastUpdate;
 
@@ -42,16 +43,14 @@ public class NearestBedSensor extends Sensor<Mob> {
             this.lastUpdate = level.getGameTime() + level.getRandom().nextInt(20);
             PoiManager poiManager = level.getPoiManager();
             Predicate<BlockPos> cacheTest = pos -> {
-                long key = pos.asLong();
-                if (this.batchCache.containsKey(key)) {
+                // ===== 直接使用 BlockPos 作为键 =====
+                if (this.batchCache.containsKey(pos)) {
                     return false;
                 }
-
                 if (++this.triedCount >= 5) {
                     return false;
                 }
-
-                this.batchCache.put(key, this.lastUpdate + 40L);
+                this.batchCache.put(pos, this.lastUpdate + 40L);
                 return true;
             };
             Set<Pair<Holder<PoiType>, BlockPos>> pois = poiManager.findAllWithType(
@@ -66,7 +65,8 @@ public class NearestBedSensor extends Sensor<Mob> {
                     body.getBrain().setMemory(MemoryModuleType.NEAREST_BED, targetPos);
                 }
             } else if (this.triedCount < 5) {
-                this.batchCache.long2LongEntrySet().removeIf(entry -> entry.getLongValue() < this.lastUpdate);
+                // ===== 修改：使用对象键迭代 =====
+                this.batchCache.object2LongEntrySet().removeIf(entry -> entry.getLongValue() < this.lastUpdate);
             }
         }
     }

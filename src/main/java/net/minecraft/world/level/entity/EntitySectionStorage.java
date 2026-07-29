@@ -1,17 +1,18 @@
 package net.minecraft.world.level.entity;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectFunction;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongAVLTreeSet;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.longs.LongSortedSet;
+import it.unimi.dsi.fastutil.objects.Object2ObjectFunction;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectAVLTreeSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
+import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Objects;
+import java.util.Set;
 import java.util.Spliterators;
-import java.util.PrimitiveIterator.OfLong;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import net.minecraft.core.SectionPos;
@@ -25,13 +26,19 @@ public class EntitySectionStorage<T extends EntityAccess> {
     public static final int CHONKY_ENTITY_SEARCH_GRACE = 2;
     public static final int MAX_NON_CHONKY_ENTITY_SIZE = 4;
     private final Class<T> entityClass;
-    private final Long2ObjectFunction<Visibility> intialSectionVisibility;
-    private final Long2ObjectMap<EntitySection<T>> sections = new Long2ObjectOpenHashMap<>();
-    private final LongSortedSet sectionIds = new LongAVLTreeSet();
+    // ===== 修改：使用 SectionPos 作为键 =====
+    private final Object2ObjectFunction<ChunkPos, Visibility> initialSectionVisibility;
+    private final Object2ObjectMap<SectionPos, EntitySection<T>> sections = new Object2ObjectOpenHashMap<>();
+    // ===== 使用 SectionPos 的排序集合，按 x -> y -> z 顺序 =====
+    private final ObjectSortedSet<SectionPos> sectionIds = new ObjectAVLTreeSet<>(
+        Comparator.comparingLong((SectionPos a) -> a.getLongX())
+            .thenComparingLong(a -> a.getLongY())
+            .thenComparingLong(a -> a.getLongZ())
+    );
 
-    public EntitySectionStorage(final Class<T> entityClass, final Long2ObjectFunction<Visibility> intialSectionVisibility) {
+    public EntitySectionStorage(final Class<T> entityClass, final Object2ObjectFunction<ChunkPos, Visibility> initialSectionVisibility) {
         this.entityClass = entityClass;
-        this.intialSectionVisibility = intialSectionVisibility;
+        this.initialSectionVisibility = initialSectionVisibility;
     }
 
     public void forEachAccessibleNonEmptySection(final AABB bb, final AbortableIterationConsumer<EntitySection<T>> output) {
@@ -42,72 +49,74 @@ public class EntitySectionStorage<T extends EntityAccess> {
         int yMax = SectionPos.posToSectionCoord(bb.maxY + 0.0);
         int zMax = SectionPos.posToSectionCoord(bb.maxZ + 2.0);
 
-        for (int x = xMin; x <= xMax; x++) {
-            long lowestAbsoluteSectionKey = SectionPos.asLong(x, 0, 0);
-            long highestAbsoluteSectionKey = SectionPos.asLong(x, -1, -1);
-            LongIterator it = this.sectionIds.subSet(lowestAbsoluteSectionKey, highestAbsoluteSectionKey + 1L).iterator();
-
-            while (it.hasNext()) {
-                long sectionKey = it.nextLong();
-                int y = SectionPos.y(sectionKey);
-                int z = SectionPos.z(sectionKey);
-                if (y >= yMin && y <= yMax && z >= zMin && z <= zMax) {
-                    EntitySection<T> entitySection = this.sections.get(sectionKey);
-                    if (entitySection != null
-                        && !entitySection.isEmpty()
-                        && entitySection.getStatus().isAccessible()
-                        && output.accept(entitySection).shouldAbort()) {
-                        return;
-                    }
+        // ===== 遍历 sectionIds，使用 SectionPos 比较 =====
+        for (SectionPos sectionPos : this.sectionIds) {
+            int x = sectionPos.getX();
+            int y = sectionPos.getY();
+            int z = sectionPos.getZ();
+            if (x >= xMin && x <= xMax && y >= yMin && y <= yMax && z >= zMin && z <= zMax) {
+                EntitySection<T> entitySection = this.sections.get(sectionPos);
+                if (entitySection != null
+                    && !entitySection.isEmpty()
+                    && entitySection.getStatus().isAccessible()
+                    && output.accept(entitySection).shouldAbort()) {
+                    return;
                 }
             }
         }
     }
 
-    public LongStream getExistingSectionPositionsInChunk(final long chunkKey) {
-        int x = ChunkPos.getX(chunkKey);
-        int z = ChunkPos.getZ(chunkKey);
-        LongSortedSet chunkSections = this.getChunkSections(x, z);
+    // ===== 返回 Stream<SectionPos> =====
+    public Stream<SectionPos> getExistingSectionPositionsInChunk(final ChunkPos chunkPos) {
+        ObjectSortedSet<SectionPos> chunkSections = this.getChunkSections(chunkPos);
         if (chunkSections.isEmpty()) {
-            return LongStream.empty();
+            return Stream.empty();
         }
-
-        OfLong iterator = chunkSections.iterator();
-        return StreamSupport.longStream(Spliterators.spliteratorUnknownSize(iterator, 1301), false);
+        return chunkSections.stream();
     }
 
-    private LongSortedSet getChunkSections(final int x, final int z) {
-        long lowestAbsoluteSectionKey = SectionPos.asLong(x, 0, z);
-        long highestAbsoluteSectionKey = SectionPos.asLong(x, -1, z);
-        return this.sectionIds.subSet(lowestAbsoluteSectionKey, highestAbsoluteSectionKey + 1L);
+    // ===== 返回 ObjectSortedSet<SectionPos> =====
+    private ObjectSortedSet<SectionPos> getChunkSections(final ChunkPos chunkPos) {
+        int x = chunkPos.x;
+        int z = chunkPos.z;
+        // 构造边界 SectionPos
+        SectionPos lowerBound = SectionPos.of(x, Integer.MIN_VALUE, z);
+        SectionPos upperBound = SectionPos.of(x, Integer.MAX_VALUE, z);
+        return this.sectionIds.subSet(lowerBound, upperBound);
     }
 
-    public Stream<EntitySection<T>> getExistingSectionsInChunk(final long chunkKey) {
-        return this.getExistingSectionPositionsInChunk(chunkKey).mapToObj(this.sections::get).filter(Objects::nonNull);
+    // ===== 返回 Stream<EntitySection<T>> =====
+    public Stream<EntitySection<T>> getExistingSectionsInChunk(final ChunkPos chunkPos) {
+        return this.getExistingSectionPositionsInChunk(chunkPos).map(this.sections::get).filter(Objects::nonNull);
     }
 
-    private static long getChunkKeyFromSectionKey(final long sectionPos) {
-        return ChunkPos.pack(SectionPos.x(sectionPos), SectionPos.z(sectionPos));
+    // ===== 从 SectionPos 获取 ChunkPos =====
+    private static ChunkPos getChunkPosFromSectionPos(final SectionPos sectionPos) {
+        return new ChunkPos(sectionPos.getX(), sectionPos.getZ());
     }
 
-    public EntitySection<T> getOrCreateSection(final long key) {
+    // ===== 参数改为 SectionPos =====
+    public EntitySection<T> getOrCreateSection(final SectionPos key) {
         return this.sections.computeIfAbsent(key, this::createSection);
     }
 
-    public @Nullable EntitySection<T> getSection(final long key) {
+    public @Nullable EntitySection<T> getSection(final SectionPos key) {
         return this.sections.get(key);
     }
 
-    private EntitySection<T> createSection(final long sectionPos) {
-        long chunkPos = getChunkKeyFromSectionKey(sectionPos);
-        Visibility chunkStatus = this.intialSectionVisibility.get(chunkPos);
+    private EntitySection<T> createSection(final SectionPos sectionPos) {
+        ChunkPos chunkPos = getChunkPosFromSectionPos(sectionPos);
+        Visibility chunkStatus = this.initialSectionVisibility.get(chunkPos);
         this.sectionIds.add(sectionPos);
         return new EntitySection<>(this.entityClass, chunkStatus);
     }
 
-    public LongSet getAllChunksWithExistingSections() {
-        LongSet chunks = new LongOpenHashSet();
-        this.sections.keySet().forEach((long sectionKey) -> chunks.add(getChunkKeyFromSectionKey(sectionKey)));
+    // ===== 返回 Set<ChunkPos> =====
+    public Set<ChunkPos> getAllChunksWithExistingSections() {
+        Set<ChunkPos> chunks = new ObjectOpenHashSet<>();
+        for (SectionPos sectionPos : this.sections.keySet()) {
+            chunks.add(getChunkPosFromSectionPos(sectionPos));
+        }
         return chunks;
     }
 
@@ -119,7 +128,8 @@ public class EntitySectionStorage<T extends EntityAccess> {
         this.forEachAccessibleNonEmptySection(bb, section -> section.getEntities(type, bb, consumer));
     }
 
-    public void remove(final long sectionKey) {
+    // ===== 参数改为 SectionPos =====
+    public void remove(final SectionPos sectionKey) {
         this.sections.remove(sectionKey);
         this.sectionIds.remove(sectionKey);
     }

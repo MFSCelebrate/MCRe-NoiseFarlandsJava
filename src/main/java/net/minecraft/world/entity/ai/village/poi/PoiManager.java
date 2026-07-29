@@ -4,12 +4,12 @@ import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.BooleanSupplier;
@@ -44,7 +44,8 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
     public static final int MAX_VILLAGE_DISTANCE = 6;
     public static final int VILLAGE_SECTION_SIZE = 1;
     private final PoiManager.DistanceTracker distanceTracker;
-    private final LongSet loadedChunks = new LongOpenHashSet();
+    // ===== 修改：使用 Set<ChunkPos> 替代 LongSet =====
+    private final Set<ChunkPos> loadedChunks = new ObjectOpenHashSet<>();
 
     public PoiManager(
         final RegionStorageInfo info,
@@ -68,12 +69,13 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
         this.distanceTracker = new PoiManager.DistanceTracker();
     }
 
+    // ===== 所有方法参数改为 SectionPos =====
     public @Nullable PoiRecord add(final BlockPos pos, final Holder<PoiType> type) {
-        return this.getOrCreate(SectionPos.asLong(pos)).add(pos, type);
+        return this.getOrCreate(SectionPos.of(pos)).add(pos, type);
     }
 
     public void remove(final BlockPos pos) {
-        this.getOrLoad(SectionPos.asLong(pos)).ifPresent(poiSection -> poiSection.remove(pos));
+        this.getOrLoad(SectionPos.of(pos)).ifPresent(poiSection -> poiSection.remove(pos));
     }
 
     public long getCountInRange(final Predicate<Holder<PoiType>> predicate, final BlockPos center, final int radius, final PoiManager.Occupancy occupancy) {
@@ -89,8 +91,8 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
     ) {
         int chunkRadius = Math.floorDiv(radius, 16) + 1;
         return ChunkPos.rangeClosed(ChunkPos.containing(center), chunkRadius).flatMap(pos -> this.getInChunk(predicate, pos, occupancy)).filter(record -> {
-            BlockPos pos = record.getPos();
-            return Math.abs(pos.getX() - center.getX()) <= radius && Math.abs(pos.getZ() - center.getZ()) <= radius;
+            BlockPos pos2 = record.getPos();
+            return Math.abs(pos2.getX() - center.getX()) <= radius && Math.abs(pos2.getZ() - center.getZ()) <= radius;
         });
     }
 
@@ -105,7 +107,8 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
     public Stream<PoiRecord> getInChunk(final Predicate<Holder<PoiType>> predicate, final ChunkPos chunkPos, final PoiManager.Occupancy occupancy) {
         return IntStream.rangeClosed(this.levelHeightAccessor.getMinSectionY(), this.levelHeightAccessor.getMaxSectionY())
             .boxed()
-            .map(sectionY -> this.getOrLoad(SectionPos.of(chunkPos, sectionY).asLong()))
+            // ===== 使用 SectionPos.of(chunkPos, sectionY) =====
+            .map(sectionY -> this.getOrLoad(SectionPos.of(chunkPos, sectionY)))
             .filter(Optional::isPresent)
             .flatMap(poiSection -> poiSection.get().getRecords(predicate, occupancy));
     }
@@ -202,22 +205,22 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
     }
 
     public boolean release(final BlockPos pos) {
-        return this.getOrLoad(SectionPos.asLong(pos))
+        return this.getOrLoad(SectionPos.of(pos))
             .map(section -> section.release(pos))
             .orElseThrow(() -> Util.pauseInIde(new IllegalStateException("POI never registered at " + pos)));
     }
 
     public boolean exists(final BlockPos pos, final Predicate<Holder<PoiType>> predicate) {
-        return this.getOrLoad(SectionPos.asLong(pos)).map(s -> s.exists(pos, predicate)).orElse(false);
+        return this.getOrLoad(SectionPos.of(pos)).map(s -> s.exists(pos, predicate)).orElse(false);
     }
 
     public Optional<Holder<PoiType>> getType(final BlockPos pos) {
-        return this.getOrLoad(SectionPos.asLong(pos)).flatMap(section -> section.getType(pos));
+        return this.getOrLoad(SectionPos.of(pos)).flatMap(section -> section.getType(pos));
     }
 
     @VisibleForDebug
     public @Nullable DebugPoiInfo getDebugPoiInfo(final BlockPos pos) {
-        return this.getOrLoad(SectionPos.asLong(pos)).flatMap(section -> section.getDebugPoiInfo(pos)).orElse(null);
+        return this.getOrLoad(SectionPos.of(pos)).flatMap(section -> section.getDebugPoiInfo(pos)).orElse(null);
     }
 
     public int sectionsToVillage(final SectionPos sectionPos) {
@@ -225,11 +228,12 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
         return this.distanceTracker.getLevel(sectionPos.asLong());
     }
 
-    private boolean isVillageCenter(final long sectionPos) {
+    // ===== isVillageCenter 内部转换 long -> SectionPos =====
+    private boolean isVillageCenter(final long sectionPosLong) {
+        SectionPos sectionPos = SectionPos.of(sectionPosLong);
         Optional<PoiSection> section = this.get(sectionPos);
-        return section == null
-            ? false
-            : section.<Boolean>map(s -> s.getRecords(e -> e.is(PoiTypeTags.VILLAGE), PoiManager.Occupancy.IS_OCCUPIED).findAny().isPresent()).orElse(false);
+        return section != null && section.map(s -> s.getRecords(e -> e.is(PoiTypeTags.VILLAGE), PoiManager.Occupancy.IS_OCCUPIED).findAny().isPresent())
+            .orElse(false);
     }
 
     @Override
@@ -239,24 +243,25 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
     }
 
     @Override
-    protected void setDirty(final long sectionPos) {
+    protected void setDirty(final SectionPos sectionPos) {
         super.setDirty(sectionPos);
-        this.distanceTracker.update(sectionPos, this.distanceTracker.getLevelFromSource(sectionPos), false);
+        // ===== 使用 SectionPos.asLong() 保持与 DistanceTracker 兼容 =====
+        this.distanceTracker.update(sectionPos.asLong(), this.distanceTracker.getLevelFromSource(sectionPos.asLong()), false);
     }
 
     @Override
-    protected void onSectionLoad(final long sectionPos) {
-        this.distanceTracker.update(sectionPos, this.distanceTracker.getLevelFromSource(sectionPos), false);
+    protected void onSectionLoad(final SectionPos sectionPos) {
+        this.distanceTracker.update(sectionPos.asLong(), this.distanceTracker.getLevelFromSource(sectionPos.asLong()), false);
     }
 
     public void checkConsistencyWithBlocks(final SectionPos sectionPos, final LevelChunkSection blockSection) {
-        Util.ifElse(this.getOrLoad(sectionPos.asLong()), section -> section.refresh(output -> {
+        Util.ifElse(this.getOrLoad(sectionPos), section -> section.refresh(output -> {
             if (mayHavePoi(blockSection)) {
                 this.updateFromSection(blockSection, sectionPos, output);
             }
         }), () -> {
             if (mayHavePoi(blockSection)) {
-                PoiSection newSection = this.getOrCreate(sectionPos.asLong());
+                PoiSection newSection = this.getOrCreate(sectionPos);
                 this.updateFromSection(blockSection, sectionPos, newSection::add);
             }
         });
@@ -273,7 +278,7 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
                     BlockState state = blockSection.getBlockState(
                         SectionPos.sectionRelative(blockPos.getX()), SectionPos.sectionRelative(blockPos.getY()), SectionPos.sectionRelative(blockPos.getZ())
                     );
-                    PoiTypes.forState(state).ifPresent(type -> output.accept(blockPos, (Holder<PoiType>)type));
+                    PoiTypes.forState(state).ifPresent(type -> output.accept(blockPos, (Holder<PoiType>) type));
                 }
             );
     }
@@ -282,19 +287,21 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
         SectionPos.aroundChunk(
                 ChunkPos.containing(center), Math.floorDiv(radius, 16), this.levelHeightAccessor.getMinSectionY(), this.levelHeightAccessor.getMaxSectionY()
             )
-            .map(pos -> Pair.of(pos, this.getOrLoad(pos.asLong())))
+            .map(pos -> Pair.of(pos, this.getOrLoad(pos)))
             .filter(poiSection -> !poiSection.getSecond().map(PoiSection::isValid).orElse(false))
             .map(p -> p.getFirst().chunk())
-            .filter(pos -> this.loadedChunks.add(pos.pack()))
-            .forEach(pos -> reader.getChunk(pos.x(), pos.z(), ChunkStatus.EMPTY));
+            // ===== 使用 ChunkPos 对象 =====
+            .filter(chunkPos -> this.loadedChunks.add(chunkPos))
+            .forEach(chunkPos -> reader.getChunk(chunkPos.x(), chunkPos.z(), ChunkStatus.EMPTY));
     }
 
+    // ===== 内部 DistanceTracker 保持不变（使用 long）以兼容父类 =====
     private final class DistanceTracker extends SectionTracker {
         private final Long2ByteMap levels = new Long2ByteOpenHashMap();
 
         DistanceTracker() {
             super(7, 16, 256);
-            this.levels.defaultReturnValue((byte)7);
+            this.levels.defaultReturnValue((byte) 7);
         }
 
         @Override
@@ -312,7 +319,7 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
             if (level > 6) {
                 this.levels.remove(node);
             } else {
-                this.levels.put(node, (byte)level);
+                this.levels.put(node, (byte) level);
             }
         }
 

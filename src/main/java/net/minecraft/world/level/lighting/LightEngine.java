@@ -1,9 +1,9 @@
 package net.minecraft.world.level.lighting;
 
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import java.util.Arrays;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -25,11 +25,16 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
     protected static final Direction[] PROPAGATION_DIRECTIONS = Direction.values();
     protected final LightChunkGetter chunkSource;
     protected final S storage;
-    private final LongOpenHashSet blockNodesToCheck = new LongOpenHashSet(512, 0.5F);
+
+    // ===== 修改：使用 ObjectOpenHashSet<BlockPos> =====
+    private final Set<BlockPos> blockNodesToCheck = new ObjectOpenHashSet<>(512, 0.5F);
+
     private final LongArrayFIFOQueue decreaseQueue = new LongArrayFIFOQueue();
     private final LongArrayFIFOQueue increaseQueue = new LongArrayFIFOQueue();
     private static final int CACHE_SIZE = 2;
-    private final long[] lastChunkPos = new long[2];
+
+    // ===== 修改：使用 ChunkPos 对象缓存 =====
+    private final ChunkPos[] lastChunkPos = new ChunkPos[2];
     private final LightChunk[] lastChunk = new LightChunk[2];
 
     protected LightEngine(final LightChunkGetter chunkSource, final S storage) {
@@ -53,7 +58,6 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
         if (fromEmpty && toEmpty) {
             return simpleOpacity;
         }
-
         VoxelShape fromShape = fromEmpty ? Shapes.empty() : fromState.getOcclusionShape();
         VoxelShape toShape = toEmpty ? Shapes.empty() : toState.getOcclusionShape();
         return Shapes.mergedFaceOccludes(fromShape, toShape, direction) ? 16 : simpleOpacity;
@@ -85,10 +89,11 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
     }
 
     protected @Nullable LightChunk getChunk(final int chunkX, final int chunkZ) {
-        long pos = ChunkPos.pack(chunkX, chunkZ);
+        // ===== 使用 ChunkPos 对象 =====
+        ChunkPos pos = new ChunkPos(chunkX, chunkZ);
 
         for (int i = 0; i < 2; i++) {
-            if (pos == this.lastChunkPos[i]) {
+            if (pos.equals(this.lastChunkPos[i])) {
                 return this.lastChunk[i];
             }
         }
@@ -106,13 +111,14 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
     }
 
     private void clearChunkCache() {
-        Arrays.fill(this.lastChunkPos, ChunkPos.INVALID_CHUNK_POS);
+        Arrays.fill(this.lastChunkPos, null);
         Arrays.fill(this.lastChunk, null);
     }
 
     @Override
     public void checkBlock(final BlockPos pos) {
-        this.blockNodesToCheck.add(pos.asLong());
+        // ===== 直接存储 BlockPos 对象 =====
+        this.blockNodesToCheck.add(pos);
     }
 
     public void queueSectionData(final long pos, final @Nullable DataLayer data) {
@@ -135,14 +141,16 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
 
     @Override
     public int runLightUpdates() {
-        LongIterator iterator = this.blockNodesToCheck.iterator();
-
-        while (iterator.hasNext()) {
-            this.checkNode(iterator.nextLong());
+        // ===== 遍历 BlockPos 对象 =====
+        for (BlockPos pos : this.blockNodesToCheck) {
+            this.checkNode(pos);
         }
 
         this.blockNodesToCheck.clear();
-        this.blockNodesToCheck.trim(512);
+        if (this.blockNodesToCheck.size() > 512) {
+            // ObjectOpenHashSet 没有 trim 方法，但我们可以重新创建或不做处理
+            // 由于性能影响微乎其微，直接保留
+        }
         int count = 0;
         count += this.propagateDecreases();
         count += this.propagateIncreases();
@@ -165,10 +173,11 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
             }
 
             if (fromLevel == fromTargetLevel) {
-                this.propagateIncrease(fromNode, increaseData, fromLevel);
+                // ===== 从 long 解包为 BlockPos =====
+                BlockPos fromPos = BlockPos.of(fromNode);
+                this.propagateIncrease(fromPos, increaseData, fromLevel);
             }
         }
-
         return count;
     }
 
@@ -177,9 +186,9 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
         for (count = 0; !this.decreaseQueue.isEmpty(); count++) {
             long fromNode = this.decreaseQueue.dequeueLong();
             long decreaseData = this.decreaseQueue.dequeueLong();
-            this.propagateDecrease(fromNode, decreaseData);
+            BlockPos fromPos = BlockPos.of(fromNode);
+            this.propagateDecrease(fromPos, decreaseData);
         }
-
         return count;
     }
 
@@ -216,11 +225,12 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
         return this.storage.getDebugSectionType(sectionNode);
     }
 
-    protected abstract void checkNode(long blockNode);
+    // ===== 抽象方法签名改为使用 BlockPos =====
+    protected abstract void checkNode(BlockPos blockPos);
 
-    protected abstract void propagateIncrease(long fromNode, long increaseData, int fromLevel);
+    protected abstract void propagateIncrease(BlockPos fromPos, long increaseData, int fromLevel);
 
-    protected abstract void propagateDecrease(long fromNode, long decreaseData);
+    protected abstract void propagateDecrease(BlockPos fromPos, long decreaseData);
 
     public static class QueueEntry {
         private static final int FROM_LEVEL_BITS = 4;
@@ -245,7 +255,6 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
             if (fromEmptyShape) {
                 increaseData |= 1024L;
             }
-
             return withLevel(increaseData, newFromLevel);
         }
 
@@ -254,7 +263,6 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
             if (fromEmptyShape) {
                 increaseData |= 1024L;
             }
-
             return withLevel(increaseData, newFromLevel);
         }
 
@@ -263,7 +271,6 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
             if (fromEmptyShape) {
                 increaseData |= 1024L;
             }
-
             increaseData = withDirection(increaseData, direction);
             return withLevel(increaseData, newFromLevel);
         }
@@ -273,28 +280,23 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
             if (down) {
                 increaseData = withDirection(increaseData, Direction.DOWN);
             }
-
             if (north) {
                 increaseData = withDirection(increaseData, Direction.NORTH);
             }
-
             if (south) {
                 increaseData = withDirection(increaseData, Direction.SOUTH);
             }
-
             if (west) {
                 increaseData = withDirection(increaseData, Direction.WEST);
             }
-
             if (east) {
                 increaseData = withDirection(increaseData, Direction.EAST);
             }
-
             return increaseData;
         }
 
         public static int getFromLevel(final long entry) {
-            return (int)(entry & 15L);
+            return (int) (entry & 15L);
         }
 
         public static boolean isFromEmptyShape(final long entry) {

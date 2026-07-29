@@ -3,7 +3,7 @@ package net.minecraft.world.level.levelgen.blending;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.ImmutableMap.Builder;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.SharedConstants;
@@ -34,7 +34,7 @@ import org.apache.commons.lang3.mutable.MutableObject;
 import org.jspecify.annotations.Nullable;
 
 public class Blender {
-    private static final Blender EMPTY = new Blender(new Long2ObjectOpenHashMap(), new Long2ObjectOpenHashMap()) {
+    private static final Blender EMPTY = new Blender(new Object2ObjectOpenHashMap<>(), new Object2ObjectOpenHashMap<>()) {
         @Override
         public Blender.BlendingOutput blendOffsetAndFactor(final int blockX, final int blockZ) {
             return new Blender.BlendingOutput(1.0, 0.0);
@@ -56,8 +56,9 @@ public class Blender {
     private static final int DENSITY_BLENDING_RANGE_CELLS = 2;
     private static final int DENSITY_BLENDING_RANGE_CHUNKS = QuartPos.toSection(5);
     private static final double OLD_CHUNK_XZ_RADIUS = 8.0;
-    private final Long2ObjectOpenHashMap<BlendingData> heightAndBiomeBlendingData;
-    private final Long2ObjectOpenHashMap<BlendingData> densityBlendingData;
+    // ===== 修改：键类型 long -> ChunkPos =====
+    private final Object2ObjectOpenHashMap<ChunkPos, BlendingData> heightAndBiomeBlendingData;
+    private final Object2ObjectOpenHashMap<ChunkPos, BlendingData> densityBlendingData;
 
     public static Blender empty() {
         return EMPTY;
@@ -70,23 +71,26 @@ public class Blender {
                 return EMPTY;
             }
 
-            Long2ObjectOpenHashMap<BlendingData> heightAndBiomeData = new Long2ObjectOpenHashMap<>();
-            Long2ObjectOpenHashMap<BlendingData> densityData = new Long2ObjectOpenHashMap<>();
+            // ===== 修改：使用 Object2ObjectOpenHashMap =====
+            Object2ObjectOpenHashMap<ChunkPos, BlendingData> heightAndBiomeData = new Object2ObjectOpenHashMap<>();
+            Object2ObjectOpenHashMap<ChunkPos, BlendingData> densityData = new Object2ObjectOpenHashMap<>();
             int maxDistSq = Mth.square(HEIGHT_BLENDING_RANGE_CHUNKS + 1);
 
             for (int dx = -HEIGHT_BLENDING_RANGE_CHUNKS; dx <= HEIGHT_BLENDING_RANGE_CHUNKS; dx++) {
                 for (int dz = -HEIGHT_BLENDING_RANGE_CHUNKS; dz <= HEIGHT_BLENDING_RANGE_CHUNKS; dz++) {
                     if (dx * dx + dz * dz <= maxDistSq) {
-                        int chunkX = centerPos.x() + dx;
-                        int chunkZ = centerPos.z() + dz;
+                        int chunkX = centerPos.x + dx;
+                        int chunkZ = centerPos.z + dz;
                         BlendingData blendingData = BlendingData.getOrUpdateBlendingData(region, chunkX, chunkZ);
                         if (blendingData != null) {
-                            heightAndBiomeData.put(ChunkPos.pack(chunkX, chunkZ), blendingData);
+                            // ===== 修改：使用 new ChunkPos 替代 pack =====
+                            ChunkPos key = new ChunkPos(chunkX, chunkZ);
+                            heightAndBiomeData.put(key, blendingData);
                             if (dx >= -DENSITY_BLENDING_RANGE_CHUNKS
                                 && dx <= DENSITY_BLENDING_RANGE_CHUNKS
                                 && dz >= -DENSITY_BLENDING_RANGE_CHUNKS
                                 && dz <= DENSITY_BLENDING_RANGE_CHUNKS) {
-                                densityData.put(ChunkPos.pack(chunkX, chunkZ), blendingData);
+                                densityData.put(key, blendingData);
                             }
                         }
                     }
@@ -99,7 +103,8 @@ public class Blender {
         }
     }
 
-    private Blender(final Long2ObjectOpenHashMap<BlendingData> heightAndBiomeBlendingData, final Long2ObjectOpenHashMap<BlendingData> densityBlendingData) {
+    private Blender(final Object2ObjectOpenHashMap<ChunkPos, BlendingData> heightAndBiomeBlendingData,
+                    final Object2ObjectOpenHashMap<ChunkPos, BlendingData> densityBlendingData) {
         this.heightAndBiomeBlendingData = heightAndBiomeBlendingData;
         this.densityBlendingData = densityBlendingData;
     }
@@ -119,10 +124,11 @@ public class Blender {
         MutableDouble totalWeight = new MutableDouble(0.0);
         MutableDouble weightedHeights = new MutableDouble(0.0);
         MutableDouble closestDistance = new MutableDouble(Double.POSITIVE_INFINITY);
+        // ===== 修改：forEach 键为 ChunkPos =====
         this.heightAndBiomeBlendingData
             .forEach(
                 (chunkPos, blendingData) -> blendingData.iterateHeights(
-                    QuartPos.fromSection(ChunkPos.getX(chunkPos)), QuartPos.fromSection(ChunkPos.getZ(chunkPos)), (testCellX, testCellZ, height) -> {
+                    QuartPos.fromSection((int)chunkPos.x), QuartPos.fromSection((int)chunkPos.z), (testCellX, testCellZ, height) -> {
                         double distance = Mth.length(cellX - testCellX, cellZ - testCellZ);
                         if (!(distance > HEIGHT_BLENDING_RANGE_CELLS)) {
                             if (distance < closestDistance.doubleValue()) {
@@ -165,11 +171,12 @@ public class Blender {
         MutableDouble totalWeight = new MutableDouble(0.0);
         MutableDouble weightedHeights = new MutableDouble(0.0);
         MutableDouble closestDistance = new MutableDouble(Double.POSITIVE_INFINITY);
+        // ===== 修改：forEach 键为 ChunkPos =====
         this.densityBlendingData
             .forEach(
                 (chunkPos, blendingData) -> blendingData.iterateDensities(
-                    QuartPos.fromSection(ChunkPos.getX(chunkPos)),
-                    QuartPos.fromSection(ChunkPos.getZ(chunkPos)),
+                    QuartPos.fromSection((int)chunkPos.x),
+                    QuartPos.fromSection((int)chunkPos.z),
                     cellY - 1,
                     cellY + 1,
                     (testCellX, testCellY, testCellZ, density) -> {
@@ -220,10 +227,12 @@ public class Blender {
         return value;
     }
 
+    // ===== 修改：使用 new ChunkPos 替代 pack =====
     private double getBlendingDataValue(
         final Blender.CellValueGetter cellValueGetter, final int chunkX, final int chunkZ, final int cellX, final int cellY, final int cellZ
     ) {
-        BlendingData blendingData = this.heightAndBiomeBlendingData.get(ChunkPos.pack(chunkX, chunkZ));
+        ChunkPos key = new ChunkPos(chunkX, chunkZ);
+        BlendingData blendingData = this.heightAndBiomeBlendingData.get(key);
         return blendingData != null
             ? cellValueGetter.get(blendingData, cellX - QuartPos.fromSection(chunkX), cellY, cellZ - QuartPos.fromSection(chunkZ))
             : Double.MAX_VALUE;
@@ -239,10 +248,11 @@ public class Blender {
     private Holder<Biome> blendBiome(final int quartX, final int quartY, final int quartZ) {
         MutableDouble closestDistance = new MutableDouble(Double.POSITIVE_INFINITY);
         MutableObject<Holder<Biome>> closestBiome = new MutableObject<>();
+        // ===== 修改：forEach 键为 ChunkPos =====
         this.heightAndBiomeBlendingData
             .forEach(
                 (chunkPos, blendingData) -> blendingData.iterateBiomes(
-                    QuartPos.fromSection(ChunkPos.getX(chunkPos)), quartY, QuartPos.fromSection(ChunkPos.getZ(chunkPos)), (testCellX, testCellZ, biome) -> {
+                    QuartPos.fromSection((int)chunkPos.x), quartY, QuartPos.fromSection((int)chunkPos.z), (testCellX, testCellZ, biome) -> {
                         double distance = Mth.length(quartX - testCellX, quartZ - testCellZ);
                         if (!(distance > HEIGHT_BLENDING_RANGE_CELLS)) {
                             if (distance < closestDistance.doubleValue()) {
@@ -284,7 +294,8 @@ public class Blender {
                 }
 
                 for (Direction direction : Direction.Plane.HORIZONTAL) {
-                    if (region.getChunk(chunkPos.x() + direction.getStepX(), chunkPos.z() + direction.getStepZ()).isOldNoiseGeneration() != oldNoiseGeneration) {
+                    // ===== 修改：使用字段访问 x/z =====
+                    if (region.getChunk(chunkPos.x + direction.getStepX(), chunkPos.z + direction.getStepZ()).isOldNoiseGeneration() != oldNoiseGeneration) {
                         int minX = direction == Direction.EAST ? 15 : 0;
                         int maxX = direction == Direction.WEST ? 0 : 15;
                         int minZ = direction == Direction.SOUTH ? 15 : 0;
@@ -323,8 +334,8 @@ public class Blender {
             Builder<Direction8, BlendingData> builder = ImmutableMap.builder();
 
             for (Direction8 direction8 : Direction8.values()) {
-                int testChunkX = chunkPos.x() + direction8.getStepX();
-                int testChunkZ = chunkPos.z() + direction8.getStepZ();
+                int testChunkX = chunkPos.x + direction8.getStepX();
+                int testChunkZ = chunkPos.z + direction8.getStepZ();
                 BlendingData blendingData = region.getChunk(testChunkX, testChunkZ).getBlendingData();
                 if (blendingData != null) {
                     builder.put(direction8, blendingData);

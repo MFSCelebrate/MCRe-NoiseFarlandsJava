@@ -44,11 +44,13 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         return chunk != null ? chunk.getSkyLightSources() : null;
     }
 
+    // ===== checkNode 参数改为 BlockPos =====
     @Override
-    protected void checkNode(final long blockNode) {
-        int x = BlockPos.getX(blockNode);
-        int y = BlockPos.getY(blockNode);
-        int z = BlockPos.getZ(blockNode);
+    protected void checkNode(final BlockPos pos) {
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
+        long blockNode = pos.asLong();
         long sectionNode = SectionPos.blockToSection(blockNode);
         int lowestSourceY = this.storage.lightOnInSection(sectionNode) ? this.getLowestSourceY(x, z, Integer.MAX_VALUE) : Integer.MAX_VALUE;
         if (lowestSourceY != Integer.MAX_VALUE) {
@@ -94,7 +96,6 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
                         if (!isSourceLevel(this.storage.getStoredLevel(blockNode))) {
                             return;
                         }
-
                         this.storage.setStoredLevel(blockNode, 0);
                         this.enqueueDecrease(blockNode, y == lowestSourceY - 1 ? REMOVE_TOP_SKY_SOURCE_ENTRY : REMOVE_SKY_SOURCE_ENTRY);
                     }
@@ -125,7 +126,6 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
                     if (isSourceLevel(this.storage.getStoredLevel(blockNode))) {
                         return;
                     }
-
                     this.storage.setStoredLevel(blockNode, 15);
                     if (y < neighborLowestSourceY || y == lowestSourceY) {
                         this.enqueueIncrease(blockNode, ADD_SKY_SOURCE_ENTRY);
@@ -135,28 +135,29 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         }
     }
 
+    // ===== propagateIncrease 参数改为 BlockPos =====
     @Override
-    protected void propagateIncrease(final long fromNode, final long increaseData, final int fromLevel) {
+    protected void propagateIncrease(final BlockPos fromPos, final long increaseData, final int fromLevel) {
+        long fromNode = fromPos.asLong();
         BlockState fromState = null;
-        int emptySectionsBelow = this.countEmptySectionsBelowIfAtBorder(fromNode);
+        int emptySectionsBelow = this.countEmptySectionsBelowIfAtBorder(fromPos);
 
         for (Direction propagationDirection : PROPAGATION_DIRECTIONS) {
             if (LightEngine.QueueEntry.shouldPropagateInDirection(increaseData, propagationDirection)) {
-                long toNode = BlockPos.offset(fromNode, propagationDirection);
+                BlockPos toPos = fromPos.relative(propagationDirection);
+                long toNode = toPos.asLong();
                 if (this.storage.storingLightForSection(SectionPos.blockToSection(toNode))) {
                     int toLevel = this.storage.getStoredLevel(toNode);
                     int maxPossibleNewToLevel = fromLevel - 1;
                     if (maxPossibleNewToLevel > toLevel) {
-                        this.mutablePos.set(toNode);
-                        BlockState toState = this.getState(this.mutablePos);
+                        BlockState toState = this.getState(toPos);
                         int newToLevel = fromLevel - this.getOpacity(toState);
                         if (newToLevel > toLevel) {
                             if (fromState == null) {
                                 fromState = LightEngine.QueueEntry.isFromEmptyShape(increaseData)
                                     ? Blocks.AIR.defaultBlockState()
-                                    : this.getState(this.mutablePos.set(fromNode));
+                                    : this.getState(fromPos);
                             }
-
                             if (!this.shapeOccludes(fromState, toState, propagationDirection)) {
                                 this.storage.setStoredLevel(toNode, newToLevel);
                                 if (newToLevel > 1) {
@@ -165,8 +166,7 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
                                         LightEngine.QueueEntry.increaseSkipOneDirection(newToLevel, isEmptyShape(toState), propagationDirection.getOpposite())
                                     );
                                 }
-
-                                this.propagateFromEmptySections(toNode, propagationDirection, newToLevel, true, emptySectionsBelow);
+                                this.propagateFromEmptySections(toPos, propagationDirection, newToLevel, true, emptySectionsBelow);
                             }
                         }
                     }
@@ -175,21 +175,24 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         }
     }
 
+    // ===== propagateDecrease 参数改为 BlockPos =====
     @Override
-    protected void propagateDecrease(final long fromNode, final long decreaseData) {
-        int emptySectionsBelow = this.countEmptySectionsBelowIfAtBorder(fromNode);
+    protected void propagateDecrease(final BlockPos fromPos, final long decreaseData) {
+        long fromNode = fromPos.asLong();
+        int emptySectionsBelow = this.countEmptySectionsBelowIfAtBorder(fromPos);
         int oldFromLevel = LightEngine.QueueEntry.getFromLevel(decreaseData);
 
         for (Direction propagationDirection : PROPAGATION_DIRECTIONS) {
             if (LightEngine.QueueEntry.shouldPropagateInDirection(decreaseData, propagationDirection)) {
-                long toNode = BlockPos.offset(fromNode, propagationDirection);
+                BlockPos toPos = fromPos.relative(propagationDirection);
+                long toNode = toPos.asLong();
                 if (this.storage.storingLightForSection(SectionPos.blockToSection(toNode))) {
                     int toLevel = this.storage.getStoredLevel(toNode);
                     if (toLevel != 0) {
                         if (toLevel <= oldFromLevel - 1) {
                             this.storage.setStoredLevel(toNode, 0);
                             this.enqueueDecrease(toNode, LightEngine.QueueEntry.decreaseSkipOneDirection(toLevel, propagationDirection.getOpposite()));
-                            this.propagateFromEmptySections(toNode, propagationDirection, toLevel, false, emptySectionsBelow);
+                            this.propagateFromEmptySections(toPos, propagationDirection, toLevel, false, emptySectionsBelow);
                         } else {
                             this.enqueueIncrease(toNode, LightEngine.QueueEntry.increaseOnlyOneDirection(toLevel, false, propagationDirection.getOpposite()));
                         }
@@ -199,15 +202,16 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         }
     }
 
-    private int countEmptySectionsBelowIfAtBorder(final long blockNode) {
-        int y = BlockPos.getY(blockNode);
+    // ===== countEmptySectionsBelowIfAtBorder 参数改为 BlockPos =====
+    private int countEmptySectionsBelowIfAtBorder(final BlockPos pos) {
+        int y = pos.getY();
         int localY = SectionPos.sectionRelative(y);
         if (localY != 0) {
             return 0;
         }
 
-        int x = BlockPos.getX(blockNode);
-        int z = BlockPos.getZ(blockNode);
+        int x = pos.getX();
+        int z = pos.getZ();
         int localX = SectionPos.sectionRelative(x);
         int localZ = SectionPos.sectionRelative(z);
         if (localX != 0 && localX != 15 && localZ != 0 && localZ != 15) {
@@ -229,14 +233,15 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         return emptySectionsBelow;
     }
 
+    // ===== propagateFromEmptySections 参数改为 BlockPos =====
     private void propagateFromEmptySections(
-        final long toNode, final Direction propagationDirection, final int toLevel, final boolean increase, final int emptySectionsBelow
+        final BlockPos toPos, final Direction propagationDirection, final int toLevel, final boolean increase, final int emptySectionsBelow
     ) {
         if (emptySectionsBelow != 0) {
-            int x = BlockPos.getX(toNode);
-            int z = BlockPos.getZ(toNode);
+            int x = toPos.getX();
+            int z = toPos.getZ();
             if (crossedSectionEdge(propagationDirection, SectionPos.sectionRelative(x), SectionPos.sectionRelative(z))) {
-                int y = BlockPos.getY(toNode);
+                int y = toPos.getY();
                 int sectionX = SectionPos.blockToSectionCoord(x);
                 int sectionZ = SectionPos.blockToSectionCoord(z);
                 int sectionY = SectionPos.blockToSectionCoord(y) - 1;
@@ -262,7 +267,6 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
                                 this.enqueueDecrease(blockNode, LightEngine.QueueEntry.decreaseSkipOneDirection(toLevel, propagationDirection.getOpposite()));
                             }
                         }
-
                         sectionY--;
                     }
                 }
@@ -280,6 +284,7 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         };
     }
 
+    // ===== setLightEnabled 使用 ChunkPos 对象 =====
     @Override
     public void setLightEnabled(final ChunkPos pos, final boolean enable) {
         super.setLightEnabled(pos, enable);
@@ -300,6 +305,7 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         }
     }
 
+    // ===== propagateLightSources 使用 ChunkPos 对象 =====
     @Override
     public void propagateLightSources(final ChunkPos pos) {
         long zeroNode = SectionPos.getZeroNode(pos.x(), pos.z());

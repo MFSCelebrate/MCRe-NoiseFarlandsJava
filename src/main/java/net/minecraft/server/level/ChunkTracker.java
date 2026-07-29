@@ -17,11 +17,11 @@ public abstract class ChunkTracker extends DynamicGraphMinFixedPoint {
     protected void checkNeighborsAfterUpdate(final long node, final int level, final boolean onlyDecrease) {
         if (!onlyDecrease || level < this.levelCount - 2) {
             ChunkPos pos = ChunkPos.unpack(node);
-            int x = pos.x();
-            int z = pos.z();
+            long x = pos.x();
+            long z = pos.z();
 
-            for (int offsetX = -1; offsetX <= 1; offsetX++) {
-                for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
+            for (long offsetX = -1; offsetX <= 1; offsetX++) {
+                for (long offsetZ = -1; offsetZ <= 1; offsetZ++) {
                     long neighbor = ChunkPos.pack(x + offsetX, z + offsetZ);
                     if (neighbor != node) {
                         this.checkNeighbor(node, neighbor, level, onlyDecrease);
@@ -35,11 +35,11 @@ public abstract class ChunkTracker extends DynamicGraphMinFixedPoint {
     protected int getComputedLevel(final long node, final long knownParent, final int knownLevelFromParent) {
         int computedLevel = knownLevelFromParent;
         ChunkPos pos = ChunkPos.unpack(node);
-        int x = pos.x();
-        int z = pos.z();
+        long x = pos.x();
+        long z = pos.z();
 
-        for (int offsetX = -1; offsetX <= 1; offsetX++) {
-            for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
+        for (long offsetX = -1; offsetX <= 1; offsetX++) {
+            for (long offsetZ = -1; offsetZ <= 1; offsetZ++) {
                 long neighbor = ChunkPos.pack(x + offsetX, z + offsetZ);
                 if (neighbor == node) {
                     neighbor = ChunkPos.INVALID_CHUNK_POS;

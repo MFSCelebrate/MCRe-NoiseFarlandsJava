@@ -30,7 +30,7 @@ public class BitStorageAlignFix extends DataFix {
         Type<?> levelType = chunkType.findFieldType("Level");
         OpticFinder<?> levelFinder = DSL.fieldFinder("Level", levelType);
         OpticFinder<?> sectionsFinder = levelFinder.type().findField("Sections");
-        Type<?> sectionType = ((ListType)sectionsFinder.type()).getElement();
+        Type<?> sectionType = ((ListType) sectionsFinder.type()).getElement();
         OpticFinder<?> sectionFinder = DSL.typeFinder(sectionType);
         Type<Pair<String, Dynamic<?>>> blockStateType = DSL.named(References.BLOCK_STATE.typeName(), DSL.remainderType());
         OpticFinder<List<Pair<String, Dynamic<?>>>> paletteFinder = DSL.fieldFinder("Palette", DSL.list(blockStateType));
@@ -46,7 +46,7 @@ public class BitStorageAlignFix extends DataFix {
         return level.update(
             DSL.remainderFinder(),
             tag -> tag.update(
-                "Heightmaps", heightmaps -> heightmaps.updateMapValues(e -> e.mapSecond(heightmap -> updateBitStorage(tag, (Dynamic<?>)heightmap, 256, 9)))
+                "Heightmaps", heightmaps -> heightmaps.updateMapValues(e -> e.mapSecond(heightmap -> updateBitStorage(tag, (Dynamic<?>) heightmap, 256, 9)))
             )
         );
     }

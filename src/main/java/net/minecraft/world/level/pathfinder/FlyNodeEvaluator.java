@@ -1,7 +1,7 @@
 package net.minecraft.world.level.pathfinder;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
@@ -13,7 +13,8 @@ import net.minecraft.world.phys.AABB;
 import org.jspecify.annotations.Nullable;
 
 public class FlyNodeEvaluator extends WalkNodeEvaluator {
-    private final Long2ObjectMap<PathType> pathTypeByPosCache = new Long2ObjectOpenHashMap<>();
+    // ===== 修改：使用 BlockPos 作为键 =====
+    private final Object2ObjectMap<BlockPos, PathType> pathTypeByPosCache = new Object2ObjectOpenHashMap<>();
     private static final float SMALL_MOB_SIZE = 1.0F;
     private static final float SMALL_MOB_INFLATED_START_NODE_BOUNDING_BOX = 1.1F;
     private static final int MAX_START_NODE_CANDIDATES = 10;
@@ -276,13 +277,13 @@ public class FlyNodeEvaluator extends WalkNodeEvaluator {
                 best.costMalus++;
             }
         }
-
         return best;
     }
 
+    // ===== 修改：使用 BlockPos 作为键 =====
     @Override
     protected PathType getCachedPathType(final int x, final int y, final int z) {
-        return this.pathTypeByPosCache.computeIfAbsent(BlockPos.asLong(x, y, z), key -> this.getPathTypeOfMob(this.currentContext, x, y, z, this.mob));
+        return this.pathTypeByPosCache.computeIfAbsent(new BlockPos(x, y, z), key -> this.getPathTypeOfMob(this.currentContext, x, y, z, this.mob));
     }
 
     @Override
