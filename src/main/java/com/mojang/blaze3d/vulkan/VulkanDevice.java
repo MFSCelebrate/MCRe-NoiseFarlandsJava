@@ -23,6 +23,16 @@ import com.mojang.blaze3d.vulkan.checkpoints.CheckpointExtension;
 import com.mojang.blaze3d.vulkan.glsl.GlslCompiler;
 import com.mojang.blaze3d.vulkan.glsl.IntermediaryShaderModule;
 import com.mojang.blaze3d.vulkan.glsl.ShaderCompileException;
+import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.io.IOException;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.vulkan.VkPipelineCacheCreateInfo;
+import org.lwjgl.vulkan.VkDescriptorSet; // 如果使用的话
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import java.nio.ByteBuffer;
@@ -67,8 +77,9 @@ public class VulkanDevice implements GpuDeviceBackend {
     private final VulkanCommandEncoder commandEncoder;
     private final CheckpointExtension checkpointExtension;
     // 在 VulkanDevice 类中添加
-    private final long pipelineCache;
-    private final Path pipelineCachePath;
+    private final long pipelineCache; // VkPipelineCache 句柄
+    private final Path pipelineCachePath; // 缓存文件路径
+
     private static final String CACHE_FILE_NAME = "vulkan_pipeline_cache.bin";
 
     public VulkanDevice(
@@ -347,15 +358,15 @@ public class VulkanDevice implements GpuDeviceBackend {
         return this.instance.debug().enabled();
     }
 
+    protected VulkanRenderPipeline getOrCompilePipeline(final RenderPipeline pipeline) {
+        return this.pipelineCacheMap.computeIfAbsent(pipeline, ignored -> this.compilePipeline(pipeline, this.defaultShaderSource));
+    }
+
     @Override
     public CompiledRenderPipeline precompilePipeline(final RenderPipeline pipeline, final @Nullable
             ShaderSource customShaderSource) {
         ShaderSource shaderSource = customShaderSource == null ? this.defaultShaderSource : customShaderSource;
-        return this.pipelineCache.computeIfAbsent(pipeline, ignored -> this.compilePipeline(pipeline, shaderSource));
-    }
-
-    protected VulkanRenderPipeline getOrCompilePipeline(final RenderPipeline pipeline) {
-        return this.pipelineCache.computeIfAbsent(pipeline, ignored -> this.compilePipeline(pipeline, this.defaultShaderSource));
+        return this.pipelineCacheMap.computeIfAbsent(pipeline, ignored -> this.compilePipeline(pipeline, shaderSource));
     }
 
     protected IntermediaryShaderModule getOrCompileShader(
@@ -404,15 +415,16 @@ public class VulkanDevice implements GpuDeviceBackend {
             return VulkanRenderPipeline.compile(this, modules.layout(), pipeline, modules.vertex(), modules.fragment(), this.pipelineCache);
         } catch (ShaderCompileException e) {
             LOGGER.error("Couldn't compile pipeline {}: {}", pipeline.getLocation(), e.getMessage());
-            return new VulkanRenderPipeline(pipeline, this, 0L, 0L, VulkanBindGroupLayout.INVALID_LAYOUT, 0L, 0L, 0L);
+
+            return new VulkanRenderPipeline(pipeline, this, 0L, 0L, VulkanBindGroupLayout.INVALID_LAYOUT, 0L, 0L, 0L, 0L);
         }
     }
 
     @Override
     public void clearPipelineCache() {
         this.graphicsQueue.waitIdle();
-        this.pipelineCache.values().forEach(VulkanRenderPipeline::destroy);
-        this.pipelineCache.clear();
+        this.pipelineCacheMap.values().forEach(VulkanRenderPipeline::destroy);
+        this.pipelineCacheMap.clear();
         this.shaderCache.values().forEach(IntermediaryShaderModule::close);
         this.shaderCache.clear();
     }

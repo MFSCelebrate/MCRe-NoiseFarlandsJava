@@ -52,7 +52,9 @@ public class VulkanDevice implements GpuDeviceBackend {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final ShaderSource defaultShaderSource;
     private final Map<RenderPipeline, VulkanRenderPipeline> pipelineCache = new IdentityHashMap<>();
-    private final Map<VulkanDevice.ShaderCompilationKey, IntermediaryShaderModule> shaderCache = new HashMap<>();
+    private final Map<
+            VulkanDevice.ShaderCompilationKey,
+            IntermediaryShaderModule> shaderCache = new HashMap<>();
     private final VulkanInstance instance;
     private final VkDevice vkDevice;
     private final long vma;
@@ -64,16 +66,19 @@ public class VulkanDevice implements GpuDeviceBackend {
     private final boolean isIntegratedIntelMoltenVK;
     private final VulkanCommandEncoder commandEncoder;
     private final CheckpointExtension checkpointExtension;
+    // 在 VulkanDevice 类中添加
+    private final long pipelineCache;
+    private final Path pipelineCachePath;
+    private static final String CACHE_FILE_NAME = "vulkan_pipeline_cache.bin";
 
     public VulkanDevice(
-        final ShaderSource defaultShaderSource,
-        final VulkanInstance instance,
-        final VulkanPhysicalDevice physicalDevice,
-        final Set<String> enabledDeviceExtensions,
-        final VkDevice vkDevice,
-        final long vma,
-        final CheckpointExtension checkpointExtension
-    ) {
+            final ShaderSource defaultShaderSource,
+            final VulkanInstance instance,
+            final VulkanPhysicalDevice physicalDevice,
+            final Set<String> enabledDeviceExtensions,
+            final VkDevice vkDevice,
+            final long vma,
+            final CheckpointExtension checkpointExtension) {
         this.defaultShaderSource = defaultShaderSource;
         this.instance = instance;
         this.vkDevice = vkDevice;
@@ -92,26 +97,26 @@ public class VulkanDevice implements GpuDeviceBackend {
         VkPhysicalDeviceLimits limits = physicalDevice.vkPhysicalDeviceProperties().limits();
         VkPhysicalDeviceVulkan11Properties vk11Properties = physicalDevice.vkPhysicalDeviceVulkan11Properties();
         this.deviceInfo = new DeviceInfo(
-            physicalDevice.deviceName(),
-            physicalDevice.vendorName(),
-            physicalDevice.driverInfo(),
-            true,
-            "Vulkan",
-            limits.timestampPeriod(),
-            new DeviceLimits(
-                (int)limits.maxSamplerAnisotropy(),
-                (int)limits.minUniformBufferOffsetAlignment(),
-                limits.maxImageDimension2D(),
-                vk11Properties.maxMemoryAllocationSize() < 0L ? Long.MAX_VALUE : vk11Properties.maxMemoryAllocationSize(),
-                physicalDevice.vkPhysicalDeviceMultiDrawPropertiesEXT().maxMultiDrawCount() < 0
-                    ? Integer.MAX_VALUE
-                    : physicalDevice.vkPhysicalDeviceMultiDrawPropertiesEXT().maxMultiDrawCount(),
-                limits.maxColorAttachments()
-            ),
-            new DeviceFeatures(true, enabledDeviceExtensions.contains("VK_EXT_multi_draw"), false, true, true, true, true),
-            Collections.unmodifiableSet(extensionNames),
-            new HintsAndWorkarounds(false, false),
-            physicalDevice.deviceType()
+        physicalDevice.deviceName(),
+        physicalDevice.vendorName(),
+        physicalDevice.driverInfo(),
+        true,
+        "Vulkan",
+        limits.timestampPeriod(),
+        new DeviceLimits(
+        (int) limits.maxSamplerAnisotropy(),
+        (int) limits.minUniformBufferOffsetAlignment(),
+        limits.maxImageDimension2D(),
+        vk11Properties.maxMemoryAllocationSize() < 0L ? Long.MAX_VALUE : vk11Properties.maxMemoryAllocationSize(),
+        physicalDevice.vkPhysicalDeviceMultiDrawPropertiesEXT().maxMultiDrawCount() < 0
+                ? Integer.MAX_VALUE
+                : physicalDevice.vkPhysicalDeviceMultiDrawPropertiesEXT().maxMultiDrawCount(),
+        limits.maxColorAttachments()
+        ),
+        new DeviceFeatures(true, enabledDeviceExtensions.contains("VK_EXT_multi_draw"), false, true, true, true, true),
+        Collections.unmodifiableSet(extensionNames),
+        new HintsAndWorkarounds(false, false),
+        physicalDevice.deviceType()
         );
         IntIntPair graphicsQueueFamily = physicalDevice.graphicsQueueFamilyAndIndex();
         assert graphicsQueueFamily != null;
@@ -131,17 +136,105 @@ public class VulkanDevice implements GpuDeviceBackend {
         }
 
         this.isIntegratedIntelMoltenVK = physicalDevice.vkPhysicalDeviceProperties().deviceType() == 1
-            && physicalDevice.vkPhysicalDeviceProperties().vendorID() == 32902
-            && physicalDevice.vkPhysicalDeviceDriverProperties().driverID() == 14;
+                && physicalDevice.vkPhysicalDeviceProperties().vendorID() == 32902
+                && physicalDevice.vkPhysicalDeviceDriverProperties().driverID() == 14;
         physicalDevice.close();
         this.commandEncoder = new VulkanCommandEncoder(this);
+        // 在 VulkanDevice 构造函数中，初始化 pipelineCache
+        this.pipelineCachePath = Paths.get(System.getProperty("user.dir"), CACHE_FILE_NAME);
+        this.pipelineCache = this.createPipelineCache();
+    }
+
+    private long createPipelineCache() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            VkPipelineCacheCreateInfo createInfo = VkPipelineCacheCreateInfo.calloc(stack).sType$Default();
+
+            // 尝试从磁盘加载缓存数据
+            ByteBuffer cacheData = null;
+            if (Files.exists(this.pipelineCachePath)) {
+                try {
+                    byte[] bytes = Files.readAllBytes(this.pipelineCachePath);
+                    if (bytes.length > 0) {
+                        cacheData = MemoryUtil.memAlloc(bytes.length);
+                        cacheData.put(bytes);
+                        cacheData.flip();
+                        createInfo.pInitialData(cacheData);
+                        LOGGER.info("Loaded Vulkan pipeline cache from disk ({} bytes)", bytes.length);
+                    }
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to load Vulkan pipeline cache from disk", e);
+                }
+            }
+
+            LongBuffer pointer = stack.callocLong(1);
+            int result = VK12.vkCreatePipelineCache(this.vkDevice, createInfo, null, pointer);
+            VulkanUtils.crashIfFailure(this, result, "Failed to create pipeline cache");
+
+            // 释放临时缓存数据（VK 已复制内部数据）
+            if (cacheData != null) {
+                MemoryUtil.memFree(cacheData);
+            }
+
+            return pointer.get(0);
+        }
+    }
+
+    private void savePipelineCache() {
+        if (this.pipelineCache == 0L) return;
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            // 先查询大小
+            LongBuffer sizePtr = stack.callocLong(1);
+            int result = VK12.vkGetPipelineCacheData(this.vkDevice, this.pipelineCache, sizePtr, null);
+            if (result != 0) {
+                LOGGER.warn("Failed to get pipeline cache data size: {}", VulkanUtils.resultToString(result));
+                return;
+            }
+
+            long cacheSize = sizePtr.get(0);
+            if (cacheSize == 0L) {
+                LOGGER.debug("Pipeline cache is empty, skipping save");
+                return;
+            }
+
+            if (cacheSize > Integer.MAX_VALUE) {
+                LOGGER.warn("Pipeline cache too large ({} bytes), skipping save", cacheSize);
+                return;
+            }
+
+            // 分配缓冲区并获取数据
+            ByteBuffer cacheData = MemoryUtil.memAlloc((int) cacheSize);
+            try {
+                result = VK12.vkGetPipelineCacheData(this.vkDevice, this.pipelineCache, sizePtr, cacheData);
+                if (result != 0) {
+                    LOGGER.warn("Failed to get pipeline cache data: {}", VulkanUtils.resultToString(result));
+                    return;
+                }
+
+                // 写入磁盘
+                Files.write(this.pipelineCachePath, cacheData.array());
+                LOGGER.info("Saved Vulkan pipeline cache to disk ({} bytes)", cacheData.remaining());
+            } catch (IOException e) {
+                LOGGER.warn("Failed to save pipeline cache to disk", e);
+            } finally {
+                MemoryUtil.memFree(cacheData);
+            }
+        }
     }
 
     @Override
     public void close() {
+        // ===== 先保存 Pipeline Cache =====
+        this.savePipelineCache();
+
         this.checkpointExtension.close();
         this.commandEncoder.destroy();
         this.clearPipelineCache();
+
+        if (this.pipelineCache != 0L) {
+            VK12.vkDestroyPipelineCache(this.vkDevice, this.pipelineCache, null);
+        }
+
         Vma.vmaDestroyAllocator(this.vma);
         VK12.vkDestroyDevice(this.vkDevice, null);
         this.instance.close();
@@ -188,39 +281,36 @@ public class VulkanDevice implements GpuDeviceBackend {
 
     @Override
     public GpuSampler createSampler(
-        final AddressMode addressModeU,
-        final AddressMode addressModeV,
-        final FilterMode minFilter,
-        final FilterMode magFilter,
-        final int maxAnisotropy,
-        final OptionalDouble maxLod
-    ) {
+            final AddressMode addressModeU,
+            final AddressMode addressModeV,
+            final FilterMode minFilter,
+            final FilterMode magFilter,
+            final int maxAnisotropy,
+            final OptionalDouble maxLod) {
         return new VulkanGpuSampler(this, addressModeU, addressModeV, minFilter, magFilter, maxAnisotropy, maxLod);
     }
 
     @Override
     public GpuTexture createTexture(
-        final @Nullable Supplier<String> label,
-        final @GpuTexture.Usage int usage,
-        final GpuFormat format,
-        final int width,
-        final int height,
-        final int depthOrLayers,
-        final int mipLevels
-    ) {
+            final @Nullable Supplier<String> label,
+            final @GpuTexture.Usage int usage,
+            final GpuFormat format,
+            final int width,
+            final int height,
+            final int depthOrLayers,
+            final int mipLevels) {
         return new VulkanGpuTexture(this, usage, this.isDebuggingEnabled() && label != null ? label.get() : "", format, width, height, depthOrLayers, mipLevels);
     }
 
     @Override
     public GpuTexture createTexture(
-        final @Nullable String label,
-        final @GpuTexture.Usage int usage,
-        final GpuFormat format,
-        final int width,
-        final int height,
-        final int depthOrLayers,
-        final int mipLevels
-    ) {
+            final @Nullable String label,
+            final @GpuTexture.Usage int usage,
+            final GpuFormat format,
+            final int width,
+            final int height,
+            final int depthOrLayers,
+            final int mipLevels) {
         return new VulkanGpuTexture(this, usage, this.isDebuggingEnabled() && label != null ? label : "", format, width, height, depthOrLayers, mipLevels);
     }
 
@@ -231,15 +321,17 @@ public class VulkanDevice implements GpuDeviceBackend {
 
     @Override
     public GpuTextureView createTextureView(final GpuTexture texture, final int baseMipLevel, final int mipLevels) {
-        return new VulkanGpuTextureView(this, (VulkanGpuTexture)texture, baseMipLevel, mipLevels);
+        return new VulkanGpuTextureView(this, (VulkanGpuTexture) texture, baseMipLevel, mipLevels);
     }
 
-    public VulkanGpuBuffer createBuffer(final @Nullable Supplier<String> label, final @GpuBuffer.Usage int usage, final long size) {
+    public VulkanGpuBuffer createBuffer(final @Nullable
+            Supplier<String> label, final @GpuBuffer.Usage int usage, final long size) {
         return new VulkanGpuBuffer.Direct(this, label, usage, size, this.isIntegratedIntelMoltenVK);
     }
 
     @Override
-    public GpuBuffer createBuffer(final @Nullable Supplier<String> label, final @GpuBuffer.Usage int usage, final ByteBuffer data) {
+    public GpuBuffer createBuffer(final @Nullable
+            Supplier<String> label, final @GpuBuffer.Usage int usage, final ByteBuffer data) {
         GpuBuffer buffer = this.createBuffer(label, usage | 8, data.remaining());
         this.createCommandEncoder().writeToBuffer(buffer.slice(), data);
         return buffer;
@@ -256,7 +348,8 @@ public class VulkanDevice implements GpuDeviceBackend {
     }
 
     @Override
-    public CompiledRenderPipeline precompilePipeline(final RenderPipeline pipeline, final @Nullable ShaderSource customShaderSource) {
+    public CompiledRenderPipeline precompilePipeline(final RenderPipeline pipeline, final @Nullable
+            ShaderSource customShaderSource) {
         ShaderSource shaderSource = customShaderSource == null ? this.defaultShaderSource : customShaderSource;
         return this.pipelineCache.computeIfAbsent(pipeline, ignored -> this.compilePipeline(pipeline, shaderSource));
     }
@@ -266,8 +359,7 @@ public class VulkanDevice implements GpuDeviceBackend {
     }
 
     protected IntermediaryShaderModule getOrCompileShader(
-        final Identifier id, final ShaderType type, final ShaderDefines defines, final ShaderSource shaderSource
-    ) {
+            final Identifier id, final ShaderType type, final ShaderDefines defines, final ShaderSource shaderSource) {
         VulkanDevice.ShaderCompilationKey key = new VulkanDevice.ShaderCompilationKey(id, type, defines);
         return this.shaderCache.computeIfAbsent(key, ignored -> this.compileShader(key, shaderSource));
     }
@@ -291,10 +383,10 @@ public class VulkanDevice implements GpuDeviceBackend {
 
     private VulkanRenderPipeline compilePipeline(final RenderPipeline pipeline, final ShaderSource shaderSource) {
         IntermediaryShaderModule vertexShader = this.getOrCompileShader(
-            pipeline.getVertexShader(), ShaderType.VERTEX, pipeline.getShaderDefines(), shaderSource
+                pipeline.getVertexShader(), ShaderType.VERTEX, pipeline.getShaderDefines(), shaderSource
         );
         IntermediaryShaderModule fragmentShader = this.getOrCompileShader(
-            pipeline.getFragmentShader(), ShaderType.FRAGMENT, pipeline.getShaderDefines(), shaderSource
+                pipeline.getFragmentShader(), ShaderType.FRAGMENT, pipeline.getShaderDefines(), shaderSource
         );
         if (vertexShader == IntermediaryShaderModule.INVALID) {
             LOGGER.error("Couldn't compile pipeline {}: vertex shader {} was invalid", pipeline.getLocation(), pipeline.getVertexShader());
@@ -308,10 +400,11 @@ public class VulkanDevice implements GpuDeviceBackend {
 
         try {
             GlslCompiler.CompiledModules modules = this.glslCompiler.compile(this, pipeline, vertexShader, fragmentShader);
-            return VulkanRenderPipeline.compile(this, modules.layout(), pipeline, modules.vertex(), modules.fragment());
+            // ===== 传入 pipelineCache =====
+            return VulkanRenderPipeline.compile(this, modules.layout(), pipeline, modules.vertex(), modules.fragment(), this.pipelineCache);
         } catch (ShaderCompileException e) {
             LOGGER.error("Couldn't compile pipeline {}: {}", pipeline.getLocation(), e.getMessage());
-            return new VulkanRenderPipeline(pipeline, this, 0L, 0L, 0L, VulkanBindGroupLayout.INVALID_LAYOUT, 0L, 0L);
+            return new VulkanRenderPipeline(pipeline, this, 0L, 0L, VulkanBindGroupLayout.INVALID_LAYOUT, 0L, 0L, 0L);
         }
     }
 

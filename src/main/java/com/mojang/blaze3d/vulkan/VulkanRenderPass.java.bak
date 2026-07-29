@@ -4,6 +4,7 @@ import com.mojang.blaze3d.IndexType;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.BindGroupLayout;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.GpuQueryPool;
@@ -12,10 +13,23 @@ import com.mojang.blaze3d.systems.RenderPassBackend;
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vulkan.checkpoints.CheckpointExtension;
+import com.mojang.logging.LogUtils;
+// ===== 新增 import =====
+import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.systems.RenderPassDescriptor;
+import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
+import org.joml.Vector4fc;
+import org.lwjgl.vulkan.VK13;  // 动态状态方法在 VK13 中
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import net.minecraft.SharedConstants;
@@ -28,6 +42,7 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.EXTMultiDraw;
 import org.lwjgl.vulkan.KHRPushDescriptor;
 import org.lwjgl.vulkan.KHRSynchronization2;
+import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VK12;
 import org.lwjgl.vulkan.VkBufferViewCreateInfo;
 import org.lwjgl.vulkan.VkCommandBuffer;
@@ -41,38 +56,106 @@ import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkViewport;
 import org.lwjgl.vulkan.VkWriteDescriptorSet;
 import org.lwjgl.vulkan.VkViewport.Buffer;
+import org.slf4j.Logger;
 
+/**
+ * Vulkan 渲染通道实现。
+ *
+ * <p>每个 RenderPass 对应一个 VkCommandBuffer 中的渲染区域， 负责管理管线绑定、描述符更新、绘制命令记录等操作。
+ *
+ * <p>关键设计：
+ *
+ * <ul>
+ *   <li>使用预分配的 Descriptor Set 而非 Push Descriptor，减少 CPU 开销
+ *   <li>深度状态全部动态控制，无需切换管线
+ *   <li>支持 Texel Buffer View 生命周期管理
+ * </ul>
+ */
 @OnlyIn(Dist.CLIENT)
 public class VulkanRenderPass implements RenderPassBackend {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
     public static final boolean VALIDATION = SharedConstants.IS_RUNNING_IN_IDE;
+
+    // ============================================================
+    // 核心依赖
+    // ============================================================
     private final VulkanDevice device;
     private final VulkanCommandEncoder encoder;
     private final CheckpointExtension.CheckpointStorage checkpointStorage;
+    private final VkCommandBuffer commandBuffer;
+
+    // ============================================================
+    // RenderPass 状态
+    // ============================================================
     private final RenderPass.@Nullable RenderArea renderArea;
     private final int outputWidth;
-    // 在类开头添加
-    private final List<Long> texelBufferViews = new ArrayList<>();
     private final int outputHeight;
     private final boolean hasDepth;
     private final Supplier<String> label;
-    protected int pushedDebugGroups = 0;
-    private final VkCommandBuffer commandBuffer;
-    protected @Nullable VulkanRenderPipeline pipeline;
-    private boolean anyDescriptorDirty = false;
-    protected final HashMap<String, GpuBufferSlice> uniforms = new HashMap<>();
-    protected final HashMap<
-            String, VulkanRenderPass.TextureViewAndSampler> textures = new HashMap<>();
+    private int pushedDebugGroups = 0;
 
+    // ============================================================
+    // 颜色附件信息（用于格式验证）
+    // ============================================================
+    private final List<
+            RenderPassDescriptor.Attachment<Optional<org.joml.Vector4fc>>> colorAttachments;
+    private final @Nullable GpuTextureView depthTextureView;
+
+    // ============================================================
+    // 管线与描述符
+    // ============================================================
+    private @Nullable VulkanRenderPipeline pipeline;
+    private boolean anyDescriptorDirty = false;
+
+    /** Uniform 缓存：名称 → Buffer 切片 */
+    protected final HashMap<String, GpuBufferSlice> uniforms = new HashMap<>();
+
+    /** 纹理/采样器缓存：名称 → (纹理视图, 采样器) */
+    protected final HashMap<String, TextureViewAndSampler> textures = new HashMap<>();
+
+    /** 当前 Pass 中创建的 Texel Buffer View 句柄列表，用于生命周期管理 */
+    private final List<Long> texelBufferViews = new ArrayList<>();
+
+    // ============================================================
+    // 顶点/索引缓冲（继承自旧实现，保留兼容）
+    // ============================================================
+    private final @Nullable GpuBufferSlice[] vertexBuffers = new GpuBufferSlice[16];
+    private @Nullable GpuBuffer indexBuffer;
+    private IndexType indexType = IndexType.INT;
+
+    // ============================================================
+    // 构造函数
+    // ============================================================
+
+    /**
+     * 构造一个新的 Vulkan 渲染通道。
+     *
+     * @param device Vulkan 设备
+     * @param encoder 命令编码器（用于提交销毁任务）
+     * @param commandBuffer 当前绑定的 VkCommandBuffer
+     * @param checkpointStorage 检查点存储（用于调试）
+     * @param renderArea 渲染区域（像素坐标）
+     * @param outputWidth 输出宽度
+     * @param outputHeight 输出高度
+     * @param hasDepth 是否有深度附件
+     * @param label 调试标签
+     * @param colorAttachments 颜色附件列表（用于格式验证）
+     * @param depthTextureView 深度纹理视图（可为 null）
+     */
     public VulkanRenderPass(
             final VulkanDevice device,
             final VulkanCommandEncoder encoder,
             final VkCommandBuffer commandBuffer,
             final CheckpointExtension.CheckpointStorage checkpointStorage,
-            final RenderPass.RenderArea renderArea,
+            final RenderPass.@Nullable RenderArea renderArea,
             final int outputWidth,
             final int outputHeight,
             final boolean hasDepth,
-            final Supplier<String> label) {
+            final Supplier<String> label,
+            final List<
+                    RenderPassDescriptor.Attachment<Optional<org.joml.Vector4fc>>> colorAttachments,
+            final @Nullable GpuTextureView depthTextureView) {
         this.device = device;
         this.encoder = encoder;
         this.commandBuffer = commandBuffer;
@@ -82,19 +165,58 @@ public class VulkanRenderPass implements RenderPassBackend {
         this.outputHeight = outputHeight;
         this.hasDepth = hasDepth;
         this.label = label;
+        this.colorAttachments = colorAttachments;
+        this.depthTextureView = depthTextureView;
 
+        // ============================================================
+        // 初始化视口和裁剪矩形
+        // ============================================================
         try (MemoryStack stack = MemoryStack.stackPush()) {
+            // 设置视口（全屏）
             Buffer viewport = VkViewport.calloc(1, stack);
             viewport.x(0.0F);
             viewport.y(0.0F);
-            viewport.width(outputWidth);
-            viewport.height(outputHeight);
+            viewport.width((float) outputWidth);
+            viewport.height((float) outputHeight);
             viewport.minDepth(0.0F);
             viewport.maxDepth(1.0F);
-            VK12.vkCmdSetViewport(this.commandBuffer(), 0, viewport);
-            setScissor(stack, this.commandBuffer(), renderArea.x(), renderArea.y(), renderArea.width(), renderArea.height());
+            VK12.vkCmdSetViewport(this.commandBuffer, 0, viewport);
+
+            // 设置裁剪矩形（全屏或指定区域）
+            if (renderArea != null) {
+                setScissor(stack, this.commandBuffer, renderArea.x(), renderArea.y(), renderArea.width(), renderArea.height());
+            } else {
+                setScissor(stack, this.commandBuffer, 0, 0, outputWidth, outputHeight);
+            }
         }
     }
+
+    // ============================================================
+    // 静态工具方法
+    // ============================================================
+
+    /** 设置裁剪矩形（Scissor） */
+    private static void setScissor(
+            final MemoryStack stack,
+            final VkCommandBuffer commandBuffer,
+            final int x,
+            final int y,
+            final int width,
+            final int height) {
+        org.lwjgl.vulkan.VkRect2D.Buffer scissor = VkRect2D.calloc(1, stack);
+        scissor.offset().set(x, y);
+        scissor.extent().set(width, height);
+        VK12.vkCmdSetScissor(commandBuffer, 0, scissor);
+    }
+
+    // ============================================================
+    // 内部 Record 类型
+    // ============================================================
+
+    /** 纹理视图 + 采样器对。 用于描述符集更新时的 Combined Image Sampler 绑定。 */
+    protected record TextureViewAndSampler(
+            VulkanGpuTextureView view,
+            VulkanGpuSampler sampler) {}
 
     private VkCommandBuffer commandBuffer() {
         return this.commandBuffer;
@@ -204,9 +326,9 @@ public class VulkanRenderPass implements RenderPassBackend {
 
         if (this.hasDepth && depthState != null) {
             // 情况 1：Pass 有深度附件，且 Pipeline 声明了深度状态 → 启用深度测试
-            VK12.vkCmdSetDepthTestEnable(this.commandBuffer(), true);
-            VK12.vkCmdSetDepthWriteEnable(this.commandBuffer(), depthState.writeDepth());
-            VK12.vkCmdSetDepthCompareOp(this.commandBuffer(), VulkanConst.toVk(depthState.depthTest()));
+            VK13.vkCmdSetDepthTestEnable(this.commandBuffer(), true);
+            VK13.vkCmdSetDepthWriteEnable(this.commandBuffer(), depthState.writeDepth());
+            VK13.vkCmdSetDepthCompareOp(this.commandBuffer(), VulkanConst.toVk(depthState.depthTest()));
             // depthBounds 默认禁用，Stencil 默认禁用（暂未使用）
             VK12.vkCmdSetDepthBoundsTestEnable(this.commandBuffer(), false);
             VK12.vkCmdSetStencilTestEnable(this.commandBuffer(), false);

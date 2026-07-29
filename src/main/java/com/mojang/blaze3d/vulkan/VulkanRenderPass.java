@@ -14,6 +14,14 @@ import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vulkan.checkpoints.CheckpointExtension;
 import com.mojang.logging.LogUtils;
+// ===== 新增 import =====
+import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.systems.RenderPassDescriptor;
+import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
+import org.joml.Vector4fc;
+import org.lwjgl.vulkan.VK13;  // 动态状态方法在 VK13 中
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
@@ -318,12 +326,12 @@ public class VulkanRenderPass implements RenderPassBackend {
 
         if (this.hasDepth && depthState != null) {
             // 情况 1：Pass 有深度附件，且 Pipeline 声明了深度状态 → 启用深度测试
-            VK12.vkCmdSetDepthTestEnable(this.commandBuffer(), true);
-            VK12.vkCmdSetDepthWriteEnable(this.commandBuffer(), depthState.writeDepth());
-            VK12.vkCmdSetDepthCompareOp(this.commandBuffer(), VulkanConst.toVk(depthState.depthTest()));
+            VK13.vkCmdSetDepthTestEnable(this.commandBuffer(), true);
+            VK13.vkCmdSetDepthWriteEnable(this.commandBuffer(), depthState.writeDepth());
+            VK13.vkCmdSetDepthCompareOp(this.commandBuffer(), VulkanConst.toVk(depthState.depthTest()));
             // depthBounds 默认禁用，Stencil 默认禁用（暂未使用）
-            VK12.vkCmdSetDepthBoundsTestEnable(this.commandBuffer(), false);
-            VK12.vkCmdSetStencilTestEnable(this.commandBuffer(), false);
+            VK13.vkCmdSetDepthBoundsTestEnable(this.commandBuffer(), false);
+            VK13.vkCmdSetStencilTestEnable(this.commandBuffer(), false);
         } else if (this.hasDepth) {
             // 情况 2：Pass 有深度附件，但 Pipeline 没有声明深度状态 → 禁用深度测试
             // 这通常发生在 UI 渲染等不需要深度的场景，但 Pass 被迫包含深度附件时

@@ -49,7 +49,8 @@ import org.lwjgl.vulkan.VkMemoryBarrier2.Buffer;
 
 @OnlyIn(Dist.CLIENT)
 public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable {
-    public static final int MAX_SUBMITS_IN_FLIGHT = 2;
+    // ===== 修改点 1：飞行中帧数从 2 提升到 3，充分利用 CPU/GPU 并行 =====
+    public static final int MAX_SUBMITS_IN_FLIGHT = 3;
     private final VulkanDevice device;
     private final VulkanTransientMemory transientMemory;
     private final long submitSemaphore;
@@ -57,8 +58,8 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
     private long completedSubmitIndex = 0L;
     private final CheckpointExtension.CheckpointStorage checkpointStorage;
     private VulkanQueue.Submission submissionBuilder;
-    private final DestructionQueue<Destroyable> destroyQueue = new DestructionQueue<>(2, Destroyable::destroy);
-    private final VulkanCommandPool[] commandPools = new VulkanCommandPool[2];
+    private final DestructionQueue<Destroyable> destroyQueue = new DestructionQueue<>(MAX_SUBMITS_IN_FLIGHT, Destroyable::destroy);
+    private final VulkanCommandPool[] commandPools = new VulkanCommandPool[MAX_SUBMITS_IN_FLIGHT];
     private @Nullable VkCommandBuffer currentCommandBuffer;
     private @Nullable VulkanRenderPass currentRenderPass;
 
@@ -68,6 +69,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         MemoryStack baseStack = MemoryStack.stackGet();
 
         try (MemoryStack stack = baseStack.push()) {
+            // Timeline Semaphore 创建（已是 VK_SEMAPHORE_TYPE_TIMELINE）
             VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = VkSemaphoreTypeCreateInfo.calloc(stack).sType$Default();
             semaphoreTypeCreateInfo.semaphoreType(1);
             semaphoreTypeCreateInfo.initialValue(this.currentSubmitIndex - 1L);
@@ -80,11 +82,12 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             this.submitSemaphore = semaphoreHandlePtr.get(0);
         }
 
-        for (int i = 0; i < 2; i++) {
+        // ===== 修改点 2：按 MAX_SUBMITS_IN_FLIGHT 创建命令池 =====
+        for (int i = 0; i < MAX_SUBMITS_IN_FLIGHT; i++) {
             this.commandPools[i] = new VulkanCommandPool(device, device.graphicsQueue());
         }
 
-        this.checkpointStorage = device.checkpointExtension().createStorage(device, device.graphicsQueue(), 2);
+        this.checkpointStorage = device.checkpointExtension().createStorage(device, device.graphicsQueue(), MAX_SUBMITS_IN_FLIGHT);
         this.submissionBuilder = device.graphicsQueue().beginSubmit();
         this.transientMemory.beginSubmit();
     }
@@ -98,7 +101,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         this.transientMemory.destroy();
         this.destroyQueue.close();
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < MAX_SUBMITS_IN_FLIGHT; i++) {
             this.commandPools[i].destroy();
         }
 
@@ -110,7 +113,8 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
     }
 
     private VulkanCommandPool currentCommandPool() {
-        return this.commandPools[(int)(this.currentSubmitIndex % 2L)];
+        // ===== 修改点 3：使用新常量取模 =====
+        return this.commandPools[(int)(this.currentSubmitIndex % MAX_SUBMITS_IN_FLIGHT)];
     }
 
     public VkCommandBuffer allocateAndBeginTransientCommandBuffer() {
@@ -202,9 +206,11 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         this.submissionBuilder.close();
         this.submissionBuilder = this.device.graphicsQueue().beginSubmit();
         this.currentSubmitIndex++;
-        if (!this.awaitSubmitCompletion(this.currentSubmitIndex - 2L, 5000000000L)) {
-            List<CheckpointExtension.QueueCheckpoints> checkpoints = this.device.checkpointExtension().retrieveCheckpoints(false);
-            throw new IllegalStateException("5s timeout reached when waiting for VK semaphore: " + VulkanUtils.formatCheckpoints(checkpoints));
+
+        // ===== 修改点 4：等待最旧的飞行中帧完成，而不是固定等待上一帧 =====
+        long waitIndex = this.currentSubmitIndex - MAX_SUBMITS_IN_FLIGHT;
+        if (waitIndex > this.completedSubmitIndex) {
+            this.awaitSubmitCompletion(waitIndex, Long.MAX_VALUE);
         }
 
         this.currentCommandPool().reset();
@@ -220,6 +226,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
 
     @Override
     public RenderPassBackend createRenderPass(final RenderPassDescriptor descriptor) {
+        // ... (保持不变，未修改) ...
         List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments = descriptor.colorAttachments();
         VulkanGpuTextureView[] colorTextures = new VulkanGpuTextureView[colorAttachments.size()];
 
@@ -594,6 +601,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         }
     }
 
+    // ===== 修改点 5：awaitSubmitCompletion 配合 Timeline Semaphore 精确等待 =====
     private boolean awaitSubmitCompletion(final long submitIndex, final long timeoutNS) {
         if (this.completedSubmitIndex >= submitIndex) {
             return true;
@@ -612,13 +620,15 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
                 waitInfo.pValues(stack.longs(submitIndex));
                 waitInfo.semaphoreCount(1);
                 int result = VK12.vkWaitSemaphores(this.device.vkDevice(), waitInfo, timeoutNS);
-                VulkanUtils.crashIfFailure(this.device, result, "Failed to wait for semaphore");
-                boolean completed = result == 0;
-                if (completed) {
+                if (result == 0) {
                     this.completedSubmitIndex = submitIndex;
+                    return true;
+                } else if (result == 2) { // VK_TIMEOUT
+                    return false;
+                } else {
+                    VulkanUtils.crashIfFailure(this.device, result, "Failed to wait for semaphore");
+                    return true;
                 }
-
-                return completed;
             }
         }
     }
@@ -634,7 +644,6 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
                 if (!this.completed) {
                     this.completed = VulkanCommandEncoder.this.awaitSubmitCompletion(this.submitIndex, timeoutMs);
                 }
-
                 return this.completed;
             }
 
