@@ -116,15 +116,114 @@ public class VulkanRenderPass implements RenderPassBackend {
         this.device.instance().debug().endDebugGroup(this.commandBuffer());
     }
 
+/**
+ * 设置当前 RenderPass 的渲染管线。
+ *
+ * <p>此方法会： 1. 验证 Pipeline 的颜色附件格式与当前 Pass 匹配 2. 绑定唯一的 Graphics Pipeline（不再区分 with/without depth） 3.
+ * 通过动态状态控制深度测试的启用/禁用
+ */
     @Override
     public void setPipeline(final RenderPipeline pipeline) {
+        // ============================================================
+        // 1. 验证颜色附件格式匹配
+        // ============================================================
+        ColorTargetState[] colorTargetStates = pipeline.getColorTargetStates();
+        if (colorTargetStates.length != this.colorAttachments.size()) {
+            throw new IllegalStateException(
+            "Render pass color attachment count (" + this.colorAttachments.size() +
+                    ") must match pipeline color target state count (" + colorTargetStates.length + ")"
+            );
+        }
+
+        for (int i = 0; i < this.colorAttachments.size(); i++) {
+            RenderPassDescriptor.Attachment<
+                    Optional<Vector4fc>> attachment = this.colorAttachments.get(i);
+            if (attachment != null) {
+                ColorTargetState colorTargetState = colorTargetStates[i];
+                if (colorTargetState == null) {
+                    throw new IllegalStateException(
+                    "Render pass color attachment " + i + " is present but pipeline color target state " + i + " is null"
+                    );
+                }
+                GpuFormat passFormat = attachment.textureView().texture().getFormat();
+                GpuFormat pipelineFormat = colorTargetState.format();
+                if (passFormat != pipelineFormat) {
+                    throw new IllegalStateException(
+                    "Render pass color attachment " + i + " format (" + passFormat +
+                            ") doesn't match pipeline format (" + pipelineFormat + ")"
+                    );
+                }
+            } else {
+                // 当前 Pass 此槽位为 null（unused color attachment），Pipeline 对应槽位也必须为 null
+                if (colorTargetStates[i] != null) {
+                    throw new IllegalStateException(
+                    "Render pass color attachment " + i + " is unused but pipeline color target state " + i + " is not null"
+                    );
+                }
+            }
+        }
+
+        // ============================================================
+        // 2. 验证深度附件格式匹配（如果存在）
+        // ============================================================
+        // Minecraft 统一使用 D32_FLOAT，但这里做防御性检查
+        if (this.hasDepth) {
+            DepthStencilState depthState = pipeline.getDepthStencilState();
+            // 即使 Pipeline 没有深度状态（depthState == null），只要 Pass 有深度附件，
+            // 管线也可以工作（深度测试被禁用即可），所以这里不强制要求 depthState != null。
+            // 但如果有 depthState，需要确保其格式与 Pass 的深度纹理一致。
+            // 由于我们的管线编译时固定了 D32_FLOAT，这里检查 Pass 的深度格式是否为 D32_FLOAT。
+            GpuFormat depthFormat = this.depthTextureView.texture().getFormat();
+            if (depthFormat != GpuFormat.D32_FLOAT) {
+                // 理论上 Minecraft 只有 D32_FLOAT，但如果未来有变化，这里给出警告但继续执行
+                // 因为管线已经编译为 D32_FLOAT，非 D32_FLOAT 的深度附件会导致未定义行为
+                LOGGER.warn("Depth attachment format is {} but pipeline was compiled with D32_FLOAT - this may cause rendering issues", depthFormat);
+            }
+        }
+
+        // ============================================================
+        // 3. 获取编译好的 Vulkan 管线
+        // ============================================================
         this.pipeline = this.device.getOrCompilePipeline(pipeline);
         if (!this.pipeline.isValid()) {
             throw new IllegalStateException("Pipeline is not valid (may contain invalid shaders?)");
         }
 
         this.anyDescriptorDirty = true;
-        VK12.vkCmdBindPipeline(this.commandBuffer(), 0, this.hasDepth ? this.pipeline.withDepthPipeline() : this.pipeline.withoutDepthPipeline());
+
+        // ============================================================
+        // 4. 绑定 Graphics Pipeline（现在只有一条）
+        // ============================================================
+        VK12.vkCmdBindPipeline(this.commandBuffer(), VK10.VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeline.pipeline());
+
+        // ============================================================
+        // 5. 动态控制深度状态
+        // ============================================================
+        // 注意：所有深度相关状态都标记为 VK_DYNAMIC_STATE，因此可以随时修改
+        DepthStencilState depthState = pipeline.getDepthStencilState();
+
+        if (this.hasDepth && depthState != null) {
+            // 情况 1：Pass 有深度附件，且 Pipeline 声明了深度状态 → 启用深度测试
+            VK12.vkCmdSetDepthTestEnable(this.commandBuffer(), true);
+            VK12.vkCmdSetDepthWriteEnable(this.commandBuffer(), depthState.writeDepth());
+            VK12.vkCmdSetDepthCompareOp(this.commandBuffer(), VulkanConst.toVk(depthState.depthTest()));
+            // depthBounds 默认禁用，Stencil 默认禁用（暂未使用）
+            VK12.vkCmdSetDepthBoundsTestEnable(this.commandBuffer(), false);
+            VK12.vkCmdSetStencilTestEnable(this.commandBuffer(), false);
+        } else if (this.hasDepth) {
+            // 情况 2：Pass 有深度附件，但 Pipeline 没有声明深度状态 → 禁用深度测试
+            // 这通常发生在 UI 渲染等不需要深度的场景，但 Pass 被迫包含深度附件时
+            VK12.vkCmdSetDepthTestEnable(this.commandBuffer(), false);
+            VK12.vkCmdSetDepthWriteEnable(this.commandBuffer(), false);
+            // 深度比较操作保持默认值
+        } else {
+            // 情况 3：Pass 没有深度附件 → 必须禁用深度测试（否则 Vulkan 规范未定义行为）
+            VK12.vkCmdSetDepthTestEnable(this.commandBuffer(), false);
+            VK12.vkCmdSetDepthWriteEnable(this.commandBuffer(), false);
+        }
+
+        // 如果 Pipeline 配置了 DepthBias，Rasterization 阶段已经设置了，不需要额外操作
+        // 注意：DepthBias 不是动态状态，必须在管线编译时确定
     }
 
     @Override
