@@ -467,8 +467,8 @@ public class WorldBorder extends SavedData {
         public static final WorldBorder.Settings DEFAULT = new WorldBorder.Settings(0.0, 0.0, 0.2, 5.0, 5, 300, Long.MAX_VALUE, 0L, 0.0);
         public static final Codec<WorldBorder.Settings> CODEC = RecordCodecBuilder.create(
             i -> i.group(
-                    Codec.doubleRange(-Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("center_x").forGetter(WorldBorder.Settings::centerX),
-                    Codec.doubleRange(-Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("center_z").forGetter(WorldBorder.Settings::centerZ),
+                    Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("center_x").forGetter(WorldBorder.Settings::centerX),
+                    Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("center_z").forGetter(WorldBorder.Settings::centerZ),
                     Codec.DOUBLE.fieldOf("damage_per_block").forGetter(WorldBorder.Settings::damagePerBlock),
                     Codec.DOUBLE.fieldOf("safe_zone").forGetter(WorldBorder.Settings::safeZone),
                     Codec.INT.fieldOf("warning_blocks").forGetter(WorldBorder.Settings::warningBlocks),
