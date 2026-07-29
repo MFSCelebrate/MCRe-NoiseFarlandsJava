@@ -34,6 +34,7 @@ public abstract class VulkanGpuBuffer extends GpuBuffer implements Destroyable {
         protected final VulkanDevice device;
         private final long vmaAllocation;
         private int mappingRefCount;
+        private final boolean isMappedPersistent;
 
         public Direct(
             final VulkanDevice device,
@@ -44,6 +45,26 @@ public abstract class VulkanGpuBuffer extends GpuBuffer implements Destroyable {
         ) {
             this.device = device;
 
+            // ===== 修改点：根据 usage 精确选择 VMA 内存类型 =====
+            int vmaUsage;
+            int vmaFlags = 0;
+            boolean persistentMapped = false;
+            
+            // 检查是否需要 CPU 访问（读取或写入）
+            boolean needsHostAccess = (usage & (GpuBuffer.USAGE_MAP_READ | GpuBuffer.USAGE_MAP_WRITE)) != 0;
+            
+            if (needsHostAccess || forceHostVisibleAllocation) {
+                // 需要 CPU 映射：使用 CPU_TO_GPU 并启用 MAPPED_BIT
+                vmaUsage = Vma.VMA_MEMORY_USAGE_CPU_TO_GPU;
+                vmaFlags |= Vma.VMA_ALLOCATION_CREATE_MAPPED_BIT;
+                persistentMapped = true;
+            } else {
+                // 静态 Vertex/Index/Uniform Buffer：纯 GPU 本地内存
+                vmaUsage = Vma.VMA_MEMORY_USAGE_GPU_ONLY;
+                // 不设置 MAPPED_BIT，避免强制映射到 PCIe
+                persistentMapped = false;
+            }
+
             long vkBuffer;
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 VkBufferCreateInfo bufferCreateInfo = VkBufferCreateInfo.calloc(stack).sType$Default();
@@ -51,25 +72,10 @@ public abstract class VulkanGpuBuffer extends GpuBuffer implements Destroyable {
                 bufferCreateInfo.usage(VulkanConst.bufferUsageToVk(usage));
                 bufferCreateInfo.sharingMode(0);
                 bufferCreateInfo.pQueueFamilyIndices(null);
+                
                 VmaAllocationCreateInfo allocCreateInfo = VmaAllocationCreateInfo.calloc(stack);
-                allocCreateInfo.usage(8);
-                if (forceHostVisibleAllocation) {
-                    allocCreateInfo.requiredFlags(allocCreateInfo.requiredFlags() | 2);
-                }
-
-                if (VulkanUtils.hasAnyBit(usage, 3)) {
-                    allocCreateInfo.requiredFlags(allocCreateInfo.requiredFlags() | 2 | 4);
-                    if (VulkanUtils.hasAnyBit(usage, 1)) {
-                        allocCreateInfo.preferredFlags(allocCreateInfo.preferredFlags() | 8);
-                        allocCreateInfo.flags(allocCreateInfo.flags() | 2048);
-                    } else {
-                        allocCreateInfo.flags(allocCreateInfo.flags() | 1024);
-                    }
-                }
-
-                if (VulkanUtils.hasAnyBit(usage, 5)) {
-                    allocCreateInfo.usage(9);
-                }
+                allocCreateInfo.usage(vmaUsage);
+                allocCreateInfo.flags(vmaFlags);
 
                 LongBuffer bufferPtr = stack.callocLong(1);
                 PointerBuffer allocPtr = stack.callocPointer(1);
@@ -85,10 +91,19 @@ public abstract class VulkanGpuBuffer extends GpuBuffer implements Destroyable {
             super(vkBuffer, usage, size);
             this.closed = false;
             this.mappingRefCount = 0;
+            this.isMappedPersistent = persistentMapped;
+
+            // 如果 Buffer 是持久映射的（即 usage 要求 CPU 访问），立即映射
+            if (this.isMappedPersistent && (usage & (GpuBuffer.USAGE_MAP_READ | GpuBuffer.USAGE_MAP_WRITE)) != 0) {
+                this.map(0L, size, (usage & 1) != 0, (usage & 2) != 0);
+            }
         }
 
         @Override
         public void destroy() {
+            if (this.isMappedPersistent && this.mappingRefCount > 0) {
+                this.unmapInternal();
+            }
             Vma.vmaDestroyBuffer(this.device.vma(), this.vkBuffer(), this.vmaAllocation);
         }
 
@@ -104,8 +119,14 @@ public abstract class VulkanGpuBuffer extends GpuBuffer implements Destroyable {
                 if (this.mappingRefCount != 0) {
                     throw new IllegalStateException("Attempt to close a mapped buffer");
                 }
-
                 this.device.createCommandEncoder().queueForDestroy(this);
+            }
+        }
+
+        private void unmapInternal() {
+            if (this.mappingRefCount > 0) {
+                this.mappingRefCount = 0;
+                Vma.vmaUnmapMemory(this.device.vma(), this.vmaAllocation);
             }
         }
 
@@ -148,7 +169,13 @@ public abstract class VulkanGpuBuffer extends GpuBuffer implements Destroyable {
 
                 try (MemoryStack stack = MemoryStack.stackPush()) {
                     PointerBuffer pointer = stack.callocPointer(1);
-                    VulkanUtils.crashIfFailure(this.device, Vma.vmaMapMemory(this.device.vma(), this.vmaAllocation, pointer), "Failed to map buffer");
+                    // 如果尚未映射（非持久化），则在此处映射
+                    if (this.mappingRefCount == 1 && !this.isMappedPersistent) {
+                        VulkanUtils.crashIfFailure(this.device, Vma.vmaMapMemory(this.device.vma(), this.vmaAllocation, pointer), "Failed to map buffer");
+                    } else {
+                        // 如果是持久映射，直接获取已映射的指针
+                        Vma.vmaGetAllocationMemory(this.device.vma(), this.vmaAllocation, pointer);
+                    }
                     ByteBuffer byteBuffer = MemoryUtil.memByteBuffer(pointer.get(0) + offset, (int)length);
                     return new GpuBufferSlice.MappedView(this.slice(offset, length), byteBuffer, new Runnable() {
                         private boolean closed = false;
@@ -158,7 +185,9 @@ public abstract class VulkanGpuBuffer extends GpuBuffer implements Destroyable {
                             if (!this.closed) {
                                 this.closed = true;
                                 Direct.this.mappingRefCount--;
-                                Vma.vmaUnmapMemory(Direct.this.device.vma(), Direct.this.vmaAllocation);
+                                if (Direct.this.mappingRefCount == 0 && !Direct.this.isMappedPersistent) {
+                                    Vma.vmaUnmapMemory(Direct.this.device.vma(), Direct.this.vmaAllocation);
+                                }
                             }
                         }
                     });
