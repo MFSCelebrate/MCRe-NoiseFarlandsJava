@@ -134,7 +134,7 @@ public class WorldBorderCommand {
 
         border.setSafeZone(distance);
         source.sendSuccess(() -> Component.translatable("commands.worldborder.damage.buffer.success", String.format(Locale.ROOT, "%.2f", distance)), true);
-        return (long)distance;
+        return (int)distance;
     }
 
     private static int setDamageAmount(final CommandSourceStack source, final float damagePerBlock) throws CommandSyntaxException {
@@ -167,7 +167,7 @@ public class WorldBorderCommand {
 
         border.setWarningBlocks(distance);
         source.sendSuccess(() -> Component.translatable("commands.worldborder.warning.distance.success", distance), true);
-        return (long)distance;
+        return (int)distance;
     }
 
     private static int getSize(final CommandSourceStack source) {
@@ -223,7 +223,7 @@ public class WorldBorderCommand {
             source.sendSuccess(() -> Component.translatable("commands.worldborder.set.immediate", formattedDistance), true);
         }
 
-        return (long)(distance - current);
+        return (int)(distance - current);
     }
 
     private static String formatTicksToSeconds(final long ticks) {

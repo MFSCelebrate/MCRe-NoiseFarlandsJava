@@ -213,12 +213,12 @@ public class WorldBorder extends SavedData {
         this.listeners.remove(listener);
     }
 
-    public void setAbsoluteMaxSize(final int absoluteMaxSize) {
+    public void setAbsoluteMaxSize(final long absoluteMaxSize) {
         this.absoluteMaxSize = absoluteMaxSize;
         this.extent.onAbsoluteMaxSizeChange();
     }
 
-    public int getAbsoluteMaxSize() {
+    public long getAbsoluteMaxSize() {
         return this.absoluteMaxSize;
     }
 

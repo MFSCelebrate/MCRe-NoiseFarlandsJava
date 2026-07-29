@@ -28,10 +28,10 @@ public class WorldBorderCommand {
         Component.translatable("commands.worldborder.set.failed.small")
     );
     private static final SimpleCommandExceptionType ERROR_TOO_BIG = new SimpleCommandExceptionType(
-        Component.translatable("commands.worldborder.set.failed.big", 5.999997E7F)
+        Component.translatable("commands.worldborder.set.failed.big", Long.MAX_VALUE)
     );
     private static final SimpleCommandExceptionType ERROR_TOO_FAR_OUT = new SimpleCommandExceptionType(
-        Component.translatable("commands.worldborder.set.failed.far", 2.9999984E7)
+        Component.translatable("commands.worldborder.set.failed.far", Long.MAX_VALUE)
     );
     private static final SimpleCommandExceptionType ERROR_SAME_WARNING_TIME = new SimpleCommandExceptionType(
         Component.translatable("commands.worldborder.warning.time.failed")
@@ -53,7 +53,7 @@ public class WorldBorderCommand {
                 .then(
                     Commands.literal("add")
                         .then(
-                            Commands.argument("distance", DoubleArgumentType.doubleArg(-5.999997E7F, 5.999997E7F))
+                            Commands.argument("distance", DoubleArgumentType.doubleArg(-Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY))
                                 .executes(
                                     c -> setSize(
                                         c.getSource(), c.getSource().getLevel().getWorldBorder().getSize() + DoubleArgumentType.getDouble(c, "distance"), 0L
@@ -74,7 +74,7 @@ public class WorldBorderCommand {
                 .then(
                     Commands.literal("set")
                         .then(
-                            Commands.argument("distance", DoubleArgumentType.doubleArg(-5.999997E7F, 5.999997E7F))
+                            Commands.argument("distance", DoubleArgumentType.doubleArg(-Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY))
                                 .executes(c -> setSize(c.getSource(), DoubleArgumentType.getDouble(c, "distance"), 0L))
                                 .then(
                                     Commands.argument("time", TimeArgument.time(0))
@@ -167,7 +167,7 @@ public class WorldBorderCommand {
 
         border.setWarningBlocks(distance);
         source.sendSuccess(() -> Component.translatable("commands.worldborder.warning.distance.success", distance), true);
-        return distance;
+        return (int)distance;
     }
 
     private static int getSize(final CommandSourceStack source) {
@@ -180,7 +180,7 @@ public class WorldBorderCommand {
         WorldBorder border = source.getLevel().getWorldBorder();
         if (border.getCenterX() == center.x && border.getCenterZ() == center.y) {
             throw ERROR_SAME_CENTER.create();
-        } else if (!(Math.abs(center.x) > 2.9999984E7) && !(Math.abs(center.y) > 2.9999984E7)) {
+        } else if (!(Math.abs(center.x) > Double.POSITIVE_INFINITY) && !(Math.abs(center.y) > Double.POSITIVE_INFINITY)) {
             border.setCenter(center.x, center.y);
             source.sendSuccess(
                 () -> Component.translatable(
@@ -194,7 +194,7 @@ public class WorldBorderCommand {
         }
     }
 
-    private static int setSize(final CommandSourceStack source, final double distance, final long ticks) throws CommandSyntaxException {
+    private static long setSize(final CommandSourceStack source, final double distance, final long ticks) throws CommandSyntaxException {
         ServerLevel level = source.getLevel();
         WorldBorder border = level.getWorldBorder();
         double current = border.getSize();
@@ -206,7 +206,7 @@ public class WorldBorderCommand {
             throw ERROR_TOO_SMALL.create();
         }
 
-        if (distance > 5.999997E7F) {
+        if (distance > Double.POSITIVE_INFINITY) {
             throw ERROR_TOO_BIG.create();
         }
 
@@ -223,7 +223,7 @@ public class WorldBorderCommand {
             source.sendSuccess(() -> Component.translatable("commands.worldborder.set.immediate", formattedDistance), true);
         }
 
-        return (int)(distance - current);
+        return (long)(distance - current);
     }
 
     private static String formatTicksToSeconds(final long ticks) {

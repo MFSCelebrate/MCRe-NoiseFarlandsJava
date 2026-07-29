@@ -19,8 +19,8 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class WorldBorder extends SavedData {
-    public static final double MAX_SIZE = 5.999997E7F;
-    public static final double MAX_CENTER_COORDINATE = 2.9999984E7;
+    public static final double MAX_SIZE = Double.POSITIVE_INFINITY;
+    public static final double MAX_CENTER_COORDINATE = Double.POSITIVE_INFINITY;
     public static final Codec<WorldBorder> CODEC = WorldBorder.Settings.CODEC.xmap(WorldBorder::new, WorldBorder.Settings::new);
     public static final SavedDataType<WorldBorder> TYPE = new SavedDataType<>(
         Identifier.withDefaultNamespace("world_border"), WorldBorder::new, CODEC, DataFixTypes.SAVED_DATA_WORLD_BORDER
@@ -34,8 +34,8 @@ public class WorldBorder extends SavedData {
     private int warningBlocks = 5;
     private double centerX;
     private double centerZ;
-    private int absoluteMaxSize = 29999984;
-    private WorldBorder.BorderExtent extent = new WorldBorder.StaticBorderExtent(5.999997E7F);
+    private long absoluteMaxSize = Long.MAX_VALUE;
+    private WorldBorder.BorderExtent extent = new WorldBorder.StaticBorderExtent(Double.POSITIVE_INFINITY);
 
     public WorldBorder() {
         this(WorldBorder.Settings.DEFAULT);
@@ -213,7 +213,7 @@ public class WorldBorder extends SavedData {
         this.listeners.remove(listener);
     }
 
-    public void setAbsoluteMaxSize(final int absoluteMaxSize) {
+    public void setAbsoluteMaxSize(final long absoluteMaxSize) {
         this.absoluteMaxSize = absoluteMaxSize;
         this.extent.onAbsoluteMaxSizeChange();
     }
@@ -464,11 +464,11 @@ public class WorldBorder extends SavedData {
         long lerpTime,
         double lerpTarget
     ) {
-        public static final WorldBorder.Settings DEFAULT = new WorldBorder.Settings(0.0, 0.0, 0.2, 5.0, 5, 300, 5.999997E7F, 0L, 0.0);
+        public static final WorldBorder.Settings DEFAULT = new WorldBorder.Settings(0.0, 0.0, 0.2, 5.0, 5, 300, Long.MAX_VALUE, 0L, 0.0);
         public static final Codec<WorldBorder.Settings> CODEC = RecordCodecBuilder.create(
             i -> i.group(
-                    Codec.doubleRange(-2.9999984E7, 2.9999984E7).fieldOf("center_x").forGetter(WorldBorder.Settings::centerX),
-                    Codec.doubleRange(-2.9999984E7, 2.9999984E7).fieldOf("center_z").forGetter(WorldBorder.Settings::centerZ),
+                    Codec.doubleRange(-Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("center_x").forGetter(WorldBorder.Settings::centerX),
+                    Codec.doubleRange(-Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("center_z").forGetter(WorldBorder.Settings::centerZ),
                     Codec.DOUBLE.fieldOf("damage_per_block").forGetter(WorldBorder.Settings::damagePerBlock),
                     Codec.DOUBLE.fieldOf("safe_zone").forGetter(WorldBorder.Settings::safeZone),
                     Codec.INT.fieldOf("warning_blocks").forGetter(WorldBorder.Settings::warningBlocks),
