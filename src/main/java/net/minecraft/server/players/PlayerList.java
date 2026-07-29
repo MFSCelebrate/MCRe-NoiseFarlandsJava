@@ -87,6 +87,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.border.BorderChangeListener;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.LevelData;
@@ -242,6 +243,42 @@ public abstract class PlayerList {
         }
     }
 
+    public void addWorldborderListener(final ServerLevel level) {
+        level.getWorldBorder().addListener(new BorderChangeListener() {
+            @Override
+            public void onSetSize(final WorldBorder border, final double newSize) {
+                PlayerList.this.broadcastAll(new ClientboundSetBorderSizePacket(border), level.dimension());
+            }
+
+            @Override
+            public void onLerpSize(final WorldBorder border, final double fromSize, final double targetSize, final long ticks, final long gameTime) {
+                PlayerList.this.broadcastAll(new ClientboundSetBorderLerpSizePacket(border), level.dimension());
+            }
+
+            @Override
+            public void onSetCenter(final WorldBorder border, final double x, final double z) {
+                PlayerList.this.broadcastAll(new ClientboundSetBorderCenterPacket(border), level.dimension());
+            }
+
+            @Override
+            public void onSetWarningTime(final WorldBorder border, final int time) {
+                PlayerList.this.broadcastAll(new ClientboundSetBorderWarningDelayPacket(border), level.dimension());
+            }
+
+            @Override
+            public void onSetWarningBlocks(final WorldBorder border, final int blocks) {
+                PlayerList.this.broadcastAll(new ClientboundSetBorderWarningDistancePacket(border), level.dimension());
+            }
+
+            @Override
+            public void onSetDamagePerBlock(final WorldBorder border, final double damagePerBlock) {
+            }
+
+            @Override
+            public void onSetSafeZone(final WorldBorder border, final double safeZone) {
+            }
+        });
+    }
 
     public Optional<CompoundTag> loadPlayerData(final NameAndId nameAndId) {
         UUID lastSingleplayerOwnerUUID = this.server.getWorldData().getSinglePlayerUUID();
@@ -614,6 +651,8 @@ public abstract class PlayerList {
     }
 
     public void sendLevelInfo(final ServerPlayer player, final ServerLevel level) {
+        WorldBorder worldBorder = level.getWorldBorder();
+        player.connection.send(new ClientboundInitializeBorderPacket(worldBorder));
         player.connection.send(this.server.clockManager().createFullSyncPacket());
         player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
         if (level.isRaining()) {

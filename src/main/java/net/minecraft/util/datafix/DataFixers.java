@@ -181,6 +181,7 @@ import net.minecraft.util.datafix.fixes.LeavesFix;
 import net.minecraft.util.datafix.fixes.LegacyDimensionIdFix;
 import net.minecraft.util.datafix.fixes.LegacyDragonFightFix;
 import net.minecraft.util.datafix.fixes.LegacyHoverEventFix;
+import net.minecraft.util.datafix.fixes.LegacyWorldBorderFix;
 import net.minecraft.util.datafix.fixes.LevelDatDifficultyFix;
 import net.minecraft.util.datafix.fixes.LevelDatToSavedDataPreparationFix;
 import net.minecraft.util.datafix.fixes.LevelDataGeneratorOptionsFix;
@@ -276,6 +277,7 @@ import net.minecraft.util.datafix.fixes.VillagerSetVillagerDataFinalized;
 import net.minecraft.util.datafix.fixes.VillagerTradeFix;
 import net.minecraft.util.datafix.fixes.WallPropertyFix;
 import net.minecraft.util.datafix.fixes.WeaponSmithChestLootTableFix;
+import net.minecraft.util.datafix.fixes.WorldBorderWarningTimeFix;
 import net.minecraft.util.datafix.fixes.WorldGenSettingsDisallowOldCustomWorldsFix;
 import net.minecraft.util.datafix.fixes.WorldGenSettingsFix;
 import net.minecraft.util.datafix.fixes.WorldGenSettingsHeightAndBiomeFix;
@@ -1580,6 +1582,8 @@ public class DataFixers {
         fixerUpper.addFixer(ItemRenameFix.create(v4541, "Rename chain to iron_chain", createRenamer("minecraft:chain", "minecraft:iron_chain")));
         Schema v4543 = fixerUpper.addSchema(4543, V4543::new);
         fixerUpper.addFixer(new AddNewChoices(v4543, "Added Mannequin", References.ENTITY));
+        Schema v4544 = fixerUpper.addSchema(4544, SAME_NAMESPACED);
+        fixerUpper.addFixer(new LegacyWorldBorderFix(v4544));
         Schema v4548 = fixerUpper.addSchema(4548, SAME_NAMESPACED);
         fixerUpper.addFixer(new WorldSpawnDataFix(v4548));
         fixerUpper.addFixer(new PlayerRespawnDataFix(v4548));
@@ -1598,8 +1602,9 @@ public class DataFixers {
         Schema v4656 = fixerUpper.addSchema(4656, V4656::new);
         fixerUpper.addFixer(new AddNewChoices(v4656, "Added Parched and Camel Husk", References.ENTITY));
         Schema v4657 = fixerUpper.addSchema(4657, SAME_NAMESPACED);
-        
-        
+        fixerUpper.addFixer(new WorldBorderWarningTimeFix(v4657));
+        Schema v4658 = fixerUpper.addSchema(4658, SAME_NAMESPACED);
+        fixerUpper.addFixer(new GameRuleRegistryFix(v4658));
         Schema v4661 = fixerUpper.addSchema(4661, SAME_NAMESPACED);
         fixerUpper.addFixer(new OptionsMusicToastFix(v4661, false));
         Schema v4763 = fixerUpper.addSchema(4763, SAME_NAMESPACED);

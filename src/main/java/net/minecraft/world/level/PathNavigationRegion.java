@@ -13,6 +13,7 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkSource;
 import net.minecraft.world.level.chunk.EmptyLevelChunk;
@@ -71,6 +72,11 @@ public class PathNavigationRegion implements CollisionGetter {
         } else {
             return new EmptyLevelChunk(this.level, new ChunkPos(chunkX, chunkZ), this.plains.get());
         }
+    }
+
+    @Override
+    public WorldBorder getWorldBorder() {
+        return this.level.getWorldBorder();
     }
 
     @Override

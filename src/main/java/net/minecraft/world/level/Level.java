@@ -65,6 +65,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.FuelValues;
 import net.minecraft.world.level.block.entity.TickingBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.PalettedContainerFactory;
@@ -98,13 +99,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
             Level> NETHER = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("the_nether"));
     public static final ResourceKey<
             Level> END = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("the_end"));
-    public static final int MAX_LEVEL_SIZE = 30000000;
-    public static final int ACROSS_THE_WHOLE_WORLD = 60000000;
+    public static final long MAX_LEVEL_SIZE = Long.MAX_VALUE;
+    public static final long ACROSS_THE_WHOLE_WORLD = Long.MAX_VALUE;
     public static final int LONG_PARTICLE_CLIP_RANGE = 512;
     public static final int SHORT_PARTICLE_CLIP_RANGE = 32;
     public static final int MAX_BRIGHTNESS = 15;
-    public static final int MAX_ENTITY_SPAWN_Y = 20000000;
-    public static final int MIN_ENTITY_SPAWN_Y = -20000000;
+    public static final long MAX_ENTITY_SPAWN_Y = Long.MAX_VALUE;
+    public static final long MIN_ENTITY_SPAWN_Y = Long.MIN_VALUE;
     private static final WeightedList<
             ExplosionParticleInfo> DEFAULT_EXPLOSION_BLOCK_PARTICLES = WeightedList.<ExplosionParticleInfo>
             builder()
@@ -185,17 +186,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     }
 
     private static boolean isInWorldBoundsHorizontal(final BlockPos pos) {
-        return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000;
+        return true;
     }
 
     private static boolean isInValidBoundsHorizontal(final BlockPos pos) {
-        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
-        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
-        return ChunkPos.isValid(chunkX, chunkZ);
+        return true;
     }
 
     private static boolean isOutsideSpawnableHeight(final int y) {
-        return y < -20000000 || y >= 20000000;
+        return false;
     }
 
     public LevelChunk getChunkAt(final BlockPos pos) {
@@ -343,14 +342,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     @Override
     public int getHeight(final Heightmap.Types type, final int x, final int z) {
         int y;
-        if (x >= -30000000 && z >= -30000000 && x < 30000000 && z < 30000000) {
-            if (this.hasChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z))) {
-                y = this.getChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z)).getHeight(type, x & 15, z & 15) + 1;
-            } else {
-                y = this.getMinY();
-            }
+
+        if (this.hasChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z))) {
+            y = this.getChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z)).getHeight(type, x & 15, z & 15) + 1;
         } else {
-            y = this.getSeaLevel() + 1;
+            y = this.getMinY();
         }
 
         return y;
@@ -729,8 +725,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     public abstract LevelData.RespawnData getRespawnData();
 
     public LevelData.RespawnData getWorldBorderAdjustedRespawnData(final LevelData.RespawnData respawnData) {
-
-        return respawnData;
+        WorldBorder worldBorder = this.getWorldBorder();
+        if (!worldBorder.isWithinBounds(respawnData.pos())) {
+            BlockPos newPos = this.getHeightmapPos(
+                    Heightmap.Types.MOTION_BLOCKING, BlockPos.containing(worldBorder.getCenterX(), 0.0, worldBorder.getCenterZ())
+            );
+            return LevelData.RespawnData.of(respawnData.dimension(), newPos, respawnData.yaw(), respawnData.pitch());
+        } else {
+            return respawnData;
+        }
     }
 
     @Override

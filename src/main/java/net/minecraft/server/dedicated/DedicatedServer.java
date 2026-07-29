@@ -381,6 +381,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
             output.write(String.format(Locale.ROOT, "sync-chunk-writes=%s%n", serverProperties.syncChunkWrites));
             output.write(String.format(Locale.ROOT, "gamemode=%s%n", serverProperties.gameMode.get()));
             output.write(String.format(Locale.ROOT, "entity-broadcast-range-percentage=%d%n", serverProperties.entityBroadcastRangePercentage.get()));
+            output.write(String.format(Locale.ROOT, "max-world-size=%d%n", serverProperties.maxWorldSize));
             output.write(String.format(Locale.ROOT, "view-distance=%d%n", serverProperties.viewDistance.get()));
             output.write(String.format(Locale.ROOT, "simulation-distance=%d%n", serverProperties.simulationDistance.get()));
             output.write(String.format(Locale.ROOT, "generate-structures=%s%n", serverProperties.worldOptions.generateStructures()));
@@ -606,6 +607,11 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
     @Override
     public boolean shouldInformAdmins() {
         return this.getProperties().broadcastConsoleToOps;
+    }
+
+    @Override
+    public long getAbsoluteMaxWorldSize() {
+        return this.getProperties().maxWorldSize;
     }
 
     @Override

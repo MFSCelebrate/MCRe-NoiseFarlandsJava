@@ -11,6 +11,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -36,7 +37,8 @@ public class DragonEggBlock extends FallingBlock {
 
     @Override
     protected InteractionResult useWithoutItem(
-            final BlockState state, final Level level, final BlockPos pos, final Player player, final BlockHitResult hitResult) {
+        final BlockState state, final Level level, final BlockPos pos, final Player player, final BlockHitResult hitResult
+    ) {
         this.teleport(state, level, pos);
         return InteractionResult.SUCCESS;
     }
@@ -47,16 +49,17 @@ public class DragonEggBlock extends FallingBlock {
     }
 
     private void teleport(final BlockState state, final Level level, final BlockPos pos) {
-
+        WorldBorder worldBorder = level.getWorldBorder();
         RandomSource random = level.getRandom();
 
         for (int i = 0; i < 1000; i++) {
             BlockPos testPos = pos.offset(
-                    random.nextInt(16) - random.nextInt(16), random.nextInt(8) - random.nextInt(8), random.nextInt(16) - random.nextInt(16)
+                random.nextInt(16) - random.nextInt(16), random.nextInt(8) - random.nextInt(8), random.nextInt(16) - random.nextInt(16)
             );
             if (level.getBlockState(testPos).isAir()
-                    && !level.getBlockState(testPos.below()).isAir()
-                    && level.isInsideBuildHeight(testPos)) {
+                && !level.getBlockState(testPos.below()).isAir()
+                && worldBorder.isWithinBounds(testPos)
+                && level.isInsideBuildHeight(testPos)) {
                 if (level.isClientSide()) {
                     for (int j = 0; j < 128; j++) {
                         double d = random.nextDouble();

@@ -32,6 +32,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.portal.PortalShape;
@@ -141,13 +142,10 @@ public class NetherPortalBlock extends Block implements Portal {
         }
 
         boolean toNether = newLevel.dimension() == Level.NETHER;
+        WorldBorder newWorldBorder = newLevel.getWorldBorder();
         double teleportationScale = DimensionType.getTeleportationScale(currentLevel.dimensionType(), newLevel.dimensionType());
-        BlockPos approximateExitPos = BlockPos.containing(
-            entity.getX() * teleportationScale,
-            entity.getY(),
-            entity.getZ() * teleportationScale
-        );
-        return this.getExitPortal(newLevel, entity, portalEntryPos, approximateExitPos, toNether);
+        BlockPos approximateExitPos = newWorldBorder.clampToBounds(entity.getX() * teleportationScale, entity.getY(), entity.getZ() * teleportationScale);
+        return this.getExitPortal(newLevel, entity, portalEntryPos, approximateExitPos, toNether, newWorldBorder);
     }
 
     private @Nullable TeleportTransition getExitPortal(
@@ -155,10 +153,10 @@ public class NetherPortalBlock extends Block implements Portal {
         final Entity entity,
         final BlockPos portalEntryPos,
         final BlockPos approximateExitPos,
-        final boolean toNether
+        final boolean toNether,
+        final WorldBorder worldBorder
     ) {
-        // 修复：findClosestPortalPosition 只有两个参数，删除多余的 null
-        Optional<BlockPos> exitPortalPos = newLevel.getPortalForcer().findClosestPortalPosition(approximateExitPos, toNether);
+        Optional<BlockPos> exitPortalPos = newLevel.getPortalForcer().findClosestPortalPosition(approximateExitPos, toNether, worldBorder);
         BlockUtil.FoundRectangle exitPortal;
         TeleportTransition.PostTeleportTransition post;
         if (exitPortalPos.isPresent()) {

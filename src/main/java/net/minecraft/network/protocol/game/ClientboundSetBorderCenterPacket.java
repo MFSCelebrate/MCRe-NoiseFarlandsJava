@@ -4,29 +4,44 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketType;
-import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.border.WorldBorder;
 
 public class ClientboundSetBorderCenterPacket implements Packet<ClientGamePacketListener> {
-    public ClientboundSetBorderCenterPacket() {}
+    public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderCenterPacket> STREAM_CODEC = Packet.codec(
+        ClientboundSetBorderCenterPacket::write, ClientboundSetBorderCenterPacket::new
+    );
+    private final double newCenterX;
+    private final double newCenterZ;
 
-    public ClientboundSetBorderCenterPacket(final FriendlyByteBuf buf) {
-        // 不读取
+    public ClientboundSetBorderCenterPacket(final WorldBorder border) {
+        this.newCenterX = border.getCenterX();
+        this.newCenterZ = border.getCenterZ();
     }
 
-    public void write(final FriendlyByteBuf buf) {
-        // 不写入
+    private ClientboundSetBorderCenterPacket(final FriendlyByteBuf input) {
+        this.newCenterX = input.readDouble();
+        this.newCenterZ = input.readDouble();
+    }
+
+    private void write(final FriendlyByteBuf output) {
+        output.writeDouble(this.newCenterX);
+        output.writeDouble(this.newCenterZ);
     }
 
     @Override
-    public void handle(final ClientGamePacketListener listener) {
-        // 忽略
+    public PacketType<ClientboundSetBorderCenterPacket> type() {
+        return GamePacketTypes.CLIENTBOUND_SET_BORDER_CENTER;
     }
 
-@Override
-public PacketType<YourClass> type() {
-    return new PacketType<>(PacketFlow.PLAY, Identifier.withDefaultNamespace("set_border_center"));
-}
+    public void handle(final ClientGamePacketListener listener) {
+        listener.handleSetBorderCenter(this);
+    }
 
-    public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderCenterPacket> STREAM_CODEC =
-        Packet.codec(ClientboundSetBorderCenterPacket::write, ClientboundSetBorderCenterPacket::new);
+    public double getNewCenterZ() {
+        return this.newCenterZ;
+    }
+
+    public double getNewCenterX() {
+        return this.newCenterX;
+    }
 }

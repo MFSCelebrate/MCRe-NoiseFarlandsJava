@@ -17,7 +17,7 @@ public class LevelRenderState {
     public @Nullable BlockOutlineRenderState blockOutlineRenderState;
     public final List<BlockBreakingRenderState> blockBreakingRenderStates = new ArrayList<>();
     public final WeatherRenderState weatherRenderState = new WeatherRenderState();
-    
+    public final WorldBorderRenderState worldBorderRenderState = new WorldBorderRenderState();
     public final SkyRenderState skyRenderState = new SkyRenderState();
     public final ParticlesRenderState particlesRenderState = new ParticlesRenderState();
     public long gameTime;
@@ -38,7 +38,7 @@ public class LevelRenderState {
         this.blockBreakingRenderStates.clear();
         this.blockOutlineRenderState = null;
         this.weatherRenderState.reset();
-      
+        this.worldBorderRenderState.reset();
         this.skyRenderState.reset();
         this.particlesRenderState.reset();
         this.chunkLoadingRenderState.reset();

@@ -70,6 +70,7 @@ import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -116,10 +117,9 @@ public class Hud {
     public static final Identifier NAUSEA_LOCATION = Identifier.withDefaultNamespace("textures/misc/nausea.png");
     private static final Identifier SPYGLASS_SCOPE_LOCATION = Identifier.withDefaultNamespace("textures/misc/spyglass_scope.png");
     private static final Identifier POWDER_SNOW_OUTLINE_LOCATION = Identifier.withDefaultNamespace("textures/misc/powder_snow_outline.png");
-    private static final Comparator<
-            PlayerScoreEntry> SCORE_DISPLAY_ORDER = Comparator.comparing(PlayerScoreEntry::value)
-            .reversed()
-            .thenComparing(PlayerScoreEntry::owner, String.CASE_INSENSITIVE_ORDER);
+    private static final Comparator<PlayerScoreEntry> SCORE_DISPLAY_ORDER = Comparator.comparing(PlayerScoreEntry::value)
+        .reversed()
+        .thenComparing(PlayerScoreEntry::owner, String.CASE_INSENSITIVE_ORDER);
     private static final Component DEMO_EXPIRED_TEXT = Component.translatable("demo.demoExpired");
     private static final Component SAVING_TEXT = Component.translatable("menu.savingLevel");
     private static final float MIN_CROSSHAIR_ATTACK_SPEED = 5.0F;
@@ -175,9 +175,7 @@ public class Hud {
     private @Nullable Runnable deferredSubtitles;
     private float autosaveIndicatorValue;
     private float lastAutosaveIndicatorValue;
-    private Pair<
-            Hud.ContextualInfo,
-            ContextualBar> contextualInfoBar = Pair.of(Hud.ContextualInfo.EMPTY, ContextualBar.EMPTY);
+    private Pair<Hud.ContextualInfo, ContextualBar> contextualInfoBar = Pair.of(Hud.ContextualInfo.EMPTY, ContextualBar.EMPTY);
     private final Map<Hud.ContextualInfo, Supplier<ContextualBar>> contextualInfoBars;
     private float scopeScale;
 
@@ -190,14 +188,14 @@ public class Hud {
         this.bossOverlay = new BossHealthOverlay(minecraft);
         this.subtitleOverlay = new SubtitleOverlay(minecraft);
         this.contextualInfoBars = ImmutableMap.of(
-                Hud.ContextualInfo.EMPTY,
-                () -> ContextualBar.EMPTY,
-                Hud.ContextualInfo.EXPERIENCE,
-                () -> new ExperienceBar(minecraft),
-                Hud.ContextualInfo.LOCATOR,
-                () -> new LocatorBar(minecraft),
-                Hud.ContextualInfo.JUMPABLE_VEHICLE,
-                () -> new JumpableVehicleBar(minecraft)
+            Hud.ContextualInfo.EMPTY,
+            () -> ContextualBar.EMPTY,
+            Hud.ContextualInfo.EXPERIENCE,
+            () -> new ExperienceBar(minecraft),
+            Hud.ContextualInfo.LOCATOR,
+            () -> new LocatorBar(minecraft),
+            Hud.ContextualInfo.JUMPABLE_VEHICLE,
+            () -> new JumpableVehicleBar(minecraft)
         );
         this.resetTitleTimes();
     }
@@ -323,7 +321,7 @@ public class Hud {
                 amount = 1.0F - (sleepTimer - 100.0F) / 10.0F;
             }
 
-            int color = (int) (220.0F * amount) << 24 | 1052704;
+            int color = (int)(220.0F * amount) << 24 | 1052704;
             graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), color);
             Profiler.get().pop();
         }
@@ -334,7 +332,7 @@ public class Hud {
         if (this.overlayMessageString != null && this.overlayMessageTime > 0) {
             Profiler.get().push("overlayMessage");
             float t = this.overlayMessageTime - deltaTracker.getGameTimeDeltaPartialTick(false);
-            int alpha = (int) (t * 255.0F / 20.0F);
+            int alpha = (int)(t * 255.0F / 20.0F);
             if (alpha > 255) {
                 alpha = 255;
             }
@@ -367,11 +365,11 @@ public class Hud {
             int alpha = 255;
             if (this.titleTime > this.titleFadeOutTime + this.titleStayTime) {
                 float time = this.titleFadeInTime + this.titleStayTime + this.titleFadeOutTime - t;
-                alpha = (int) (time * 255.0F / this.titleFadeInTime);
+                alpha = (int)(time * 255.0F / this.titleFadeInTime);
             }
 
             if (this.titleTime <= this.titleFadeOutTime) {
-                alpha = (int) (t * 255.0F / this.titleFadeOutTime);
+                alpha = (int)(t * 255.0F / this.titleFadeOutTime);
             }
 
             alpha = Mth.clamp(alpha, 0, 255);
@@ -432,7 +430,7 @@ public class Hud {
         Scoreboard scoreboard = this.minecraft.level.getScoreboard();
         Objective displayObjective = scoreboard.getDisplayObjective(DisplaySlot.LIST);
         if (!this.minecraft.options.keyPlayerList.isDown()
-                || this.minecraft.isLocalServer() && this.minecraft.player.connection.getListedOnlinePlayers().size() <= 1 && displayObjective == null) {
+            || this.minecraft.isLocalServer() && this.minecraft.player.connection.getListedOnlinePlayers().size() <= 1 && displayObjective == null) {
             this.tabList.setVisible(false);
         } else {
             this.tabList.setVisible(true);
@@ -453,15 +451,13 @@ public class Hud {
                         float attackStrengthScale = this.minecraft.player.getAttackStrengthScale(0.0F);
                         boolean renderMaxAttackIndicator = false;
                         if (this.minecraft.crosshairPickEntity != null
-                                && this.minecraft.crosshairPickEntity instanceof LivingEntity
-                                && attackStrengthScale >= 1.0F) {
+                            && this.minecraft.crosshairPickEntity instanceof LivingEntity
+                            && attackStrengthScale >= 1.0F) {
                             renderMaxAttackIndicator = this.minecraft.player.getCurrentItemAttackStrengthDelay() > 5.0F;
-                            renderMaxAttackIndicator &=
-                                    this.minecraft.crosshairPickEntity.isAlive();
+                            renderMaxAttackIndicator &= this.minecraft.crosshairPickEntity.isAlive();
                             AttackRange attackRange = this.minecraft.player.getActiveItem().get(DataComponents.ATTACK_RANGE);
-                            renderMaxAttackIndicator &=
-                                    attackRange == null
-                                            || attackRange.isInRange(this.minecraft.player, this.minecraft.hitResult.getLocation());
+                            renderMaxAttackIndicator &= attackRange == null
+                                || attackRange.isInRange(this.minecraft.player, this.minecraft.hitResult.getLocation());
                         }
 
                         int y = graphics.guiHeight() / 2 - 7 + 16;
@@ -469,7 +465,7 @@ public class Hud {
                         if (renderMaxAttackIndicator) {
                             graphics.blitSprite(RenderPipelines.CROSSHAIR, CROSSHAIR_ATTACK_INDICATOR_FULL_SPRITE, x, y, 16, 16);
                         } else if (attackStrengthScale < 1.0F) {
-                            int progress = (int) (attackStrengthScale * 17.0F);
+                            int progress = (int)(attackStrengthScale * 17.0F);
                             graphics.blitSprite(RenderPipelines.CROSSHAIR, CROSSHAIR_ATTACK_INDICATOR_BACKGROUND_SPRITE, x, y, 16, 4);
                             graphics.blitSprite(RenderPipelines.CROSSHAIR, CROSSHAIR_ATTACK_INDICATOR_PROGRESS_SPRITE, 16, 4, 0, 0, x, y, progress, 4);
                         }
@@ -483,9 +479,9 @@ public class Hud {
         if (hitResult == null) {
             return false;
         } else if (hitResult.getType() == HitResult.Type.ENTITY) {
-            return ((EntityHitResult) hitResult).getEntity() instanceof MenuProvider;
+            return ((EntityHitResult)hitResult).getEntity() instanceof MenuProvider;
         } else if (hitResult.getType() == HitResult.Type.BLOCK) {
-            BlockPos pos = ((BlockHitResult) hitResult).getBlockPos();
+            BlockPos pos = ((BlockHitResult)hitResult).getBlockPos();
             Level level = this.minecraft.level;
             return level.getBlockState(pos).getMenuProvider(level, pos) != null;
         } else {
@@ -526,7 +522,7 @@ public class Hud {
                             int remainingDuration = instance.getDuration();
                             int usedSeconds = 10 - remainingDuration / 20;
                             alpha = Mth.clamp(remainingDuration / 10.0F / 5.0F * 0.5F, 0.0F, 0.5F)
-                                    + Mth.cos(remainingDuration * (float) Math.PI / 5.0F) * Mth.clamp(usedSeconds / 10.0F * 0.25F, 0.0F, 0.25F);
+                                + Mth.cos(remainingDuration * (float) Math.PI / 5.0F) * Mth.clamp(usedSeconds / 10.0F * 0.25F, 0.0F, 0.25F);
                             alpha = Mth.clamp(alpha, 0.0F, 1.0F);
                         }
                     }
@@ -538,9 +534,7 @@ public class Hud {
     }
 
     public static Identifier getMobEffectSprite(final Holder<MobEffect> effect) {
-        return effect.unwrapKey().map(ResourceKey
-                ::identifier).map(id -> id.withPrefix("mob_effect/")).orElseGet(MissingTextureAtlasSprite
-                ::getLocation);
+        return effect.unwrapKey().map(ResourceKey::identifier).map(id -> id.withPrefix("mob_effect/")).orElseGet(MissingTextureAtlasSprite::getLocation);
     }
 
     private void extractHotbarAndDecorations(final GuiGraphicsExtractor graphics, final DeltaTracker deltaTracker) {
@@ -583,12 +577,12 @@ public class Hud {
             int halfHotbar = 91;
             graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HOTBAR_SPRITE, screenCenter - 91, graphics.guiHeight() - 22, 182, 22);
             graphics.blitSprite(
-                    RenderPipelines.GUI_TEXTURED,
-                    HOTBAR_SELECTION_SPRITE,
-                    screenCenter - 91 - 1 + player.getInventory().getSelectedSlot() * 20,
-                    graphics.guiHeight() - 22 - 1,
-                    24,
-                    23
+                RenderPipelines.GUI_TEXTURED,
+                HOTBAR_SELECTION_SPRITE,
+                screenCenter - 91 - 1 + player.getInventory().getSelectedSlot() * 20,
+                graphics.guiHeight() - 22 - 1,
+                24,
+                23
             );
             if (!offhand.isEmpty()) {
                 if (offhandArm == HumanoidArm.LEFT) {
@@ -624,10 +618,10 @@ public class Hud {
                         x = screenCenter - 91 - 22;
                     }
 
-                    int progress = (int) (attackStrengthScale * 19.0F);
+                    int progress = (int)(attackStrengthScale * 19.0F);
                     graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HOTBAR_ATTACK_INDICATOR_BACKGROUND_SPRITE, x, y, 18, 18);
                     graphics.blitSprite(
-                            RenderPipelines.GUI_TEXTURED, HOTBAR_ATTACK_INDICATOR_PROGRESS_SPRITE, 18, 18, 0, 18 - progress, x, y + 18 - progress, 18, progress
+                        RenderPipelines.GUI_TEXTURED, HOTBAR_ATTACK_INDICATOR_PROGRESS_SPRITE, 18, 18, 0, 18 - progress, x, y + 18 - progress, 18, progress
                     );
                 }
             }
@@ -648,7 +642,7 @@ public class Hud {
                 y += 14;
             }
 
-            int alpha = (int) (this.toolHighlightTimer * 256.0F / 10.0F);
+            int alpha = (int)(this.toolHighlightTimer * 256.0F / 10.0F);
             if (alpha > 255) {
                 alpha = 255;
             }
@@ -668,8 +662,8 @@ public class Hud {
                 msg = DEMO_EXPIRED_TEXT;
             } else {
                 msg = Component.translatable(
-                        "demo.remainingTime",
-                        StringUtil.formatTickDuration((int) (120500L - this.minecraft.level.getGameTime()), this.minecraft.level.tickRateManager().tickrate())
+                    "demo.remainingTime",
+                    StringUtil.formatTickDuration((int)(120500L - this.minecraft.level.getGameTime()), this.minecraft.level.tickRateManager().tickrate())
                 );
             }
 
@@ -686,22 +680,23 @@ public class Hud {
         NumberFormat objectiveScoreFormat = objective.numberFormatOrDefault(StyledFormat.SIDEBAR_DEFAULT);
 
         @OnlyIn(Dist.CLIENT)
-        record DisplayEntry(Component name, Component score, int scoreWidth) {}
+        record DisplayEntry(Component name, Component score, int scoreWidth) {
+        }
 
         DisplayEntry[] entriesToDisplay = scoreboard.listPlayerScores(objective)
-                .stream()
-                .filter(input -> !input.isHidden())
-                .sorted(SCORE_DISPLAY_ORDER)
-                .limit(15L)
-                .map(score -> {
-                    PlayerTeam team = scoreboard.getPlayersTeam(score.owner());
-                    Component ownerName = score.ownerName();
-                    Component name = PlayerTeam.formatNameForTeam(team, ownerName);
-                    Component scoreString = score.formatValue(objectiveScoreFormat);
-                    int scoreWidth = this.getFont().width(scoreString);
-                    return new DisplayEntry(name, scoreString, scoreWidth);
-                })
-                .toArray(DisplayEntry[]::new);
+            .stream()
+            .filter(input -> !input.isHidden())
+            .sorted(SCORE_DISPLAY_ORDER)
+            .limit(15L)
+            .map(score -> {
+                PlayerTeam team = scoreboard.getPlayersTeam(score.owner());
+                Component ownerName = score.ownerName();
+                Component name = PlayerTeam.formatNameForTeam(team, ownerName);
+                Component scoreString = score.formatValue(objectiveScoreFormat);
+                int scoreWidth = this.getFont().width(scoreString);
+                return new DisplayEntry(name, scoreString, scoreWidth);
+            })
+            .toArray(DisplayEntry[]::new);
         Component objectiveDisplayName = objective.getDisplayName();
         int objectiveDisplayNameWidth = this.getFont().width(objectiveDisplayName);
         int biggestWidth = objectiveDisplayNameWidth;
@@ -756,7 +751,7 @@ public class Hud {
     private int getVehicleMaxHearts(final @Nullable LivingEntity vehicle) {
         if (vehicle != null && vehicle.showVehicleHealth()) {
             float maxVehicleHealth = vehicle.getMaxHealth();
-            int hearts = (int) (maxVehicleHealth + 0.5F) / 2;
+            int hearts = (int)(maxVehicleHealth + 0.5F) / 2;
             if (hearts > 30) {
                 hearts = 30;
             }
@@ -768,7 +763,7 @@ public class Hud {
     }
 
     private int getVisibleVehicleHeartRows(final int hearts) {
-        return (int) Math.ceil(hearts / 10.0);
+        return (int)Math.ceil(hearts / 10.0);
     }
 
     private void extractPlayerHealth(final GuiGraphicsExtractor graphics) {
@@ -796,7 +791,7 @@ public class Hud {
             int xLeft = graphics.guiWidth() / 2 - 91;
             int xRight = graphics.guiWidth() / 2 + 91;
             int yLineBase = graphics.guiHeight() - 39;
-            float maxHealth = Math.max((float) player.getAttributeValue(Attributes.MAX_HEALTH), Math.max(oldHealth, currentHealth));
+            float maxHealth = Math.max((float)player.getAttributeValue(Attributes.MAX_HEALTH), Math.max(oldHealth, currentHealth));
             int totalAbsorption = Mth.ceil(player.getAbsorptionAmount());
             int numHealthRows = Mth.ceil((maxHealth + totalAbsorption) / 2.0F / 10.0F);
             int healthRowHeight = Math.max(10 - (numHealthRows - 2), 3);
@@ -810,7 +805,7 @@ public class Hud {
             extractArmor(graphics, player, yLineBase, numHealthRows, healthRowHeight, xLeft);
             Profiler.get().popPush("health");
             this.extractHearts(
-                    graphics, player, xLeft, yLineBase, healthRowHeight, heartOffsetIndex, maxHealth, currentHealth, oldHealth, totalAbsorption, blink
+                graphics, player, xLeft, yLineBase, healthRowHeight, heartOffsetIndex, maxHealth, currentHealth, oldHealth, totalAbsorption, blink
             );
             LivingEntity vehicleWithHearts = this.getPlayerVehicleWithHealth();
             int vehicleHearts = this.getVehicleMaxHearts(vehicleWithHearts);
@@ -827,7 +822,8 @@ public class Hud {
     }
 
     private static void extractArmor(
-            final GuiGraphicsExtractor graphics, final Player player, final int yLineBase, final int numHealthRows, final int healthRowHeight, final int xLeft) {
+        final GuiGraphicsExtractor graphics, final Player player, final int yLineBase, final int numHealthRows, final int healthRowHeight, final int xLeft
+    ) {
         int armor = player.getArmorValue();
         if (armor > 0) {
             int yLineArmor = yLineBase - (numHealthRows - 1) * healthRowHeight - 10;
@@ -850,26 +846,25 @@ public class Hud {
     }
 
     private void extractHearts(
-            final GuiGraphicsExtractor graphics,
-            final Player player,
-            final int xLeft,
-            final int yLineBase,
-            final int healthRowHeight,
-            final int heartOffsetIndex,
-            final float maxHealth,
-            final int currentHealth,
-            final int oldHealth,
-            final int absorption,
-            final boolean blink) {
+        final GuiGraphicsExtractor graphics,
+        final Player player,
+        final int xLeft,
+        final int yLineBase,
+        final int healthRowHeight,
+        final int heartOffsetIndex,
+        final float maxHealth,
+        final int currentHealth,
+        final int oldHealth,
+        final int absorption,
+        final boolean blink
+    ) {
         Hud.HeartType type = Hud.HeartType.forPlayer(player);
         boolean isHardcore = player.level().getLevelData().isHardcore();
         int healthContainerCount = Mth.ceil(maxHealth / 2.0);
         int absorptionContainerCount = Mth.ceil(absorption / 2.0);
         int maxHealthHalvesCount = healthContainerCount * 2;
 
-        for (int containerIndex = healthContainerCount + absorptionContainerCount - 1;
-                containerIndex >= 0;
-                containerIndex--) {
+        for (int containerIndex = healthContainerCount + absorptionContainerCount - 1; containerIndex >= 0; containerIndex--) {
             int row = containerIndex / 10;
             int column = containerIndex % 10;
             int xo = xLeft + column * 8;
@@ -906,13 +901,14 @@ public class Hud {
     }
 
     private void extractHeart(
-            final GuiGraphicsExtractor graphics,
-            final Hud.HeartType type,
-            final int xo,
-            final int yo,
-            final boolean isHardcore,
-            final boolean blinks,
-            final boolean half) {
+        final GuiGraphicsExtractor graphics,
+        final Hud.HeartType type,
+        final int xo,
+        final int yo,
+        final boolean isHardcore,
+        final boolean blinks,
+        final boolean half
+    ) {
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, type.getSprite(isHardcore, half, blinks), xo, yo, 9, 9);
     }
 
@@ -925,7 +921,7 @@ public class Hud {
             int fullAirBubbles = getCurrentAirSupplyBubble(currentAirSupplyTicks, maxAirSupplyTicks, -2);
             int poppingAirBubblePosition = getCurrentAirSupplyBubble(currentAirSupplyTicks, maxAirSupplyTicks, 0);
             int emptyAirBubbles = 10
-                    - getCurrentAirSupplyBubble(currentAirSupplyTicks, maxAirSupplyTicks, getEmptyBubbleDelayDuration(currentAirSupplyTicks, isUnderWater));
+                - getCurrentAirSupplyBubble(currentAirSupplyTicks, maxAirSupplyTicks, getEmptyBubbleDelayDuration(currentAirSupplyTicks, isUnderWater));
             boolean isPoppingBubble = fullAirBubbles != poppingAirBubblePosition;
             if (!isUnderWater) {
                 this.lastBubblePopSoundPlayed = 0;
@@ -952,7 +948,7 @@ public class Hud {
     }
 
     private static int getCurrentAirSupplyBubble(final int currentAirSupplyTicks, final int maxAirSupplyTicks, final int tickOffset) {
-        return Mth.ceil((float) ((currentAirSupplyTicks + tickOffset) * 10) / maxAirSupplyTicks);
+        return Mth.ceil((float)((currentAirSupplyTicks + tickOffset) * 10) / maxAirSupplyTicks);
     }
 
     private static int getEmptyBubbleDelayDuration(final int currentAirSupplyTicks, final boolean isUnderWater) {
@@ -1008,7 +1004,7 @@ public class Hud {
         if (vehicleWithHearts != null) {
             int hearts = this.getVehicleMaxHearts(vehicleWithHearts);
             if (hearts != 0) {
-                int currentHealth = (int) Math.ceil(vehicleWithHearts.getHealth());
+                int currentHealth = (int)Math.ceil(vehicleWithHearts.getHealth());
                 Profiler.get().popPush("mountHealth");
                 int yLine1 = graphics.guiHeight() - 39;
                 int xRight = graphics.guiWidth() / 2 + 91;
@@ -1039,17 +1035,17 @@ public class Hud {
     private void extractTextureOverlay(final GuiGraphicsExtractor graphics, final Identifier texture, final float alpha) {
         int color = ARGB.white(alpha);
         graphics.blit(
-                RenderPipelines.GUI_TEXTURED,
-                texture,
-                0,
-                0,
-                0.0F,
-                0.0F,
-                graphics.guiWidth(),
-                graphics.guiHeight(),
-                graphics.guiWidth(),
-                graphics.guiHeight(),
-                color
+            RenderPipelines.GUI_TEXTURED,
+            texture,
+            0,
+            0,
+            0.0F,
+            0.0F,
+            graphics.guiWidth(),
+            graphics.guiHeight(),
+            graphics.guiWidth(),
+            graphics.guiHeight(),
+            color
         );
     }
 
@@ -1077,8 +1073,45 @@ public class Hud {
         this.vignetteBrightness = this.vignetteBrightness + (brightness - this.vignetteBrightness) * 0.01F;
     }
 
-    private void extractVignette(final GuiGraphicsExtractor graphics, final @Nullable
-            Entity camera) {}
+    private void extractVignette(final GuiGraphicsExtractor graphics, final @Nullable Entity camera) {
+        WorldBorder worldBorder = this.minecraft.level.getWorldBorder();
+        float borderWarningStrength = 0.0F;
+        if (camera != null) {
+            float distToBorder = (float)worldBorder.getDistanceToBorder(camera);
+            double movingBlocksThreshold = Math.min(
+                worldBorder.getLerpSpeed() * worldBorder.getWarningTime(), Math.abs(worldBorder.getLerpTarget() - worldBorder.getSize())
+            );
+            double warningDistance = Math.max(worldBorder.getWarningBlocks(), movingBlocksThreshold);
+            if (distToBorder < warningDistance) {
+                borderWarningStrength = 1.0F - (float)(distToBorder / warningDistance);
+            }
+        }
+
+        float brightness = Mth.clamp(this.vignetteBrightness, 0.0F, 1.0F);
+        int color;
+        if (borderWarningStrength > 0.0F) {
+            borderWarningStrength = Mth.clamp(borderWarningStrength, 0.0F, 1.0F);
+            float red = brightness * (1.0F - borderWarningStrength);
+            float greenBlue = brightness + (1.0F - brightness) * borderWarningStrength;
+            color = ARGB.colorFromFloat(1.0F, red, greenBlue, greenBlue);
+        } else {
+            color = ARGB.colorFromFloat(1.0F, brightness, brightness, brightness);
+        }
+
+        graphics.blit(
+            RenderPipelines.VIGNETTE,
+            VIGNETTE_LOCATION,
+            0,
+            0,
+            0.0F,
+            0.0F,
+            graphics.guiWidth(),
+            graphics.guiHeight(),
+            graphics.guiWidth(),
+            graphics.guiHeight(),
+            color
+        );
+    }
 
     private void extractPortalOverlay(final GuiGraphicsExtractor graphics, float alpha) {
         if (alpha < 1.0F) {
@@ -1089,10 +1122,10 @@ public class Hud {
 
         int color = ARGB.white(alpha);
         TextureAtlasSprite slot = this.minecraft
-                .getModelManager()
-                .getBlockStateModelSet()
-                .getParticleMaterial(Blocks.NETHER_PORTAL.defaultBlockState())
-                .sprite();
+            .getModelManager()
+            .getBlockStateModelSet()
+            .getParticleMaterial(Blocks.NETHER_PORTAL.defaultBlockState())
+            .sprite();
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, slot, 0, 0, graphics.guiWidth(), graphics.guiHeight(), color);
     }
 
@@ -1108,29 +1141,30 @@ public class Hud {
         float green = 0.4F * strength;
         float blue = 0.2F * strength;
         graphics.blit(
-                RenderPipelines.GUI_NAUSEA_OVERLAY,
-                NAUSEA_LOCATION,
-                0,
-                0,
-                0.0F,
-                0.0F,
-                screenWidth,
-                screenHeight,
-                screenWidth,
-                screenHeight,
-                ARGB.colorFromFloat(1.0F, red, green, blue)
+            RenderPipelines.GUI_NAUSEA_OVERLAY,
+            NAUSEA_LOCATION,
+            0,
+            0,
+            0.0F,
+            0.0F,
+            screenWidth,
+            screenHeight,
+            screenWidth,
+            screenHeight,
+            ARGB.colorFromFloat(1.0F, red, green, blue)
         );
         graphics.pose().popMatrix();
     }
 
     private void extractSlot(
-            final GuiGraphicsExtractor graphics,
-            final int x,
-            final int y,
-            final DeltaTracker deltaTracker,
-            final Player player,
-            final ItemStack itemStack,
-            final int seed) {
+        final GuiGraphicsExtractor graphics,
+        final int x,
+        final int y,
+        final DeltaTracker deltaTracker,
+        final Player player,
+        final ItemStack itemStack,
+        final int seed
+    ) {
         if (!itemStack.isEmpty()) {
             float pop = itemStack.getPopTime() - deltaTracker.getGameTimeDeltaPartialTick(false);
             if (pop > 0.0F) {
@@ -1181,9 +1215,9 @@ public class Hud {
             if (selected.isEmpty()) {
                 this.toolHighlightTimer = 0;
             } else if (this.lastToolHighlight.isEmpty()
-                    || !selected.is(this.lastToolHighlight.getItem())
-                    || !selected.getHoverName().equals(this.lastToolHighlight.getHoverName())) {
-                this.toolHighlightTimer = (int) (40.0 * this.minecraft.options.notificationDisplayTime().get());
+                || !selected.is(this.lastToolHighlight.getItem())
+                || !selected.getHoverName().equals(this.lastToolHighlight.getHoverName())) {
+                this.toolHighlightTimer = (int)(40.0 * this.minecraft.options.notificationDisplayTime().get());
             } else if (this.toolHighlightTimer > 0) {
                 this.toolHighlightTimer--;
             }
@@ -1295,7 +1329,7 @@ public class Hud {
     public void extractSavingIndicator(final GuiGraphicsExtractor graphics, final DeltaTracker deltaTracker) {
         if (this.minecraft.options.showAutosaveIndicator().get() && (this.autosaveIndicatorValue > 0.0F || this.lastAutosaveIndicatorValue > 0.0F)) {
             int alpha = Mth.floor(
-                    255.0F * Mth.clamp(Mth.lerp(deltaTracker.getRealtimeDeltaTicks(), this.lastAutosaveIndicatorValue, this.autosaveIndicatorValue), 0.0F, 1.0F)
+                255.0F * Mth.clamp(Mth.lerp(deltaTracker.getRealtimeDeltaTicks(), this.lastAutosaveIndicatorValue, this.autosaveIndicatorValue), 0.0F, 1.0F)
             );
             if (alpha > 0) {
                 Font font = this.getFont();
@@ -1315,8 +1349,7 @@ public class Hud {
 
     private boolean willPrioritizeJumpInfo() {
         return this.minecraft.player.getJumpRidingScale() > 0.0F
-                || Optionull.mapOrDefault(this.minecraft.player.jumpableVehicle(), PlayerRideableJumping
-                                ::getJumpCooldown, 0) > 0;
+            || Optionull.mapOrDefault(this.minecraft.player.jumpableVehicle(), PlayerRideableJumping::getJumpCooldown, 0) > 0;
     }
 
     private Hud.ContextualInfo nextContextualInfoState() {
@@ -1347,64 +1380,64 @@ public class Hud {
     @OnlyIn(Dist.CLIENT)
     private enum HeartType {
         CONTAINER(
-                Identifier.withDefaultNamespace("hud/heart/container"),
-                Identifier.withDefaultNamespace("hud/heart/container_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/container"),
-                Identifier.withDefaultNamespace("hud/heart/container_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/container_hardcore"),
-                Identifier.withDefaultNamespace("hud/heart/container_hardcore_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/container_hardcore"),
-                Identifier.withDefaultNamespace("hud/heart/container_hardcore_blinking")
+            Identifier.withDefaultNamespace("hud/heart/container"),
+            Identifier.withDefaultNamespace("hud/heart/container_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/container"),
+            Identifier.withDefaultNamespace("hud/heart/container_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/container_hardcore"),
+            Identifier.withDefaultNamespace("hud/heart/container_hardcore_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/container_hardcore"),
+            Identifier.withDefaultNamespace("hud/heart/container_hardcore_blinking")
         ),
         NORMAL(
-                Identifier.withDefaultNamespace("hud/heart/full"),
-                Identifier.withDefaultNamespace("hud/heart/full_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/half"),
-                Identifier.withDefaultNamespace("hud/heart/half_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/hardcore_full"),
-                Identifier.withDefaultNamespace("hud/heart/hardcore_full_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/hardcore_half"),
-                Identifier.withDefaultNamespace("hud/heart/hardcore_half_blinking")
+            Identifier.withDefaultNamespace("hud/heart/full"),
+            Identifier.withDefaultNamespace("hud/heart/full_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/half"),
+            Identifier.withDefaultNamespace("hud/heart/half_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/hardcore_full"),
+            Identifier.withDefaultNamespace("hud/heart/hardcore_full_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/hardcore_half"),
+            Identifier.withDefaultNamespace("hud/heart/hardcore_half_blinking")
         ),
         POISIONED(
-                Identifier.withDefaultNamespace("hud/heart/poisoned_full"),
-                Identifier.withDefaultNamespace("hud/heart/poisoned_full_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/poisoned_half"),
-                Identifier.withDefaultNamespace("hud/heart/poisoned_half_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/poisoned_hardcore_full"),
-                Identifier.withDefaultNamespace("hud/heart/poisoned_hardcore_full_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/poisoned_hardcore_half"),
-                Identifier.withDefaultNamespace("hud/heart/poisoned_hardcore_half_blinking")
+            Identifier.withDefaultNamespace("hud/heart/poisoned_full"),
+            Identifier.withDefaultNamespace("hud/heart/poisoned_full_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/poisoned_half"),
+            Identifier.withDefaultNamespace("hud/heart/poisoned_half_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/poisoned_hardcore_full"),
+            Identifier.withDefaultNamespace("hud/heart/poisoned_hardcore_full_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/poisoned_hardcore_half"),
+            Identifier.withDefaultNamespace("hud/heart/poisoned_hardcore_half_blinking")
         ),
         WITHERED(
-                Identifier.withDefaultNamespace("hud/heart/withered_full"),
-                Identifier.withDefaultNamespace("hud/heart/withered_full_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/withered_half"),
-                Identifier.withDefaultNamespace("hud/heart/withered_half_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/withered_hardcore_full"),
-                Identifier.withDefaultNamespace("hud/heart/withered_hardcore_full_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/withered_hardcore_half"),
-                Identifier.withDefaultNamespace("hud/heart/withered_hardcore_half_blinking")
+            Identifier.withDefaultNamespace("hud/heart/withered_full"),
+            Identifier.withDefaultNamespace("hud/heart/withered_full_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/withered_half"),
+            Identifier.withDefaultNamespace("hud/heart/withered_half_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/withered_hardcore_full"),
+            Identifier.withDefaultNamespace("hud/heart/withered_hardcore_full_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/withered_hardcore_half"),
+            Identifier.withDefaultNamespace("hud/heart/withered_hardcore_half_blinking")
         ),
         ABSORBING(
-                Identifier.withDefaultNamespace("hud/heart/absorbing_full"),
-                Identifier.withDefaultNamespace("hud/heart/absorbing_full_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/absorbing_half"),
-                Identifier.withDefaultNamespace("hud/heart/absorbing_half_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/absorbing_hardcore_full"),
-                Identifier.withDefaultNamespace("hud/heart/absorbing_hardcore_full_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/absorbing_hardcore_half"),
-                Identifier.withDefaultNamespace("hud/heart/absorbing_hardcore_half_blinking")
+            Identifier.withDefaultNamespace("hud/heart/absorbing_full"),
+            Identifier.withDefaultNamespace("hud/heart/absorbing_full_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/absorbing_half"),
+            Identifier.withDefaultNamespace("hud/heart/absorbing_half_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/absorbing_hardcore_full"),
+            Identifier.withDefaultNamespace("hud/heart/absorbing_hardcore_full_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/absorbing_hardcore_half"),
+            Identifier.withDefaultNamespace("hud/heart/absorbing_hardcore_half_blinking")
         ),
         FROZEN(
-                Identifier.withDefaultNamespace("hud/heart/frozen_full"),
-                Identifier.withDefaultNamespace("hud/heart/frozen_full_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/frozen_half"),
-                Identifier.withDefaultNamespace("hud/heart/frozen_half_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/frozen_hardcore_full"),
-                Identifier.withDefaultNamespace("hud/heart/frozen_hardcore_full_blinking"),
-                Identifier.withDefaultNamespace("hud/heart/frozen_hardcore_half"),
-                Identifier.withDefaultNamespace("hud/heart/frozen_hardcore_half_blinking")
+            Identifier.withDefaultNamespace("hud/heart/frozen_full"),
+            Identifier.withDefaultNamespace("hud/heart/frozen_full_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/frozen_half"),
+            Identifier.withDefaultNamespace("hud/heart/frozen_half_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/frozen_hardcore_full"),
+            Identifier.withDefaultNamespace("hud/heart/frozen_hardcore_full_blinking"),
+            Identifier.withDefaultNamespace("hud/heart/frozen_hardcore_half"),
+            Identifier.withDefaultNamespace("hud/heart/frozen_hardcore_half_blinking")
         );
 
         private final Identifier full;
@@ -1417,14 +1450,15 @@ public class Hud {
         private final Identifier hardcoreHalfBlinking;
 
         HeartType(
-                final Identifier full,
-                final Identifier fullBlinking,
-                final Identifier half,
-                final Identifier halfBlinking,
-                final Identifier hardcoreFull,
-                final Identifier hardcoreFullBlinking,
-                final Identifier hardcoreHalf,
-                final Identifier hardcoreHalfBlinking) {
+            final Identifier full,
+            final Identifier fullBlinking,
+            final Identifier half,
+            final Identifier halfBlinking,
+            final Identifier hardcoreFull,
+            final Identifier hardcoreFullBlinking,
+            final Identifier hardcoreHalf,
+            final Identifier hardcoreHalfBlinking
+        ) {
             this.full = full;
             this.fullBlinking = fullBlinking;
             this.half = half;

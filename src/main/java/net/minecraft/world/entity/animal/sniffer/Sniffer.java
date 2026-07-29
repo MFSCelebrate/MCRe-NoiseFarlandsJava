@@ -260,7 +260,7 @@ public class Sniffer extends Animal {
             .mapToObj(idx -> LandRandomPos.getPos(this, 10 + 2 * idx, 3))
             .filter(Objects::nonNull)
             .map(BlockPos::containing)
-          
+            .filter(position -> this.level().getWorldBorder().isWithinBounds(position))
             .map(BlockPos::below)
             .filter(this::canDig)
             .findFirst();

@@ -1,6 +1,5 @@
 package net.minecraft.util.datafix.fixes;
 
-import com.mojang.datafixers.DSL;
 import com.mojang.datafixers.DataFix;
 import com.mojang.datafixers.TypeRewriteRule;
 import com.mojang.datafixers.schemas.Schema;
@@ -12,11 +11,11 @@ public class WorldBorderWarningTimeFix extends DataFix {
 
     @Override
     protected TypeRewriteRule makeRule() {
-        // 空操作
-        return this.fixTypeEverywhere(
+        return this.writeFixAndRead(
             "WorldBorderWarningTimeFix",
-            DSL.remainderType(),
-            dynamic -> dynamic
+            this.getInputSchema().getType(References.SAVED_DATA_WORLD_BORDER),
+            this.getOutputSchema().getType(References.SAVED_DATA_WORLD_BORDER),
+            input -> input.update("data", tag -> tag.update("warning_time", warningTime -> tag.createInt(warningTime.asInt(15) * 20)))
         );
     }
 }

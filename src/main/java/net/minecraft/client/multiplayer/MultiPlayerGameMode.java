@@ -126,9 +126,7 @@ public class MultiPlayerGameMode {
         }
 
         Block oldBlock = oldState.getBlock();
-        if (oldBlock
-                        instanceof
-                        GameMasterBlock && !this.minecraft.player.canUseGameMasterBlocks()) {
+        if (oldBlock instanceof GameMasterBlock && !this.minecraft.player.canUseGameMasterBlocks()) {
             return false;
         }
 
@@ -155,6 +153,10 @@ public class MultiPlayerGameMode {
             return false;
         }
 
+        if (!this.minecraft.level.getWorldBorder().isWithinBounds(pos)) {
+            return false;
+        }
+
         if (this.minecraft.player.getAbilities().instabuild) {
             BlockState state = this.minecraft.level.getBlockState(pos);
             this.minecraft.getTutorial().onDestroyBlock(this.minecraft.level, pos, state, 1.0F);
@@ -174,7 +176,7 @@ public class MultiPlayerGameMode {
                 }
 
                 this.connection
-                        .send(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK, this.destroyBlockPos, direction));
+                    .send(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK, this.destroyBlockPos, direction));
             }
 
             BlockState state = this.minecraft.level.getBlockState(pos);
@@ -216,7 +218,7 @@ public class MultiPlayerGameMode {
             }
 
             this.connection
-                    .send(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK, this.destroyBlockPos, Direction.DOWN));
+                .send(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK, this.destroyBlockPos, Direction.DOWN));
             this.isDestroying = false;
             this.destroyProgress = 0.0F;
             this.minecraft.level.destroyBlockProgress(this.minecraft.player.getId(), this.destroyBlockPos, -1);
@@ -231,7 +233,7 @@ public class MultiPlayerGameMode {
             return true;
         }
 
-        if (this.minecraft.player.getAbilities().instabuild) {
+        if (this.minecraft.player.getAbilities().instabuild && this.minecraft.level.getWorldBorder().isWithinBounds(pos)) {
             this.destroyDelay = 5;
             BlockState state = this.minecraft.level.getBlockState(pos);
             this.minecraft.getTutorial().onDestroyBlock(this.minecraft.level, pos, state, 1.0F);
@@ -255,17 +257,17 @@ public class MultiPlayerGameMode {
             if (this.destroyTicks % 4.0F == 0.0F) {
                 SoundType soundType = state.getSoundType();
                 this.minecraft
-                        .getSoundManager()
-                        .play(
-                                new SimpleSoundInstance(
-                                soundType.getHitSound(),
-                                SoundSource.BLOCKS,
-                                (soundType.getVolume() + 1.0F) / 8.0F,
-                                soundType.getPitch() * 0.5F,
-                                SoundInstance.createUnseededRandom(),
-                                pos
-                                )
-                        );
+                    .getSoundManager()
+                    .play(
+                        new SimpleSoundInstance(
+                            soundType.getHitSound(),
+                            SoundSource.BLOCKS,
+                            (soundType.getVolume() + 1.0F) / 8.0F,
+                            soundType.getPitch() * 0.5F,
+                            SoundInstance.createUnseededRandom(),
+                            pos
+                        )
+                    );
             }
 
             this.destroyTicks++;
@@ -295,8 +297,7 @@ public class MultiPlayerGameMode {
     private void startPrediction(final ClientLevel level, final PredictiveAction predictiveAction) {
         try (BlockStatePredictionHandler prediction = level.getBlockStatePredictionHandler().startPredicting()) {
             int sequence = prediction.currentSequence();
-            Packet<
-                    ServerGamePacketListener> packetConcludingPrediction = predictiveAction.predict(sequence);
+            Packet<ServerGamePacketListener> packetConcludingPrediction = predictiveAction.predict(sequence);
             this.connection.send(packetConcludingPrediction);
         }
     }
@@ -325,7 +326,7 @@ public class MultiPlayerGameMode {
 
     public InteractionResult useItemOn(final LocalPlayer player, final InteractionHand hand, final BlockHitResult blockHit) {
         this.ensureHasSentCarriedItem();
-        if (false) {
+        if (!this.minecraft.level.getWorldBorder().isWithinBounds(blockHit.getBlockPos())) {
             return InteractionResult.FAIL;
         }
 
@@ -357,9 +358,7 @@ public class MultiPlayerGameMode {
                 return itemUse;
             }
 
-            if (itemUse
-                            instanceof
-                            InteractionResult.TryEmptyHandInteraction && hand == InteractionHand.MAIN_HAND) {
+            if (itemUse instanceof InteractionResult.TryEmptyHandInteraction && hand == InteractionHand.MAIN_HAND) {
                 InteractionResult use = blockState.useWithoutItem(this.minecraft.level, player, blockHit);
                 if (use.consumesAction()) {
                     return use;
@@ -422,7 +421,8 @@ public class MultiPlayerGameMode {
     }
 
     public LocalPlayer createPlayer(
-            final ClientLevel level, final StatsCounter stats, final ClientRecipeBook recipeBook, final Input lastSentInput, final boolean wasSprinting) {
+        final ClientLevel level, final StatsCounter stats, final ClientRecipeBook recipeBook, final Input lastSentInput, final boolean wasSprinting
+    ) {
         return new LocalPlayer(this.minecraft, level, this.connection, stats, recipeBook, lastSentInput, wasSprinting, this.minecraft.computeChatAbilities());
     }
 
@@ -474,17 +474,17 @@ public class MultiPlayerGameMode {
 
             HashedStack carriedItem = HashedStack.create(containerMenu.getCarried(), this.connection.decoratedHashOpsGenenerator());
             this.connection
-                    .send(
+                .send(
                     new ServerboundContainerClickPacket(
-                    containerId,
-                    containerMenu.getStateId(),
-                    Shorts.checkedCast(slotNum),
-                    SignedBytes.checkedCast(buttonNum),
-                    containerInput,
-                    changedSlots,
-                    carriedItem
+                        containerId,
+                        containerMenu.getStateId(),
+                        Shorts.checkedCast(slotNum),
+                        SignedBytes.checkedCast(buttonNum),
+                        containerInput,
+                        changedSlots,
+                        carriedItem
                     )
-            );
+                );
         }
     }
 
@@ -503,13 +503,12 @@ public class MultiPlayerGameMode {
     }
 
     public void handleCreativeModeItemDrop(final ItemStack clicked) {
-        boolean hasOtherInventoryOpen = this.minecraft.gui.screen()
-                        instanceof AbstractContainerScreen
-                && !(this.minecraft.gui.screen() instanceof CreativeModeInventoryScreen);
+        boolean hasOtherInventoryOpen = this.minecraft.gui.screen() instanceof AbstractContainerScreen
+            && !(this.minecraft.gui.screen() instanceof CreativeModeInventoryScreen);
         if (this.minecraft.player.hasInfiniteMaterials()
-                && !hasOtherInventoryOpen
-                && !clicked.isEmpty()
-                && this.connection.isFeatureEnabled(clicked.getItem().requiredFeatures())) {
+            && !hasOtherInventoryOpen
+            && !clicked.isEmpty()
+            && this.connection.isFeatureEnabled(clicked.getItem().requiredFeatures())) {
             this.connection.send(new ServerboundSetCreativeModeSlotPacket(-1, clicked));
             this.minecraft.player.getDropSpamThrottler().increment();
         }
@@ -538,8 +537,7 @@ public class MultiPlayerGameMode {
     }
 
     public boolean isServerControlledInventory() {
-        return this.minecraft.player.isPassenger() && this.minecraft.player.getVehicle()
-                        instanceof HasCustomInventoryScreen;
+        return this.minecraft.player.isPassenger() && this.minecraft.player.getVehicle() instanceof HasCustomInventoryScreen;
     }
 
     public boolean isSpectator() {
@@ -559,7 +557,7 @@ public class MultiPlayerGameMode {
     }
 
     public int getDestroyStage() {
-        return this.destroyProgress > 0.0F ? (int) (this.destroyProgress * 10.0F) : -1;
+        return this.destroyProgress > 0.0F ? (int)(this.destroyProgress * 10.0F) : -1;
     }
 
     public void handlePickItemFromBlock(final BlockPos pos, final boolean includeData) {

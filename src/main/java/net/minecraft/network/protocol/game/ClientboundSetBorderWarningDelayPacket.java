@@ -4,29 +4,36 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketType;
-import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.border.WorldBorder;
 
 public class ClientboundSetBorderWarningDelayPacket implements Packet<ClientGamePacketListener> {
-    public ClientboundSetBorderWarningDelayPacket() {}
+    public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderWarningDelayPacket> STREAM_CODEC = Packet.codec(
+        ClientboundSetBorderWarningDelayPacket::write, ClientboundSetBorderWarningDelayPacket::new
+    );
+    private final int warningDelay;
 
-    public ClientboundSetBorderWarningDelayPacket(final FriendlyByteBuf buf) {
-        // 不读取
+    public ClientboundSetBorderWarningDelayPacket(final WorldBorder border) {
+        this.warningDelay = border.getWarningTime();
     }
 
-    public void write(final FriendlyByteBuf buf) {
-        // 不写入
+    private ClientboundSetBorderWarningDelayPacket(final FriendlyByteBuf input) {
+        this.warningDelay = input.readVarInt();
+    }
+
+    private void write(final FriendlyByteBuf output) {
+        output.writeVarInt(this.warningDelay);
     }
 
     @Override
-    public void handle(final ClientGamePacketListener listener) {
-        // 忽略
+    public PacketType<ClientboundSetBorderWarningDelayPacket> type() {
+        return GamePacketTypes.CLIENTBOUND_SET_BORDER_WARNING_DELAY;
     }
 
-@Override
-public PacketType<YourClass> type() {
-    return new PacketType<>(PacketFlow.PLAY, Identifier.withDefaultNamespace("set_border_warning_delay"));
-}
+    public void handle(final ClientGamePacketListener listener) {
+        listener.handleSetBorderWarningDelay(this);
+    }
 
-    public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderWarningDelayPacket> STREAM_CODEC =
-        Packet.codec(ClientboundSetBorderWarningDelayPacket::write, ClientboundSetBorderWarningDelayPacket::new);
+    public int getWarningDelay() {
+        return this.warningDelay;
+    }
 }

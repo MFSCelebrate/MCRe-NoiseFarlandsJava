@@ -16,10 +16,21 @@ public class WorldBorderRenderState {
     public int tint;
     public double alpha;
 
+    public List<WorldBorderRenderState.DistancePerDirection> closestBorder(final double x, final double z) {
+        WorldBorderRenderState.DistancePerDirection[] directions = new WorldBorderRenderState.DistancePerDirection[]{
+            new WorldBorderRenderState.DistancePerDirection(Direction.NORTH, z - this.minZ),
+            new WorldBorderRenderState.DistancePerDirection(Direction.SOUTH, this.maxZ - z),
+            new WorldBorderRenderState.DistancePerDirection(Direction.WEST, x - this.minX),
+            new WorldBorderRenderState.DistancePerDirection(Direction.EAST, this.maxX - x)
+        };
+        return Arrays.stream(directions).sorted(Comparator.comparingDouble(d -> d.distance)).toList();
+    }
+
     public void reset() {
         this.alpha = 0.0;
     }
 
     @OnlyIn(Dist.CLIENT)
-    public record DistancePerDirection(Direction direction, double distance) {}
+    public record DistancePerDirection(Direction direction, double distance) {
+    }
 }

@@ -264,9 +264,6 @@ public abstract class Player extends Avatar implements ContainerUser {
         super.tick();
         double nx = this.getX();
         double nz = this.getZ();
-        if (nx != this.getX() || nz != this.getZ()) {
-            this.setPos(nx, this.getY(), nz);
-        }
 
         this.attackStrengthTicker++;
         this.itemSwapTicker++;

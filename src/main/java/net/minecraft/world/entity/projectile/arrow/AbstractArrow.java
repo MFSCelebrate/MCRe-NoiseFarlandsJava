@@ -750,6 +750,10 @@ public abstract class AbstractArrow extends Projectile {
         return slot == 0 ? SlotAccess.of(this::getPickupItemStackOrigin, this::setPickupItemStack) : super.getSlot(slot);
     }
 
+    @Override
+    protected boolean shouldBounceOnWorldBorder() {
+        return true;
+    }
 
     public enum Pickup {
         DISALLOWED,

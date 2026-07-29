@@ -4,29 +4,52 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketType;
-import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.border.WorldBorder;
 
 public class ClientboundSetBorderLerpSizePacket implements Packet<ClientGamePacketListener> {
-    public ClientboundSetBorderLerpSizePacket() {}
+    public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderLerpSizePacket> STREAM_CODEC = Packet.codec(
+        ClientboundSetBorderLerpSizePacket::write, ClientboundSetBorderLerpSizePacket::new
+    );
+    private final double oldSize;
+    private final double newSize;
+    private final long lerpTime;
 
-    public ClientboundSetBorderLerpSizePacket(final FriendlyByteBuf buf) {
-        // 不读取
+    public ClientboundSetBorderLerpSizePacket(final WorldBorder border) {
+        this.oldSize = border.getSize();
+        this.newSize = border.getLerpTarget();
+        this.lerpTime = border.getLerpTime();
     }
 
-    public void write(final FriendlyByteBuf buf) {
-        // 不写入
+    private ClientboundSetBorderLerpSizePacket(final FriendlyByteBuf input) {
+        this.oldSize = input.readDouble();
+        this.newSize = input.readDouble();
+        this.lerpTime = input.readVarLong();
+    }
+
+    private void write(final FriendlyByteBuf output) {
+        output.writeDouble(this.oldSize);
+        output.writeDouble(this.newSize);
+        output.writeVarLong(this.lerpTime);
     }
 
     @Override
+    public PacketType<ClientboundSetBorderLerpSizePacket> type() {
+        return GamePacketTypes.CLIENTBOUND_SET_BORDER_LERP_SIZE;
+    }
+
     public void handle(final ClientGamePacketListener listener) {
-        // 忽略
+        listener.handleSetBorderLerpSize(this);
     }
 
-    @Override
-public PacketType<YourClass> type() {
-    return new PacketType<>(PacketFlow.PLAY, Identifier.withDefaultNamespace("set_border_lerp_size"));
-}
+    public double getOldSize() {
+        return this.oldSize;
+    }
 
-    public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderLerpSizePacket> STREAM_CODEC =
-        Packet.codec(ClientboundSetBorderLerpSizePacket::write, ClientboundSetBorderLerpSizePacket::new);
+    public double getNewSize() {
+        return this.newSize;
+    }
+
+    public long getLerpTime() {
+        return this.lerpTime;
+    }
 }

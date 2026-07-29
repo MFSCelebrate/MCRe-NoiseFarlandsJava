@@ -38,6 +38,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkSource;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
@@ -349,6 +350,11 @@ public class WorldGenRegion implements WorldGenLevel {
     @Override
     public boolean removeBlock(final BlockPos pos, final boolean movedByPiston) {
         return this.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+    }
+
+    @Override
+    public WorldBorder getWorldBorder() {
+        return this.level.getWorldBorder();
     }
 
     @Override

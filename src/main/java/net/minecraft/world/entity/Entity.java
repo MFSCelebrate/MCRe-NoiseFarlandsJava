@@ -118,6 +118,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.entity.EntityAccess;
 import net.minecraft.world.level.entity.EntityInLevelCallback;
 import net.minecraft.world.level.gameevent.DynamicGameEventListener;
@@ -1228,6 +1229,13 @@ public abstract class Entity
         if (!entityColliders.isEmpty()) {
             colliders.addAll(entityColliders);
         }
+
+        WorldBorder worldBorder = level.getWorldBorder();
+        boolean isEntityInsideCloseToBorder = source != null && worldBorder.isInsideCloseToBorder(source, boundingBox);
+        if (isEntityInsideCloseToBorder) {
+            colliders.add(worldBorder.getCollisionShape());
+        }
+
         colliders.addAll(level.getBlockCollisions(source, boundingBox));
         return colliders.build();
     }
@@ -1791,7 +1799,7 @@ public abstract class Entity
         this.xo = x;
         this.yo = y;
         this.zo = z;
-        this.setPos(x, y, z);
+        this.setPos(cx, y, cz);
     }
 
     public void snapTo(final Vec3 pos) {
@@ -2159,7 +2167,7 @@ public abstract class Entity
                     Math.abs(motion.x) > 10.0 ? 0.0 : motion.x, Math.abs(motion.y) > 10.0 ? 0.0 : motion.y, Math.abs(motion.z) > 10.0 ? 0.0 : motion.z
             );
             this.needsSync = true;
-
+            double maxHorizontalPosition = Double.POSITIVE_INFINITY;
             this.setPosRaw(pos.x, pos.y, pos.z);
             this.setYRot(rotation.x);
             this.setXRot(rotation.y);
@@ -2176,6 +2184,9 @@ public abstract class Entity
                 this.uuid = id;
                 this.stringUUID = this.uuid.toString();
             });
+            if (!Double.isFinite(this.getX()) || !Double.isFinite(this.getY()) || !Double.isFinite(this.getZ())) {
+                throw new IllegalStateException("Entity has invalid position");
+            }
 
             if (Double.isFinite(this.getYRot()) && Double.isFinite(this.getXRot())) {
                 this.reapplyPosition();

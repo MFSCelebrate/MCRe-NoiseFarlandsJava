@@ -397,7 +397,7 @@ public class Shulker extends AbstractGolem implements Enemy {
                 );
                 if (target.getY() > this.level().getMinY()
                     && this.level().isEmptyBlock(target)
-                
+                    && this.level().getWorldBorder().isWithinBounds(target)
                     && this.level().noCollision(this, new AABB(target).deflate(1.0E-6))) {
                     Direction attachmentDirection = this.findAttachableSurface(target);
                     if (attachmentDirection != null) {

@@ -38,15 +38,9 @@ public final class ImprovedNoise {
         double x = _x + this.xo;
         double y = _y + this.yo;
         double z = _z + this.zo;
-// 原代码：
-// int xf = Mth.floor(x);
-// int yf = Mth.floor(y);
-// int zf = Mth.floor(z);
-
-// 改为：
-        int xf = floorToIntWithWrap(x);
-        int yf = floorToIntWithWrap(y);
-        int zf = floorToIntWithWrap(z);
+        int xf = Mth.floor(x);
+        int yf = Mth.floor(y);
+        int zf = Mth.floor(z);
         double xr = x - xf;
         double yr = y - yf;
         double zr = z - zf;

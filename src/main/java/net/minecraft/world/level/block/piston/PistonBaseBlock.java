@@ -231,6 +231,9 @@ public class PistonBaseBlock extends DirectionalBlock {
         final boolean allowDestroyable,
         final Direction connectionDirection
     ) {
+        if (pos.getY() < level.getMinY() || pos.getY() > level.getMaxY() || !level.getWorldBorder().isWithinBounds(pos)) {
+            return false;
+        }
 
         if (state.isAir()) {
             return true;

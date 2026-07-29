@@ -113,13 +113,11 @@ public class LevelRenderer implements AutoCloseable {
     private final OptionsRenderState optionsRenderState;
     private @Nullable SkyRenderer skyRenderer;
     private final CloudRenderer cloudRenderer = new CloudRenderer();
-
+    private final WorldBorderRenderer worldBorderRenderer = new WorldBorderRenderer();
     private final WeatherEffectRenderer weatherEffectRenderer = new WeatherEffectRenderer();
     private final SectionOcclusionGraph sectionOcclusionGraph = new SectionOcclusionGraph();
-    private final ObjectArrayList<
-            SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
-    private final ObjectArrayList<
-            SectionRenderDispatcher.RenderSection> nearbyVisibleSections = new ObjectArrayList<>(50);
+    private final ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
+    private final ObjectArrayList<SectionRenderDispatcher.RenderSection> nearbyVisibleSections = new ObjectArrayList<>(50);
     private @Nullable ViewArea viewArea;
     private final RenderTarget entityOutlineTarget;
     private final LevelTargetBundle targets = new LevelTargetBundle();
@@ -131,15 +129,16 @@ public class LevelRenderer implements AutoCloseable {
     private LevelRenderer.FinalizedGizmos finalizedGizmos = new LevelRenderer.FinalizedGizmos(new DrawableGizmoPrimitives(), new DrawableGizmoPrimitives());
 
     public LevelRenderer(
-            final EntityRenderDispatcher entityRenderDispatcher,
-            final BlockEntityRenderDispatcher blockEntityRenderDispatcher,
-            final ModelManager modelManager,
-            final TextureManager textureManager,
-            final AtlasManager atlasManager,
-            final ShaderManager shaderManager,
-            final GameRenderer gameRenderer,
-            final int width,
-            final int height) {
+        final EntityRenderDispatcher entityRenderDispatcher,
+        final BlockEntityRenderDispatcher blockEntityRenderDispatcher,
+        final ModelManager modelManager,
+        final TextureManager textureManager,
+        final AtlasManager atlasManager,
+        final ShaderManager shaderManager,
+        final GameRenderer gameRenderer,
+        final int width,
+        final int height
+    ) {
         this.gameRenderer = gameRenderer;
         this.entityRenderDispatcher = entityRenderDispatcher;
         this.blockEntityRenderDispatcher = blockEntityRenderDispatcher;
@@ -155,14 +154,15 @@ public class LevelRenderer implements AutoCloseable {
     }
 
     public void render(
-            final GraphicsResourceAllocator resourceAllocator,
-            final DeltaTracker deltaTracker,
-            final boolean renderOutline,
-            final CameraRenderState cameraState,
-            final Matrix4fc modelViewMatrix,
-            final GpuBufferSlice terrainFog,
-            final Vector4f fogColor,
-            final boolean shouldRenderSky) {
+        final GraphicsResourceAllocator resourceAllocator,
+        final DeltaTracker deltaTracker,
+        final boolean renderOutline,
+        final CameraRenderState cameraState,
+        final Matrix4fc modelViewMatrix,
+        final GpuBufferSlice terrainFog,
+        final Vector4f fogColor,
+        final boolean shouldRenderSky
+    ) {
         float deltaPartialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
         final ProfilerFiller profiler = Profiler.get();
         profiler.push("repositionCamera");
@@ -180,7 +180,7 @@ public class LevelRenderer implements AutoCloseable {
         int screenWidth = this.gameRenderer.mainRenderTarget().width;
         int screenHeight = this.gameRenderer.mainRenderTarget().height;
         RenderTargetDescriptor screenSizeTargetDescriptor = new RenderTargetDescriptor(
-        screenWidth, screenHeight, true, SCREEN_SIZE_TARGET_CLEAR_COLOR, GpuFormat.RGBA8_UNORM
+            screenWidth, screenHeight, true, SCREEN_SIZE_TARGET_CLEAR_COLOR, GpuFormat.RGBA8_UNORM
         );
         PostChain transparencyChain = this.getTransparencyChain();
         if (transparencyChain != null) {
@@ -195,14 +195,14 @@ public class LevelRenderer implements AutoCloseable {
         FramePass clearPass = frame.addPass("clear");
         this.targets.main = clearPass.readsAndWrites(this.targets.main);
         clearPass.executes(
-                () -> {
-                    RenderTarget mainRenderTarget = this.gameRenderer.mainRenderTarget();
-                    RenderSystem.getDevice()
-                            .createCommandEncoder()
-                            .clearColorAndDepthTextures(
-                                    mainRenderTarget.getColorTexture(), new Vector4f(fogColor.x, fogColor.y, fogColor.z, 0.0F), mainRenderTarget.getDepthTexture(), 0.0
-                            );
-                }
+            () -> {
+                RenderTarget mainRenderTarget = this.gameRenderer.mainRenderTarget();
+                RenderSystem.getDevice()
+                    .createCommandEncoder()
+                    .clearColorAndDepthTextures(
+                        mainRenderTarget.getColorTexture(), new Vector4f(fogColor.x, fogColor.y, fogColor.z, 0.0F), mainRenderTarget.getDepthTexture(), 0.0
+                    );
+            }
         );
         if (shouldRenderSky) {
             this.addSkyPass(frame, cameraState, terrainFog);
@@ -218,14 +218,14 @@ public class LevelRenderer implements AutoCloseable {
         CloudStatus cloudStatus = this.optionsRenderState.cloudStatus;
         if (cloudStatus != CloudStatus.OFF && ARGB.alpha(this.levelRenderState.cloudColor) > 0) {
             this.addCloudsPass(
-                    frame,
-                    cloudStatus,
-                    this.levelRenderState.cameraRenderState.pos,
-                    this.levelRenderState.gameTime,
-                    deltaPartialTick,
-                    this.levelRenderState.cloudColor,
-                    this.levelRenderState.cloudHeight,
-                    this.optionsRenderState.cloudRange
+                frame,
+                cloudStatus,
+                this.levelRenderState.cameraRenderState.pos,
+                this.levelRenderState.gameTime,
+                deltaPartialTick,
+                this.levelRenderState.cloudColor,
+                this.levelRenderState.cloudHeight,
+                this.optionsRenderState.cloudRange
             );
         }
 
@@ -304,6 +304,9 @@ public class LevelRenderer implements AutoCloseable {
     private void repositionCamera(final CameraRenderState camera) {
         Vec3 cameraPos = camera.pos;
         SectionPos cameraSectionPos = SectionPos.of(cameraPos);
+        if (this.viewArea.repositionCamera(cameraSectionPos)) {
+            this.worldBorderRenderer.invalidate();
+        }
 
         this.sectionRenderDispatcher.setCameraPosition(cameraPos);
     }
@@ -324,39 +327,40 @@ public class LevelRenderer implements AutoCloseable {
                 FramePass pass = frame.addPass("sky");
                 this.targets.main = pass.readsAndWrites(this.targets.main);
                 pass.executes(
-                        () -> {
-                            RenderSystem.setShaderFog(skyFog);
-                            if (state.skybox == DimensionType.Skybox.END) {
-                                this.skyRenderer.renderEndSky();
-                                if (state.endFlashIntensity > 1.0E-5F) {
-                                    PoseStack poseStack = new PoseStack();
-                                    this.skyRenderer.renderEndFlash(poseStack, state.endFlashIntensity, state.endFlashXAngle, state.endFlashYAngle);
-                                }
-                            } else {
+                    () -> {
+                        RenderSystem.setShaderFog(skyFog);
+                        if (state.skybox == DimensionType.Skybox.END) {
+                            this.skyRenderer.renderEndSky();
+                            if (state.endFlashIntensity > 1.0E-5F) {
                                 PoseStack poseStack = new PoseStack();
-                                this.skyRenderer.renderSkyDisc(state.skyColor);
-                                this.skyRenderer.renderSunriseAndSunset(poseStack, state.sunAngle, state.sunriseAndSunsetColor);
-                                this.skyRenderer
-                                        .renderSunMoonAndStars(
-                                        poseStack, state.sunAngle, state.moonAngle, state.starAngle, state.moonPhase, state.rainBrightness, state.starBrightness
+                                this.skyRenderer.renderEndFlash(poseStack, state.endFlashIntensity, state.endFlashXAngle, state.endFlashYAngle);
+                            }
+                        } else {
+                            PoseStack poseStack = new PoseStack();
+                            this.skyRenderer.renderSkyDisc(state.skyColor);
+                            this.skyRenderer.renderSunriseAndSunset(poseStack, state.sunAngle, state.sunriseAndSunsetColor);
+                            this.skyRenderer
+                                .renderSunMoonAndStars(
+                                    poseStack, state.sunAngle, state.moonAngle, state.starAngle, state.moonPhase, state.rainBrightness, state.starBrightness
                                 );
-                                if (state.shouldRenderDarkDisc) {
-                                    this.skyRenderer.renderDarkDisc();
-                                }
+                            if (state.shouldRenderDarkDisc) {
+                                this.skyRenderer.renderDarkDisc();
                             }
                         }
+                    }
                 );
             }
         }
     }
 
     private void addMainPass(
-            final FrameGraphBuilder frame,
-            final FeatureRenderDispatcher.PreparedFrame featureFrame,
-            final GpuBufferSlice terrainFog,
-            final LevelRenderState levelRenderState,
-            final ProfilerFiller profiler,
-            final ChunkSectionsToRender chunkSectionsToRender) {
+        final FrameGraphBuilder frame,
+        final FeatureRenderDispatcher.PreparedFrame featureFrame,
+        final GpuBufferSlice terrainFog,
+        final LevelRenderState levelRenderState,
+        final ProfilerFiller profiler,
+        final ChunkSectionsToRender chunkSectionsToRender
+    ) {
         FramePass pass = frame.addPass("main");
         this.targets.main = pass.readsAndWrites(this.targets.main);
         if (this.targets.translucent != null) {
@@ -385,68 +389,69 @@ public class LevelRenderer implements AutoCloseable {
         ResourceHandle<RenderTarget> entityOutlineTarget = this.targets.entityOutline;
         ResourceHandle<RenderTarget> particleTarget = this.targets.particles;
         pass.executes(
-                () -> {
-                    RenderSystem.setShaderFog(terrainFog);
-                    if (levelRenderState.shouldResetChunkLayerSampler || this.chunkLayerSampler == null) {
-                        if (this.chunkLayerSampler != null) {
-                            this.chunkLayerSampler.close();
-                        }
-
-                        int maxAnisotropy = this.optionsRenderState.textureFiltering == TextureFilteringMethod.ANISOTROPIC
-                                ? this.optionsRenderState.maxAnisotropyValue
-                                : 1;
-                        this.chunkLayerSampler = RenderSystem.getDevice()
-                                .createSampler(
-                                        AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE, FilterMode.LINEAR, FilterMode.LINEAR, maxAnisotropy, OptionalDouble.empty()
-                                );
+            () -> {
+                RenderSystem.setShaderFog(terrainFog);
+                if (levelRenderState.shouldResetChunkLayerSampler || this.chunkLayerSampler == null) {
+                    if (this.chunkLayerSampler != null) {
+                        this.chunkLayerSampler.close();
                     }
 
-                    profiler.push("solidTerrain");
-                    chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE, this.chunkLayerSampler);
-                    this.gameRenderer.lighting().setupFor(Lighting.Entry.LEVEL);
-                    if (levelRenderState.shouldShowEntityOutlines && entityOutlineTarget != null) {
-                        RenderTarget outlineTarget = entityOutlineTarget.get();
-                        RenderSystem.getDevice()
-                                .createCommandEncoder()
-                                .clearColorAndDepthTextures(outlineTarget.getColorTexture(), ENTITY_OUTLINE_CLEAR_COLOR, outlineTarget.getDepthTexture(), 0.0);
-                    }
-
-                    profiler.popPush("renderSolidFeatures");
-                    featureFrame.executeSolid();
-                    profiler.pop();
-                    if (translucentTarget != null) {
-                        translucentTarget.get().copyDepthFrom(mainTarget.get());
-                    }
-
-                    if (itemEntityTarget != null) {
-                        itemEntityTarget.get().copyDepthFrom(mainTarget.get());
-                    }
-
-                    if (particleTarget != null) {
-                        particleTarget.get().copyDepthFrom(mainTarget.get());
-                    }
-
-                    profiler.push("renderTranslucentFeatures");
-                    featureFrame.executeTranslucent();
-                    profiler.pop();
-                    featureFrame.executeOutline();
-                    profiler.push("translucentTerrain");
-                    chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT, this.chunkLayerSampler);
-                    profiler.pop();
-                    featureFrame.executeTranslucentAfterTerrain();
+                    int maxAnisotropy = this.optionsRenderState.textureFiltering == TextureFilteringMethod.ANISOTROPIC
+                        ? this.optionsRenderState.maxAnisotropyValue
+                        : 1;
+                    this.chunkLayerSampler = RenderSystem.getDevice()
+                        .createSampler(
+                            AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE, FilterMode.LINEAR, FilterMode.LINEAR, maxAnisotropy, OptionalDouble.empty()
+                        );
                 }
+
+                profiler.push("solidTerrain");
+                chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE, this.chunkLayerSampler);
+                this.gameRenderer.lighting().setupFor(Lighting.Entry.LEVEL);
+                if (levelRenderState.shouldShowEntityOutlines && entityOutlineTarget != null) {
+                    RenderTarget outlineTarget = entityOutlineTarget.get();
+                    RenderSystem.getDevice()
+                        .createCommandEncoder()
+                        .clearColorAndDepthTextures(outlineTarget.getColorTexture(), ENTITY_OUTLINE_CLEAR_COLOR, outlineTarget.getDepthTexture(), 0.0);
+                }
+
+                profiler.popPush("renderSolidFeatures");
+                featureFrame.executeSolid();
+                profiler.pop();
+                if (translucentTarget != null) {
+                    translucentTarget.get().copyDepthFrom(mainTarget.get());
+                }
+
+                if (itemEntityTarget != null) {
+                    itemEntityTarget.get().copyDepthFrom(mainTarget.get());
+                }
+
+                if (particleTarget != null) {
+                    particleTarget.get().copyDepthFrom(mainTarget.get());
+                }
+
+                profiler.push("renderTranslucentFeatures");
+                featureFrame.executeTranslucent();
+                profiler.pop();
+                featureFrame.executeOutline();
+                profiler.push("translucentTerrain");
+                chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT, this.chunkLayerSampler);
+                profiler.pop();
+                featureFrame.executeTranslucentAfterTerrain();
+            }
         );
     }
 
     private void addCloudsPass(
-            final FrameGraphBuilder frame,
-            final CloudStatus cloudStatus,
-            final Vec3 cameraPosition,
-            final long gameTime,
-            final float partialTicks,
-            final int cloudColor,
-            final float cloudHeight,
-            final int cloudRange) {
+        final FrameGraphBuilder frame,
+        final CloudStatus cloudStatus,
+        final Vec3 cameraPosition,
+        final long gameTime,
+        final float partialTicks,
+        final int cloudColor,
+        final float cloudHeight,
+        final int cloudRange
+    ) {
         FramePass pass = frame.addPass("clouds");
         if (this.targets.clouds != null) {
             this.targets.clouds = pass.readsAndWrites(this.targets.clouds);
@@ -467,11 +472,13 @@ public class LevelRenderer implements AutoCloseable {
         }
 
         pass.executes(
-                () -> {
-                    RenderSystem.setShaderFog(fog);
-                    CameraRenderState cameraState = this.levelRenderState.cameraRenderState;
-                    this.weatherEffectRenderer.render(cameraState.pos, this.levelRenderState.weatherRenderState);
-                }
+            () -> {
+                RenderSystem.setShaderFog(fog);
+                CameraRenderState cameraState = this.levelRenderState.cameraRenderState;
+                this.weatherEffectRenderer.render(cameraState.pos, this.levelRenderState.weatherRenderState);
+                this.worldBorderRenderer
+                    .render(this.levelRenderState.worldBorderRenderState, cameraState.pos, renderDistance, this.levelRenderState.cameraRenderState.depthFar);
+            }
         );
     }
 
@@ -500,14 +507,8 @@ public class LevelRenderer implements AutoCloseable {
     }
 
     public ChunkSectionsToRender prepareChunkRenders(final Matrix4fc modelViewMatrix) {
-        ObjectListIterator<
-                SectionRenderDispatcher.RenderSection> iterator = this.visibleSections.listIterator(0);
-        EnumMap<
-                ChunkSectionLayer,
-                Int2ObjectOpenHashMap<
-                        List<
-                                RenderPass.Draw<
-                                        GpuBufferSlice[]>>>> drawGroups = new EnumMap<>(ChunkSectionLayer.class);
+        ObjectListIterator<SectionRenderDispatcher.RenderSection> iterator = this.visibleSections.listIterator(0);
+        EnumMap<ChunkSectionLayer, Int2ObjectOpenHashMap<List<RenderPass.Draw<GpuBufferSlice[]>>>> drawGroups = new EnumMap<>(ChunkSectionLayer.class);
         int largestIndexCount = 0;
 
         for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
@@ -536,7 +537,7 @@ public class LevelRenderer implements AutoCloseable {
                             if (uboIndex == -1) {
                                 uboIndex = sectionInfos.size();
                                 sectionInfos.add(
-                                        new DynamicUniforms.ChunkSectionInfo(
+                                    new DynamicUniforms.ChunkSectionInfo(
                                         new Matrix4f(modelViewMatrix),
                                         renderOffset.getX(),
                                         renderOffset.getY(),
@@ -544,7 +545,7 @@ public class LevelRenderer implements AutoCloseable {
                                         section.getVisibility(now),
                                         textureAtlasWidth,
                                         textureAtlasHeight
-                                        )
+                                    )
                                 );
                             }
 
@@ -573,16 +574,14 @@ public class LevelRenderer implements AutoCloseable {
                                     combinedHash = 31 * combinedHash + indexType.hashCode();
                                 }
 
-                                firstIndex = (int) (slice.indexBufferOffset() / indexType.bytes);
+                                firstIndex = (int)(slice.indexBufferOffset() / indexType.bytes);
                             }
 
                             int finalUboIndex = uboIndex;
-                            int baseVertex = (int) (slice.vertexBufferOffset() / vertexFormat.getVertexSize());
-                            List<
-                                    RenderPass.Draw<
-                                            GpuBufferSlice[]>> draws = drawGroups.get(layer).computeIfAbsent(combinedHash, var0 -> new ArrayList<>());
+                            int baseVertex = (int)(slice.vertexBufferOffset() / vertexFormat.getVertexSize());
+                            List<RenderPass.Draw<GpuBufferSlice[]>> draws = drawGroups.get(layer).computeIfAbsent(combinedHash, var0 -> new ArrayList<>());
                             draws.add(
-                                    new RenderPass.Draw<>(
+                                new RenderPass.Draw<>(
                                     0,
                                     vertexBuffer,
                                     indexBuffer,
@@ -590,9 +589,8 @@ public class LevelRenderer implements AutoCloseable {
                                     firstIndex,
                                     draw.indexCount(),
                                     baseVertex,
-                                    (sectionUbos, uploader) -> uploader.upload("ChunkSection", sectionUbos[
-                                    finalUboIndex])
-                                    )
+                                    (sectionUbos, uploader) -> uploader.upload("ChunkSection", sectionUbos[finalUboIndex])
+                                )
                             );
                         }
                     }
@@ -603,7 +601,7 @@ public class LevelRenderer implements AutoCloseable {
         }
 
         GpuBufferSlice[] chunkSectionInfos = RenderSystem.getDynamicUniforms()
-                .writeChunkSections(sectionInfos.toArray(new DynamicUniforms.ChunkSectionInfo[0]));
+            .writeChunkSections(sectionInfos.toArray(new DynamicUniforms.ChunkSectionInfo[0]));
         return new ChunkSectionsToRender(blockAtlas, drawGroups, largestIndexCount, chunkSectionInfos);
     }
 
@@ -717,43 +715,44 @@ public class LevelRenderer implements AutoCloseable {
 
             int outlineColor = state.highContrast() ? -11010079 : ARGB.black(102);
             this.submitHitOutline(
-                    poseStack,
-                    submitNodeCollector,
-                    RenderTypes.lines(),
-                    state,
-                    outlineColor,
-                    this.gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth,
-                    state.isTranslucent()
+                poseStack,
+                submitNodeCollector,
+                RenderTypes.lines(),
+                state,
+                outlineColor,
+                this.gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth,
+                state.isTranslucent()
             );
             poseStack.popPose();
         }
     }
 
     private void submitHitOutline(
-            final PoseStack poseStack,
-            final SubmitNodeCollector submitNodeCollector,
-            final RenderType renderType,
-            final BlockOutlineRenderState state,
-            final int color,
-            final float width,
-            final boolean afterTerrain) {
+        final PoseStack poseStack,
+        final SubmitNodeCollector submitNodeCollector,
+        final RenderType renderType,
+        final BlockOutlineRenderState state,
+        final int color,
+        final float width,
+        final boolean afterTerrain
+    ) {
         if (SharedConstants.DEBUG_SHAPES) {
             submitNodeCollector.submitShapeOutline(poseStack, state.shape(), renderType, -1, width, afterTerrain);
             if (state.collisionShape() != null) {
                 submitNodeCollector.submitShapeOutline(
-                        poseStack, state.collisionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 0.0F, 0.0F), width, afterTerrain
+                    poseStack, state.collisionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 0.0F, 0.0F), width, afterTerrain
                 );
             }
 
             if (state.occlusionShape() != null) {
                 submitNodeCollector.submitShapeOutline(
-                        poseStack, state.occlusionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 1.0F, 0.0F), width, afterTerrain
+                    poseStack, state.occlusionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 1.0F, 0.0F), width, afterTerrain
                 );
             }
 
             if (state.interactionShape() != null) {
                 submitNodeCollector.submitShapeOutline(
-                        poseStack, state.interactionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 0.0F, 1.0F), width, afterTerrain
+                    poseStack, state.interactionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 0.0F, 1.0F), width, afterTerrain
                 );
             }
         } else {
@@ -782,7 +781,7 @@ public class LevelRenderer implements AutoCloseable {
             this.chunkLayerSampler.close();
         }
 
-   
+        this.worldBorderRenderer.close();
         this.cloudRenderer.close();
         this.weatherEffectRenderer.close();
     }
@@ -790,22 +789,21 @@ public class LevelRenderer implements AutoCloseable {
     public void doEntityOutline() {
         if (this.levelRenderState.shouldShowEntityOutlines) {
             this.entityOutlineTarget
-                    .blitAndBlendToTexture(this.gameRenderer.mainRenderTarget().getColorTextureView(), this.gameRenderer.mainRenderTarget().getDepthTextureView());
+                .blitAndBlendToTexture(this.gameRenderer.mainRenderTarget().getColorTextureView(), this.gameRenderer.mainRenderTarget().getDepthTextureView());
         }
     }
 
     public void invalidateCompiledGeometry(final ClientLevel level, final Options options, final Camera camera, final BlockColors blockColors) {
         SectionCompiler sectionCompiler = new SectionCompiler(
-        options.ambientOcclusion().get(),
-        options.cutoutLeaves().get(),
-        this.modelManager.getBlockStateModelSet(),
-        this.modelManager.getFluidStateModelSet(),
-        blockColors
+            options.ambientOcclusion().get(),
+            options.cutoutLeaves().get(),
+            this.modelManager.getBlockStateModelSet(),
+            this.modelManager.getFluidStateModelSet(),
+            blockColors
         );
         if (this.sectionRenderDispatcher == null) {
             this.sectionRenderDispatcher = new SectionRenderDispatcher(
-            Util.backgroundExecutor(), this.renderBuffers, sectionCompiler, this.sectionOcclusionGraph
-                    ::schedulePropagationFrom
+                Util.backgroundExecutor(), this.renderBuffers, sectionCompiler, this.sectionOcclusionGraph::schedulePropagationFrom
             );
         } else {
             this.sectionRenderDispatcher.setCompiler(sectionCompiler);
@@ -819,13 +817,13 @@ public class LevelRenderer implements AutoCloseable {
 
         this.sectionRenderDispatcher.clearCompileQueue();
         this.viewArea = new ViewArea(
-        this.sectionRenderDispatcher,
-        level.getMinY(),
-        level.getMaxY(),
-        level.getMinSectionY(),
-        level.getMaxSectionY(),
-        options.getEffectiveRenderDistance(),
-        this.sectionOcclusionGraph
+            this.sectionRenderDispatcher,
+            level.getMinY(),
+            level.getMaxY(),
+            level.getMinSectionY(),
+            level.getMaxSectionY(),
+            options.getEffectiveRenderDistance(),
+            this.sectionOcclusionGraph
         );
         this.sectionOcclusionGraph().waitAndReset(this.viewArea);
         this.clearVisibleSections();
@@ -835,8 +833,8 @@ public class LevelRenderer implements AutoCloseable {
 
     private @Nullable PostChain getTransparencyChain() {
         return !this.gameRenderer.gameRenderState().useShaderTransparency()
-                ? null
-                : this.shaderManager.getPostChain(TRANSPARENCY_POST_CHAIN_ID, LevelTargetBundle.SORTING_TARGETS);
+            ? null
+            : this.shaderManager.getPostChain(TRANSPARENCY_POST_CHAIN_ID, LevelTargetBundle.SORTING_TARGETS);
     }
 
     private void scheduleTranslucentSectionResort(final Vec3 cameraPos) {
@@ -862,11 +860,12 @@ public class LevelRenderer implements AutoCloseable {
     }
 
     private void scheduleResort(
-            final SectionRenderDispatcher.RenderSection section,
-            final TranslucencyPointOfView pointOfView,
-            final Vec3 cameraPos,
-            final boolean blockPosChanged,
-            final boolean isNearby) {
+        final SectionRenderDispatcher.RenderSection section,
+        final TranslucencyPointOfView pointOfView,
+        final Vec3 cameraPos,
+        final boolean blockPosChanged,
+        final boolean isNearby
+    ) {
         pointOfView.set(cameraPos, section.getSectionNode());
         boolean pointOfViewChanged = section.getSectionMesh().isDifferentPointOfView(pointOfView);
         boolean resortBecauseBlockPosChanged = blockPosChanged && (pointOfView.isAxisAligned() || isNearby);
@@ -906,8 +905,8 @@ public class LevelRenderer implements AutoCloseable {
 
         SectionRenderDispatcher.RenderSection renderSection = this.viewArea.getRenderSectionAt(blockPos);
         return renderSection != null && renderSection.sectionMesh.get() != CompiledSectionMesh.UNCOMPILED
-                ? renderSection.getVisibility(Util.getMillis()) >= 0.3F
-                : false;
+            ? renderSection.getVisibility(Util.getMillis()) >= 0.3F
+            : false;
     }
 
     public @Nullable SectionRenderDispatcher sectionRenderDispatcher() {
@@ -958,7 +957,9 @@ public class LevelRenderer implements AutoCloseable {
         return this.weatherEffectRenderer;
     }
 
-    
+    public WorldBorderRenderer worldBorderRenderer() {
+        return this.worldBorderRenderer;
+    }
 
     public @Nullable ViewArea viewArea() {
         return this.viewArea;
@@ -996,11 +997,11 @@ public class LevelRenderer implements AutoCloseable {
         this.finalizedGizmos = new LevelRenderer.FinalizedGizmos(standardPrimitives, alwaysOnTopPrimitives);
     }
 
-    public void addMainThreadGizmos(final List<
-                    SimpleGizmoCollector.GizmoInstance> mainThreadGizmos) {
+    public void addMainThreadGizmos(final List<SimpleGizmoCollector.GizmoInstance> mainThreadGizmos) {
         this.renderThreadGizmos.addTemporaryGizmos(mainThreadGizmos);
     }
 
     @OnlyIn(Dist.CLIENT)
-    private record FinalizedGizmos(DrawableGizmoPrimitives standardPrimitives, DrawableGizmoPrimitives alwaysOnTopPrimitives) {}
+    private record FinalizedGizmos(DrawableGizmoPrimitives standardPrimitives, DrawableGizmoPrimitives alwaysOnTopPrimitives) {
+    }
 }

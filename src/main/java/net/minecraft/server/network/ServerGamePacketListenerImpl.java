@@ -432,11 +432,11 @@ public class ServerGamePacketListenerImpl
     }
 
     private static double clampHorizontal(final double value) {
-        return Mth.clamp(value, -3.0E7, 3.0E7);
+        return Mth.clamp(value, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     }
 
     private static double clampVertical(final double value) {
-        return Mth.clamp(value, -2.0E7, 2.0E7);
+        return Mth.clamp(value, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
     }
 
     @Override
@@ -1817,7 +1817,7 @@ public class ServerGamePacketListenerImpl
             ServerLevel level = this.player.level();
             Entity target = level.getEntityOrPart(packet.entityId());
             this.player.resetLastActionTime();
-            if (target != null) {
+            if (target != null && level.getWorldBorder().isWithinBounds(target.blockPosition())) {
                 AABB targetBounds = target.getBoundingBox();
                 ItemStack mainHandItem = this.player.getMainHandItem();
                 if (this.player.isWithinAttackRange(mainHandItem, targetBounds, 3.0)) {
@@ -1847,7 +1847,7 @@ public class ServerGamePacketListenerImpl
             Entity target = level.getEntityOrPart(packet.entityId());
             this.player.resetLastActionTime();
             this.player.setShiftKeyDown(packet.usingSecondaryAction());
-            if (target != null) {
+            if (target != null && level.getWorldBorder().isWithinBounds(target.blockPosition())) {
                 AABB targetBounds = target.getBoundingBox();
                 if (this.player.isWithinEntityInteractionRange(targetBounds, 3.0)) {
                     InteractionHand hand = packet.hand();
@@ -1876,7 +1876,7 @@ public class ServerGamePacketListenerImpl
             if (packet.spectateEntityId().isPresent()) {
                 ServerLevel level = this.player.level();
                 Entity target = level.getEntityOrPart(packet.spectateEntityId().getAsInt());
-                if (target != null) {
+                if (target != null && level.getWorldBorder().isWithinBounds(target.blockPosition())) {
                     if (this.player.isWithinEntityInteractionRange(target.getBoundingBox(), 3.0)) {
                         if (target.isPickable()) {
                             this.player.setCamera(target);

@@ -128,7 +128,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.FuelValues;
 import net.minecraft.world.level.block.entity.TickingBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -356,8 +356,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
         TickRateManager tickRateManager = this.tickRateManager();
         boolean runs = tickRateManager.runsNormally();
         if (runs) {
-            
-            
+            profiler.push("world border");
+            this.getWorldBorder().tick();
             profiler.popPush("weather");
             this.advanceWeatherCycle();
             profiler.pop();
@@ -871,7 +871,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
 
     @Override
     public boolean mayInteract(final Entity entity, final BlockPos pos) {
-        return !(entity instanceof Player player && (this.server.isUnderSpawnProtection(this, pos, player)));
+        return !(entity instanceof Player player && (this.server.isUnderSpawnProtection(this, pos, player) || !this.getWorldBorder().isWithinBounds(pos)));
     }
 
     public void save(final @Nullable ProgressListener progressListener, final boolean flush, final boolean noSave) {
@@ -1454,7 +1454,12 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
             );
     }
 
-
+    @Override
+    public WorldBorder getWorldBorder() {
+        WorldBorder worldBorder = this.getDataStorage().computeIfAbsent(WorldBorder.TYPE);
+        worldBorder.applyInitialSettings(this.levelData.getGameTime());
+        return worldBorder;
+    }
 
     public RecipeManager recipeAccess() {
         return this.server.getRecipeManager();
@@ -1817,7 +1822,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
     }
 
     public boolean canSpawnEntitiesInChunk(final ChunkPos pos) {
-        return this.entityManager.canPositionTick(pos);
+        return this.entityManager.canPositionTick(pos) && this.getWorldBorder().isWithinBounds(pos);
     }
 
     @Override

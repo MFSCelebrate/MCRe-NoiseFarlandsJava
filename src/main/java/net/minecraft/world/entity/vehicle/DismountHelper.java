@@ -45,7 +45,8 @@ public class DismountHelper {
                 return false;
             }
         }
-        return true;
+
+        return level.getWorldBorder().isWithinBounds(box);
     }
 
     public static boolean canDismountTo(final CollisionGetter level, final Vec3 location, final LivingEntity passenger, final Pose dismountPose) {
@@ -68,6 +69,7 @@ public class DismountHelper {
             if (!collisionShape.isEmpty()) {
                 return pos.getY() + y + collisionShape.min(Direction.Axis.Y);
             }
+
             y++;
             cursor.move(Direction.UP);
         }
@@ -100,10 +102,9 @@ public class DismountHelper {
             }
         }
 
-        // ===== 修复：返回 position 而不是 boolean =====
         if (type != EntityTypes.PLAYER
-            || !level.getBlockState(blockPos.above()).is(BlockTags.INVALID_SPAWN_INSIDE)) {
-            return position;
+            || !level.getBlockState(blockPos).is(BlockTags.INVALID_SPAWN_INSIDE) && !level.getBlockState(blockPos.above()).is(BlockTags.INVALID_SPAWN_INSIDE)) {
+            return !level.getWorldBorder().isWithinBounds(aabb) ? null : position;
         } else {
             return null;
         }

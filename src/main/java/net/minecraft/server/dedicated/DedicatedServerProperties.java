@@ -107,6 +107,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
     public final int networkCompressionThreshold = this.get("network-compression-threshold", 256);
     public final boolean broadcastRconToOps = this.get("broadcast-rcon-to-ops", true);
     public final boolean broadcastConsoleToOps = this.get("broadcast-console-to-ops", true);
+    public final long maxWorldSize = this.get("max-world-size", v -> Mth.clamp(v, 1, Long.MAX_VALUE), Long.MAX_VALUE);
     public final boolean syncChunkWrites = this.get("sync-chunk-writes", true);
     public final String regionFileComression = this.get("region-file-compression", "deflate");
     public final boolean enableJmxMonitoring = this.get("enable-jmx-monitoring", false);

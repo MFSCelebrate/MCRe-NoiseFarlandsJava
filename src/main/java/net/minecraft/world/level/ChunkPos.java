@@ -30,7 +30,7 @@ public record ChunkPos(int x, int z) {
         }
     };
     private static final int SAFETY_MARGIN = 1056;
-    public static final long INVALID_CHUNK_POS = pack(134217728, 134217728);
+    public static final long INVALID_CHUNK_POS = pack(2147483647, 2147483647);
     public static final ChunkPos ZERO = new ChunkPos(0, 0);
     private static final long COORD_BITS = 32L;
     private static final long COORD_MASK = 4294967295L;
@@ -63,7 +63,7 @@ public record ChunkPos(int x, int z) {
     }
 
     public static boolean isValid(final int x, final int z) {
-        return Mth.absMax(x, z) <= ChunkPyramid.MAX_CHUNK_COORDINATE_VALUE;
+        return true;
     }
 
     public long pack() {

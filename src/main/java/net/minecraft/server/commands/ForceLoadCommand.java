@@ -144,7 +144,6 @@ public class ForceLoadCommand {
         int minZ = Math.min(from.z(), to.z());
         int maxX = Math.max(from.x(), to.x());
         int maxZ = Math.max(from.z(), to.z());
-
         int minChunkX = SectionPos.blockToSectionCoord(minX);
         int minChunkZ = SectionPos.blockToSectionCoord(minZ);
         int maxChunkX = SectionPos.blockToSectionCoord(maxX);

@@ -4,29 +4,36 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketType;
-import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.border.WorldBorder;
 
 public class ClientboundSetBorderWarningDistancePacket implements Packet<ClientGamePacketListener> {
-    public ClientboundSetBorderWarningDistancePacket() {}
+    public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderWarningDistancePacket> STREAM_CODEC = Packet.codec(
+        ClientboundSetBorderWarningDistancePacket::write, ClientboundSetBorderWarningDistancePacket::new
+    );
+    private final int warningBlocks;
 
-    public ClientboundSetBorderWarningDistancePacket(final FriendlyByteBuf buf) {
-        // 不读取
+    public ClientboundSetBorderWarningDistancePacket(final WorldBorder border) {
+        this.warningBlocks = border.getWarningBlocks();
     }
 
-    public void write(final FriendlyByteBuf buf) {
-        // 不写入
+    private ClientboundSetBorderWarningDistancePacket(final FriendlyByteBuf input) {
+        this.warningBlocks = input.readVarInt();
+    }
+
+    private void write(final FriendlyByteBuf output) {
+        output.writeVarInt(this.warningBlocks);
     }
 
     @Override
-    public void handle(final ClientGamePacketListener listener) {
-        // 忽略
+    public PacketType<ClientboundSetBorderWarningDistancePacket> type() {
+        return GamePacketTypes.CLIENTBOUND_SET_BORDER_WARNING_DISTANCE;
     }
 
-@Override
-public PacketType<YourClass> type() {
-    return new PacketType<>(PacketFlow.PLAY, Identifier.withDefaultNamespace("set_border_warning_distance"));
-}
+    public void handle(final ClientGamePacketListener listener) {
+        listener.handleSetBorderWarningDistance(this);
+    }
 
-    public static final StreamCodec<FriendlyByteBuf, ClientboundSetBorderWarningDistancePacket> STREAM_CODEC =
-        Packet.codec(ClientboundSetBorderWarningDistancePacket::write, ClientboundSetBorderWarningDistancePacket::new);
+    public int getWarningBlocks() {
+        return this.warningBlocks;
+    }
 }
