@@ -436,7 +436,7 @@ public class ServerGamePacketListenerImpl
     }
 
     private static double clampVertical(final double value) {
-        return Mth.clamp(value, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
+        return value;
     }
 
     @Override

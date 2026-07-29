@@ -1799,7 +1799,7 @@ public abstract class Entity
         this.xo = x;
         this.yo = y;
         this.zo = z;
-        this.setPos(cx, y, cz);
+        this.setPos(x, y, z);
     }
 
     public void snapTo(final Vec3 pos) {

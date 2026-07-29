@@ -2167,7 +2167,7 @@ public abstract class Entity
                     Math.abs(motion.x) > 10.0 ? 0.0 : motion.x, Math.abs(motion.y) > 10.0 ? 0.0 : motion.y, Math.abs(motion.z) > 10.0 ? 0.0 : motion.z
             );
             this.needsSync = true;
-            double maxHorizontalPosition = Double.POSITIVE_INFINITY;
+            
             this.setPosRaw(pos.x, pos.y, pos.z);
             this.setYRot(rotation.x);
             this.setXRot(rotation.y);
