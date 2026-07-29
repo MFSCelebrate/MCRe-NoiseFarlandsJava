@@ -194,7 +194,7 @@ public class WorldBorderCommand {
         }
     }
 
-    private static long setSize(final CommandSourceStack source, final double distance, final long ticks) throws CommandSyntaxException {
+    private static int setSize(final CommandSourceStack source, final double distance, final long ticks) throws CommandSyntaxException {
         ServerLevel level = source.getLevel();
         WorldBorder border = level.getWorldBorder();
         double current = border.getSize();

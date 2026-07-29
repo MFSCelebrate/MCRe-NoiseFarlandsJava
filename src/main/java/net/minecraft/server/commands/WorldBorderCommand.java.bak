@@ -223,7 +223,7 @@ public class WorldBorderCommand {
             source.sendSuccess(() -> Component.translatable("commands.worldborder.set.immediate", formattedDistance), true);
         }
 
-        return (long)(distance - current);
+        return (int)(distance - current);
     }
 
     private static String formatTicksToSeconds(final long ticks) {
