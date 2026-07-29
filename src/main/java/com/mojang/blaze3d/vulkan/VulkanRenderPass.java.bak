@@ -330,8 +330,8 @@ public class VulkanRenderPass implements RenderPassBackend {
             VK13.vkCmdSetDepthWriteEnable(this.commandBuffer(), depthState.writeDepth());
             VK13.vkCmdSetDepthCompareOp(this.commandBuffer(), VulkanConst.toVk(depthState.depthTest()));
             // depthBounds 默认禁用，Stencil 默认禁用（暂未使用）
-            VK12.vkCmdSetDepthBoundsTestEnable(this.commandBuffer(), false);
-            VK12.vkCmdSetStencilTestEnable(this.commandBuffer(), false);
+            VK13.vkCmdSetDepthBoundsTestEnable(this.commandBuffer(), false);
+            VK13.vkCmdSetStencilTestEnable(this.commandBuffer(), false);
         } else if (this.hasDepth) {
             // 情况 2：Pass 有深度附件，但 Pipeline 没有声明深度状态 → 禁用深度测试
             // 这通常发生在 UI 渲染等不需要深度的场景，但 Pass 被迫包含深度附件时

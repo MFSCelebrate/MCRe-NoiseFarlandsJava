@@ -21,7 +21,7 @@ import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import org.joml.Vector4fc;
-import org.lwjgl.vulkan.VK13;  // 动态状态方法在 VK13 中
+import org.lwjgl.vulkan.VK13; // 动态状态方法在 VK13 中
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
@@ -335,13 +335,13 @@ public class VulkanRenderPass implements RenderPassBackend {
         } else if (this.hasDepth) {
             // 情况 2：Pass 有深度附件，但 Pipeline 没有声明深度状态 → 禁用深度测试
             // 这通常发生在 UI 渲染等不需要深度的场景，但 Pass 被迫包含深度附件时
-            VK12.vkCmdSetDepthTestEnable(this.commandBuffer(), false);
-            VK12.vkCmdSetDepthWriteEnable(this.commandBuffer(), false);
+            VK13.vkCmdSetDepthTestEnable(this.commandBuffer(), false);
+            VK13.vkCmdSetDepthWriteEnable(this.commandBuffer(), false);
             // 深度比较操作保持默认值
         } else {
             // 情况 3：Pass 没有深度附件 → 必须禁用深度测试（否则 Vulkan 规范未定义行为）
-            VK12.vkCmdSetDepthTestEnable(this.commandBuffer(), false);
-            VK12.vkCmdSetDepthWriteEnable(this.commandBuffer(), false);
+            VK13.vkCmdSetDepthTestEnable(this.commandBuffer(), false);
+            VK13.vkCmdSetDepthWriteEnable(this.commandBuffer(), false);
         }
 
         // 如果 Pipeline 配置了 DepthBias，Rasterization 阶段已经设置了，不需要额外操作
@@ -604,12 +604,14 @@ public class VulkanRenderPass implements RenderPassBackend {
         }
 
         // ===== 绑定 Descriptor Set（每帧/每次 Draw 前执行，开销极小） =====
+        LongBuffer setBuffer = stack.callocLong(1);
+        setBuffer.put(0, vkPipeline.descriptorSet());
         VK12.vkCmdBindDescriptorSets(
                 this.commandBuffer(),
-                0, // pipeline bind point (graphics)
+                0,
                 vkPipeline.pipelineLayout(),
-                0, // first set
-                stack.longs(vkPipeline.descriptorSet()),
+                0,
+                setBuffer,
                 null
         );
     }
@@ -625,6 +627,4 @@ public class VulkanRenderPass implements RenderPassBackend {
         return this.label;
     }
 
-    @OnlyIn(Dist.CLIENT)
-    protected record TextureViewAndSampler(VulkanGpuTextureView view, VulkanGpuSampler sampler) {}
 }

@@ -32,7 +32,7 @@ import java.io.IOException;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkPipelineCacheCreateInfo;
-import org.lwjgl.vulkan.VkDescriptorSet; // 如果使用的话
+
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import java.nio.ByteBuffer;
@@ -65,6 +65,7 @@ public class VulkanDevice implements GpuDeviceBackend {
     private final Map<
             VulkanDevice.ShaderCompilationKey,
             IntermediaryShaderModule> shaderCache = new HashMap<>();
+    private final Map<RenderPipeline, VulkanRenderPipeline> pipelineCacheMap;
     private final VulkanInstance instance;
     private final VkDevice vkDevice;
     private final long vma;
@@ -93,6 +94,7 @@ public class VulkanDevice implements GpuDeviceBackend {
         this.defaultShaderSource = defaultShaderSource;
         this.instance = instance;
         this.vkDevice = vkDevice;
+        this.pipelineCacheMap = new IdentityHashMap<>();
         this.vma = vma;
         this.checkpointExtension = checkpointExtension;
         Set<String> extensionNames = new HashSet<>();
@@ -195,7 +197,7 @@ public class VulkanDevice implements GpuDeviceBackend {
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             // 先查询大小
-            LongBuffer sizePtr = stack.callocLong(1);
+            PointerBuffer sizePtr = stack.callocPointer(1);
             int result = VK12.vkGetPipelineCacheData(this.vkDevice, this.pipelineCache, sizePtr, null);
             if (result != 0) {
                 LOGGER.warn("Failed to get pipeline cache data size: {}", VulkanUtils.resultToString(result));
@@ -359,7 +361,9 @@ public class VulkanDevice implements GpuDeviceBackend {
     }
 
     protected VulkanRenderPipeline getOrCompilePipeline(final RenderPipeline pipeline) {
-        return this.pipelineCacheMap.computeIfAbsent(pipeline, ignored -> this.compilePipeline(pipeline, this.defaultShaderSource));
+        return this.pipelineCacheMap.computeIfAbsent(pipeline, ignored ->
+                this.compilePipeline(pipeline, this.defaultShaderSource)
+        );
     }
 
     @Override
@@ -401,12 +405,36 @@ public class VulkanDevice implements GpuDeviceBackend {
         );
         if (vertexShader == IntermediaryShaderModule.INVALID) {
             LOGGER.error("Couldn't compile pipeline {}: vertex shader {} was invalid", pipeline.getLocation(), pipeline.getVertexShader());
-            return new VulkanRenderPipeline(pipeline, this, 0L, 0L, 0L, VulkanBindGroupLayout.INVALID_LAYOUT, 0L, 0L);
+
+// ✅ 正确（9 个参数）
+            return new VulkanRenderPipeline(
+            pipeline,
+            this,
+            0L, // pipeline
+            0L, // pipelineLayout
+            VulkanBindGroupLayout.INVALID_LAYOUT, // layout
+            0L, // vertexModule
+            0L, // fragmentModule
+            0L, // descriptorPool
+            0L // descriptorSet
+            );
         }
 
         if (fragmentShader == IntermediaryShaderModule.INVALID) {
             LOGGER.error("Couldn't compile pipeline {}: fragment shader {} was invalid", pipeline.getLocation(), pipeline.getFragmentShader());
-            return new VulkanRenderPipeline(pipeline, this, 0L, 0L, 0L, VulkanBindGroupLayout.INVALID_LAYOUT, 0L, 0L);
+
+// ✅ 正确（9 个参数）
+            return new VulkanRenderPipeline(
+            pipeline,
+            this,
+            0L, // pipeline
+            0L, // pipelineLayout
+            VulkanBindGroupLayout.INVALID_LAYOUT, // layout
+            0L, // vertexModule
+            0L, // fragmentModule
+            0L, // descriptorPool
+            0L // descriptorSet
+            );
         }
 
         try {

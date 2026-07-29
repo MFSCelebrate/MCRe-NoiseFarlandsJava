@@ -7,9 +7,6 @@ import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lwjgl.system.MemoryStack;
@@ -36,14 +33,21 @@ import org.lwjgl.vulkan.VkPipelineViewportStateCreateInfo;
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
 import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 import org.lwjgl.vulkan.VkVertexInputBindingDivisorDescriptionEXT;
-import org.lwjgl.vulkan.VkPipelineShaderStageCreateInfo.Buffer;
+
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 
 /**
  * Vulkan 渲染管线封装。
+ * <p>
  * 每个实例对应一个 RenderPipeline，内部维护：
- * - 一条 Graphics Pipeline（深度状态通过动态状态控制）
- * - 一个 Descriptor Pool + 一个 Descriptor Set（用于高效绑定资源）
- * - Pipeline Layout 以及 Shader Module 句柄
+ * <ul>
+ *   <li>一条 Graphics Pipeline（深度状态通过动态状态控制）</li>
+ *   <li>一个 Descriptor Pool + 一个 Descriptor Set（用于高效绑定资源）</li>
+ *   <li>Pipeline Layout 以及 Shader Module 句柄</li>
+ * </ul>
+ * </p>
  */
 @OnlyIn(Dist.CLIENT)
 public record VulkanRenderPipeline(
@@ -103,7 +107,7 @@ public record VulkanRenderPipeline(
             );
             pipelineLayout = ptr.get(0);
             device.instance().debug().setObjectName(
-                device.vkDevice(), 17, pipelineLayout,
+                device.vkDevice(), VK10.VK_OBJECT_TYPE_PIPELINE_LAYOUT, pipelineLayout,
                 () -> "Pipeline layout for " + pipeline.getLocation()
             );
         }
@@ -163,7 +167,7 @@ public record VulkanRenderPipeline(
             );
             descriptorPool = poolPtr.get(0);
             device.instance().debug().setObjectName(
-                device.vkDevice(), 16, descriptorPool,
+                device.vkDevice(), VK10.VK_OBJECT_TYPE_DESCRIPTOR_POOL, descriptorPool,
                 () -> "Descriptor pool for " + pipeline.getLocation()
             );
 
@@ -182,7 +186,7 @@ public record VulkanRenderPipeline(
             );
             descriptorSet = setPtr.get(0);
             device.instance().debug().setObjectName(
-                device.vkDevice(), 15, descriptorSet,
+                device.vkDevice(), VK10.VK_OBJECT_TYPE_DESCRIPTOR_SET, descriptorSet,
                 () -> "Descriptor set for " + pipeline.getLocation()
             );
         }
@@ -192,7 +196,7 @@ public record VulkanRenderPipeline(
         // ============================================================
         try (MemoryStack stack = MemoryStack.stackPush()) {
             // 4.1 Shader Stages
-            Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(2, stack);
+            VkPipelineShaderStageCreateInfo.Buffer shaderStages = VkPipelineShaderStageCreateInfo.calloc(2, stack);
             ByteBuffer mainName = stack.UTF8("main");
             VkPipelineShaderStageCreateInfo vertexStage = VkPipelineShaderStageCreateInfo.calloc(stack)
                 .sType$Default()
@@ -368,7 +372,7 @@ public record VulkanRenderPipeline(
 
             long pipelineHandle = pipelinePtr.get(0);
             device.instance().debug().setObjectName(
-                device.vkDevice(), 19, pipelineHandle,
+                device.vkDevice(), VK10.VK_OBJECT_TYPE_PIPELINE, pipelineHandle,
                 () -> "Pipeline " + pipeline.getLocation()
             );
 

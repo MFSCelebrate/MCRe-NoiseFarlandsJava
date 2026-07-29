@@ -54,6 +54,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
     private final VulkanDevice device;
     private final VulkanTransientMemory transientMemory;
     private final long submitSemaphore;
+    private @Nullable VkCommandBuffer currentCommandBuffer;
     private long currentSubmitIndex = 2L;
     private long completedSubmitIndex = 0L;
     private final CheckpointExtension.CheckpointStorage checkpointStorage;
@@ -229,6 +230,9 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
     @Override
     public RenderPassBackend createRenderPass(final RenderPassDescriptor descriptor) {
         // ... (保持不变，未修改) ...
+        this.currentCommandBuffer = this.currentCommandBuffer != null 
+    ? this.currentCommandBuffer 
+    : this.allocateAndBeginTransientCommandBuffer();
         List<
                 RenderPassDescriptor.Attachment<
                         Optional<Vector4fc>>> colorAttachments = descriptor.colorAttachments();
@@ -332,7 +336,7 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             width,
             height,
             depthAttachment != null,
-            descriptor.label,
+            descriptor.label(),
             colorAttachments, // 新增
             depthAttachment != null ? depthAttachment.textureView() : null // 新增
             );
