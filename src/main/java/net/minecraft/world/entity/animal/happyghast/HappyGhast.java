@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.happyghast;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import net.minecraft.core.BlockPos;

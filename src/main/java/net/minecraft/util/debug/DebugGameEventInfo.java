@@ -1,4 +1,5 @@
 package net.minecraft.util.debug;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;

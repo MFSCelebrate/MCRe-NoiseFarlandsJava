@@ -1,4 +1,5 @@
 package net.minecraft.commands.execution;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public record ChainModifiers(byte flags) {
     public static final ChainModifiers DEFAULT = new ChainModifiers((byte)0);

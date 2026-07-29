@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.feature.submit;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.feature.FeatureRendererType;
 import net.minecraftforge.api.distmarker.Dist;

@@ -1,4 +1,5 @@
 package net.minecraft.client.data.models.blockstates;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher;
 import net.minecraft.world.level.block.Block;

@@ -1,4 +1,5 @@
 package net.minecraft.server.notifications;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.IpBanListEntry;

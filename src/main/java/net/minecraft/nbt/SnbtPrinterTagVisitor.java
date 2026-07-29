@@ -1,4 +1,5 @@
 package net.minecraft.nbt;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;

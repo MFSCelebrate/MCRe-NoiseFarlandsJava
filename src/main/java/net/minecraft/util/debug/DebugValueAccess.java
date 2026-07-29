@@ -1,4 +1,5 @@
 package net.minecraft.util.debug;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.BiConsumer;
 import net.minecraft.core.BlockPos;

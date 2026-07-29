@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.feature;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.textures.GpuTextureView;
 import net.minecraft.client.color.block.BlockColors;

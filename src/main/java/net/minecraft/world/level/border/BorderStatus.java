@@ -1,4 +1,5 @@
 package net.minecraft.world.level.border;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public enum BorderStatus {
     GROWING(4259712),

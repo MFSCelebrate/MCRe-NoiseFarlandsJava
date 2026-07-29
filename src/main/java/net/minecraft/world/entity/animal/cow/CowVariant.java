@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.cow;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

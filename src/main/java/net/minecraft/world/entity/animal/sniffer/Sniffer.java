@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.sniffer;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import io.netty.buffer.ByteBuf;
 import java.util.Collection;

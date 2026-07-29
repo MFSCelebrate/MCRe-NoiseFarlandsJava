@@ -1,4 +1,5 @@
 package net.minecraft.world.level;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class GrassColor {
     private static int[] pixels = new int[65536];

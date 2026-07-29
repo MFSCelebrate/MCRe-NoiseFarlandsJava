@@ -1,4 +1,5 @@
 package net.minecraft.client.data.models.blockstates;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Function3;
 import com.mojang.datafixers.util.Function4;

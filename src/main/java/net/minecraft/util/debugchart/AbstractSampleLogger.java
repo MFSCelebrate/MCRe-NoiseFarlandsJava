@@ -1,4 +1,5 @@
 package net.minecraft.util.debugchart;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public abstract class AbstractSampleLogger implements SampleLogger {
     protected final long[] defaults;

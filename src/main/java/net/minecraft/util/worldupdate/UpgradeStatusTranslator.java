@@ -1,4 +1,5 @@
 package net.minecraft.util.worldupdate;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.EnumMap;
 import java.util.Map;

@@ -1,4 +1,5 @@
 package net.minecraft.world.level.levelgen.feature.configurations;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.world.level.block.state.BlockState;

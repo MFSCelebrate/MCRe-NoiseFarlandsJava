@@ -1,4 +1,5 @@
 package net.minecraft.world.level.pathfinder;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;

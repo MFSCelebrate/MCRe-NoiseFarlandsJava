@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.dolphin;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.EnumSet;
 import java.util.List;

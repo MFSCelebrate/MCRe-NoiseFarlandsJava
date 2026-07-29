@@ -1,4 +1,5 @@
 package net.minecraft.world.level.levelgen.structure;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;

@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.dialog;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.stream.Stream;
 import net.minecraft.client.gui.screens.Screen;

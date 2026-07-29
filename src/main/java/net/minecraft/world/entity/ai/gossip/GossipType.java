@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.gossip;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.util.StringRepresentable;

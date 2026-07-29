@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.components.debug;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.clock.ClockManager;
 import net.minecraft.world.level.Level;

@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.font.glyphs;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.font.TextRenderable;
 import net.minecraftforge.api.distmarker.Dist;

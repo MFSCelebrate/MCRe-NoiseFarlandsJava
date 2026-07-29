@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.entity.state;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.model.animal.parrot.ParrotModel;
 import net.minecraft.world.entity.animal.parrot.Parrot;

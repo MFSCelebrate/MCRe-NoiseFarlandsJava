@@ -1,4 +1,5 @@
 package net.minecraft.client.gui;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Objects;
 import java.util.function.Consumer;

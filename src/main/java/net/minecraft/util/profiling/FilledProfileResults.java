@@ -1,4 +1,5 @@
 package net.minecraft.util.profiling;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;

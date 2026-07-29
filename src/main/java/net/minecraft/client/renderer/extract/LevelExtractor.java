@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.extract;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;

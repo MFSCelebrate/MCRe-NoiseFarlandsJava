@@ -1,4 +1,5 @@
 package net.minecraft.network.protocol.game;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.network.FriendlyByteBuf;

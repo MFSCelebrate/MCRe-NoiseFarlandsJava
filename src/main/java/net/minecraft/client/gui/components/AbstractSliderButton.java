@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.components;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.minecraft.client.InputType;

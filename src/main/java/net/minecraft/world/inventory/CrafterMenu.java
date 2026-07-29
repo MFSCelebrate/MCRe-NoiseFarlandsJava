@@ -1,4 +1,5 @@
 package net.minecraft.world.inventory;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;

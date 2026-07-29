@@ -1,4 +1,5 @@
 package net.minecraft.client.particle;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;

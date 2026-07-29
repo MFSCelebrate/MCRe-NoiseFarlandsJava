@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.font.glyphs;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.font.GlyphInfo;
 import com.mojang.blaze3d.pipeline.RenderPipeline;

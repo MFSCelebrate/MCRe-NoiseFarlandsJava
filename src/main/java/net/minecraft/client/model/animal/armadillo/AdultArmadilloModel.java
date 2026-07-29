@@ -1,4 +1,5 @@
 package net.minecraft.client.model.animal.armadillo;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.animation.definitions.ArmadilloAnimation;
 import net.minecraft.client.model.geom.ModelPart;

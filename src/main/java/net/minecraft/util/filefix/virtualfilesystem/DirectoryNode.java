@@ -1,4 +1,5 @@
 package net.minecraft.util.filefix.virtualfilesystem;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Collection;
 import java.util.Collections;

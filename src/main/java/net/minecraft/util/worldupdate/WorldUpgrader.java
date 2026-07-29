@@ -1,4 +1,5 @@
 package net.minecraft.util.worldupdate;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.mojang.datafixers.DataFixer;

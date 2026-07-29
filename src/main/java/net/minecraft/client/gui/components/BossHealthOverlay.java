@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.components;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Maps;
 import java.util.Map;

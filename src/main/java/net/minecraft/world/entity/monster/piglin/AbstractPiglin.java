@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.monster.piglin;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import net.minecraft.core.component.DataComponents;

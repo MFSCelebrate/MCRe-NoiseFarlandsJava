@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.state.gui;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;

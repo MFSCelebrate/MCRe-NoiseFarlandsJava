@@ -1,4 +1,5 @@
 package net.minecraft.world.phys.shapes;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;

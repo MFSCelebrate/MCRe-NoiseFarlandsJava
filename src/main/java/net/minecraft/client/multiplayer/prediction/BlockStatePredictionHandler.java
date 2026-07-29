@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer.prediction;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;

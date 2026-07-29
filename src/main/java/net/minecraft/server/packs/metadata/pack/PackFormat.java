@@ -1,4 +1,5 @@
 package net.minecraft.server.packs.metadata.pack;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.mojang.logging.LogUtils;

@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.blockentity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import net.minecraft.util.LightCoordsUtil;

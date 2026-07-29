@@ -1,4 +1,5 @@
 package net.minecraft.core.dispenser;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public abstract class OptionalDispenseItemBehavior extends DefaultDispenseItemBehavior {
     private boolean success = true;

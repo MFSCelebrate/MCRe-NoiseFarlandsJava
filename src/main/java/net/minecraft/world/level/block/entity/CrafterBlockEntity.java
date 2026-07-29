@@ -1,4 +1,5 @@
 package net.minecraft.world.level.block.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntArrayList;

@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.nautilus;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;

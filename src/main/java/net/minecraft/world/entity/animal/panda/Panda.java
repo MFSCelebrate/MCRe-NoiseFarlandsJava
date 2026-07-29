@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.panda;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import java.util.EnumSet;

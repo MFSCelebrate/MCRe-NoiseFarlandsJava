@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.feline;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import net.minecraft.advancements.predicates.MinMaxBounds;

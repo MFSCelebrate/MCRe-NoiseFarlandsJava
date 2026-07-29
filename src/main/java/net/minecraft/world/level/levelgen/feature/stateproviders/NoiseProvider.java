@@ -1,4 +1,5 @@
 package net.minecraft.world.level.levelgen.feature.stateproviders;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.Products.P4;
 import com.mojang.serialization.MapCodec;

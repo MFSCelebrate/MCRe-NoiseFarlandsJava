@@ -1,4 +1,5 @@
 package net.minecraft.world.inventory;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class SimpleContainerData implements ContainerData {
     private final int[] ints;

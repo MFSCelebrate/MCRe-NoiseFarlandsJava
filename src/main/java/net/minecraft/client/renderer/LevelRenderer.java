@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.IndexType;

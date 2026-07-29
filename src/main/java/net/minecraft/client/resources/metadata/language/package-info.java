@@ -1,6 +1,7 @@
 @NullMarked
 @OnlyIn(Dist.CLIENT)
 package net.minecraft.client.resources.metadata.language;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

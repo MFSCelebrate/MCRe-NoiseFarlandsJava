@@ -1,4 +1,5 @@
 package net.minecraft.world.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.scores.PlayerTeam;
 import org.jspecify.annotations.Nullable;

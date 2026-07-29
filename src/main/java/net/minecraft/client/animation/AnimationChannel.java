@@ -1,4 +1,5 @@
 package net.minecraft.client.animation;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;

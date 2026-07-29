@@ -1,4 +1,5 @@
 package net.minecraft.server;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class TickTask implements Runnable {
     private final int tick;

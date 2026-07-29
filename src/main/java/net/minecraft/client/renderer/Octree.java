@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;

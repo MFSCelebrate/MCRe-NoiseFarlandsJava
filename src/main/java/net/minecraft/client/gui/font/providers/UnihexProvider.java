@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.font.providers;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.mojang.blaze3d.font.GlyphBitmap;

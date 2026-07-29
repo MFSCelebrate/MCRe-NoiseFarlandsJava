@@ -1,4 +1,5 @@
 package net.minecraft.client.resources;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.io.IOException;
 import net.minecraft.resources.Identifier;

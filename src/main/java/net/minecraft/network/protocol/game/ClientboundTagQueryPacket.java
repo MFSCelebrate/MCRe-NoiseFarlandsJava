@@ -1,4 +1,5 @@
 package net.minecraft.network.protocol.game;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;

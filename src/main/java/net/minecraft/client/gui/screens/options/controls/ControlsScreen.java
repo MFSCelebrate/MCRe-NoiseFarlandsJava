@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.options.controls;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;

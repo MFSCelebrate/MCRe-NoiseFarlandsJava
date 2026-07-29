@@ -1,4 +1,5 @@
 package net.minecraft.server.level;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.HumanoidArm;

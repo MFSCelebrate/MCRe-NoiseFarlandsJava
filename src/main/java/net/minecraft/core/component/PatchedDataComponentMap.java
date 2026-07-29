@@ -1,4 +1,5 @@
 package net.minecraft.core.component;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;

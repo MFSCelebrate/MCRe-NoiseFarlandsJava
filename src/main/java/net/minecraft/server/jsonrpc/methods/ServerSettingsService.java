@@ -1,4 +1,5 @@
 package net.minecraft.server.jsonrpc.methods;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.jsonrpc.internalapi.MinecraftApi;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;

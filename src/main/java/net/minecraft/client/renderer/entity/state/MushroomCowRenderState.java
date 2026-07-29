@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.entity.state;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.world.entity.animal.cow.MushroomCow;

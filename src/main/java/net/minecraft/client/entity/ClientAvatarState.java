@@ -1,4 +1,5 @@
 package net.minecraft.client.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;

@@ -1,4 +1,5 @@
 package net.minecraft.data.registries;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DataFixUtils;
 import java.util.Optional;

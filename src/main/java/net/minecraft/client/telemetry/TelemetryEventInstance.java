@@ -1,4 +1,5 @@
 package net.minecraft.client.telemetry;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.minecraft.TelemetryEvent;
 import com.mojang.authlib.minecraft.TelemetrySession;

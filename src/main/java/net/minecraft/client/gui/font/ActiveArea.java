@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.font;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.chat.Style;
 import net.minecraftforge.api.distmarker.Dist;

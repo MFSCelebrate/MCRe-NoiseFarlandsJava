@@ -1,4 +1,5 @@
 package net.minecraft.commands;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.exceptions.BuiltInExceptionProvider;
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;

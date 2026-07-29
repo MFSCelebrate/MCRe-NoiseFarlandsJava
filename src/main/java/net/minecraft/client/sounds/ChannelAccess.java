@@ -1,4 +1,5 @@
 package net.minecraft.client.sounds;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.audio.Channel;

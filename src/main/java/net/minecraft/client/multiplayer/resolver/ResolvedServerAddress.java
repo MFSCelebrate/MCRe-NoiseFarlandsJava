@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer.resolver;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.net.InetSocketAddress;
 import net.minecraftforge.api.distmarker.Dist;

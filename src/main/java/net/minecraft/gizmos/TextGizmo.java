@@ -1,4 +1,5 @@
 package net.minecraft.gizmos;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.OptionalDouble;
 import net.minecraft.util.ARGB;

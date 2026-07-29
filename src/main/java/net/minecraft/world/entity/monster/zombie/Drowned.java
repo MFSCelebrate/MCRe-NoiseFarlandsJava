@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.monster.zombie;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.EnumSet;
 import net.minecraft.core.BlockPos;

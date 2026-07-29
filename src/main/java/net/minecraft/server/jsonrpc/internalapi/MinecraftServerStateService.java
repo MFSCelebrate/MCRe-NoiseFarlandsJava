@@ -1,4 +1,5 @@
 package net.minecraft.server.jsonrpc.internalapi;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Collection;
 import net.minecraft.network.chat.Component;

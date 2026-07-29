@@ -1,4 +1,5 @@
 package net.minecraft.server.level;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;

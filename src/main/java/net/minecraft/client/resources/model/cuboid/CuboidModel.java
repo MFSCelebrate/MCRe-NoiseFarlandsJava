@@ -1,4 +1,5 @@
 package net.minecraft.client.resources.model.cuboid;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;

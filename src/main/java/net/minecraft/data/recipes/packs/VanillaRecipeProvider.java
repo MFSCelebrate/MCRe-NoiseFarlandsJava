@@ -1,4 +1,5 @@
 package net.minecraft.data.recipes.packs;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;

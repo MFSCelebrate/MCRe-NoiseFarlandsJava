@@ -1,4 +1,5 @@
 package net.minecraft.network.protocol;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;

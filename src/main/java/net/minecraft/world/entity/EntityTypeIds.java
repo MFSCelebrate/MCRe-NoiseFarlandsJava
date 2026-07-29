@@ -1,4 +1,5 @@
 package net.minecraft.world.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;

@@ -1,4 +1,5 @@
 package net.minecraft.world.level.lighting;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;

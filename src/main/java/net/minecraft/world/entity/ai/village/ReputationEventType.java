@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.village;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface ReputationEventType {
     ReputationEventType ZOMBIE_VILLAGER_CURED = register("zombie_villager_cured");

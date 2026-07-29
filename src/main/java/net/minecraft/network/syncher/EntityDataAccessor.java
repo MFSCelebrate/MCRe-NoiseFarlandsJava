@@ -1,4 +1,5 @@
 package net.minecraft.network.syncher;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public record EntityDataAccessor<T>(int id, EntityDataSerializer<T> serializer) {
     @Override

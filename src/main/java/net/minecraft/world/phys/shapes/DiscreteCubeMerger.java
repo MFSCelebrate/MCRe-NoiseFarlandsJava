@@ -1,4 +1,5 @@
 package net.minecraft.world.phys.shapes;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.math.IntMath;
 import it.unimi.dsi.fastutil.doubles.DoubleList;

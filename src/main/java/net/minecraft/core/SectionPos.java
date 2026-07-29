@@ -1,4 +1,5 @@
 package net.minecraft.core;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.AbstractIterator;
 import io.netty.buffer.ByteBuf;

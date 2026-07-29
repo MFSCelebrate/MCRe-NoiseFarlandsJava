@@ -1,4 +1,5 @@
 package net.minecraft.world.level.pathfinder;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.HashSet;
 import java.util.List;

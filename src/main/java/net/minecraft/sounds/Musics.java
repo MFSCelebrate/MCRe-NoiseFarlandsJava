@@ -1,4 +1,5 @@
 package net.minecraft.sounds;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.Holder;
 

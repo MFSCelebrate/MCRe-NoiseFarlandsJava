@@ -1,4 +1,5 @@
 package net.minecraft.client.model.object.skull;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.ModelPart;

@@ -1,4 +1,5 @@
 package net.minecraft.stats;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.inventory.RecipeBookType;
 

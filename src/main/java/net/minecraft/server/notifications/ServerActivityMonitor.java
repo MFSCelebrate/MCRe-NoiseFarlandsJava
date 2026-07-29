@@ -1,4 +1,5 @@
 package net.minecraft.server.notifications;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;

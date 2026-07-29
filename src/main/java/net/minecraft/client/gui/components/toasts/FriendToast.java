@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.components.toasts;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import java.util.UUID;

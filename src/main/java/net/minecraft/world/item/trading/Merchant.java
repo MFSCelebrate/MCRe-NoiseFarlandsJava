@@ -1,4 +1,5 @@
 package net.minecraft.world.item.trading;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.OptionalInt;
 import net.minecraft.network.chat.Component;

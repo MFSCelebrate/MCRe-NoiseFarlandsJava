@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.block.dispatch;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.math.Quadrant;
 import com.mojang.serialization.Codec;

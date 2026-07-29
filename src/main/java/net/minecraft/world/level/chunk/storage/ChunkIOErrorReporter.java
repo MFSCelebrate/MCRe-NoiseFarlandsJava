@@ -1,4 +1,5 @@
 package net.minecraft.world.level.chunk.storage;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.CrashReport;
 import net.minecraft.CrashReportCategory;

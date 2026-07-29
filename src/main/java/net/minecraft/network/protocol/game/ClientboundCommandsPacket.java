@@ -1,4 +1,5 @@
 package net.minecraft.network.protocol.game;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;

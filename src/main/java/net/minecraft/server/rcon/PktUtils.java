@@ -1,4 +1,5 @@
 package net.minecraft.server.rcon;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.charset.StandardCharsets;
 

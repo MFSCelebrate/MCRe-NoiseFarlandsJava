@@ -1,4 +1,5 @@
 package net.minecraft.client.tutorial;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.ClientInput;

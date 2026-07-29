@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.inventory;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.stream.IntStream;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

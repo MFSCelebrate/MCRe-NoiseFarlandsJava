@@ -1,4 +1,5 @@
 package net.minecraft.world.level.biome;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSet;

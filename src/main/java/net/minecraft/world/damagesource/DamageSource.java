@@ -1,4 +1,5 @@
 package net.minecraft.world.damagesource;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;

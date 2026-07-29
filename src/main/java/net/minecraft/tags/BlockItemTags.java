@@ -1,4 +1,5 @@
 package net.minecraft.tags;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class BlockItemTags {
     public static final BlockItemTagId WOOL = BlockItemTagId.create("wool");

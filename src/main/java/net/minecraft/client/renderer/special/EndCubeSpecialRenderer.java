@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.special;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.serialization.Codec;

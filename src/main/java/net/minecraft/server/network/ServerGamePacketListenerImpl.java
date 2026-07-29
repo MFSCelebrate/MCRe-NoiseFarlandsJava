@@ -1,4 +1,5 @@
 package net.minecraft.server.network;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Floats;

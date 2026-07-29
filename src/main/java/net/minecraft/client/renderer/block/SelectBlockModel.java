@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.block;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.math.Transformation;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;

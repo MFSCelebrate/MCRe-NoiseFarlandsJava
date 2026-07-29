@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.projectile.arrow;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ColorParticleOption;

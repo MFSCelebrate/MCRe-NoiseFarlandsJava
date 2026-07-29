@@ -1,4 +1,5 @@
 package net.minecraft.world;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuConstructor;

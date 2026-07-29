@@ -1,4 +1,5 @@
 package net.minecraft.client.resources.sounds;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import java.util.Objects;

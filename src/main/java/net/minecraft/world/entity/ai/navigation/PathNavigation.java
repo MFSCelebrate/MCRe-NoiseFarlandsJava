@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.navigation;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;

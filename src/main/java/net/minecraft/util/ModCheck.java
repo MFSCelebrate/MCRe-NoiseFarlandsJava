@@ -1,4 +1,5 @@
 package net.minecraft.util;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.Supplier;
 import org.apache.commons.lang3.ObjectUtils;

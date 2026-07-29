@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.narration;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import java.util.function.BiConsumer;

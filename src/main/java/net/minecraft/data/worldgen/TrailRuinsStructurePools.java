@@ -1,4 +1,5 @@
 package net.minecraft.data.worldgen;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Pair;
 import java.util.List;

@@ -1,4 +1,5 @@
 package net.minecraft.world.level.block.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;

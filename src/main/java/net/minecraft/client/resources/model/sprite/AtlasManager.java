@@ -1,4 +1,5 @@
 package net.minecraft.client.resources.model.sprite;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import java.util.ArrayList;

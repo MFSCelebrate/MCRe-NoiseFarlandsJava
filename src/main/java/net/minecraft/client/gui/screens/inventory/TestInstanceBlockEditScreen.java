@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.inventory;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Optional;
 import net.minecraft.ChatFormatting;

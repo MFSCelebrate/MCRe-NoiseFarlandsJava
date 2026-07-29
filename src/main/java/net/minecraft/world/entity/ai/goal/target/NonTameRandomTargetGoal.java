@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.goal.target;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;

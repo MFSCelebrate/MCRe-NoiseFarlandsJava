@@ -1,4 +1,5 @@
 package net.minecraft.server.permissions;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.objects.ReferenceArraySet;

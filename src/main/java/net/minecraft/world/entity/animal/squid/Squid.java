@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.squid;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Objects;
 import net.minecraft.core.BlockPos;

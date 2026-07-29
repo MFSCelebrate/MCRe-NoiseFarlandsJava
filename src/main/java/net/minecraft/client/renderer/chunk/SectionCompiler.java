@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.chunk;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;

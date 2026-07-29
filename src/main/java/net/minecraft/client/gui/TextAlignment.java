@@ -1,4 +1,5 @@
 package net.minecraft.client.gui;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;

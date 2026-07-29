@@ -1,4 +1,5 @@
 package net.minecraft.client.sounds;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraftforge.api.distmarker.Dist;

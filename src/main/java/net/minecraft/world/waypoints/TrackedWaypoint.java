@@ -1,4 +1,5 @@
 package net.minecraft.world.waypoints;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Either;
 import com.mojang.logging.LogUtils;

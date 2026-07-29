@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.monster;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;

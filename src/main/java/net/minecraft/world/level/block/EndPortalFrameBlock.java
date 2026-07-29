@@ -1,4 +1,5 @@
 package net.minecraft.world.level.block;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Predicates;
 import com.mojang.serialization.MapCodec;

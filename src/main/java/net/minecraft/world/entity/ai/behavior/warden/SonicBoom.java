@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.behavior.warden;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.particles.ParticleTypes;

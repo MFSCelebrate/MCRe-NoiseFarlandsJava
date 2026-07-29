@@ -1,4 +1,5 @@
 package net.minecraft.world.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;

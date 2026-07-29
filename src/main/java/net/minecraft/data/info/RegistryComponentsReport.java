@@ -1,4 +1,5 @@
 package net.minecraft.data.info;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

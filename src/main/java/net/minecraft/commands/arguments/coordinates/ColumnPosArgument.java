@@ -1,4 +1,5 @@
 package net.minecraft.commands.arguments.coordinates;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;

@@ -1,4 +1,5 @@
 package net.minecraft.world.level.storage;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.CrashReportCategory;
 import net.minecraft.world.Difficulty;

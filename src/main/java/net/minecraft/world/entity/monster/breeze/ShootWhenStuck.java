@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.monster.breeze;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Map;
 import net.minecraft.server.level.ServerLevel;

@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.debug;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;

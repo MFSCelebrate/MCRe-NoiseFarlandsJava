@@ -1,4 +1,5 @@
 package net.minecraft.server;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public final class RunningOnDifferentThreadException extends RuntimeException {
     public static final RunningOnDifferentThreadException RUNNING_ON_DIFFERENT_THREAD = new RunningOnDifferentThreadException();

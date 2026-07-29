@@ -1,4 +1,5 @@
 package net.minecraft.server;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.GameProfileRepository;
 import com.mojang.authlib.minecraft.MinecraftSessionService;

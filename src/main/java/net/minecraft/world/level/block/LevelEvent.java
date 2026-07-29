@@ -1,4 +1,5 @@
 package net.minecraft.world.level.block;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class LevelEvent {
     public static final int SOUND_DISPENSER_DISPENSE = 1000;

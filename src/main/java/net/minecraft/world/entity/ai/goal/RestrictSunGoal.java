@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.goal;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PathfinderMob;

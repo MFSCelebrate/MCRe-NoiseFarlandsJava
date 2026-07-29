@@ -1,4 +1,5 @@
 package net.minecraft.resources;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.MapMaker;
 import com.mojang.serialization.Codec;

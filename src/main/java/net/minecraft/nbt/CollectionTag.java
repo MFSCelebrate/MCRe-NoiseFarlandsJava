@@ -1,4 +1,5 @@
 package net.minecraft.nbt;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

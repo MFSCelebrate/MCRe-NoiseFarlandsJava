@@ -1,4 +1,5 @@
 package net.minecraft.gizmos;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface GizmoCollector {
     GizmoProperties IGNORED = new GizmoProperties() {

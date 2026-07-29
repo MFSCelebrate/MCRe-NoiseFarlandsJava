@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.boss.enderdragon;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;

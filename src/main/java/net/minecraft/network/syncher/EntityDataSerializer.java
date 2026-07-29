@@ -1,4 +1,5 @@
 package net.minecraft.network.syncher;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

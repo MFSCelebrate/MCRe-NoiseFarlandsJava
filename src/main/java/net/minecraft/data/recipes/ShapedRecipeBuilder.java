@@ -1,4 +1,5 @@
 package net.minecraft.data.recipes;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

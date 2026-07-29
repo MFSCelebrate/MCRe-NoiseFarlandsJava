@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.behavior;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;

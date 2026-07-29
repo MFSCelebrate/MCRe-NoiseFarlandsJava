@@ -1,4 +1,5 @@
 package net.minecraft.world.level.storage.loot.predicates;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.MapCodec;
 import java.util.List;

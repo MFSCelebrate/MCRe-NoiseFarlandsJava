@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.layouts;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;

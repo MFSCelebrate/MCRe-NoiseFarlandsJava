@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import java.util.ArrayList;

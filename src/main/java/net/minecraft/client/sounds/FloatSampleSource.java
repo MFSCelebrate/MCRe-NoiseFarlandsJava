@@ -1,4 +1,5 @@
 package net.minecraft.client.sounds;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.floats.FloatConsumer;
 import java.io.IOException;

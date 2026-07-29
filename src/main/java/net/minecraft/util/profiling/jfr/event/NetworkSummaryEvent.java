@@ -1,4 +1,5 @@
 package net.minecraft.util.profiling.jfr.event;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;

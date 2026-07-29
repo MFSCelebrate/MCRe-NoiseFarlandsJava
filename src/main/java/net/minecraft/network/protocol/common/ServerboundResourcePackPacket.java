@@ -1,4 +1,5 @@
 package net.minecraft.network.protocol.common;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.UUID;
 import net.minecraft.network.FriendlyByteBuf;

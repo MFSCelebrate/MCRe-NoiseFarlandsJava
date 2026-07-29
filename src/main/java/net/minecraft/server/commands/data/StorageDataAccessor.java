@@ -1,4 +1,5 @@
 package net.minecraft.server.commands.data;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;

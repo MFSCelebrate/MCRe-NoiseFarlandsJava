@@ -1,4 +1,5 @@
 package net.minecraft.server.packs.resources;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;

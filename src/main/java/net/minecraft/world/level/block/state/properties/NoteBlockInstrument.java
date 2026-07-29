@@ -1,4 +1,5 @@
 package net.minecraft.world.level.block.state.properties;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;

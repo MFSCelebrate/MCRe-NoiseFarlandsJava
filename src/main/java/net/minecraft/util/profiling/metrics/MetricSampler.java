@@ -1,4 +1,5 @@
 package net.minecraft.util.profiling.metrics;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;

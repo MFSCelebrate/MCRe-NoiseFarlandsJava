@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.feature;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.client.renderer.feature.submit.SubmitNode;

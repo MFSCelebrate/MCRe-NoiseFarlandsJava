@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.entity.layers;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.geom.ModelLayers;

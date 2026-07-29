@@ -1,4 +1,5 @@
 package net.minecraft.world.level.chunk.storage;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import java.io.DataInputStream;

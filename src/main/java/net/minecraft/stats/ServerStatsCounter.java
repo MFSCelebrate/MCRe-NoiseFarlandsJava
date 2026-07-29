@@ -1,4 +1,5 @@
 package net.minecraft.stats;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;

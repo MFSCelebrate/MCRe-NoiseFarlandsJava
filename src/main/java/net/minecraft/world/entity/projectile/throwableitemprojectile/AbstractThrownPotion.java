@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.projectile.throwableitemprojectile;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.doubles.DoubleDoubleImmutablePair;
 import java.util.function.Predicate;

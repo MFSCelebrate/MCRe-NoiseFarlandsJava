@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.monster.skeleton;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;

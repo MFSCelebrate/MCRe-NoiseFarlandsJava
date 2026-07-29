@@ -1,4 +1,5 @@
 package net.minecraft.network.protocol.handshake;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public enum ClientIntent {
     STATUS,

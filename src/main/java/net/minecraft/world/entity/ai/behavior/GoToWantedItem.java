@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.behavior;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.kinds.K1;
 import java.util.function.Predicate;

@@ -1,4 +1,5 @@
 package net.minecraft.nbt.visitors;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;

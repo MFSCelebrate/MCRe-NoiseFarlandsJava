@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.vehicle;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.NonNullList;

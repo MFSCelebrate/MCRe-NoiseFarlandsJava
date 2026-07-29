@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.village.poi;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.util.Pair;

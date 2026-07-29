@@ -1,4 +1,5 @@
 package net.minecraft.world.level.storage.loot.functions;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableMap;
 import com.mojang.serialization.Codec;

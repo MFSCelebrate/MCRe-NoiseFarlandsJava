@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.advancements;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;

@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.cow;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;

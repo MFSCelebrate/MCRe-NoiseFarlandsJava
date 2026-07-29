@@ -1,4 +1,5 @@
 package net.minecraft.data.recipes;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;

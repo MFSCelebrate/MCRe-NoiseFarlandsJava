@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.font.providers;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.font.GlyphProvider;
 import com.mojang.blaze3d.font.TrueTypeGlyphProvider;

@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.font;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.textures.GpuTextureView;

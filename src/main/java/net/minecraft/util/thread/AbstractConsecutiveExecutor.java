@@ -1,4 +1,5 @@
 package net.minecraft.util.thread;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.logging.LogUtils;

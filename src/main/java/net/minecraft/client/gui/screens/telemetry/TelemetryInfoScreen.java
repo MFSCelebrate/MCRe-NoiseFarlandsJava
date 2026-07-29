@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.telemetry;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;

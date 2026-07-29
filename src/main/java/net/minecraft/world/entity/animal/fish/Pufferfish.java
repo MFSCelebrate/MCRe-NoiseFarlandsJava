@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.fish;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import net.minecraft.network.protocol.game.ClientboundGameEventPacket;

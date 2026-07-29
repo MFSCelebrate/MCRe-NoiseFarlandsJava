@@ -1,4 +1,5 @@
 package net.minecraft.client.gui;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;

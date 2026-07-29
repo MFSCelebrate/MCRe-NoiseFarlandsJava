@@ -1,4 +1,5 @@
 package net.minecraft.client.resources.sounds;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.sounds.SoundManager;

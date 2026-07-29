@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.block;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.vertex.QuadInstance;
 import it.unimi.dsi.fastutil.objects.Object2FloatLinkedOpenHashMap;

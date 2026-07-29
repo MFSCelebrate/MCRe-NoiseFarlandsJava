@@ -1,4 +1,5 @@
 package net.minecraft.world.item.slot;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.Products.P1;
 import com.mojang.serialization.MapCodec;

@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.monster;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface Enemy {
     int XP_REWARD_NONE = 0;

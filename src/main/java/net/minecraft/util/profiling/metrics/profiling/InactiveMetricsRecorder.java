@@ -1,4 +1,5 @@
 package net.minecraft.util.profiling.metrics.profiling;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.profiling.InactiveProfiler;
 import net.minecraft.util.profiling.ProfilerFiller;

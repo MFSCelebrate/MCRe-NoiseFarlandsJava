@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.item.properties.conditional;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.LivingEntity;

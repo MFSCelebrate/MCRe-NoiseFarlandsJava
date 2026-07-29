@@ -1,4 +1,5 @@
 package net.minecraft.util.thread;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public abstract class ReentrantBlockableEventLoop<R extends Runnable> extends BlockableEventLoop<R> {
     private int reentrantCount;

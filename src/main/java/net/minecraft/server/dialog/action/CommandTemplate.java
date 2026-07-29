@@ -1,4 +1,5 @@
 package net.minecraft.server.dialog.action;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

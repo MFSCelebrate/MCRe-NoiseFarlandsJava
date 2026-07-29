@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer.chat;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Optional;
 import java.util.Set;

@@ -1,4 +1,5 @@
 package net.minecraft.world.food;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class Foods {
     public static final FoodProperties APPLE = new FoodProperties.Builder().nutrition(4).saturationModifier(0.3F).build();

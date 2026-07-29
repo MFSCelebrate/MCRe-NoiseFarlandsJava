@@ -1,4 +1,5 @@
 package net.minecraft.world.inventory;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public abstract class DataSlot {
     private int prevValue;

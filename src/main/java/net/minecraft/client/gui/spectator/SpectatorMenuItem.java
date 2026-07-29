@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.spectator;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;

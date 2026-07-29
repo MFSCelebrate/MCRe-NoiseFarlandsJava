@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.blockentity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Map;
 import java.util.function.Function;

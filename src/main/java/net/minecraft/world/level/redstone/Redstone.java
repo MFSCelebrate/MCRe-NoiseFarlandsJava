@@ -1,4 +1,5 @@
 package net.minecraft.world.level.redstone;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class Redstone {
     public static final int BITS = 4;

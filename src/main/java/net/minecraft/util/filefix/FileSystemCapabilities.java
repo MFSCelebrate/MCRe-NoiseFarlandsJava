@@ -1,4 +1,5 @@
 package net.minecraft.util.filefix;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.file.CopyOption;
 import java.nio.file.LinkOption;

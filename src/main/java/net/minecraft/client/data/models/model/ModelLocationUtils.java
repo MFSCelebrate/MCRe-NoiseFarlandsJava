@@ -1,4 +1,5 @@
 package net.minecraft.client.data.models.model;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;

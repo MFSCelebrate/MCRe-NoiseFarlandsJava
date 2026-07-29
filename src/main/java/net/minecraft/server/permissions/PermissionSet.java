@@ -1,4 +1,5 @@
 package net.minecraft.server.permissions;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface PermissionSet {
     PermissionSet NO_PERMISSIONS = permission -> false;

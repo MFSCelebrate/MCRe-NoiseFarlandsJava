@@ -1,4 +1,5 @@
 package net.minecraft.commands.arguments.selector;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.primitives.Doubles;
 import com.mojang.brigadier.StringReader;

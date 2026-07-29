@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer.chat.report;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Locale;
 import net.minecraftforge.api.distmarker.Dist;

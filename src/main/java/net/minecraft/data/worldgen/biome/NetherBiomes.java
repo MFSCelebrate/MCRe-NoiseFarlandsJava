@@ -1,4 +1,5 @@
 package net.minecraft.data.worldgen.biome;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import java.util.Optional;

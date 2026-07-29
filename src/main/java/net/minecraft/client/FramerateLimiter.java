@@ -1,4 +1,5 @@
 package net.minecraft.client;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.concurrent.locks.LockSupport;
 import net.minecraftforge.api.distmarker.Dist;

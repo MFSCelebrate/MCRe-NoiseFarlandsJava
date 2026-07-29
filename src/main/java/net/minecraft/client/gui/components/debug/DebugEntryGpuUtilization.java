@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.components.debug;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;

@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.projectile.hurtingprojectile.windcharge;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;

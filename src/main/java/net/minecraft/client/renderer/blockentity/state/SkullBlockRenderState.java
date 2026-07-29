@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.blockentity.state;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.math.Transformation;
 import net.minecraft.client.renderer.rendertype.RenderType;

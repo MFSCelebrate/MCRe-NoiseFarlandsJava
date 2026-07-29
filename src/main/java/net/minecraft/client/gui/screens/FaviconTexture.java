@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.hash.Hashing;
 import com.mojang.blaze3d.platform.NativeImage;

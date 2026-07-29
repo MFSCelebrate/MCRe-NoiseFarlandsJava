@@ -1,4 +1,5 @@
 package net.minecraft.server.jsonrpc.security;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import io.netty.handler.ssl.SslContext;

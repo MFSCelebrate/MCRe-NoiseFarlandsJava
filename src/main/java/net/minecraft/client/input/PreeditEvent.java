@@ -1,4 +1,5 @@
 package net.minecraft.client.input;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;

@@ -1,4 +1,5 @@
 package net.minecraft.network;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public enum ConnectionProtocol {
     HANDSHAKING("handshake"),

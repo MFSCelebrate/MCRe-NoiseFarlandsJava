@@ -1,4 +1,5 @@
 package net.minecraft.client.model.ambient;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.animation.KeyframeAnimation;
 import net.minecraft.client.animation.definitions.BatAnimation;

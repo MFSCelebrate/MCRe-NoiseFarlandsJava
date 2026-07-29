@@ -1,4 +1,5 @@
 package net.minecraft.server.packs.linkfs;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.file.Path;
 import java.util.Map;

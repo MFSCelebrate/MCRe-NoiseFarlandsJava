@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.inventory.tooltip;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.DataResult;
 import java.util.List;

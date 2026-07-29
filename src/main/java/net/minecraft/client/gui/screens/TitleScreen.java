@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.minecraft.BanDetails;
 import com.mojang.logging.LogUtils;

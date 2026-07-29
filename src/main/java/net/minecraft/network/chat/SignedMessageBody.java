@@ -1,4 +1,5 @@
 package net.minecraft.network.chat;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;

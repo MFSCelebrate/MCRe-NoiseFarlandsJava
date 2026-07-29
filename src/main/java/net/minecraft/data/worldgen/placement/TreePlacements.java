@@ -1,4 +1,5 @@
 package net.minecraft.data.worldgen.placement;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import net.minecraft.core.Direction;

@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.options;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.NarratorStatus;
 import net.minecraft.client.OptionInstance;

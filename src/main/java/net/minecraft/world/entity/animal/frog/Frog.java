@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.frog;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import java.util.Objects;

@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.parrot;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

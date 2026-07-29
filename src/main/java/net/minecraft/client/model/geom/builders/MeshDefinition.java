@@ -1,4 +1,5 @@
 package net.minecraft.client.model.geom.builders;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableList;
 import java.util.function.UnaryOperator;

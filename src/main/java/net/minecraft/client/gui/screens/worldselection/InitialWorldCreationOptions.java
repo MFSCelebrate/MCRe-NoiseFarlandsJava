@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.worldselection;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.gamerules.GameRuleMap;

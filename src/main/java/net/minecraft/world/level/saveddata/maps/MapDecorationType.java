@@ -1,4 +1,5 @@
 package net.minecraft.world.level.saveddata.maps;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.core.Holder;

@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.worldselection;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DataFixer;
 import com.mojang.logging.LogUtils;

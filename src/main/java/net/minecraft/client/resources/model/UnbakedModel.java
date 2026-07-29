@@ -1,4 +1,5 @@
 package net.minecraft.client.resources.model;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.resources.model.cuboid.ItemTransforms;
 import net.minecraft.client.resources.model.geometry.UnbakedGeometry;

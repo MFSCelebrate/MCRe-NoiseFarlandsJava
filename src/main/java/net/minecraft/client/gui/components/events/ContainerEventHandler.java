@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.components.events;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Pair;
 import java.util.ArrayList;

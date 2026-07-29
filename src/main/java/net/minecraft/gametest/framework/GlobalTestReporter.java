@@ -1,4 +1,5 @@
 package net.minecraft.gametest.framework;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class GlobalTestReporter {
     private static TestReporter DELEGATE = new LogTestReporter();

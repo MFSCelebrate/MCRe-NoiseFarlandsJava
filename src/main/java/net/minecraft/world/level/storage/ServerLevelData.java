@@ -1,4 +1,5 @@
 package net.minecraft.world.level.storage;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Locale;
 import net.minecraft.CrashReportCategory;

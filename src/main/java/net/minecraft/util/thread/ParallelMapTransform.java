@@ -1,4 +1,5 @@
 package net.minecraft.util.thread;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.HashMap;
 import java.util.Map;

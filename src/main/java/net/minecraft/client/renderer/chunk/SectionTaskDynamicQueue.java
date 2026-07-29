@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.chunk;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;

@@ -1,4 +1,5 @@
 package net.minecraft.data.structures;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.io.IOException;

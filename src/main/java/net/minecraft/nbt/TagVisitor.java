@@ -1,4 +1,5 @@
 package net.minecraft.nbt;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface TagVisitor {
     void visitString(StringTag tag);

@@ -1,4 +1,5 @@
 package net.minecraft.world.ticks;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;

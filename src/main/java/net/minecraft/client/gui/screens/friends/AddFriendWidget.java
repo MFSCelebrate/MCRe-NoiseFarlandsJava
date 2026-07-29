@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.friends;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Collection;
 import java.util.List;

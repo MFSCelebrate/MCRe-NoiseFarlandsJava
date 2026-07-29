@@ -1,4 +1,5 @@
 package net.minecraft.server.network;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.Connection;
 import net.minecraft.network.DisconnectionDetails;

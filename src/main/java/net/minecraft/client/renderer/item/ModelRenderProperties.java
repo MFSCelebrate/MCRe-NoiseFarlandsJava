@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.item;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.resources.model.ModelBaker;
 import net.minecraft.client.resources.model.ResolvedModel;

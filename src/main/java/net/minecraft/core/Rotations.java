@@ -1,4 +1,5 @@
 package net.minecraft.core;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;

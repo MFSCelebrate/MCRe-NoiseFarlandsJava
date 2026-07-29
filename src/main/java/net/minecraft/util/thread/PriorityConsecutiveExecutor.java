@@ -1,4 +1,5 @@
 package net.minecraft.util.thread;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;

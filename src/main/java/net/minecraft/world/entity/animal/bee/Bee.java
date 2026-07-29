@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.bee;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;

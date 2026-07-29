@@ -1,4 +1,5 @@
 package net.minecraft.client.resources.language;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import com.ibm.icu.lang.UCharacter;

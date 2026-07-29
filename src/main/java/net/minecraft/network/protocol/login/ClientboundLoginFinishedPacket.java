@@ -1,4 +1,5 @@
 package net.minecraft.network.protocol.login;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.GameProfile;
 import io.netty.buffer.ByteBuf;

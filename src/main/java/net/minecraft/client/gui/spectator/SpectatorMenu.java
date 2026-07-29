@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.spectator;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;

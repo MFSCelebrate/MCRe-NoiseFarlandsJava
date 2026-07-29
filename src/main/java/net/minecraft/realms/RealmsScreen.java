@@ -1,4 +1,5 @@
 package net.minecraft.realms;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.components.ImageWidget;
 import net.minecraft.client.gui.screens.Screen;

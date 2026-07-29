@@ -1,4 +1,5 @@
 package net.minecraft.client.main;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Ticker;

@@ -1,4 +1,5 @@
 package net.minecraft.world.level.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;

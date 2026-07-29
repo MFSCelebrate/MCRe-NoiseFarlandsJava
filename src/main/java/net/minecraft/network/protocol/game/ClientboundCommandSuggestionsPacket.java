@@ -1,4 +1,5 @@
 package net.minecraft.network.protocol.game;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.suggestion.Suggestion;

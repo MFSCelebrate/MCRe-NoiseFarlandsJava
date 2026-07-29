@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.feature.phase;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Collection;
 import net.minecraft.client.renderer.feature.FeatureRendererType;

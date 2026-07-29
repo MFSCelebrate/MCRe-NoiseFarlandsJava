@@ -1,4 +1,5 @@
 package net.minecraft.data.tags;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.core.Holder;

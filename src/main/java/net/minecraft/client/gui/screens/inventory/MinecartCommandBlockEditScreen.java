@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.inventory;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.protocol.game.ServerboundSetCommandMinecartPacket;
 import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;

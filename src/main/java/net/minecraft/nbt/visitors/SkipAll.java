@@ -1,4 +1,5 @@
 package net.minecraft.nbt.visitors;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.nbt.StreamTagVisitor;
 import net.minecraft.nbt.TagType;

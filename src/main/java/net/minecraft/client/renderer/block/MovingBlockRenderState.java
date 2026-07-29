@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.block;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;

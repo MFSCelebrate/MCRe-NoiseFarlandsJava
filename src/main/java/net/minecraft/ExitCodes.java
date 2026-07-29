@@ -1,4 +1,5 @@
 package net.minecraft;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class ExitCodes {
     public static final int EXIT_CODE_CRASH_DEFAULT = -1;

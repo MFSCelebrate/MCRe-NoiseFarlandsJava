@@ -1,4 +1,5 @@
 package net.minecraft.util.profiling;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;

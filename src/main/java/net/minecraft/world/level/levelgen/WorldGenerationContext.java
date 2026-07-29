@@ -1,4 +1,5 @@
 package net.minecraft.world.level.levelgen;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.chunk.ChunkGenerator;

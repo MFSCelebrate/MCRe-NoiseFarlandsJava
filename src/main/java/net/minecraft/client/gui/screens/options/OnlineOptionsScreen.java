@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.options;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.yggdrasil.FriendsService.ResultCode;
 import java.util.function.Consumer;

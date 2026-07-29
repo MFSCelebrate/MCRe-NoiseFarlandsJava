@@ -1,4 +1,5 @@
 package net.minecraft.world.item;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.stream.Stream;
 import net.minecraft.world.InteractionHand;

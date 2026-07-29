@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.texture;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;

@@ -1,4 +1,5 @@
 package net.minecraft.client.resources.metadata.animation;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;

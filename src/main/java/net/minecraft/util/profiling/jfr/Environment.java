@@ -1,4 +1,5 @@
 package net.minecraft.util.profiling.jfr;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.MinecraftServer;
 

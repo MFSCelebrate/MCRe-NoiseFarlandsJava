@@ -1,4 +1,5 @@
 package net.minecraft.network;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.net.URI;
 import java.nio.file.Path;

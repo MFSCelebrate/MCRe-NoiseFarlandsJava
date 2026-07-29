@@ -1,4 +1,5 @@
 package net.minecraft.world.item;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.Stats;

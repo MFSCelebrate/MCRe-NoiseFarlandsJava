@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.inventory;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;

@@ -1,4 +1,5 @@
 package net.minecraft.network.chat;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.context.CommandContextBuilder;

@@ -1,4 +1,5 @@
 package net.minecraft.client.data.models.model;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;

@@ -1,4 +1,5 @@
 package net.minecraft;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 

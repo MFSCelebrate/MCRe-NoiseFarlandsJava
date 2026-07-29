@@ -1,4 +1,5 @@
 package net.minecraft.world.level.saveddata;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public abstract class SavedData {
     private boolean dirty;

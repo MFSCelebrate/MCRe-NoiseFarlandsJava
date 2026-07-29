@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.texture.atlas;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.MapCodec;
 import java.util.function.Predicate;

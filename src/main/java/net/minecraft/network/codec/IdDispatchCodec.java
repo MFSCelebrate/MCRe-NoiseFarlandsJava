@@ -1,4 +1,5 @@
 package net.minecraft.network.codec;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;

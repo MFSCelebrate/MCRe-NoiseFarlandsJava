@@ -1,4 +1,5 @@
 package net.minecraft.world.effect;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;

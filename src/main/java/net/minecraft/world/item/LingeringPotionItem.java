@@ -1,4 +1,5 @@
 package net.minecraft.world.item;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.Position;
 import net.minecraft.server.level.ServerLevel;

@@ -1,4 +1,5 @@
 package net.minecraft.server.jsonrpc.websocket;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;

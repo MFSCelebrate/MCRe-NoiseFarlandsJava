@@ -1,4 +1,5 @@
 package net.minecraft.client.resources.language;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.IllegalFormatException;
 import java.util.Locale;

@@ -1,4 +1,5 @@
 package net.minecraft.client.server;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.net.SocketAddress;
 import net.minecraft.core.LayeredRegistryAccess;

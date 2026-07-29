@@ -1,4 +1,5 @@
 package net.minecraft.world.level.storage.loot;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Sets;
 import java.util.Optional;

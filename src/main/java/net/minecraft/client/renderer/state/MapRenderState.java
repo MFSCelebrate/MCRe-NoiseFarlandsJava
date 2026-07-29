@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.state;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.ArrayList;
 import java.util.List;

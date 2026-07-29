@@ -1,4 +1,5 @@
 package net.minecraft.commands.arguments.selector.options;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class SetOnceOptionState {
     private boolean hasValue;

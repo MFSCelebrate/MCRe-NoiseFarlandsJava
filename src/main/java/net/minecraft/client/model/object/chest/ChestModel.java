@@ -1,4 +1,5 @@
 package net.minecraft.client.model.object.chest;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Set;
 import net.minecraft.client.model.Model;

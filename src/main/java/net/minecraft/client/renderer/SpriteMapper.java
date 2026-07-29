@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.resources.model.sprite.SpriteId;
 import net.minecraft.resources.Identifier;

@@ -1,4 +1,5 @@
 package net.minecraft.world.level.block.entity.vault;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.Mth;
 

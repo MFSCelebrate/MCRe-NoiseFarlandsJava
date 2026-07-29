@@ -1,4 +1,5 @@
 package net.minecraft.world;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.TimeUtil;
 import net.minecraft.world.entity.Entity;

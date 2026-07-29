@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer.prediction;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerGamePacketListener;

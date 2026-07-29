@@ -1,4 +1,5 @@
 package net.minecraft.world.level.levelgen.blending;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.primitives.Doubles;
 import com.mojang.serialization.Codec;

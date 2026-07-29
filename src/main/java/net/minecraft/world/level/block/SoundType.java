@@ -1,4 +1,5 @@
 package net.minecraft.world.level.block;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;

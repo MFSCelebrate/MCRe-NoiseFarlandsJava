@@ -1,4 +1,5 @@
 package net.minecraft.gametest.framework;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public record RetryOptions(int numberOfTries, boolean haltOnFailure) {
     private static final RetryOptions NO_RETRIES = new RetryOptions(1, true);

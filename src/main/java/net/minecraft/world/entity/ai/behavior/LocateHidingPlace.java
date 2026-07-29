@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.behavior;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.LivingEntity;

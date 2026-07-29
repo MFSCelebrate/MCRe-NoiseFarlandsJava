@@ -1,4 +1,5 @@
 package net.minecraft.world.item.component;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.PropertyMap;

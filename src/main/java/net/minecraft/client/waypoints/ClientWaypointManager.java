@@ -1,4 +1,5 @@
 package net.minecraft.client.waypoints;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Either;
 import java.util.Comparator;

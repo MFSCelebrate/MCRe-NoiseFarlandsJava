@@ -1,4 +1,5 @@
 package net.minecraft.data.worldgen;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.data.worldgen.placement.AquaticPlacements;
 import net.minecraft.data.worldgen.placement.CavePlacements;

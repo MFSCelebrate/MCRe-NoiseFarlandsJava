@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.GameProfile;
 import java.util.function.Supplier;

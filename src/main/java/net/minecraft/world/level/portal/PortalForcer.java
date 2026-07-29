@@ -1,4 +1,5 @@
 package net.minecraft.world.level.portal;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Comparator;
 import java.util.Optional;

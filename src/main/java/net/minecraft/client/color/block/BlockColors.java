@@ -1,4 +1,5 @@
 package net.minecraft.client.color.block;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.HashSet;
 import java.util.IdentityHashMap;

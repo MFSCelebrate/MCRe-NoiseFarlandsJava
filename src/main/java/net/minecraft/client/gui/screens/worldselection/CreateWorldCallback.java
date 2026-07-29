@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.worldselection;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.file.Path;
 import java.util.Optional;

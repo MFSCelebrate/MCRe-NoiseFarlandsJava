@@ -1,4 +1,5 @@
 package net.minecraft.server.level.progress;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.network.chat.Component;

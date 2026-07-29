@@ -1,4 +1,5 @@
 package net.minecraft.world.scores;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.IntFunction;
 import net.minecraft.util.ByIdMap;

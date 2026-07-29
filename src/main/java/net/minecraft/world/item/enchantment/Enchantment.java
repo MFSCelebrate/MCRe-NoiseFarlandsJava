@@ -1,4 +1,5 @@
 package net.minecraft.world.item.enchantment;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;

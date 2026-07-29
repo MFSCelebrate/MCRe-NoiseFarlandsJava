@@ -1,4 +1,5 @@
 package net.minecraft.server;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import com.mojang.datafixers.DataFixer;

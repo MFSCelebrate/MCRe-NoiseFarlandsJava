@@ -1,4 +1,5 @@
 package net.minecraft.world.effect;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.ToIntFunction;
 import net.minecraft.core.particles.ParticleTypes;

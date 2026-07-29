@@ -1,4 +1,5 @@
 package net.minecraft.server.network;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.SharedConstants;
 import net.minecraft.network.Connection;

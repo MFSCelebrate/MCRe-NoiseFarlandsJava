@@ -1,4 +1,5 @@
 package net.minecraft.world.level.gamerules;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;

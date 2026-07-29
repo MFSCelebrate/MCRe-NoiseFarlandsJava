@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.monster.breeze;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;

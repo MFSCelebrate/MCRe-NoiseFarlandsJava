@@ -1,4 +1,5 @@
 package net.minecraft.world.level.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface LevelCallback<T> {
     void onCreated(T entity);

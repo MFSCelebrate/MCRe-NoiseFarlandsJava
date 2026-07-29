@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.dialog;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.MapCodec;
 import java.util.HashMap;

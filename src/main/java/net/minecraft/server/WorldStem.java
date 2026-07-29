@@ -1,4 +1,5 @@
 package net.minecraft.server;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.server.packs.resources.CloseableResourceManager;

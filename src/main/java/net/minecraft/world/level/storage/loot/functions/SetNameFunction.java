@@ -1,4 +1,5 @@
 package net.minecraft.world.level.storage.loot.functions;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.DataFixUtils;

@@ -1,4 +1,5 @@
 package net.minecraft.server.jsonrpc.api;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.net.URI;
 import java.util.List;

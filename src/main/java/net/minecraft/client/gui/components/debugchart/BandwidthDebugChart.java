@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.components.debugchart;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Locale;
 import net.minecraft.client.gui.Font;

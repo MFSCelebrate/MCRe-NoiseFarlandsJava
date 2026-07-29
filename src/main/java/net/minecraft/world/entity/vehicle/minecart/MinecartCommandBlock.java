@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.vehicle.minecart;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;

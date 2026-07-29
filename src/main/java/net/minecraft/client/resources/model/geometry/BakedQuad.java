@@ -1,4 +1,5 @@
 package net.minecraft.client.resources.model.geometry;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.platform.Transparency;
 import java.lang.annotation.ElementType;

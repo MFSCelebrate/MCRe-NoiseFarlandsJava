@@ -1,4 +1,5 @@
 package net.minecraft.world.level.levelgen.structure.placement;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.Products.P4;
 import com.mojang.datafixers.Products.P5;

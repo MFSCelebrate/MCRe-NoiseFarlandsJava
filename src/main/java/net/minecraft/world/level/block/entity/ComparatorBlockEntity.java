@@ -1,4 +1,5 @@
 package net.minecraft.world.level.block.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;

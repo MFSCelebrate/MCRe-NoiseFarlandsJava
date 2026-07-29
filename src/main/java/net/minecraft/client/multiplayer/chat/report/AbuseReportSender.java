@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer.chat.report;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.exceptions.MinecraftClientException;
 import com.mojang.authlib.exceptions.MinecraftClientHttpException;

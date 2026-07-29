@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer.chat;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import net.minecraft.client.gui.Font;

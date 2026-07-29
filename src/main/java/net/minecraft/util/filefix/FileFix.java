@@ -1,4 +1,5 @@
 package net.minecraft.util.filefix;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DataFixUtils;
 import com.mojang.datafixers.schemas.Schema;

@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.behavior.declarative;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.kinds.App;
 import com.mojang.datafixers.kinds.Applicative;

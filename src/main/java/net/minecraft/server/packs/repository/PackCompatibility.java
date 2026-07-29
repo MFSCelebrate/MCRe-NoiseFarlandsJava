@@ -1,4 +1,5 @@
 package net.minecraft.server.packs.repository;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;

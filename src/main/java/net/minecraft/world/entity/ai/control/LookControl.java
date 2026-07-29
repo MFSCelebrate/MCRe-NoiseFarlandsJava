@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.ai.control;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Optional;
 import net.minecraft.util.Mth;

@@ -1,4 +1,5 @@
 package net.minecraft.resources;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 @FunctionalInterface
 public interface DependantName<T, V> {

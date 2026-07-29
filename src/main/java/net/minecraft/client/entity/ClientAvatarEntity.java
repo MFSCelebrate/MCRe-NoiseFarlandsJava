@@ -1,4 +1,5 @@
 package net.minecraft.client.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.entity.animal.parrot.Parrot;
 import net.minecraft.world.entity.player.PlayerSkin;

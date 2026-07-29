@@ -1,4 +1,5 @@
 package net.minecraft.client.model.effects;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;

@@ -1,4 +1,5 @@
 package net.minecraft.network.chat.contents;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Locale;
 

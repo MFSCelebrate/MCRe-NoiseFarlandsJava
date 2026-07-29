@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.font.providers;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.api.distmarker.Dist;

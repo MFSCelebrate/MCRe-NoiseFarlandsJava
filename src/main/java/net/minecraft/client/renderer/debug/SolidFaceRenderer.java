@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.debug;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.culling.Frustum;

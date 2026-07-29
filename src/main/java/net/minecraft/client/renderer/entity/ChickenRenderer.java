@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.vertex.PoseStack;

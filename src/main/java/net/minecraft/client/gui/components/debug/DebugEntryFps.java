@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.components.debug;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.systems.GpuSurface;
 import java.util.Locale;

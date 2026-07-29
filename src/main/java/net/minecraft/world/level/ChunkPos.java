@@ -1,4 +1,5 @@
 package net.minecraft.world.level;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
@@ -73,6 +74,15 @@ public final class ChunkPos {
         );
     }
 
+    // ========== Getter（兼容旧代码调用 .x() / .z()） ==========
+    public long x() {
+        return this.x;
+    }
+
+    public long z() {
+        return this.z;
+    }
+
     // ========== 静态工厂 ==========
     public static ChunkPos containing(final BlockPos pos) {
         return new ChunkPos(
@@ -112,8 +122,13 @@ public final class ChunkPos {
         return (x & COORD_MASK) | ((z & COORD_MASK) << 32);
     }
 
+    /**
+     * @deprecated 此方法依赖于已废弃的 SectionPos 打包键，不再支持。
+     * 请使用 {@link #ChunkPos(long, long)} 直接构造。
+     */
+    @Deprecated
     public static long fromSectionNode(final long sectionNode) {
-        return pack(SectionPos.x(sectionNode), SectionPos.z(sectionNode));
+        throw new UnsupportedOperationException("fromSectionNode is no longer supported; use new ChunkPos(x, z) instead.");
     }
 
     public static long pack(final BlockPos pos) {

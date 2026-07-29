@@ -1,4 +1,5 @@
 package net.minecraft.client.model.animal.rabbit;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.animation.definitions.BabyRabbitAnimation;
 import net.minecraft.client.model.geom.ModelPart;

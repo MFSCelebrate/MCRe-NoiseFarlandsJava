@@ -1,4 +1,5 @@
 package net.minecraft.core;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class Cursor3D {
     public static final int TYPE_INSIDE = 0;

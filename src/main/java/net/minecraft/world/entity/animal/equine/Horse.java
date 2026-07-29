@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.equine;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentType;

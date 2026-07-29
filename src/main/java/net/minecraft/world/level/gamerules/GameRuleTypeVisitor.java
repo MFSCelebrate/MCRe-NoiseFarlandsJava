@@ -1,4 +1,5 @@
 package net.minecraft.world.level.gamerules;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface GameRuleTypeVisitor {
     default <T> void visit(final GameRule<T> gameRule) {

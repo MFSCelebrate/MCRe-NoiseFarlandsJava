@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.item;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.math.Transformation;
 import com.mojang.serialization.Codec;

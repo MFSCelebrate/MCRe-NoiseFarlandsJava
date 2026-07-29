@@ -1,4 +1,5 @@
 package net.minecraft.client.model.animal.nautilus;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.animation.KeyframeAnimation;
 import net.minecraft.client.animation.definitions.NautilusAnimation;

@@ -1,4 +1,5 @@
 package net.minecraft.server.jsonrpc.api;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.serialization.Codec;

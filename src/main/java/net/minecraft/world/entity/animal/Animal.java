@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Optional;
 import net.minecraft.advancements.triggers.CriteriaTriggers;

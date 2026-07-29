@@ -1,4 +1,5 @@
 package net.minecraft.util;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;

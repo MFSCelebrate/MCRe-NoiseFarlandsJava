@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.blockentity.state;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraftforge.api.distmarker.Dist;

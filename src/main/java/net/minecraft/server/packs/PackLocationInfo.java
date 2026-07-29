@@ -1,4 +1,5 @@
 package net.minecraft.server.packs;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import java.util.Optional;

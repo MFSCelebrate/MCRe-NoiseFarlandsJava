@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.state;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;

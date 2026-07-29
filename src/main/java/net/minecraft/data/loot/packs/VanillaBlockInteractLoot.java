@@ -1,4 +1,5 @@
 package net.minecraft.data.loot.packs;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.BiConsumer;
 import net.minecraft.advancements.predicates.StatePropertiesPredicate;

@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.projectile.throwableitemprojectile;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Optional;
 import net.minecraft.core.component.DataComponents;

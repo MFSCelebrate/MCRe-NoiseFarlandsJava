@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.layouts;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.math.Divisor;
 import java.util.ArrayList;

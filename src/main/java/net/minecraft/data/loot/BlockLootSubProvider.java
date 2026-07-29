@@ -1,4 +1,5 @@
 package net.minecraft.data.loot;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.HashMap;
 import java.util.HashSet;

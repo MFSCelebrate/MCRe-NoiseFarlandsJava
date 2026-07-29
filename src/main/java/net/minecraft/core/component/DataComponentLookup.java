@@ -1,4 +1,5 @@
 package net.minecraft.core.component;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;

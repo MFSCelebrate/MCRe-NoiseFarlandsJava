@@ -1,4 +1,5 @@
 package net.minecraft.client.searchtree;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterators;

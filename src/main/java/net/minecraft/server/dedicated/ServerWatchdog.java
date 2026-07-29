@@ -1,4 +1,5 @@
 package net.minecraft.server.dedicated;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Streams;
 import com.mojang.logging.LogUtils;

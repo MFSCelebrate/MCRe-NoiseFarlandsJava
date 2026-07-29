@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.animal.frog;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;

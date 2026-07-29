@@ -1,4 +1,5 @@
 package net.minecraft.server.gui;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import com.mojang.logging.LogQueues;

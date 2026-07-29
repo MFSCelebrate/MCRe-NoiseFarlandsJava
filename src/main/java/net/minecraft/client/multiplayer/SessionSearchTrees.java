@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.IdentityHashMap;
 import java.util.List;

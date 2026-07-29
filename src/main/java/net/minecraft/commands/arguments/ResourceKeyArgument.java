@@ -1,4 +1,5 @@
 package net.minecraft.commands.arguments;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.gson.JsonObject;
 import com.mojang.brigadier.StringReader;

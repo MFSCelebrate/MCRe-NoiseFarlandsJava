@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.dialog;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.layouts.FrameLayout;

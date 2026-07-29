@@ -1,4 +1,5 @@
 package net.minecraft.world.level.levelgen.structure.pools.alias;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.MapCodec;

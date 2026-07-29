@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.dialog.input;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.screens.Screen;

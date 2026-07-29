@@ -1,4 +1,5 @@
 package net.minecraft.client.model.geom.builders;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

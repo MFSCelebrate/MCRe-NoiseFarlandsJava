@@ -1,4 +1,5 @@
 package net.minecraft.client;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.color.item.ItemTintSources;
 import net.minecraft.client.gui.screens.dialog.DialogScreens;

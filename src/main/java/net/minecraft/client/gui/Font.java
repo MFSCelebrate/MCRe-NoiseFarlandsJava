@@ -1,4 +1,5 @@
 package net.minecraft.client.gui;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.ibm.icu.text.ArabicShaping;
 import com.ibm.icu.text.ArabicShapingException;

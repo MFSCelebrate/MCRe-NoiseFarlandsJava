@@ -1,4 +1,5 @@
 package net.minecraft.client.resources;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;

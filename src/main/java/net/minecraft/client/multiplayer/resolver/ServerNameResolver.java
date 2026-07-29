@@ -1,4 +1,5 @@
 package net.minecraft.client.multiplayer.resolver;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;

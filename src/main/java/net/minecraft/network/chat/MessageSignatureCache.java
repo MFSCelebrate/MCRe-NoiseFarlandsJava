@@ -1,4 +1,5 @@
 package net.minecraft.network.chat;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;

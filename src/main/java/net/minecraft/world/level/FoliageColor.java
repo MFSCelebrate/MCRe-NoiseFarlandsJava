@@ -1,4 +1,5 @@
 package net.minecraft.world.level;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class FoliageColor {
     public static final int FOLIAGE_EVERGREEN = -10380959;

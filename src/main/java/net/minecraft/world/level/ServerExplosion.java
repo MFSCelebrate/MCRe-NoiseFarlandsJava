@@ -1,4 +1,5 @@
 package net.minecraft.world.level;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.ArrayList;

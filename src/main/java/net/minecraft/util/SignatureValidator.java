@@ -1,4 +1,5 @@
 package net.minecraft.util;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.yggdrasil.ServicesKeyInfo;
 import com.mojang.authlib.yggdrasil.ServicesKeySet;

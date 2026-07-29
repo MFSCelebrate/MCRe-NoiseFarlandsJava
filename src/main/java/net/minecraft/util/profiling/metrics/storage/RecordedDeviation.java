@@ -1,4 +1,5 @@
 package net.minecraft.util.profiling.metrics.storage;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.time.Instant;
 import net.minecraft.util.profiling.ProfileResults;

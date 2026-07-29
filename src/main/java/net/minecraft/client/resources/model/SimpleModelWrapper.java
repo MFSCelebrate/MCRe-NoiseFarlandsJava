@@ -1,4 +1,5 @@
 package net.minecraft.client.resources.model;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;

@@ -1,4 +1,5 @@
 package net.minecraft.client.animation.definitions;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.animation.AnimationChannel;
 import net.minecraft.client.animation.AnimationDefinition;

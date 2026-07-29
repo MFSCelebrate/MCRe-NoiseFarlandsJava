@@ -1,4 +1,5 @@
 package net.minecraft.network;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class HandlerNames {
     public static final String DECOMPRESS = "decompress";

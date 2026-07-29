@@ -1,4 +1,5 @@
 package net.minecraft.world.entity;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import java.util.Map;

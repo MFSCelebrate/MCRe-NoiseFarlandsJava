@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.screens.advancements;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.cursor.CursorTypes;

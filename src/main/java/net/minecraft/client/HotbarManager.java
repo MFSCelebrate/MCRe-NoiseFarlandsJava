@@ -1,4 +1,5 @@
 package net.minecraft.client;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DataFixer;
 import com.mojang.logging.LogUtils;

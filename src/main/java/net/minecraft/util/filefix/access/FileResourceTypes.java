@@ -1,4 +1,5 @@
 package net.minecraft.util.filefix.access;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DSL.TypeReference;
 import net.minecraft.util.datafix.DataFixTypes;

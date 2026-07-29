@@ -1,4 +1,5 @@
 package net.minecraft.commands.execution.tasks;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.context.ContextChain;

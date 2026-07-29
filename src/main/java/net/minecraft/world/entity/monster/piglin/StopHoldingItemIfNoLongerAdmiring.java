@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.monster.piglin;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;

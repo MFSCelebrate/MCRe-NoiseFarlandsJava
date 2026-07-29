@@ -1,4 +1,5 @@
 package net.minecraft.world.level.levelgen.structure.pieces;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Locale;
 import net.minecraft.core.Registry;

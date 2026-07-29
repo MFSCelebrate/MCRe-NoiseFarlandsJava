@@ -1,4 +1,5 @@
 package net.minecraft.client.model.animal.squid;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Arrays;
 import net.minecraft.client.model.EntityModel;

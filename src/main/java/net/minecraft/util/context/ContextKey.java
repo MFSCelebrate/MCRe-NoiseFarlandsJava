@@ -1,4 +1,5 @@
 package net.minecraft.util.context;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.resources.Identifier;
 

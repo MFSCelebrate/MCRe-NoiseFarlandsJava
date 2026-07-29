@@ -1,4 +1,5 @@
 package net.minecraft.world.level.storage;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public record LevelResource(String id) {
     public static final LevelResource PLAYER_ADVANCEMENTS_DIR = new LevelResource("players/advancements");

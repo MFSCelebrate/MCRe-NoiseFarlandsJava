@@ -1,4 +1,5 @@
 package net.minecraft.world.level.redstone;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Locale;
 import net.minecraft.CrashReport;

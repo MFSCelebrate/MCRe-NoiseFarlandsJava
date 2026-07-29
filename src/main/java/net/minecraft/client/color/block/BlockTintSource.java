@@ -1,4 +1,5 @@
 package net.minecraft.client.color.block;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Set;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;

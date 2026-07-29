@@ -1,4 +1,5 @@
 package net.minecraft.util.datafix;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DataFixUtils;
 import com.mojang.datafixers.OpticFinder;

@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.monster.illager;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.entity.Entity;

@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.projectile.hurtingprojectile;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import net.minecraft.core.particles.ParticleOptions;

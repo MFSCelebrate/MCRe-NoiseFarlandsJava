@@ -1,4 +1,5 @@
 package net.minecraft.client.model.animal.axolotl;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.animation.KeyframeAnimation;
 import net.minecraft.client.animation.definitions.BabyAxolotlAnimation;

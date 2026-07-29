@@ -1,4 +1,5 @@
 @NullMarked
 package net.minecraft.util.profiling.metrics;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import org.jspecify.annotations.NullMarked;

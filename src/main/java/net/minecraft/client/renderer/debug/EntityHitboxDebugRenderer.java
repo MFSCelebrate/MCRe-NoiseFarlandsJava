@@ -1,4 +1,5 @@
 package net.minecraft.client.renderer.debug;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.SharedConstants;
 import net.minecraft.client.CameraType;

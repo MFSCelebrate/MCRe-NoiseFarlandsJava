@@ -1,4 +1,5 @@
 package net.minecraft.client.gui.components.toasts;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
