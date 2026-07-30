@@ -39,7 +39,7 @@ public final class ChunkPos {
         }
     };
 
-    // ========== 原版常量（保留） ==========
+    // ========== 原版常量（保留) 用于兼容 ==========
     private static final int SAFETY_MARGIN = 1056;
     public static final long INVALID_CHUNK_POS = pack(2147483647, 2147483647);
     public static final ChunkPos ZERO = new ChunkPos(0, 0);
