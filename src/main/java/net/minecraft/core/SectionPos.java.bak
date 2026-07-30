@@ -1,4 +1,5 @@
 package net.minecraft.core;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.AbstractIterator;
 import io.netty.buffer.ByteBuf;
@@ -74,7 +75,7 @@ public final class SectionPos extends Vec3i implements Position {
         return of(chunk.getPos(), chunk.getMinSectionY());
     }
 
-    // ==================== 坐标转换工具（long 版本） ====================
+    // ==================== 坐标转换工具 ====================
     public static long blockToSectionCoord(long blockCoord) {
         return blockCoord >> 4;
     }
@@ -93,31 +94,6 @@ public final class SectionPos extends Vec3i implements Position {
 
     public static long sectionToBlockCoord(long sectionCoord, long offset) {
         return sectionToBlockCoord(sectionCoord) + offset;
-    }
-
-    // ==================== 坐标转换工具（int 兼容版本） ====================
-    /**
-     * int 兼容版本，适用于坐标在 int 范围内的场景。
-     * 内部调用 long 版本并强转，返回 int。
-     */
-    public static int blockToSectionCoord(int blockCoord) {
-        return (int) blockToSectionCoord((long) blockCoord);
-    }
-
-    /**
-     * int 兼容版本，适用于坐标在 int 范围内的场景。
-     * 内部调用 long 版本并强转，返回 int。
-     */
-    public static int sectionToBlockCoord(int sectionCoord) {
-        return (int) sectionToBlockCoord((long) sectionCoord);
-    }
-
-    /**
-     * int 兼容版本，适用于坐标在 int 范围内的场景。
-     * 内部调用 long 版本并强转，返回 int。
-     */
-    public static int sectionToBlockCoord(int sectionCoord, int offset) {
-        return (int) sectionToBlockCoord((long) sectionCoord, (long) offset);
     }
 
     // ==================== Getter ====================

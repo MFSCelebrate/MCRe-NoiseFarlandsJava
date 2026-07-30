@@ -1,4 +1,5 @@
 package net.minecraft.world.level;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
@@ -73,32 +74,13 @@ public final class ChunkPos {
         );
     }
 
-    // ========== Getter（兼容旧代码调用 .x() / .z()，返回 long） ==========
+    // ========== Getter（兼容旧代码调用 .x() / .z()） ==========
     public long x() {
         return this.x;
     }
 
     public long z() {
         return this.z;
-    }
-
-    // ========== int 兼容方法（用于需要 int 的场景，注意可能溢出） ==========
-    /**
-     * 返回 int 类型的 x 坐标。注意：如果坐标超出 int 范围，将发生截断。
-     * 对于原版世界（±3000 万块坐标），此方法安全；
-     * 对于大数世界（>21亿），应使用 {@link #x()} 获取 long 值。
-     */
-    public int xInt() {
-        return (int) this.x;
-    }
-
-    /**
-     * 返回 int 类型的 z 坐标。注意：如果坐标超出 int 范围，将发生截断。
-     * 对于原版世界（±3000 万块坐标），此方法安全；
-     * 对于大数世界（>21亿），应使用 {@link #z()} 获取 long 值。
-     */
-    public int zInt() {
-        return (int) this.z;
     }
 
     // ========== 静态工厂 ==========

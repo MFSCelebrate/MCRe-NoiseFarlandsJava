@@ -1,8 +1,5 @@
 package net.minecraft.world.level.chunk.storage;
-
 import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.shorts.ShortList;
-import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 
 import com.google.common.collect.Maps;
 import com.mojang.logging.LogUtils;
@@ -298,6 +295,7 @@ public record SerializableChunkData(
         }
 
         Heightmap.primeHeightmaps(chunk, toPrime);
+        // 修改：使用 Set<ChunkPos> 的对象引用
         chunk.setAllStarts(unpackStructureStart(StructurePieceSerializationContext.fromLevel(level), this.structureData, level.getSeed()));
         chunk.setAllReferences(unpackStructureReferences(level.registryAccess(), pos, this.structureData));
 
@@ -329,9 +327,8 @@ public record SerializableChunkData(
         return protoChunk;
     }
 
-    // ===== 修改：pos.x() 和 pos.z() 强转为 int（因为日志格式化） =====
     private static void logErrors(final ChunkPos pos, final int sectionY, final String message) {
-        LOGGER.error("Recoverable errors when loading section [{}, {}, {}]: {}", (int)pos.x(), sectionY, (int)pos.z(), message);
+        LOGGER.error("Recoverable errors when loading section [{}, {}, {}]: {}", pos.x(), sectionY, pos.z(), message);
     }
 
     public static SerializableChunkData copyOf(final ServerLevel level, final ChunkAccess chunk) {
@@ -394,7 +391,7 @@ public record SerializableChunkData(
             StructurePieceSerializationContext.fromLevel(level),
             pos,
             chunk.getAllStarts(),
-            chunk.getAllReferences()
+            chunk.getAllReferences()  // 现在返回 Map<Structure, Set<ChunkPos>>
         );
         return new SerializableChunkData(
             level.palettedContainerFactory(),
@@ -420,10 +417,9 @@ public record SerializableChunkData(
 
     public CompoundTag write() {
         CompoundTag tag = NbtUtils.addCurrentDataVersion(new CompoundTag());
-        // ===== 修改：强转为 int，因为 putInt 需要 int =====
-        tag.putInt("xPos", (int)this.chunkPos.x());
+        tag.putInt("xPos", this.chunkPos.x());
         tag.putInt("yPos", this.minSectionY);
-        tag.putInt("zPos", (int)this.chunkPos.z());
+        tag.putInt("zPos", this.chunkPos.z());
         tag.putLong("LastUpdate", this.lastUpdateTime);
         tag.putLong("InhabitedTime", this.inhabitedTime);
         tag.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(this.chunkStatus).toString());
@@ -523,6 +519,7 @@ public record SerializableChunkData(
             };
     }
 
+    // ===== 修改：使用 Set<ChunkPos> 替代 LongSet =====
     private static CompoundTag packStructureData(
         final StructurePieceSerializationContext context,
         final ChunkPos pos,
@@ -544,6 +541,7 @@ public record SerializableChunkData(
         for (Entry<Structure, Set<ChunkPos>> entry : references.entrySet()) {
             if (!entry.getValue().isEmpty()) {
                 Identifier key = structuresRegistry.getKey(entry.getKey());
+                // 将 Set<ChunkPos> 转换为 long 数组存储
                 long[] packedRefs = entry.getValue().stream().mapToLong(ChunkPos::pack).toArray();
                 referencesTag.putLongArray(key.toString(), packedRefs);
             }
@@ -574,6 +572,7 @@ public record SerializableChunkData(
         return outmap;
     }
 
+    // ===== 修改：返回 Map<Structure, Set<ChunkPos>> =====
     private static Map<Structure, Set<ChunkPos>> unpackStructureReferences(final RegistryAccess registryAccess, final ChunkPos pos, final CompoundTag tag) {
         Map<Structure, Set<ChunkPos>> outmap = Maps.newHashMap();
         Registry<Structure> structuresRegistry = registryAccess.lookupOrThrow(Registries.STRUCTURE);
