@@ -1,5 +1,4 @@
 package net.minecraft.util;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class LinearCongruentialGenerator {
     private static final long MULTIPLIER = 6364136223846793005L;

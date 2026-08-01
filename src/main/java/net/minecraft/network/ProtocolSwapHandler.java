@@ -1,5 +1,4 @@
 package net.minecraft.network;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.network.protocol.Packet;

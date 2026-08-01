@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.ai.goal;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import java.util.EnumMap;

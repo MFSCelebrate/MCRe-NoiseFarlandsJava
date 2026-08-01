@@ -1,5 +1,4 @@
 package net.minecraft.util.filefix.virtualfilesystem;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.mojang.logging.LogUtils;

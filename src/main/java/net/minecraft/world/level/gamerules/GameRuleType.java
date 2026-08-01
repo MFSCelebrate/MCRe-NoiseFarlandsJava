@@ -1,5 +1,4 @@
 package net.minecraft.world.level.gamerules;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.StringRepresentable;
 

@@ -1,5 +1,4 @@
 package net.minecraft.client.input;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

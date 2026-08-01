@@ -1,5 +1,4 @@
 package net.minecraft.util.parsing.packrat;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.IdentityHashMap;
 import java.util.List;

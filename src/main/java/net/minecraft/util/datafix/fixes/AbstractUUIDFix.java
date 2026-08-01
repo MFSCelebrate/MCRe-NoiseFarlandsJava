@@ -1,5 +1,4 @@
 package net.minecraft.util.datafix.fixes;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DSL;
 import com.mojang.datafixers.DataFix;
@@ -28,17 +27,17 @@ public abstract class AbstractUUIDFix extends DataFix {
     }
 
     protected static Optional<Dynamic<?>> replaceUUIDString(final Dynamic<?> tag, final String oldKey, final String newKey) {
-        return createUUIDFromString(tag, oldKey).map(uuidTag -> tag.remove(oldKey).set(newKey, (Dynamic<?>) uuidTag));
+        return createUUIDFromString(tag, oldKey).map(uuidTag -> tag.remove(oldKey).set(newKey, (Dynamic<?>)uuidTag));
     }
 
     protected static Optional<Dynamic<?>> replaceUUIDMLTag(final Dynamic<?> tag, final String oldKey, final String newKey) {
-        return tag.get(oldKey).result().flatMap(AbstractUUIDFix::createUUIDFromML).map(uuidTag -> tag.remove(oldKey).set(newKey, (Dynamic<?>) uuidTag));
+        return tag.get(oldKey).result().flatMap(AbstractUUIDFix::createUUIDFromML).map(uuidTag -> tag.remove(oldKey).set(newKey, (Dynamic<?>)uuidTag));
     }
 
     protected static Optional<Dynamic<?>> replaceUUIDLeastMost(final Dynamic<?> tag, final String oldKey, final String newKey) {
         String mostKey = oldKey + "Most";
         String leastKey = oldKey + "Least";
-        return createUUIDFromLongs(tag, mostKey, leastKey).map(uuidTag -> tag.remove(mostKey).remove(leastKey).set(newKey, (Dynamic<?>) uuidTag));
+        return createUUIDFromLongs(tag, mostKey, leastKey).map(uuidTag -> tag.remove(mostKey).remove(leastKey).set(newKey, (Dynamic<?>)uuidTag));
     }
 
     protected static Optional<Dynamic<?>> createUUIDFromString(final Dynamic<?> tag, final String oldKey) {
@@ -51,6 +50,7 @@ public abstract class AbstractUUIDFix extends DataFix {
                 } catch (IllegalArgumentException var4) {
                 }
             }
+
             return Optional.empty();
         });
     }
@@ -69,7 +69,7 @@ public abstract class AbstractUUIDFix extends DataFix {
         return Optional.of(
             tag.createIntList(
                 Arrays.stream(
-                    new int[]{(int) (mostSignificantBits >> 32), (int) mostSignificantBits, (int) (leastSignificantBits >> 32), (int) leastSignificantBits}
+                    new int[]{(int)(mostSignificantBits >> 32), (int)mostSignificantBits, (int)(leastSignificantBits >> 32), (int)leastSignificantBits}
                 )
             )
         );

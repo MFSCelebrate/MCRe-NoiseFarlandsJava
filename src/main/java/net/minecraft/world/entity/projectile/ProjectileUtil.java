@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.projectile;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Either;
 import java.util.ArrayList;

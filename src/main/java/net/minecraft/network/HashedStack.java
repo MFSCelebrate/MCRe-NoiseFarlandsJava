@@ -1,5 +1,4 @@
 package net.minecraft.network;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DataFixUtils;
 import java.util.Optional;

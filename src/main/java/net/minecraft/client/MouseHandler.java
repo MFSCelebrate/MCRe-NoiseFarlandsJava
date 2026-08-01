@@ -1,5 +1,4 @@
 package net.minecraft.client;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.Blaze3D;
 import com.mojang.blaze3d.platform.InputConstants;

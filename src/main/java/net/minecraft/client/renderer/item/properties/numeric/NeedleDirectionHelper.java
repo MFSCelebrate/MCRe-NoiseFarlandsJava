@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.item.properties.numeric;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.util.Mth;

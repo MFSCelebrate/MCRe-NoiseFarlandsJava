@@ -1,5 +1,4 @@
 package net.minecraft.server.level;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.util.StaticCache2D;
@@ -9,8 +8,7 @@ import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.status.ChunkStep;
 
 public interface GeneratingChunkMap {
-    // ===== 修改：参数从 long chunkNode 改为 ChunkPos pos =====
-    GenerationChunkHolder acquireGeneration(ChunkPos pos);
+    GenerationChunkHolder acquireGeneration(long chunkNode);
 
     void releaseGeneration(GenerationChunkHolder chunkHolder);
 

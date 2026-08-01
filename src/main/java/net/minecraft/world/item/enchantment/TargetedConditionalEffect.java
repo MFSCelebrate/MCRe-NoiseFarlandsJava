@@ -1,5 +1,4 @@
 package net.minecraft.world.item.enchantment;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Function4;
 import com.mojang.serialization.Codec;

@@ -1,5 +1,4 @@
 package net.minecraft.client.entity;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import java.util.Optional;

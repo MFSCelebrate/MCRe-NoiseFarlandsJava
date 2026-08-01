@@ -1,5 +1,4 @@
 package net.minecraft.util.datafix;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.DSL.TypeReference;

@@ -1,8 +1,7 @@
 package net.minecraft.client.renderer.debug;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import java.util.Set;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
@@ -36,20 +35,18 @@ public class LightDebugRenderer implements DebugRenderer.SimpleDebugRenderer {
     ) {
         Level level = this.minecraft.level;
         BlockPos playerPos = BlockPos.containing(camX, camY, camZ);
-        // ===== 修改：使用 ObjectOpenHashSet<SectionPos> =====
-        Set<SectionPos> visitedSections = new ObjectOpenHashSet<>();
+        LongSet set = new LongOpenHashSet();
 
         for (BlockPos blockPos : BlockPos.betweenClosed(playerPos.offset(-10, -10, -10), playerPos.offset(10, 10, 10))) {
             int skyBrightness = level.getBrightness(LightLayer.SKY, blockPos);
-            // ===== 直接使用 SectionPos.of(blockPos) =====
-            SectionPos sectionPos = SectionPos.of(blockPos);
-            if (visitedSections.add(sectionPos)) {
+            long sectionNode = SectionPos.blockToSection(blockPos.asLong());
+            if (set.add(sectionNode)) {
                 Gizmos.billboardText(
-                    level.getChunkSource().getLightEngine().getDebugData(LightLayer.SKY, sectionPos),
+                    level.getChunkSource().getLightEngine().getDebugData(LightLayer.SKY, SectionPos.of(sectionNode)),
                     new Vec3(
-                        SectionPos.sectionToBlockCoord(sectionPos.getX(), 8),
-                        SectionPos.sectionToBlockCoord(sectionPos.getY(), 8),
-                        SectionPos.sectionToBlockCoord(sectionPos.getZ(), 8)
+                        SectionPos.sectionToBlockCoord(SectionPos.x(sectionNode), 8),
+                        SectionPos.sectionToBlockCoord(SectionPos.y(sectionNode), 8),
+                        SectionPos.sectionToBlockCoord(SectionPos.z(sectionNode), 8)
                     ),
                     TextGizmo.Style.forColorAndCentered(-65536).withScale(4.8F)
                 );

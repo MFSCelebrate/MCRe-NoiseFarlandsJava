@@ -1,5 +1,4 @@
 package net.minecraft.data.worldgen;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Lifecycle;
 import net.minecraft.core.Holder;

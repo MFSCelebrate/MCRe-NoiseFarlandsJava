@@ -1,5 +1,4 @@
 package net.minecraft.world.ticks;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -45,10 +44,8 @@ public record SavedTick<T>(T type, BlockPos pos, int delay, TickPriority priorit
     }
 
     public static <T> List<SavedTick<T>> filterTickListForChunk(final List<SavedTick<T>> savedTicks, final ChunkPos chunkPos) {
-        // ===== 修改：使用 new ChunkPos(tick.pos()) 替代 ChunkPos.pack 比较 =====
-        return savedTicks.stream()
-            .filter(tick -> new ChunkPos(tick.pos()).equals(chunkPos))
-            .toList();
+        long posKey = chunkPos.pack();
+        return savedTicks.stream().filter(tick -> ChunkPos.pack(tick.pos()) == posKey).toList();
     }
 
     public ScheduledTick<T> unpack(final long currentTick, final long currentSubTick) {

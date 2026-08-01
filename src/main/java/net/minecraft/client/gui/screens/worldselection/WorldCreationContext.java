@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.worldselection;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;

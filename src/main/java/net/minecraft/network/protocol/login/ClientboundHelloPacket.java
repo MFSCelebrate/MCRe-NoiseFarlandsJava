@@ -1,5 +1,4 @@
 package net.minecraft.network.protocol.login;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.security.PublicKey;
 import net.minecraft.network.FriendlyByteBuf;

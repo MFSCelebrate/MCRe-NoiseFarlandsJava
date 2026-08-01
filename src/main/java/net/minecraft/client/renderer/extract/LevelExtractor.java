@@ -1,10 +1,8 @@
 package net.minecraft.client.renderer.extract;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
-import java.util.Collection;
+import it.unimi.dsi.fastutil.longs.LongCollection;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -142,31 +140,28 @@ public class LevelExtractor implements ResourceManagerReloadListener {
             this.levelRenderState.chunkLoadingRenderState.addedLoadedChunks = chunkCache.addedLoadedChunks();
             this.levelRenderState.chunkLoadingRenderState.removedLoadedChunks = chunkCache.removedLoadedChunks();
             chunkCache.flipUpdateTrackingSets();
-            // ===== 修改：expectedChunks 现在是 Set<ChunkPos> =====
-            Collection<ChunkPos> expectedChunks = this.levelRenderer.expectedChunks();
-            for (ChunkPos chunkPos : expectedChunks) {
-                if (chunkCache.hasChunk(chunkPos.x, chunkPos.z)) {
-                    this.levelRenderState.chunkLoadingRenderState.loadedExpectedChunks.add(chunkPos);
+            LongCollection expectedChunks = this.levelRenderer.expectedChunks();
+            expectedChunks.forEach(expectedChunk -> {
+                if (chunkCache.hasChunk(ChunkPos.getX(expectedChunk), ChunkPos.getZ(expectedChunk))) {
+                    this.levelRenderState.chunkLoadingRenderState.loadedExpectedChunks.add(expectedChunk);
                 }
-            }
+            });
             profiler.popPush("sectionUpdates");
             RenderRegionCache cache = new RenderRegionCache();
 
             for (SectionRenderDispatcher.RenderSection section : this.levelRenderer.visibleSections()) {
-                // ===== 使用 section.getSectionPos() =====
-                SectionPos sectionPos = section.getSectionPos();
-                SectionUpdateTracker.SectionDirtyState dirtyState = this.sectionUpdateTracker.getDirtyState(sectionPos);
+                SectionUpdateTracker.SectionDirtyState dirtyState = this.sectionUpdateTracker.getDirtyState(section.getSectionNode());
                 if (dirtyState != null
                     && dirtyState.isDirty()
                     && (
                         section.sectionMesh.get() != CompiledSectionMesh.UNCOMPILED
-                            || this.sectionUpdateTracker.hasAllNeighbors(this.level, sectionPos)
+                            || this.sectionUpdateTracker.hasAllNeighbors(this.level, section.getSectionNode())
                     )) {
                     this.levelRenderState
                         .sectionUpdateRenderStates
                         .add(
                             new SectionUpdateRenderState(
-                                sectionPos, dirtyState.isDirtyFromPlayer(), cache.createRegion(this.level, sectionPos)
+                                section.getSectionNode(), dirtyState.isDirtyFromPlayer(), cache.createRegion(this.level, section.getSectionNode())
                             )
                         );
                     dirtyState.setNotDirty();
@@ -281,8 +276,7 @@ public class LevelExtractor implements ResourceManagerReloadListener {
             if (!renderableBlockEntities.isEmpty() && !(section.getVisibility(Util.getMillis()) < 0.3F)) {
                 for (BlockEntity blockEntity : renderableBlockEntities) {
                     BlockPos blockPos = blockEntity.getBlockPos();
-                    // ===== 修改：使用 SectionPos.of(blockPos) 作为键 =====
-                    SortedSet<BlockDestructionProgress> progresses = this.level.destructionProgress().get(SectionPos.of(blockPos));
+                    SortedSet<BlockDestructionProgress> progresses = this.level.destructionProgress().get(blockPos.asLong());
                     ModelFeatureRenderer.CrumblingOverlay breakProgress;
                     if (progresses != null && !progresses.isEmpty()) {
                         poseStack.pushPose();
@@ -327,22 +321,13 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         double camZ = cameraPos.z();
         levelRenderState.blockBreakingRenderStates.clear();
 
-        // ===== 修改：迭代 Object2ObjectMap.Entry<SectionPos, SortedSet<...>> =====
-        for (Object2ObjectMap.Entry<SectionPos, SortedSet<BlockDestructionProgress>> entry : this.level.destructionProgress().object2ObjectEntrySet()) {
-            SectionPos sectionPos = entry.getKey();
-            // 使用 SectionPos 的中心作为位置计算距离
-            BlockPos pos = sectionPos.origin(); // 或者 center()，但 origin 是角，用 center 更合适
-            // 为了与原有逻辑一致（原为 BlockPos.of(long)），使用 origin
+        for (Entry<SortedSet<BlockDestructionProgress>> entry : this.level.destructionProgress().long2ObjectEntrySet()) {
+            BlockPos pos = BlockPos.of(entry.getLongKey());
             if (!(pos.distToCenterSqr(camX, camY, camZ) > 1024.0)) {
                 SortedSet<BlockDestructionProgress> progresses = entry.getValue();
                 if (progresses != null && !progresses.isEmpty()) {
                     int progress = progresses.last().getProgress();
-                    // 从 progresses 中取出 BlockPos（因为 BlockDestructionProgress 内部有 BlockPos）
-                    // 但这里我们直接用 sectionPos 的 origin，但原逻辑是使用 BlockPos.of(long)，那是具体的破坏位置，与 SectionPos 不完全一致。
-                    // 为了更准确，我们应该从 BlockDestructionProgress 中获取 BlockPos，但这里我们假设 destructionProgress 的键是 BlockPos 对应的 SectionPos，
-                    // 且所有破坏进度都在同一个 Section 内，所以取首个 progress 的 pos。
-                    BlockPos actualPos = progresses.first().getPos();
-                    levelRenderState.blockBreakingRenderStates.add(new BlockBreakingRenderState(actualPos, this.level.getBlockState(actualPos), progress));
+                    levelRenderState.blockBreakingRenderStates.add(new BlockBreakingRenderState(pos, this.level.getBlockState(pos), progress));
                 }
             }
         }
@@ -495,11 +480,13 @@ public class LevelExtractor implements ResourceManagerReloadListener {
 
     public int countRenderedSections() {
         int rendered = 0;
+
         for (SectionRenderDispatcher.RenderSection section : this.levelRenderer.visibleSections()) {
             if (section.getSectionMesh().hasRenderableLayers()) {
                 rendered++;
             }
         }
+
         return rendered;
     }
 
@@ -509,6 +496,7 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         if (viewArea == null) {
             return null;
         }
+
         int totalSections = viewArea.size();
         int rendered = this.countRenderedSections();
         SectionRenderDispatcher sectionRenderDispatcher = this.levelRenderer.sectionRenderDispatcher();

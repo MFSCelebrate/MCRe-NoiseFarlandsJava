@@ -1,5 +1,4 @@
 package net.minecraft.client;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Direction;

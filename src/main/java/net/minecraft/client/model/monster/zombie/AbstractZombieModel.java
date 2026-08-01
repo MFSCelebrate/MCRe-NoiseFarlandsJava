@@ -1,5 +1,4 @@
 package net.minecraft.client.model.monster.zombie;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.model.AnimationUtils;
 import net.minecraft.client.model.HumanoidModel;

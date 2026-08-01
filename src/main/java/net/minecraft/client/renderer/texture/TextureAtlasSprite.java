@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.texture;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;

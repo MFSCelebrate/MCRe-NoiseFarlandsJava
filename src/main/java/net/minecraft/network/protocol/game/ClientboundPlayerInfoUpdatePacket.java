@@ -1,5 +1,4 @@
 package net.minecraft.network.protocol.game;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.MoreObjects;
 import com.mojang.authlib.GameProfile;

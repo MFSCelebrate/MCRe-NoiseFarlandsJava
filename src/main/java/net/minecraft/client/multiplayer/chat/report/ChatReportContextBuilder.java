@@ -1,5 +1,4 @@
 package net.minecraft.client.multiplayer.chat.report;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntRBTreeSet;

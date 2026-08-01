@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.ai.goal;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import java.util.EnumSet;

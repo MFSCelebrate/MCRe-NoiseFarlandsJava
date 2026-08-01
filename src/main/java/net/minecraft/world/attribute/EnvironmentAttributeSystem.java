@@ -1,5 +1,4 @@
 package net.minecraft.world.attribute;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;

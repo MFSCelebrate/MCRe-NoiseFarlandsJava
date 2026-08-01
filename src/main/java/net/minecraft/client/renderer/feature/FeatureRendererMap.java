@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.feature;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Iterables;
 import java.util.Arrays;

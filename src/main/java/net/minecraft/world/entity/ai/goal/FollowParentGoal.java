@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.ai.goal;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import net.minecraft.world.entity.animal.Animal;

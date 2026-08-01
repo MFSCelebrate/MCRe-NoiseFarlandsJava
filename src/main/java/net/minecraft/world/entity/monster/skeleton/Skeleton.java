@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.monster.skeleton;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import net.minecraft.network.syncher.EntityDataAccessor;

@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.components;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.ActiveTextCollector;
 import net.minecraft.client.gui.Font;

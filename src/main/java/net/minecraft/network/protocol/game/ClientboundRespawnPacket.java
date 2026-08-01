@@ -1,5 +1,4 @@
 package net.minecraft.network.protocol.game;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

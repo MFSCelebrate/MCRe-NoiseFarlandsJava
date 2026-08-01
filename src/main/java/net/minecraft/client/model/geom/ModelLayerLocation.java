@@ -1,5 +1,4 @@
 package net.minecraft.client.model.geom;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.resources.Identifier;
 import net.minecraftforge.api.distmarker.Dist;

@@ -1,5 +1,4 @@
 package net.minecraft.data.worldgen.features;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableList;
 import net.minecraft.data.worldgen.BootstrapContext;

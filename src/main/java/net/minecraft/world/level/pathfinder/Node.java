@@ -1,5 +1,4 @@
 package net.minecraft.world.level.pathfinder;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;

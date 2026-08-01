@@ -1,5 +1,4 @@
 package net.minecraft.client.model.monster.strider;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.BiConsumer;
 import net.minecraft.client.model.EntityModel;

@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.reporting;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.report.AbuseReportLimits;

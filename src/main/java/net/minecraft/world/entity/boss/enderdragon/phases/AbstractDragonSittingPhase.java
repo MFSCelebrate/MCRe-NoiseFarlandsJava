@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.boss.enderdragon.phases;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;

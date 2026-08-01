@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.projectile.arrow;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SpellParticleOption;

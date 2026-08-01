@@ -1,5 +1,4 @@
 package net.minecraft.world.level.block.entity.trialspawner;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Optional;
 import java.util.function.Consumer;

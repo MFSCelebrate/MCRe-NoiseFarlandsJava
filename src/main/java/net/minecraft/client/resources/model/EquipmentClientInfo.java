@@ -1,5 +1,4 @@
 package net.minecraft.client.resources.model;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableMap;
 import com.mojang.serialization.Codec;

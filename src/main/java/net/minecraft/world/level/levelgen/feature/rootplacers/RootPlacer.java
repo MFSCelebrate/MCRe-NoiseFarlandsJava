@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.feature.rootplacers;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.Products.P3;
 import com.mojang.serialization.Codec;

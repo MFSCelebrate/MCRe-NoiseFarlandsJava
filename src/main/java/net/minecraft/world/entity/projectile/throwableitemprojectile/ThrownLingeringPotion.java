@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.projectile.throwableitemprojectile;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AreaEffectCloud;

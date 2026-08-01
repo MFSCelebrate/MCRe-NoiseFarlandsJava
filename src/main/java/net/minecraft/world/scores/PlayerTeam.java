@@ -1,5 +1,4 @@
 package net.minecraft.world.scores;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Sets;
 import com.mojang.serialization.Codec;

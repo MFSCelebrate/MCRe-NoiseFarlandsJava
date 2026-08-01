@@ -1,5 +1,4 @@
 package net.minecraft.network.chat.numbers;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;

@@ -1,5 +1,4 @@
 package net.minecraft.world.damagesource;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstrapContext;

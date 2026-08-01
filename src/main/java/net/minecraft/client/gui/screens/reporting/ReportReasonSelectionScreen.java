@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.reporting;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.Consumer;
 import net.minecraft.Optionull;

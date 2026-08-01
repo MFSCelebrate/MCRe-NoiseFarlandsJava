@@ -1,5 +1,4 @@
 package net.minecraft.world.food;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class FoodConstants {
     public static final int MAX_FOOD = 20;

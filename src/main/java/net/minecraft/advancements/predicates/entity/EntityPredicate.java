@@ -1,5 +1,4 @@
 package net.minecraft.advancements.predicates.entity;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;

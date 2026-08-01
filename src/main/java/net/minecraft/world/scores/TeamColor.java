@@ -1,5 +1,4 @@
 package net.minecraft.world.scores;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import io.netty.buffer.ByteBuf;
 import java.util.List;

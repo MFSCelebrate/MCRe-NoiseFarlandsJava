@@ -1,5 +1,4 @@
 package net.minecraft.core;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.util.Util;

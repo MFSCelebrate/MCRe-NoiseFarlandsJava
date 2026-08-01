@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.texture.atlas.sources;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import java.io.IOException;

@@ -1,5 +1,4 @@
 package net.minecraft.data.worldgen;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.floats.Float2FloatFunction;
 import net.minecraft.util.BoundedFloatFunction;

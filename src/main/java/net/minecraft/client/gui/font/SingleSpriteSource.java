@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.font;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.GlyphSource;
 import net.minecraft.client.gui.font.glyphs.BakedGlyph;

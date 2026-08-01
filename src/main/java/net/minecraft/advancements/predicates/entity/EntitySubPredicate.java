@@ -1,5 +1,4 @@
 package net.minecraft.advancements.predicates.entity;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;

@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.components.debug;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.StringRepresentable;
 import net.minecraftforge.api.distmarker.Dist;

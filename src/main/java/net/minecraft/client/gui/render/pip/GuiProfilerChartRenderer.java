@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.render.pip;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;

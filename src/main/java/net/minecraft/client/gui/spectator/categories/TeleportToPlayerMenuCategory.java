@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.spectator.categories;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Collection;
 import java.util.Comparator;

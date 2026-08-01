@@ -1,5 +1,4 @@
 package net.minecraft.world.item.crafting;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;

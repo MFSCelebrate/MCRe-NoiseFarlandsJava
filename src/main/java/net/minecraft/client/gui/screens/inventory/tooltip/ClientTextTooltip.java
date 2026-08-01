@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.inventory.tooltip;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.projectile;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;

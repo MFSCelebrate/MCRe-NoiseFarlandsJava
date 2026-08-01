@@ -1,5 +1,4 @@
 package net.minecraft.network.chat;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class ThrowingComponent extends Exception {
     private final Component component;

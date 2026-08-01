@@ -1,5 +1,4 @@
 package net.minecraft.data.recipes;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.advancements.triggers.Criterion;
 import net.minecraft.resources.ResourceKey;

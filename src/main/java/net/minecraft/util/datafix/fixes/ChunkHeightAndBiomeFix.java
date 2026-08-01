@@ -1,5 +1,4 @@
 package net.minecraft.util.datafix.fixes;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
@@ -154,6 +153,7 @@ public class ChunkHeightAndBiomeFix extends DataFix {
                             if (sectionYIndex >= 0 && sectionYIndex < biomeContainers.length) {
                                 result = result.set("biomes", biomeContainers[sectionYIndex]);
                             }
+
                             doneSections.add(sectionYx);
                             if (sectionx.get("Y").asInt(Integer.MAX_VALUE) == 0) {
                                 bedrockSectionBlocks.setValue(() -> {
@@ -162,6 +162,7 @@ public class ChunkHeightAndBiomeFix extends DataFix {
                                     return new ChunkProtoTickListFix.PoorMansPalettedContainer(palette, data);
                                 });
                             }
+
                             return result.set("block_states", blockStatesContainer).remove("Palette").remove("BlockStates");
                         }).collect(Collectors.toCollection(ArrayList::new));
 
@@ -183,6 +184,7 @@ public class ChunkHeightAndBiomeFix extends DataFix {
                             if (isOverworld) {
                                 chunkTag = this.predictChunkStatusBeforeSurface(chunkTag, blocksInChunk);
                             }
+
                             return updateChunkTag(
                                 chunkTag, isOverworld, wasIncreasedHeight.booleanValue(), "minecraft:noise".equals(generator), bedrockSectionBlocks.get()
                             );
@@ -307,6 +309,7 @@ public class ChunkHeightAndBiomeFix extends DataFix {
                                 if (isAir) {
                                     missingBedrock.set(z * 16 + x);
                                 }
+
                                 hasAnyBedrock |= isBedrock;
                             }
                         }
@@ -384,6 +387,7 @@ public class ChunkHeightAndBiomeFix extends DataFix {
             for (String heightmapType : HEIGHTMAP_TYPES) {
                 heightmapTag = heightmapTag.update(heightmapType, ChunkHeightAndBiomeFix::getFixedHeightmap);
             }
+
             return heightmapTag;
         });
     }

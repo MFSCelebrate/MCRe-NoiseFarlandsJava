@@ -1,5 +1,4 @@
 package net.minecraft.world.item;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface TooltipFlag {
     TooltipFlag.Default NORMAL = new TooltipFlag.Default(false, false);

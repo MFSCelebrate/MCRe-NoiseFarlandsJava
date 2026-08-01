@@ -1,5 +1,4 @@
 package net.minecraft.network.protocol.ping;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.PacketListener;
 

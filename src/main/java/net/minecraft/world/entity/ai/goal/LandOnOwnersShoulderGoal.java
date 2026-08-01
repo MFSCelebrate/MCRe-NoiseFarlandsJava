@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.ai.goal;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.animal.parrot.ShoulderRidingEntity;

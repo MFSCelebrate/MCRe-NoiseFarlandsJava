@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.ai.goal.target;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.EnumSet;
 import net.minecraft.server.level.ServerLevel;

@@ -1,5 +1,4 @@
 package net.minecraft.world.item;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;

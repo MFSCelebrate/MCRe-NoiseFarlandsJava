@@ -1,9 +1,8 @@
 package net.minecraft.client.renderer.block;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.vertex.QuadInstance;
-import it.unimi.dsi.fastutil.objects.Object2FloatLinkedOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2IntLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2FloatLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -639,9 +638,8 @@ public class BlockModelLighter {
     @OnlyIn(Dist.CLIENT)
     public static class Cache {
         private boolean enabled;
-        // ===== 使用 BlockPos 作为键 =====
-        private final Object2IntLinkedOpenHashMap<BlockPos> colorCache = Util.make(() -> {
-            Object2IntLinkedOpenHashMap<BlockPos> map = new Object2IntLinkedOpenHashMap<>(100, 0.25F) {
+        private final Long2IntLinkedOpenHashMap colorCache = Util.make(() -> {
+            Long2IntLinkedOpenHashMap map = new Long2IntLinkedOpenHashMap(100, 0.25F) {
                 @Override
                 protected void rehash(final int newN) {
                 }
@@ -649,8 +647,8 @@ public class BlockModelLighter {
             map.defaultReturnValue(Integer.MAX_VALUE);
             return map;
         });
-        private final Object2FloatLinkedOpenHashMap<BlockPos> brightnessCache = Util.make(() -> {
-            Object2FloatLinkedOpenHashMap<BlockPos> map = new Object2FloatLinkedOpenHashMap<>(100, 0.25F) {
+        private final Long2FloatLinkedOpenHashMap brightnessCache = Util.make(() -> {
+            Long2FloatLinkedOpenHashMap map = new Long2FloatLinkedOpenHashMap(100, 0.25F) {
                 @Override
                 protected void rehash(final int newN) {
                 }
@@ -659,15 +657,17 @@ public class BlockModelLighter {
             return map;
         });
         private final LightCoordsUtil.BrightnessGetter cachedBrightnessGetter = (level, pos) -> {
-            BlockPos key = pos.immutable();
-            int cached = this.colorCache.getInt(key);
+            long key = pos.asLong();
+            int cached = this.colorCache.get(key);
             if (cached != Integer.MAX_VALUE) {
                 return cached;
             }
+
             int value = LightCoordsUtil.BrightnessGetter.DEFAULT.packedBrightness(level, pos);
             if (this.colorCache.size() == 100) {
                 this.colorCache.removeFirstInt();
             }
+
             this.colorCache.put(key, value);
             return value;
         };
@@ -687,20 +687,23 @@ public class BlockModelLighter {
         }
 
         public float getShadeBrightness(final BlockState state, final BlockAndTintGetter level, final BlockPos pos) {
-            BlockPos key = pos.immutable();
+            long key = pos.asLong();
             if (this.enabled) {
-                float cached = this.brightnessCache.getFloat(key);
+                float cached = this.brightnessCache.get(key);
                 if (!Float.isNaN(cached)) {
                     return cached;
                 }
             }
+
             float brightness = state.getShadeBrightness(level, pos);
             if (this.enabled) {
                 if (this.brightnessCache.size() == 100) {
                     this.brightnessCache.removeFirstFloat();
                 }
+
                 this.brightnessCache.put(key, brightness);
             }
+
             return brightness;
         }
     }

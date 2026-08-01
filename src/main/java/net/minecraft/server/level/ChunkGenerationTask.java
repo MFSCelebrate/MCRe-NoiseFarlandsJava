@@ -1,5 +1,4 @@
 package net.minecraft.server.level;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,9 +34,8 @@ public class ChunkGenerationTask {
 
     public static ChunkGenerationTask create(final GeneratingChunkMap chunkMap, final ChunkStatus targetStatus, final ChunkPos pos) {
         int worstCaseRadius = ChunkPyramid.GENERATION_PYRAMID.getStepTo(targetStatus).getAccumulatedRadiusOf(ChunkStatus.EMPTY);
-        // ===== 修改：使用 new ChunkPos(x, z) 替代 ChunkPos.pack(x, z) =====
         StaticCache2D<GenerationChunkHolder> cache = StaticCache2D.create(
-            (int)pos.x, (int)pos.z, worstCaseRadius, (x, z) -> chunkMap.acquireGeneration(new ChunkPos(x, z))
+            pos.x(), pos.z(), worstCaseRadius, (x, z) -> chunkMap.acquireGeneration(ChunkPos.pack(x, z))
         );
         return new ChunkGenerationTask(chunkMap, targetStatus, pos, cache);
     }
@@ -78,8 +76,7 @@ public class ChunkGenerationTask {
     }
 
     private void releaseClaim() {
-        // ===== 修改：使用 pos.x 和 pos.z 字段 =====
-        GenerationChunkHolder chunkHolder = this.cache.get((int)this.pos.x, (int)this.pos.z);
+        GenerationChunkHolder chunkHolder = this.cache.get(this.pos.x(), this.pos.z());
         chunkHolder.removeTask(this);
         this.cache.forEach(this.chunkMap::releaseGeneration);
     }
@@ -89,18 +86,16 @@ public class ChunkGenerationTask {
             return true;
         }
 
-        GenerationChunkHolder centerHolder = this.cache.get((int)this.pos.x, (int)this.pos.z);
-        ChunkStatus highestGeneratedStatus = centerHolder.getPersistedStatus();
+        ChunkStatus highestGeneratedStatus = this.cache.get(this.pos.x(), this.pos.z()).getPersistedStatus();
         if (highestGeneratedStatus != null && !highestGeneratedStatus.isBefore(this.targetStatus)) {
             ChunkDependencies dependencies = ChunkPyramid.LOADING_PYRAMID.getStepTo(this.targetStatus).accumulatedDependencies();
             int range = dependencies.getRadius();
 
-            // ===== 循环使用 long 坐标，通过 pos.x / pos.z 字段访问 =====
-            for (long x = this.pos.x - range; x <= this.pos.x + range; x++) {
-                for (long z = this.pos.z - range; z <= this.pos.z + range; z++) {
-                    int distance = (int) this.pos.getChessboardDistance(x, z); // 返回 long，转为 int
+            for (int x = this.pos.x() - range; x <= this.pos.x() + range; x++) {
+                for (int z = this.pos.z() - range; z <= this.pos.z() + range; z++) {
+                    int distance = this.pos.getChessboardDistance(x, z);
                     ChunkStatus requiredStatus = dependencies.get(distance);
-                    ChunkStatus persistedStatus = this.cache.get((int)x, (int)z).getPersistedStatus();
+                    ChunkStatus persistedStatus = this.cache.get(x, z).getPersistedStatus();
                     if (persistedStatus == null || persistedStatus.isBefore(requiredStatus)) {
                         return false;
                     }
@@ -114,7 +109,7 @@ public class ChunkGenerationTask {
     }
 
     public GenerationChunkHolder getCenter() {
-        return this.cache.get((int)this.pos.x, (int)this.pos.z);
+        return this.cache.get(this.pos.x(), this.pos.z());
     }
 
     private void scheduleLayer(final ChunkStatus status, final boolean needsGeneration) {
@@ -122,10 +117,9 @@ public class ChunkGenerationTask {
             zone.addText(status::getName);
             int radius = this.getRadiusForLayer(status, needsGeneration);
 
-            // ===== 循环使用 long 坐标 =====
-            for (long x = this.pos.x - radius; x <= this.pos.x + radius; x++) {
-                for (long z = this.pos.z - radius; z <= this.pos.z + radius; z++) {
-                    GenerationChunkHolder chunkHolder = this.cache.get((int)x, (int)z);
+            for (int x = this.pos.x() - radius; x <= this.pos.x() + radius; x++) {
+                for (int z = this.pos.z() - radius; z <= this.pos.z() + radius; z++) {
+                    GenerationChunkHolder chunkHolder = this.cache.get(x, z);
                     if (this.markedForCancellation || !this.scheduleChunkInLayer(status, needsGeneration, chunkHolder)) {
                         return;
                     }

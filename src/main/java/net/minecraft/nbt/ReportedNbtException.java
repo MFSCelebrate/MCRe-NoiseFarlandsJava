@@ -1,5 +1,4 @@
 package net.minecraft.nbt;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.CrashReport;
 import net.minecraft.ReportedException;

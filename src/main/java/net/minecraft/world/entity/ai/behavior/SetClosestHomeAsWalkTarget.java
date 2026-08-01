@@ -1,9 +1,8 @@
 package net.minecraft.world.entity.ai.behavior;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Pair;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2LongMap;
+import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -28,8 +27,7 @@ public class SetClosestHomeAsWalkTarget {
     private static final int OK_DISTANCE_SQR = 4;
 
     public static BehaviorControl<PathfinderMob> create(final float speedModifier) {
-        // ===== 修改：使用 BlockPos 作为键 =====
-        Object2LongMap<BlockPos> batchCache = new Object2LongOpenHashMap<>();
+        Long2LongMap batchCache = new Long2LongOpenHashMap();
         MutableLong lastUpdate = new MutableLong(0L);
         return BehaviorBuilder.create(
             i -> i.group(i.absent(MemoryModuleType.WALK_TARGET), i.absent(MemoryModuleType.HOME))
@@ -46,14 +44,16 @@ public class SetClosestHomeAsWalkTarget {
                             MutableInt triedCount = new MutableInt(0);
                             lastUpdate.setValue(level.getGameTime() + level.getRandom().nextInt(20));
                             Predicate<BlockPos> cacheTest = pos -> {
-                                // ===== 直接使用 BlockPos 作为键 =====
-                                if (batchCache.containsKey(pos)) {
+                                long key = pos.asLong();
+                                if (batchCache.containsKey(key)) {
                                     return false;
                                 }
+
                                 if (triedCount.incrementAndGet() >= 5) {
                                     return false;
                                 }
-                                batchCache.put(pos, lastUpdate.longValue() + 40L);
+
+                                batchCache.put(key, lastUpdate.longValue() + 40L);
                                 return true;
                             };
                             Set<Pair<Holder<PoiType>, BlockPos>> pois = poiManager.findAllWithType(
@@ -69,8 +69,7 @@ public class SetClosestHomeAsWalkTarget {
                                     level.debugSynchronizers().updatePoi(targetPos);
                                 }
                             } else if (triedCount.intValue() < 5) {
-                                // ===== 修改：使用对象键迭代 =====
-                                batchCache.object2LongEntrySet().removeIf(entry -> entry.getLongValue() < lastUpdate.longValue());
+                                batchCache.long2LongEntrySet().removeIf(entry -> entry.getLongValue() < lastUpdate.longValue());
                             }
 
                             return true;

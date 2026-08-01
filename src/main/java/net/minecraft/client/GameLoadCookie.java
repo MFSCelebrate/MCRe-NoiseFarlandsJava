@@ -1,5 +1,4 @@
 package net.minecraft.client;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.realmsclient.client.RealmsClient;
 import net.minecraft.client.main.GameConfig;

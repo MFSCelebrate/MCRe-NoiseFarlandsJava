@@ -1,5 +1,4 @@
 package net.minecraft.world.item.enchantment.effects;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.HashMultimap;
 import com.mojang.serialization.MapCodec;

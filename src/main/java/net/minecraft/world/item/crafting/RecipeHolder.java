@@ -1,5 +1,4 @@
 package net.minecraft.world.item.crafting;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;

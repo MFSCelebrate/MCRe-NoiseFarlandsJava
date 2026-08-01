@@ -1,5 +1,4 @@
 package net.minecraft.client.model.monster.zombie;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.builders.CubeDeformation;

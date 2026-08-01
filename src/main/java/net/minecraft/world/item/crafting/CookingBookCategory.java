@@ -1,5 +1,4 @@
 package net.minecraft.world.item.crafting;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;

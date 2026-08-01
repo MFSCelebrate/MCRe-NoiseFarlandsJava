@@ -1,5 +1,4 @@
 package net.minecraft.data.worldgen.biome;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.HolderGetter;
 import net.minecraft.data.worldgen.BiomeDefaultFeatures;

@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.blockentity;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -43,8 +42,7 @@ public class CampfireRenderer implements BlockEntityRenderer<CampfireBlockEntity
     ) {
         BlockEntityRenderer.super.extractRenderState(blockEntity, state, partialTicks, cameraPosition, breakProgress);
         state.facing = blockEntity.getBlockState().getValue(CampfireBlock.FACING);
-        // ===== 修改：asLong() → hashCode() =====
-        int seed = blockEntity.getBlockPos().hashCode();
+        int seed = (int)blockEntity.getBlockPos().asLong();
         state.items = new ArrayList<>();
 
         for (int slot = 0; slot < blockEntity.getItems().size(); slot++) {

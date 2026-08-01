@@ -1,13 +1,12 @@
 package net.minecraft.world.level.chunk.storage;
 
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.shorts.ShortList;
-import it.unimi.dsi.fastutil.shorts.ShortArrayList;
-
 import com.google.common.collect.Maps;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.shorts.ShortArrayList;
+import it.unimi.dsi.fastutil.shorts.ShortList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.Map.Entry;
 import net.minecraft.Optionull;
 import net.minecraft.core.BlockPos;
@@ -329,9 +327,8 @@ public record SerializableChunkData(
         return protoChunk;
     }
 
-    // ===== 修改：pos.x() 和 pos.z() 强转为 int（因为日志格式化） =====
     private static void logErrors(final ChunkPos pos, final int sectionY, final String message) {
-        LOGGER.error("Recoverable errors when loading section [{}, {}, {}]: {}", (int)pos.x(), sectionY, (int)pos.z(), message);
+        LOGGER.error("Recoverable errors when loading section [{}, {}, {}]: {}", pos.x(), sectionY, pos.z(), message);
     }
 
     public static SerializableChunkData copyOf(final ServerLevel level, final ChunkAccess chunk) {
@@ -390,12 +387,7 @@ public record SerializableChunkData(
         ShortList[] postProcessingSections = Arrays.stream(chunk.getPostProcessing())
             .map(shorts -> shorts != null && !shorts.isEmpty() ? new ShortArrayList(shorts) : null)
             .toArray(ShortList[]::new);
-        CompoundTag structureData = packStructureData(
-            StructurePieceSerializationContext.fromLevel(level),
-            pos,
-            chunk.getAllStarts(),
-            chunk.getAllReferences()
-        );
+        CompoundTag structureData = packStructureData(StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences());
         return new SerializableChunkData(
             level.palettedContainerFactory(),
             pos,
@@ -420,10 +412,9 @@ public record SerializableChunkData(
 
     public CompoundTag write() {
         CompoundTag tag = NbtUtils.addCurrentDataVersion(new CompoundTag());
-        // ===== 修改：强转为 int，因为 putInt 需要 int =====
-        tag.putInt("xPos", (int)this.chunkPos.x());
+        tag.putInt("xPos", this.chunkPos.x());
         tag.putInt("yPos", this.minSectionY);
-        tag.putInt("zPos", (int)this.chunkPos.z());
+        tag.putInt("zPos", this.chunkPos.z());
         tag.putLong("LastUpdate", this.lastUpdateTime);
         tag.putLong("InhabitedTime", this.inhabitedTime);
         tag.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(this.chunkStatus).toString());
@@ -527,7 +518,7 @@ public record SerializableChunkData(
         final StructurePieceSerializationContext context,
         final ChunkPos pos,
         final Map<Structure, StructureStart> starts,
-        final Map<Structure, Set<ChunkPos>> references
+        final Map<Structure, LongSet> references
     ) {
         CompoundTag outTag = new CompoundTag();
         CompoundTag startsTag = new CompoundTag();
@@ -541,11 +532,10 @@ public record SerializableChunkData(
         outTag.put("starts", startsTag);
         CompoundTag referencesTag = new CompoundTag();
 
-        for (Entry<Structure, Set<ChunkPos>> entry : references.entrySet()) {
+        for (Entry<Structure, LongSet> entry : references.entrySet()) {
             if (!entry.getValue().isEmpty()) {
                 Identifier key = structuresRegistry.getKey(entry.getKey());
-                long[] packedRefs = entry.getValue().stream().mapToLong(ChunkPos::pack).toArray();
-                referencesTag.putLongArray(key.toString(), packedRefs);
+                referencesTag.putLongArray(key.toString(), entry.getValue().toLongArray());
             }
         }
 
@@ -574,8 +564,8 @@ public record SerializableChunkData(
         return outmap;
     }
 
-    private static Map<Structure, Set<ChunkPos>> unpackStructureReferences(final RegistryAccess registryAccess, final ChunkPos pos, final CompoundTag tag) {
-        Map<Structure, Set<ChunkPos>> outmap = Maps.newHashMap();
+    private static Map<Structure, LongSet> unpackStructureReferences(final RegistryAccess registryAccess, final ChunkPos pos, final CompoundTag tag) {
+        Map<Structure, LongSet> outmap = Maps.newHashMap();
         Registry<Structure> structuresRegistry = registryAccess.lookupOrThrow(Registries.STRUCTURE);
         CompoundTag referencesTag = tag.getCompoundOrEmpty("References");
         referencesTag.forEach((key, entry) -> {
@@ -586,18 +576,15 @@ public record SerializableChunkData(
             } else {
                 Optional<long[]> longArray = entry.asLongArray();
                 if (!longArray.isEmpty()) {
-                    Set<ChunkPos> refs = new ObjectOpenHashSet<>();
-                    for (long packed : longArray.get()) {
-                        ChunkPos refPos = ChunkPos.unpack(packed);
+                    outmap.put(structureType, new LongOpenHashSet(Arrays.stream(longArray.get()).filter(chunkLongPos -> {
+                        ChunkPos refPos = ChunkPos.unpack(chunkLongPos);
                         if (refPos.getChessboardDistance(pos) > 8) {
                             LOGGER.warn("Found invalid structure reference [ {} @ {} ] for chunk {}.", structureId, refPos, pos);
-                            continue;
+                            return false;
+                        } else {
+                            return true;
                         }
-                        refs.add(refPos);
-                    }
-                    if (!refs.isEmpty()) {
-                        outmap.put(structureType, refs);
-                    }
+                    }).toArray()));
                 }
             }
         });

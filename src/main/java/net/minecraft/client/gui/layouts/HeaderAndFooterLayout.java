@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.layouts;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.Consumer;
 import net.minecraft.client.gui.Font;

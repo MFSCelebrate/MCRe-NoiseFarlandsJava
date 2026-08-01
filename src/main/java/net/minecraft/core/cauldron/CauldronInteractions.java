@@ -1,5 +1,4 @@
 package net.minecraft.core.cauldron;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import java.util.function.Predicate;

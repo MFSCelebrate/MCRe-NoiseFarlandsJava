@@ -1,5 +1,4 @@
 package net.minecraft.stats;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;

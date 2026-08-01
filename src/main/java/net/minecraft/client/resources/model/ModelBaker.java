@@ -1,5 +1,4 @@
 package net.minecraft.client.resources.model;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.resources.model.geometry.BakedQuad;

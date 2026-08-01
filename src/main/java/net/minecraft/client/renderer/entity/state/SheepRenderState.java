@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.entity.state;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.color.ColorLerper;
 import net.minecraft.world.item.DyeColor;

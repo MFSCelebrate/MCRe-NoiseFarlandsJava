@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.item.properties.conditional;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.client.Minecraft;

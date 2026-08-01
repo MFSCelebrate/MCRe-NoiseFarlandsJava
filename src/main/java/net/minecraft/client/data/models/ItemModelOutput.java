@@ -1,5 +1,4 @@
 package net.minecraft.client.data.models;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.client.renderer.item.ItemModel;

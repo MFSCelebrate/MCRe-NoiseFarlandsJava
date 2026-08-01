@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.block.model.properties.conditional;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.blockentity.ChestRenderer;
 import net.minecraft.world.level.block.state.BlockState;

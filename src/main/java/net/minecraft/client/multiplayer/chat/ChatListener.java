@@ -1,5 +1,4 @@
 package net.minecraft.client.multiplayer.chat;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Queues;
 import com.mojang.authlib.GameProfile;

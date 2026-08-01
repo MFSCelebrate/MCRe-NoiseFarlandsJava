@@ -1,5 +1,4 @@
 package net.minecraft.client.multiplayer.chat.report;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.minecraft.report.AbuseReport;
 import com.mojang.authlib.minecraft.report.AbuseReportLimits;

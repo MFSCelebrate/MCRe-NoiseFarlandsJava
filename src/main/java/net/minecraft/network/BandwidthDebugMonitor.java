@@ -1,5 +1,4 @@
 package net.minecraft.network;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.util.debugchart.LocalSampleLogger;

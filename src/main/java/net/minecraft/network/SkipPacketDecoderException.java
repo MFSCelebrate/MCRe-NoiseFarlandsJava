@@ -1,5 +1,4 @@
 package net.minecraft.network;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import io.netty.handler.codec.DecoderException;
 import net.minecraft.network.codec.IdDispatchCodec;

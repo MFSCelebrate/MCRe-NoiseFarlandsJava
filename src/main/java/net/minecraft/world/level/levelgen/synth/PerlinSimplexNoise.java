@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.synth;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSortedSet;

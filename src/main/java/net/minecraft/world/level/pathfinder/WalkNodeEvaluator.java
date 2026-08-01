@@ -1,10 +1,9 @@
 package net.minecraft.world.level.pathfinder;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.EnumSet;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
@@ -32,8 +31,7 @@ import org.jspecify.annotations.Nullable;
 public class WalkNodeEvaluator extends NodeEvaluator {
     public static final double SPACE_BETWEEN_WALL_POSTS = 0.5;
     private static final double DEFAULT_MOB_JUMP_HEIGHT = 1.125;
-    // ===== 修改：使用 BlockPos 作为键 =====
-    private final Object2ObjectMap<BlockPos, PathType> pathTypesByPosCacheByMob = new Object2ObjectOpenHashMap<>();
+    private final Long2ObjectMap<PathType> pathTypesByPosCacheByMob = new Long2ObjectOpenHashMap<>();
     private final Object2BooleanMap<AABB> collisionCache = new Object2BooleanOpenHashMap<>();
     private final Node[] reusableNeighbors = new Node[Direction.Plane.HORIZONTAL.length()];
 
@@ -63,6 +61,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
                         startY--;
                         break;
                     }
+
                     blockState = this.currentContext.getBlockState(reusablePos.set(this.mob.getX(), ++startY, this.mob.getZ()));
                 }
             } else if (this.mob.onGround()) {
@@ -83,6 +82,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
             while (this.mob.canStandOnFluid(blockState.getFluidState())) {
                 blockState = this.currentContext.getBlockState(reusablePos.set(this.mob.getX(), ++startY, this.mob.getZ()));
             }
+
             startY--;
         }
 
@@ -168,6 +168,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
         if (ns == null || ew == null || ns.y > pos.y || ew.y > pos.y) {
             return false;
         }
+
         if (ew.type != PathType.WALKABLE_DOOR && ns.type != PathType.WALKABLE_DOOR) {
             if (!(this.mob.getBbWidth() > 1.0F) || !(ew.costMalus > 0.0F) && !(ns.costMalus > 0.0F)) {
                 boolean canPassBetweenPosts = ns.type == PathType.FENCE && ew.type == PathType.FENCE && this.mob.getBbWidth() < 0.5;
@@ -330,7 +331,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
             this.getFloorLevel(reusablePos.set(centerX, y + 1, centerZ)) + 0.001,
             centerZ - halfWidth,
             centerX + halfWidth,
-            this.mob.getBbHeight() + this.getFloorLevel(reusablePos.set((double) nodeAbove.x, (double) nodeAbove.y, (double) nodeAbove.z)) - 0.002,
+            this.mob.getBbHeight() + this.getFloorLevel(reusablePos.set((double)nodeAbove.x, (double)nodeAbove.y, (double)nodeAbove.z)) - 0.002,
             centerZ + halfWidth
         );
         return this.hasCollisions(grow) ? null : nodeAbove;
@@ -338,14 +339,17 @@ public class WalkNodeEvaluator extends NodeEvaluator {
 
     private @Nullable Node tryFindFirstNonWaterBelow(final int x, int y, final int z, @Nullable Node best) {
         y--;
+
         while (y > this.mob.level().getMinY()) {
             PathType pathTypeLocal = this.getCachedPathType(x, y, z);
             if (pathTypeLocal != PathType.WATER) {
                 return best;
             }
+
             best = this.getNodeAndUpdateCostToMax(x, y, z, pathTypeLocal, this.mob.getPathfindingMalus(pathTypeLocal));
             y--;
         }
+
         return best;
     }
 
@@ -354,15 +358,18 @@ public class WalkNodeEvaluator extends NodeEvaluator {
             if (y - currentY > this.mob.getMaxFallDistance()) {
                 return this.getBlockedNode(x, currentY, z);
             }
+
             PathType pathType = this.getCachedPathType(x, currentY, z);
             float pathCost = this.mob.getPathfindingMalus(pathType);
             if (pathType != PathType.OPEN) {
                 if (pathCost >= 0.0F) {
                     return this.getNodeAndUpdateCostToMax(x, currentY, z, pathType, pathCost);
                 }
+
                 return this.getBlockedNode(x, currentY, z);
             }
         }
+
         return this.getBlockedNode(x, y, z);
     }
 
@@ -370,9 +377,8 @@ public class WalkNodeEvaluator extends NodeEvaluator {
         return this.collisionCache.computeIfAbsent(aabb, bb -> !this.currentContext.level().noCollision(this.mob, aabb));
     }
 
-    // ===== 修改：使用 BlockPos 作为键 =====
     protected PathType getCachedPathType(final int x, final int y, final int z) {
-        return this.pathTypesByPosCacheByMob.computeIfAbsent(new BlockPos(x, y, z), k -> this.getPathTypeOfMob(this.currentContext, x, y, z, this.mob));
+        return this.pathTypesByPosCacheByMob.computeIfAbsent(BlockPos.asLong(x, y, z), k -> this.getPathTypeOfMob(this.currentContext, x, y, z, this.mob));
     }
 
     @Override
@@ -398,6 +404,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
             if (malusForPathType < 0.0F) {
                 return pathType;
             }
+
             if (malusForPathType >= highestMalusWithinBB) {
                 highestMalusWithinBB = malusForPathType;
                 highestMalusPathTypeWithinBB = pathType;
@@ -432,14 +439,17 @@ public class WalkNodeEvaluator extends NodeEvaluator {
                     if (blockType == PathType.DOOR_WOOD_CLOSED && this.canOpenDoors() && canPassDoors) {
                         blockType = PathType.WALKABLE_DOOR;
                     }
+
                     if (blockType == PathType.DOOR_OPEN && !canPassDoors) {
                         blockType = PathType.BLOCKED;
                     }
+
                     if (blockType == PathType.RAIL
                         && this.getPathType(context, mobPosition.getX(), mobPosition.getY(), mobPosition.getZ()) != PathType.RAIL
                         && this.getPathType(context, mobPosition.getX(), mobPosition.getY() - 1, mobPosition.getZ()) != PathType.RAIL) {
                         blockType = PathType.UNPASSABLE_RAIL;
                     }
+
                     blockTypes.add(blockType);
                 }
             }
@@ -487,12 +497,15 @@ public class WalkNodeEvaluator extends NodeEvaluator {
                         if (pathType == PathType.DAMAGING) {
                             return PathType.DAMAGING_IN_NEIGHBOR;
                         }
+
                         if (pathType == PathType.FIRE || pathType == PathType.LAVA) {
                             return PathType.FIRE_IN_NEIGHBOR;
                         }
+
                         if (pathType == PathType.WATER) {
                             return PathType.WATER_BORDER;
                         }
+
                         if (pathType == PathType.DAMAGE_CAUTIOUS) {
                             return PathType.DAMAGE_CAUTIOUS;
                         }
@@ -500,6 +513,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
                 }
             }
         }
+
         return blockPathType;
     }
 

@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.social;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;

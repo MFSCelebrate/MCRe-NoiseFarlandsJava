@@ -1,8 +1,7 @@
 package net.minecraft.world.level.chunk.storage;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.BitSet;
@@ -34,8 +33,7 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
     private final PriorityConsecutiveExecutor consecutiveExecutor;
     private final RegionFileStorage storage;
     private final SequencedMap<ChunkPos, IOWorker.PendingStore> pendingWrites = new LinkedHashMap<>();
-    // ===== 修改：键类型 long -> ChunkPos =====
-    private final Object2ObjectLinkedOpenHashMap<ChunkPos, CompletableFuture<BitSet>> regionCacheForBlender = new Object2ObjectLinkedOpenHashMap<>();
+    private final Long2ObjectLinkedOpenHashMap<CompletableFuture<BitSet>> regionCacheForBlender = new Long2ObjectLinkedOpenHashMap<>();
     private static final int REGION_CACHE_SIZE = 1024;
 
     protected IOWorker(final RegionStorageInfo info, final Path dir, final boolean sync) {
@@ -44,19 +42,18 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
     }
 
     public boolean isOldChunkAround(final ChunkPos pos, final int range) {
-        // ===== 修改：使用字段访问 x/z =====
-        ChunkPos from = new ChunkPos(pos.x - range, pos.z - range);
-        ChunkPos to = new ChunkPos(pos.x + range, pos.z + range);
+        ChunkPos from = new ChunkPos(pos.x() - range, pos.z() - range);
+        ChunkPos to = new ChunkPos(pos.x() + range, pos.z() + range);
 
-        for (int regionX = (int) from.getRegionX(); regionX <= (int) to.getRegionX(); regionX++) {
-            for (int regionZ = (int) from.getRegionZ(); regionZ <= (int) to.getRegionZ(); regionZ++) {
+        for (int regionX = from.getRegionX(); regionX <= to.getRegionX(); regionX++) {
+            for (int regionZ = from.getRegionZ(); regionZ <= to.getRegionZ(); regionZ++) {
                 BitSet data = this.getOrCreateOldDataForRegion(regionX, regionZ).join();
                 if (!data.isEmpty()) {
                     ChunkPos minChunkPos = ChunkPos.minFromRegion(regionX, regionZ);
-                    int startChunkX = Math.max((int)(from.x - minChunkPos.x), 0);
-                    int startChunkZ = Math.max((int)(from.z - minChunkPos.z), 0);
-                    int endChunkX = Math.min((int)(to.x - minChunkPos.x), 31);
-                    int endChunkZ = Math.min((int)(to.z - minChunkPos.z), 31);
+                    int startChunkX = Math.max(from.x() - minChunkPos.x(), 0);
+                    int startChunkZ = Math.max(from.z() - minChunkPos.z(), 0);
+                    int endChunkX = Math.min(to.x() - minChunkPos.x(), 31);
+                    int endChunkZ = Math.min(to.z() - minChunkPos.z(), 31);
 
                     for (int x = startChunkX; x <= endChunkX; x++) {
                         for (int z = startChunkZ; z <= endChunkZ; z++) {
@@ -74,8 +71,7 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
     }
 
     private CompletableFuture<BitSet> getOrCreateOldDataForRegion(final int regionX, final int regionZ) {
-        // ===== 修改：使用 new ChunkPos 替代 pack =====
-        ChunkPos regionPos = new ChunkPos(regionX, regionZ);
+        long regionPos = ChunkPos.pack(regionX, regionZ);
         synchronized (this.regionCacheForBlender) {
             CompletableFuture<BitSet> result = this.regionCacheForBlender.getAndMoveToFirst(regionPos);
             if (result == null) {
@@ -111,7 +107,7 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
                             }
 
                             if (collectFields.getResult() instanceof CompoundTag chunkTag && this.isOldChunk(chunkTag)) {
-                                int chunkIndex = (int)(pos.getRegionLocalZ() * 32 + pos.getRegionLocalX());
+                                int chunkIndex = pos.getRegionLocalZ() * 32 + pos.getRegionLocalX();
                                 resultSet.set(chunkIndex);
                             }
                         }

@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;

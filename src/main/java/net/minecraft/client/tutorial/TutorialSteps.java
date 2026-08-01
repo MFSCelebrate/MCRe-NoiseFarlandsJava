@@ -1,5 +1,4 @@
 package net.minecraft.client.tutorial;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.Function;
 import net.minecraftforge.api.distmarker.Dist;

@@ -1,5 +1,4 @@
 package net.minecraft.server.packs.metadata;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import java.util.Optional;

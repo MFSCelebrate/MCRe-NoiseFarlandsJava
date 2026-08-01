@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.item.properties.select;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;

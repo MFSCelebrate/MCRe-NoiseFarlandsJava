@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.synth;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.mojang.serialization.Codec;

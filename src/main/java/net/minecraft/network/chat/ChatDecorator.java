@@ -1,5 +1,4 @@
 package net.minecraft.network.chat;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.Nullable;

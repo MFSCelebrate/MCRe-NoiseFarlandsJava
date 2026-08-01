@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.animal.golem;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;

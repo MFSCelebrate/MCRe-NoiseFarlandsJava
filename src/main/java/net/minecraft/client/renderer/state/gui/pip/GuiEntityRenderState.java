@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.state.gui.pip;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;

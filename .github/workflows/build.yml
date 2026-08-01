@@ -1,8 +1,8 @@
-name: Build Minecraft 26.2 (Unobfuscated)
+name: Build Minecraft 26.2 (Permanent)
 
 on:
   push:
-    branches: [ "main", "26.2-Permanent" ]   # 可选分支名
+    branches: [ "main", "26.2-Permanent" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
@@ -12,16 +12,67 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # ===== 修改：Java 版本升到 25 =====
   JAVA_VERSION: 25
   JAVA_DISTRIBUTION: temurin
-  # ===== 修改：Minecraft 版本号同步 =====
-  MINECRAFT_VERSION: 26.2
 
 jobs:
-  build:
+  ArchiveCode:
+    name: 备份仓库源代码
     runs-on: ubuntu-24.04
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
 
+      - name: 打包当前源代码（含 .github）
+        run: |
+          echo "📦 正在打包当前源代码（排除构建缓存、jar 等）..."
+          zip -r source-current.zip . \
+            -x "*.git/*" "build/*" ".gradle/*" "extracted/*" \
+               "*.jar" "*.log" "*.bin" "*.lock" "*.iml" ".idea/*"
+          echo "✅ 当前源代码打包完成（source-current.zip）"
+
+      - name: 尝试下载上一次构建的源码备份
+        id: download_prev
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: source-backup
+          path: .
+
+      - name: 处理上一次备份文件
+        if: steps.download_prev.outcome == 'success'
+        run: |
+          if [ -f source-backup.zip ]; then
+            mv source-backup.zip source-previous.zip
+            echo "✅ 成功获取上一次构建的源代码备份"
+          else
+            echo "⚠️ 下载成功但找不到 source-backup.zip，跳过"
+          fi
+
+      - name: 上传当前源码备份（供下一次构建使用）
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-backup
+          path: source-current.zip
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: 上传本次 & 上次源码归档（供人工查阅）
+        uses: actions/upload-artifact@v4
+        with:
+          name: SourceBackups-${{ github.run_id }}
+          path: |
+            source-current.zip
+            source-previous.zip
+          if-no-files-found: warn
+          retention-days: 3
+
+  build-Minecraft:
+    runs-on: ubuntu-24.04
+    # ===== 声明 outputs，供 release job 使用 =====
+    outputs:
+      enable_nightly: ${{ steps.read_config.outputs.enable_nightly }}
+      minecraft_version: ${{ steps.read_version.outputs.version }}  # 可选，留给后续
     steps:
       - name: 拉取代码
         uses: actions/checkout@v4
@@ -32,14 +83,36 @@ jobs:
           distribution: ${{ env.JAVA_DISTRIBUTION }}
           java-version: ${{ env.JAVA_VERSION }}
 
+      # ----- 动态读取配置 -----
+      - name: 从 gradle.properties 读取 minecraft_version
+        id: read_version
+        run: |
+          VERSION=$(grep '^minecraft_version=' gradle.properties | cut -d'=' -f2)
+          if [ -z "$VERSION" ]; then
+            echo "⚠️ 未找到 minecraft_version，使用默认 26.2"
+            VERSION="26.2"
+          fi
+          echo "MINECRAFT_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ 读取到 Minecraft 版本: $VERSION"
+
+      - name: 读取 DebugBuildConfig.properties（Nightly 开关）
+        id: read_config
+        run: |
+          ENABLE=$(grep '^EnableTestNightlyRelease=' DebugBuildConfig.properties | cut -d'=' -f2 || echo "false")
+          # 转为小写，防止大小写问题
+          ENABLE=$(echo "$ENABLE" | tr '[:upper:]' '[:lower:]')
+          echo "enable_nightly=$ENABLE" >> $GITHUB_OUTPUT
+          echo "ENABLE_NIGHTLY=$ENABLE" >> $GITHUB_ENV
+          echo "✅ Nightly Release 开关: $ENABLE"
+
+      # ----- 下载原版 jar -----
       - name: 下载原版 Minecraft ${{ env.MINECRAFT_VERSION }} client jar
         run: |
-          # 注意：对快照版本，Mojang manifest 可能包含，如果失败可改用固定 URL
           curl -s -o version_manifest.json https://launchermeta.mojang.com/mc/game/version_manifest.json
           VERSION_URL=$(cat version_manifest.json | jq -r --arg VERSION "${{ env.MINECRAFT_VERSION }}" '.versions[] | select(.id==$VERSION) | .url')
           if [ -z "$VERSION_URL" ]; then
             echo "❌ 未找到版本 ${{ env.MINECRAFT_VERSION }}，尝试使用最新快照..."
-            # 备用：获取最新快照
             VERSION_URL=$(cat version_manifest.json | jq -r '.latest.snapshot.url')
           fi
           curl -s -o version.json $VERSION_URL
@@ -86,18 +159,73 @@ jobs:
       - name: 重新打包完整 jar
         run: |
           cd extracted
-          jar cfm ../26.2.jar META-INF/MANIFEST.MF .
+          jar cfm ../26.2-Permanent.jar META-INF/MANIFEST.MF .
           cd ..
 
       - name: 验证关键类
         run: |
-          jar tf minecraft-${{ env.MINECRAFT_VERSION }}-custom-full.jar | grep -E "Minecraft\.class$" || echo "⚠️ 未找到 Minecraft.class，可能类名不同。"
+          jar tf 26.2-Permanent.jar | grep -E "Minecraft\.class$" || echo "⚠️ 未找到 Minecraft.class，可能类名不同。"
           echo "===== 列出前 20 个类 ====="
-          jar tf minecraft-${{ env.MINECRAFT_VERSION }}-custom-full.jar | grep -E "\.class$" | head -20
+          jar tf 26.2-Permanent.jar | grep -E "\.class$" | head -20
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: 26.2
-          path: 26.2.jar
+          name: 26.2-Permanent
+          path: 26.2-Permanent.jar
           if-no-files-found: error
+
+  # ============================================================
+  #  Nightly Release Job（依赖 build-Minecraft 的输出）
+  # ============================================================
+  release:
+    needs: build-Minecraft
+    if: needs.build-Minecraft.outputs.enable_nightly == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Update release
+        uses: andelf/nightly-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly
+          name: 🛠 每日构建 Nightly Release
+          body: |
+            **该每日构建版本 (Nightly Release) 是正在开发测试的版本**，用于发布带有改动的测试版本，由 Github Actions 半自动化发布，便于公开进行改版测试
+
+            > [!WARNING]
+            > 该版本携带未测试或正在开发的改动，需要进一步测试  
+            > 该测试版仍然使用 [GNU General Public License](./LICENSE) 协议，不允许违反协议的行为
+
+            ### 🧩 主要信息 Main Info information
+            该版本主要由 **Github Actions** 构建完之后半自动发布，具有不固定的延迟发布，带有测试使用的调试器和测试改动
+
+            - 📀 **构建时间**: 每次 Github Actions 触发构建时，当**构建成功且开启 EnableTestNightlyRelease 配置时**，CI环境会自动上传构建产物到此
+            - 📲 **构建目标**: **每日构建版本**用于发布每次的开发测试构建，方便公开下载，满足开发者 / 用户的开发需求，提供开发使用的 MCRe-NoiseFarlandsJava 改版
+            - 🔨 **满足需求**: 原本的 Github Actions 不满足在无 Github 账号的情况下下载开发测试版本，在这种情况下需要开发者自己发布测试版，过于麻烦。这样的每日构建完美解决了这个问题
+            - 🪤 **测试内容**: 正在进行测试的功能和改动，例如 Vulkan 优化和修复各大 Minecraft 特性~~或者 Bug~~
+
+            ### 🖥 您是否需要使用这个版本
+            - **开发者或热心测试的用户** 愿意为项目进行开发 / 测试，我们改版欢迎您贡献每一个更改，每一个问题
+            - **正常用户** 只想使用已经测试完毕的改版，可以去使用 [正式版](https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases)
+
+            ### 🤔 反馈该改版的问题
+            如果您在该测试改版的过程中发现了问题，您的 Issue 将极具修复的价值
+            > 但是你需要组织好你的语言.png
+
+            ### 🎲 构建产物
+            由于该改版目前主要更改均在单一分支测试，极少时会在其他分支进行测试，所以每次的构建产物均会上传到这里来~~(懒得进行分离发布了)~~
+            
+          files: |
+            artifacts/*
+
+      - name: Cleanup artifacts (only on success)
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: build-*

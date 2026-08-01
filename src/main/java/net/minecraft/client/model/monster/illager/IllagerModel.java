@@ -1,5 +1,4 @@
 package net.minecraft.client.model.monster.illager;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.AnimationUtils;

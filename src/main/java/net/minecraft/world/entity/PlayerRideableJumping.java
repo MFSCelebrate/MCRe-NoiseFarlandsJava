@@ -1,5 +1,4 @@
 package net.minecraft.world.entity;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface PlayerRideableJumping extends PlayerRideable {
     void onPlayerJump(int jumpAmount);

@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.state.gui;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.navigation.ScreenRectangle;

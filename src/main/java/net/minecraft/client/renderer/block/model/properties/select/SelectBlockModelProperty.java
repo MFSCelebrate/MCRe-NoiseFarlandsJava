@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.block.model.properties.select;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.block.model.BlockDisplayContext;
 import net.minecraft.world.level.block.state.BlockState;

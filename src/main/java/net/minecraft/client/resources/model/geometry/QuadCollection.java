@@ -1,5 +1,4 @@
 package net.minecraft.client.resources.model.geometry;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;

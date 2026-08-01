@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.recipebook;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import net.minecraft.client.ClientRecipeBook;

@@ -1,5 +1,4 @@
 package net.minecraft.server.jsonrpc;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.Registry;
 import net.minecraft.server.jsonrpc.api.Schema;

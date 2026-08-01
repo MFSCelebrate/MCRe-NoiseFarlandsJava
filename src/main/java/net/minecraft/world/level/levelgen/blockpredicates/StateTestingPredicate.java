@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.blockpredicates;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.Products.P1;
 import com.mojang.serialization.codecs.RecordCodecBuilder.Instance;

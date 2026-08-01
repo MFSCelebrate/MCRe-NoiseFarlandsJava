@@ -1,5 +1,4 @@
 package net.minecraft.client.resources;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.mojang.serialization.Codec;

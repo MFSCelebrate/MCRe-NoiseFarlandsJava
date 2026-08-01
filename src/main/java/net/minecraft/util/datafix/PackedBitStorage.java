@@ -1,5 +1,4 @@
 package net.minecraft.util.datafix;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.Mth;
 import org.apache.commons.lang3.Validate;

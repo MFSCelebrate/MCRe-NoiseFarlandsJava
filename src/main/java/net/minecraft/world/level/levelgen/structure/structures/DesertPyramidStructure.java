@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.structure.structures;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.MapCodec;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -68,8 +67,7 @@ public class DesertPyramidStructure extends SinglePieceStructure {
         if (chunkBB.isInside(blockPos)) {
             level.setBlock(blockPos, Blocks.SUSPICIOUS_SAND.defaultBlockState(), 2);
             level.getBlockEntity(blockPos, BlockEntityTypes.BRUSHABLE_BLOCK)
-                // ===== 修改：使用 hashCode 替代 asLong 作为种子 =====
-                .ifPresent(entity -> entity.setLootTable(BuiltInLootTables.DESERT_PYRAMID_ARCHAEOLOGY, blockPos.hashCode()));
+                .ifPresent(entity -> entity.setLootTable(BuiltInLootTables.DESERT_PYRAMID_ARCHAEOLOGY, blockPos.asLong()));
         }
     }
 

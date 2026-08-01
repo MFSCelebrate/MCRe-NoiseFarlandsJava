@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.entity.state;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.entity.boss.enderdragon.DragonFlightHistory;
 import net.minecraft.world.phys.Vec3;

@@ -1,5 +1,4 @@
 package net.minecraft.network.protocol.configuration;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.HashSet;
 import java.util.Set;

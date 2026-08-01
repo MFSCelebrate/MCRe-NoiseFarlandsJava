@@ -1,5 +1,4 @@
 package net.minecraft;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class ReportedException extends RuntimeException {
     private final CrashReport report;

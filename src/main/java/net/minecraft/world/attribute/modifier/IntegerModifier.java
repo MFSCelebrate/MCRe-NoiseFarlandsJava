@@ -1,5 +1,4 @@
 package net.minecraft.world.attribute.modifier;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.world.attribute.EnvironmentAttribute;

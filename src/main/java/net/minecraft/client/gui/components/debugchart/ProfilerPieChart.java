@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.components.debugchart;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;

@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.structure.templatesystem.loader;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.nio.file.Path;
 import java.util.List;

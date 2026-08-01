@@ -1,5 +1,4 @@
 package net.minecraft.world.level;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface ColorMapColorUtil {
     static int get(final double temp, double rain, final int[] pixels, final int defaultMapColor) {

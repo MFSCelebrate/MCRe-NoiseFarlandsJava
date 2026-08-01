@@ -1,5 +1,4 @@
 package net.minecraft.world.level;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class DryFoliageColor {
     public static final int FOLIAGE_DRY_DEFAULT = -10732494;

@@ -1,5 +1,4 @@
 package net.minecraft.world.level.dimension;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class DimensionDefaults {
     public static final int CLOUD_THICKNESS = 4;

@@ -1,5 +1,4 @@
 package net.minecraft.world.level.gameevent.vibrations;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -370,15 +369,12 @@ public interface VibrationSystem {
             return true;
         }
 
-        // ===== 修改：完全对象化，移除 ChunkPos.pack =====
         private static boolean areAdjacentChunksTicking(final Level level, final BlockPos listenerPos) {
             ChunkPos listenerChunkPos = ChunkPos.containing(listenerPos);
 
-            // 使用 long 循环变量，避免溢出
-            for (long x = listenerChunkPos.x - 1; x <= listenerChunkPos.x + 1; x++) {
-                for (long z = listenerChunkPos.z - 1; z <= listenerChunkPos.z + 1; z++) {
-                    ChunkPos chunkPos = new ChunkPos(x, z);
-                    if (!level.shouldTickBlocksAt(chunkPos) || level.getChunkSource().getChunkNow((int)x, (int)z) == null) {
+            for (int x = listenerChunkPos.x() - 1; x <= listenerChunkPos.x() + 1; x++) {
+                for (int z = listenerChunkPos.z() - 1; z <= listenerChunkPos.z() + 1; z++) {
+                    if (!level.shouldTickBlocksAt(ChunkPos.pack(x, z)) || level.getChunkSource().getChunkNow(x, z) == null) {
                         return false;
                     }
                 }

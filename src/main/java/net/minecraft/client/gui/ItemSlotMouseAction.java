@@ -1,5 +1,4 @@
 package net.minecraft.client.gui;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;

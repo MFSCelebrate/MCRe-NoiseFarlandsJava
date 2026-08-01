@@ -1,5 +1,4 @@
 package net.minecraft.client.resources;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;

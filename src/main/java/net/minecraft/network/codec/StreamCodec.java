@@ -1,5 +1,4 @@
 package net.minecraft.network.codec;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Suppliers;
 import com.mojang.datafixers.util.Function10;

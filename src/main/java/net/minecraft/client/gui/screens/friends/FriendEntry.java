@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.friends;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.yggdrasil.response.PresenceStatus;
 import com.mojang.authlib.yggdrasil.response.PresenceStatusDto;

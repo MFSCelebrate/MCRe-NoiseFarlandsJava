@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.block;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;

@@ -1,5 +1,4 @@
 package net.minecraft.data.loot;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.BiConsumer;
 import net.minecraft.resources.ResourceKey;

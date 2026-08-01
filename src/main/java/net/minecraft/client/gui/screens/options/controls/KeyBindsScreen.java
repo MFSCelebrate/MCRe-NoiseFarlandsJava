@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.options.controls;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;

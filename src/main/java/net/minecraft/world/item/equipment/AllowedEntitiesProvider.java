@@ -1,5 +1,4 @@
 package net.minecraft.world.item.equipment;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;

@@ -1,5 +1,4 @@
 package net.minecraft.util.debugchart;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class LocalSampleLogger extends AbstractSampleLogger implements SampleStorage {
     public static final int CAPACITY = 240;

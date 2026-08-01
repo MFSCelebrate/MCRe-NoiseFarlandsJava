@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.advancements;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.advancements.AdvancementType;
 import net.minecraft.resources.Identifier;

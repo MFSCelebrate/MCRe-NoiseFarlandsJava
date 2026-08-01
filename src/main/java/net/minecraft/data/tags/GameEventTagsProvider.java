@@ -1,5 +1,4 @@
 package net.minecraft.data.tags;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;

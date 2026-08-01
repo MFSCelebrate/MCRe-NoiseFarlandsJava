@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.feature.trunkplacers;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import com.mojang.serialization.Codec;

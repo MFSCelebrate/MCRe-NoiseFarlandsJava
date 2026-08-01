@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.options;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Arrays;
 import net.minecraft.client.OptionInstance;

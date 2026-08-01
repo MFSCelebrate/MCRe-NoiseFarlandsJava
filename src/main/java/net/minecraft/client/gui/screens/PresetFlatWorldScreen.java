@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;

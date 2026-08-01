@@ -1,15 +1,14 @@
 package net.minecraft.world.level.levelgen.structure;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DataFixer;
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
-import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2BooleanMap;
+import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMaps;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -51,9 +50,8 @@ public class StructureCheck {
     private final BiomeSource biomeSource;
     private final long seed;
     private final DataFixer fixerUpper;
-    // ===== 修改：键类型 long -> ChunkPos =====
-    private final Object2ObjectMap<ChunkPos, Object2IntMap<Structure>> loadedChunks = new Object2ObjectOpenHashMap<>();
-    private final Map<Structure, Object2BooleanMap<ChunkPos>> featureChecks = new HashMap<>();
+    private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
+    private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
 
     public StructureCheck(
         final ChunkScanAccess storageAccess,
@@ -80,25 +78,24 @@ public class StructureCheck {
     }
 
     public StructureCheckResult checkStart(final ChunkPos pos, final Structure structure, final StructurePlacement placement, final boolean requireUnreferenced) {
-        // ===== 直接使用 ChunkPos 作为键 =====
-        Object2IntMap<Structure> cachedResult = this.loadedChunks.get(pos);
+        long posKey = pos.pack();
+        Object2IntMap<Structure> cachedResult = this.loadedChunks.get(posKey);
         if (cachedResult != null) {
             return this.checkStructureInfo(cachedResult, structure, requireUnreferenced);
         }
 
-        StructureCheckResult storageCheckResult = this.tryLoadFromStorage(pos, structure, requireUnreferenced);
+        StructureCheckResult storageCheckResult = this.tryLoadFromStorage(pos, structure, requireUnreferenced, posKey);
         if (storageCheckResult != null) {
             return storageCheckResult;
         }
 
-        // ===== 使用 pos.x / pos.z 字段访问 =====
-        if (!placement.applyAdditionalChunkRestrictions(pos.x, pos.z, this.seed)) {
+        if (!placement.applyAdditionalChunkRestrictions(pos.x(), pos.z(), this.seed)) {
             return StructureCheckResult.START_NOT_PRESENT;
         }
 
         boolean isFeatureChunk = this.featureChecks
-            .computeIfAbsent(structure, k -> new Object2BooleanOpenHashMap<>())
-            .computeIfAbsent(pos, k -> this.canCreateStructure(pos, structure));
+            .computeIfAbsent(structure, k -> new Long2BooleanOpenHashMap())
+            .computeIfAbsent(posKey, k -> this.canCreateStructure(pos, structure));
         return !isFeatureChunk ? StructureCheckResult.START_NOT_PRESENT : StructureCheckResult.CHUNK_LOAD_NEEDED;
     }
 
@@ -119,9 +116,8 @@ public class StructureCheck {
             .isPresent();
     }
 
-    // ===== 移除 posKey 参数，直接传 ChunkPos =====
     private @Nullable StructureCheckResult tryLoadFromStorage(
-        final ChunkPos pos, final Structure structure, final boolean requireUnreferenced
+        final ChunkPos pos, final Structure structure, final boolean requireUnreferenced, final long posKey
     ) {
         CollectFields collectFields = new CollectFields(
             new FieldSelector(IntTag.TYPE, "DataVersion"),
@@ -155,8 +151,7 @@ public class StructureCheck {
                 return null;
             }
 
-            // ===== 使用 pos 对象 =====
-            this.storeFullResults(pos, knownStarts);
+            this.storeFullResults(posKey, knownStarts);
             return this.checkStructureInfo(knownStarts, structure, requireUnreferenced);
         } else {
             return null;
@@ -204,26 +199,23 @@ public class StructureCheck {
     }
 
     public void onStructureLoad(final ChunkPos pos, final Map<Structure, StructureStart> starts) {
+        long posKey = pos.pack();
         Object2IntMap<Structure> startsToReferences = new Object2IntOpenHashMap<>();
         starts.forEach((structure, structureStart) -> {
             if (structureStart.isValid()) {
                 startsToReferences.put(structure, structureStart.getReferences());
             }
         });
-        // ===== 使用 pos 对象 =====
-        this.storeFullResults(pos, startsToReferences);
+        this.storeFullResults(posKey, startsToReferences);
     }
 
-    // ===== 参数类型从 long 改为 ChunkPos =====
-    private void storeFullResults(final ChunkPos pos, final Object2IntMap<Structure> starts) {
-        this.loadedChunks.put(pos, deduplicateEmptyMap(starts));
-        // ===== 清除 featureChecks 中对应键 =====
-        this.featureChecks.values().forEach(m -> m.remove(pos));
+    private void storeFullResults(final long posKey, final Object2IntMap<Structure> starts) {
+        this.loadedChunks.put(posKey, deduplicateEmptyMap(starts));
+        this.featureChecks.values().forEach(m -> m.remove(posKey));
     }
 
     public void incrementReference(final ChunkPos chunkPos, final Structure structure) {
-        // ===== 直接使用 chunkPos 对象 =====
-        this.loadedChunks.compute(chunkPos, (key, counts) -> {
+        this.loadedChunks.compute(chunkPos.pack(), (key, counts) -> {
             if (counts == null || counts.isEmpty()) {
                 counts = new Object2IntOpenHashMap<>();
             }

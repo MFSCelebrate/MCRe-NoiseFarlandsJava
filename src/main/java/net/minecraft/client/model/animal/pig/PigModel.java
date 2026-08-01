@@ -1,5 +1,4 @@
 package net.minecraft.client.model.animal.pig;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Set;
 import net.minecraft.client.model.BabyModelTransform;

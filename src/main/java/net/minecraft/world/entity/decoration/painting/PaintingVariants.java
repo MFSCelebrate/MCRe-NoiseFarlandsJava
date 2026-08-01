@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.decoration.painting;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Optional;
 import net.minecraft.ChatFormatting;

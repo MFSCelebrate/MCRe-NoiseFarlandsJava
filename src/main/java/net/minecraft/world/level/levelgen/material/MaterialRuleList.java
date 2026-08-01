@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.material;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.DensityFunction;

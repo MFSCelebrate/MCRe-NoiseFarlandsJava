@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.components.debug;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;

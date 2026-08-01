@@ -1,5 +1,4 @@
 package net.minecraft.client.animation;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Maps;
 import java.util.ArrayList;

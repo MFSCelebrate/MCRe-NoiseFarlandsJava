@@ -1,5 +1,4 @@
 package net.minecraft.util;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class BinaryAnimator {
     private final int animationLength;

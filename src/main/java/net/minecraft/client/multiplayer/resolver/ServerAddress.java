@@ -1,5 +1,4 @@
 package net.minecraft.client.multiplayer.resolver;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.net.HostAndPort;
 import com.mojang.logging.LogUtils;

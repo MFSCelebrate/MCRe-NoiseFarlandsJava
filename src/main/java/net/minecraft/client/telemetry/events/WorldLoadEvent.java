@@ -1,5 +1,4 @@
 package net.minecraft.client.telemetry.events;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;

@@ -1,5 +1,4 @@
 package net.minecraft.client.model.object.crystal;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.math.Axis;
 import net.minecraft.client.model.EntityModel;

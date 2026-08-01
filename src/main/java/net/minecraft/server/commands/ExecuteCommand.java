@@ -1,5 +1,4 @@
 package net.minecraft.server.commands;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -458,11 +457,10 @@ public class ExecuteCommand {
         }, CommandResultCallback::chain);
     }
 
-    // ===== 修改：使用 ChunkPos 对象替代 pack() =====
     private static boolean isChunkLoaded(final ServerLevel level, final BlockPos pos) {
         ChunkPos chunkPos = ChunkPos.containing(pos);
-        LevelChunk chunk = level.getChunkSource().getChunkNow((int)chunkPos.x(), (int)chunkPos.z());
-        return chunk == null ? false : chunk.getFullStatus() == FullChunkStatus.ENTITY_TICKING && level.areEntitiesLoaded(chunkPos);
+        LevelChunk chunk = level.getChunkSource().getChunkNow(chunkPos.x(), chunkPos.z());
+        return chunk == null ? false : chunk.getFullStatus() == FullChunkStatus.ENTITY_TICKING && level.areEntitiesLoaded(chunkPos.pack());
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> addConditionals(

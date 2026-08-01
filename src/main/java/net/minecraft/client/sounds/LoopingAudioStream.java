@@ -1,5 +1,4 @@
 package net.minecraft.client.sounds;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.io.BufferedInputStream;
 import java.io.FilterInputStream;

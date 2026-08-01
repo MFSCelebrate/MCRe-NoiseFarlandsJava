@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.debug;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Map.Entry;
 import net.minecraft.client.Minecraft;

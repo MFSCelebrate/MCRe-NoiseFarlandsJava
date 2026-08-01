@@ -1,5 +1,4 @@
 package net.minecraft.world.damagesource;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;

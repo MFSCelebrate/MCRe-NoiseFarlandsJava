@@ -1,5 +1,4 @@
 package net.minecraft.util;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.io.DataOutput;
 import java.io.IOException;

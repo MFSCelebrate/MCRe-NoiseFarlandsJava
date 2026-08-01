@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.feature.treedecorators;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;

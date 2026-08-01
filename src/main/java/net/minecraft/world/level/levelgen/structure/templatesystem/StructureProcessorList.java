@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.structure.templatesystem;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 

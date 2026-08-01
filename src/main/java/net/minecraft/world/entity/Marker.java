@@ -1,5 +1,4 @@
 package net.minecraft.world.entity;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;

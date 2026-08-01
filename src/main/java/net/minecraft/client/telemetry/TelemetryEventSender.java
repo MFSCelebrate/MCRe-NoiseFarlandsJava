@@ -1,5 +1,4 @@
 package net.minecraft.client.telemetry;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.Consumer;
 import net.minecraftforge.api.distmarker.Dist;

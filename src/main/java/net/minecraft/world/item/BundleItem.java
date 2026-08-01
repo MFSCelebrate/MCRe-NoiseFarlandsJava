@@ -1,5 +1,4 @@
 package net.minecraft.world.item;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.DataResult.Error;
 import com.mojang.serialization.DataResult.Success;

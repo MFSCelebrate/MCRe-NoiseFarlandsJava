@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.entity;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.model.animal.equine.BabyDonkeyModel;
 import net.minecraft.client.model.animal.equine.DonkeyModel;

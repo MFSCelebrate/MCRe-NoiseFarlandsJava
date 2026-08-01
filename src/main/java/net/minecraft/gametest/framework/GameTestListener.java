@@ -1,5 +1,4 @@
 package net.minecraft.gametest.framework;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface GameTestListener {
     void testStructureLoaded(GameTestInfo testInfo);

@@ -1,5 +1,4 @@
 package net.minecraft.world.flag;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class FeatureFlag {
     final FeatureFlagUniverse universe;

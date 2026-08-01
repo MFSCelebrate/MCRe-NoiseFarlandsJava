@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.ibm.icu.text.Collator;
 import java.util.Comparator;

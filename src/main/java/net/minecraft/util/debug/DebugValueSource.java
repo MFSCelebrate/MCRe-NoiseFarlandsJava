@@ -1,5 +1,4 @@
 package net.minecraft.util.debug;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.level.ServerLevel;
 import org.jspecify.annotations.Nullable;

@@ -1,5 +1,4 @@
 package net.minecraft.client.resources;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Splitter;
 import com.google.gson.JsonElement;

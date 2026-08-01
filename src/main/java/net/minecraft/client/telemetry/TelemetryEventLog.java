@@ -1,5 +1,4 @@
 package net.minecraft.client.telemetry;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import java.io.IOException;

@@ -1,5 +1,4 @@
 package net.minecraft.core;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;

@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.state.level;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.dimension.DimensionType;

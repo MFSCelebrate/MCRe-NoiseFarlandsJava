@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.ambient;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;

@@ -1,5 +1,4 @@
 package net.minecraft.util.debugchart;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface SampleStorage {
     int capacity();

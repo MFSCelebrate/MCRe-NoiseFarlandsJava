@@ -1,5 +1,4 @@
 package net.minecraft.client.model.animal.sniffer;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.animation.KeyframeAnimation;
 import net.minecraft.client.animation.definitions.SnifferAnimation;

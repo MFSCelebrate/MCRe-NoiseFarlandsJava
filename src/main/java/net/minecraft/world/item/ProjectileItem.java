@@ -1,5 +1,4 @@
 package net.minecraft.world.item;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.OptionalInt;
 import net.minecraft.core.Direction;

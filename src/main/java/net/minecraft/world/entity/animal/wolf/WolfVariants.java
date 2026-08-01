@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.animal.wolf;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.ClientAsset;
 import net.minecraft.core.HolderSet;

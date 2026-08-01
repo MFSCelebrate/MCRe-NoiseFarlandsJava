@@ -1,5 +1,4 @@
 package net.minecraft.util.filefix;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import net.minecraft.CrashReport;

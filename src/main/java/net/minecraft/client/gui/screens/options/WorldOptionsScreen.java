@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.options;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;

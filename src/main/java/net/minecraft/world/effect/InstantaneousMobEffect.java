@@ -1,5 +1,4 @@
 package net.minecraft.world.effect;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class InstantaneousMobEffect extends MobEffect {
     public InstantaneousMobEffect(final MobEffectCategory category, final int color) {

@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.monster.breeze;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;

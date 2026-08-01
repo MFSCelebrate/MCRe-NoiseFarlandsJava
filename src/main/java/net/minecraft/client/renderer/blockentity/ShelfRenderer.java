@@ -1,8 +1,8 @@
 package net.minecraft.client.renderer.blockentity;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import it.unimi.dsi.fastutil.HashCommon;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.state.ShelfRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
@@ -46,8 +46,7 @@ public class ShelfRenderer implements BlockEntityRenderer<ShelfBlockEntity, Shel
         state.alignToBottom = blockEntity.getAlignItemsToBottom();
         state.facing = blockEntity.getBlockState().getValue(ShelfBlock.FACING);
         NonNullList<ItemStack> items = blockEntity.getItems();
-        // ===== 修改：HashCommon.long2int(asLong()) → hashCode() =====
-        int seed = blockEntity.getBlockPos().hashCode();
+        int seed = HashCommon.long2int(blockEntity.getBlockPos().asLong());
 
         for (int slot = 0; slot < items.size(); slot++) {
             ItemStack itemStack = items.get(slot);
@@ -91,6 +90,7 @@ public class ShelfRenderer implements BlockEntityRenderer<ShelfBlockEntity, Shel
         if (!state.alignToBottom) {
             offsetY += -(box.maxY - box.minY) / 2.0;
         }
+
         poseStack.translate(0.0, offsetY, 0.0);
         itemStackRenderState.submit(poseStack, submitNodeCollector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         poseStack.popPose();

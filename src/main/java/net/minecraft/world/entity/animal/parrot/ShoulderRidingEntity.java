@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.animal.parrot;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerPlayer;

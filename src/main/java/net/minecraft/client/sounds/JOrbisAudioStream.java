@@ -1,5 +1,4 @@
 package net.minecraft.client.sounds;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.jcraft.jogg.Packet;
 import com.jcraft.jogg.Page;

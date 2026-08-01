@@ -1,5 +1,4 @@
 package net.minecraft.util.parsing.packrat;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.Util;
 import org.jspecify.annotations.Nullable;

@@ -1,5 +1,4 @@
 package net.minecraft.world;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public record Stopwatch(long creationTime, long accumulatedElapsedTime) {
     public Stopwatch(final long creationTime) {

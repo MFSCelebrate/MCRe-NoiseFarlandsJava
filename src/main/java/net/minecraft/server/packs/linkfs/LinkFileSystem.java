@@ -1,5 +1,4 @@
 package net.minecraft.server.packs.linkfs;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Splitter;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;

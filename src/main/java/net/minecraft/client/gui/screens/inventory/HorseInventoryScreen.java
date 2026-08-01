@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.inventory;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.EntityTypeTags;

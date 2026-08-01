@@ -1,5 +1,4 @@
 package net.minecraft.recipebook;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Iterator;
 import net.minecraft.util.Mth;

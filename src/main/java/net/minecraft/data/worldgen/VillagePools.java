@@ -1,5 +1,4 @@
 package net.minecraft.data.worldgen;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 

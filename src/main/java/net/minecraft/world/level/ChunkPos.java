@@ -16,31 +16,21 @@ import net.minecraft.util.Util;
 import net.minecraft.world.level.chunk.status.ChunkPyramid;
 import org.jspecify.annotations.Nullable;
 
-public final class ChunkPos {
-    // ========== 序列化 ==========
+public record ChunkPos(int x, int z) {
     public static final Codec<ChunkPos> CODEC = Codec.INT_STREAM
-        .comapFlatMap(
-            input -> Util.fixedSize(input, 2).map(ints -> new ChunkPos(ints[0], ints[1])),
-            pos -> IntStream.of((int) pos.x, (int) pos.z)
-        )
+        .<ChunkPos>comapFlatMap(input -> Util.fixedSize(input, 2).map(ints -> new ChunkPos(ints[0], ints[1])), pos -> IntStream.of(pos.x, pos.z))
         .stable();
-
     public static final StreamCodec<ByteBuf, ChunkPos> STREAM_CODEC = new StreamCodec<ByteBuf, ChunkPos>() {
-        @Override
         public ChunkPos decode(final ByteBuf input) {
-            return new ChunkPos(input.readLong(), input.readLong());
+            return FriendlyByteBuf.readChunkPos(input);
         }
 
-        @Override
         public void encode(final ByteBuf output, final ChunkPos value) {
-            output.writeLong(value.x);
-            output.writeLong(value.z);
+            FriendlyByteBuf.writeChunkPos(output, value);
         }
     };
-
-    // ========== 原版常量（保留) 用于兼容 ==========
     private static final int SAFETY_MARGIN = 1056;
-    public static final long INVALID_CHUNK_POS = pack(2147483647, 2147483647);
+    public static final long INVALID_CHUNK_POS = pack(1875066, 1875066);
     public static final ChunkPos ZERO = new ChunkPos(0, 0);
     private static final long COORD_BITS = 32L;
     private static final long COORD_MASK = 4294967295L;
@@ -52,259 +42,174 @@ public final class ChunkPos {
     private static final int HASH_C = 1013904223;
     private static final int HASH_Z_XOR = -559038737;
 
-    // ========== MCRe: 64 位坐标 ==========
-    public final long x;
-    public final long z;
-
-    // ========== 构造 ==========
-    public ChunkPos(final long x, final long z) {
-        this.x = x;
-        this.z = z;
-    }
-
-    public ChunkPos(final int x, final int z) {
-        this((long) x, (long) z);
-    }
-
-    public ChunkPos(final BlockPos pos) {
-        this(
-            SectionPos.blockToSectionCoord(pos.getBigX().longValue()),
-            SectionPos.blockToSectionCoord(pos.getBigZ().longValue())
-        );
-    }
-
-    // ========== Getter（兼容旧代码调用 .x() / .z()，返回 long） ==========
-    public long x() {
-        return this.x;
-    }
-
-    public long z() {
-        return this.z;
-    }
-
-    // ========== int 兼容方法（用于需要 int 的场景，注意可能溢出） ==========
-    /**
-     * 返回 int 类型的 x 坐标。注意：如果坐标超出 int 范围，将发生截断。
-     * 对于原版世界（±3000 万块坐标），此方法安全；
-     * 对于大数世界（>21亿），应使用 {@link #x()} 获取 long 值。
-     */
-    public int xInt() {
-        return (int) this.x;
-    }
-
-    /**
-     * 返回 int 类型的 z 坐标。注意：如果坐标超出 int 范围，将发生截断。
-     * 对于原版世界（±3000 万块坐标），此方法安全；
-     * 对于大数世界（>21亿），应使用 {@link #z()} 获取 long 值。
-     */
-    public int zInt() {
-        return (int) this.z;
-    }
-
-    // ========== 静态工厂 ==========
     public static ChunkPos containing(final BlockPos pos) {
-        return new ChunkPos(
-            SectionPos.blockToSectionCoord(pos.getBigX().longValue()),
-            SectionPos.blockToSectionCoord(pos.getBigZ().longValue())
-        );
+        return new ChunkPos(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
     }
 
     public static ChunkPos unpack(final long key) {
-        return new ChunkPos((int) key, (int) (key >> 32));
+        return new ChunkPos((int)key, (int)(key >> 32));
     }
 
-    public static ChunkPos minFromRegion(final long regionX, final long regionZ) {
+    public static ChunkPos minFromRegion(final int regionX, final int regionZ) {
         return new ChunkPos(regionX << 5, regionZ << 5);
     }
 
-    public static ChunkPos maxFromRegion(final long regionX, final long regionZ) {
+    public static ChunkPos maxFromRegion(final int regionX, final int regionZ) {
         return new ChunkPos((regionX << 5) + 31, (regionZ << 5) + 31);
     }
 
-    // ========== 有效性 ==========
     public boolean isValid() {
         return isValid(this.x, this.z);
     }
 
-    public static boolean isValid(final long x, final long z) {
-        // 原版始终返回 true，我们扩展为检查是否在 long 范围内
-        return Math.abs(x) <= Long.MAX_VALUE / 2 && Math.abs(z) <= Long.MAX_VALUE / 2;
+    public static boolean isValid(final int x, final int z) {
+        return Mth.absMax(x, z) <= ChunkPyramid.MAX_CHUNK_COORDINATE_VALUE;
     }
 
-    // ========== 打包/解包（兼容原版 32 位） ==========
     public long pack() {
         return pack(this.x, this.z);
     }
 
-    public static long pack(final long x, final long z) {
-        return (x & COORD_MASK) | ((z & COORD_MASK) << 32);
+    public static long pack(final int x, final int z) {
+        return x & 4294967295L | (z & 4294967295L) << 32;
     }
 
-    /**
-     * @deprecated 此方法依赖于已废弃的 SectionPos 打包键，不再支持。
-     * 请使用 {@link #ChunkPos(long, long)} 直接构造。
-     */
-    @Deprecated
     public static long fromSectionNode(final long sectionNode) {
-        throw new UnsupportedOperationException("fromSectionNode is no longer supported; use new ChunkPos(x, z) instead.");
+        return pack(SectionPos.x(sectionNode), SectionPos.z(sectionNode));
     }
 
     public static long pack(final BlockPos pos) {
-        return pack(
-            SectionPos.blockToSectionCoord(pos.getBigX().longValue()),
-            SectionPos.blockToSectionCoord(pos.getBigZ().longValue())
-        );
+        return pack(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
     }
 
-    // ========== 解包（返回 long 坐标，用于兼容旧代码） ==========
-    public static long getLongX(final long pos) {
-        return pos & COORD_MASK;
-    }
-
-    public static long getLongZ(final long pos) {
-        return (pos >>> 32) & COORD_MASK;
-    }
-
-    /** @deprecated 使用 {@link #getLongX(long)} 替代 */
-    @Deprecated
     public static int getX(final long pos) {
-        return (int) (pos & COORD_MASK);
+        return (int)(pos & 4294967295L);
     }
 
-    /** @deprecated 使用 {@link #getLongZ(long)} 替代 */
-    @Deprecated
     public static int getZ(final long pos) {
-        return (int) ((pos >>> 32) & COORD_MASK);
+        return (int)(pos >>> 32 & 4294967295L);
     }
 
-    // ========== 哈希 ==========
     @Override
     public int hashCode() {
         return hash(this.x, this.z);
     }
 
-    public static int hash(final long x, final long z) {
-        int xi = (int) x;
-        int zi = (int) z;
-        int xTransform = 1664525 * xi + 1013904223;
-        int zTransform = 1664525 * (zi ^ -559038737) + 1013904223;
+    public static int hash(final int x, final int z) {
+        int xTransform = 1664525 * x + 1013904223;
+        int zTransform = 1664525 * (z ^ -559038737) + 1013904223;
         return xTransform ^ zTransform;
     }
 
-    // ========== 坐标边界（返回 long） ==========
-    public long getMiddleBlockX() {
+    public int getMiddleBlockX() {
         return this.getBlockX(8);
     }
 
-    public long getMiddleBlockZ() {
+    public int getMiddleBlockZ() {
         return this.getBlockZ(8);
     }
 
-    public long getMinBlockX() {
+    public int getMinBlockX() {
         return SectionPos.sectionToBlockCoord(this.x);
     }
 
-    public long getMinBlockZ() {
+    public int getMinBlockZ() {
         return SectionPos.sectionToBlockCoord(this.z);
     }
 
-    public long getMaxBlockX() {
+    public int getMaxBlockX() {
         return this.getBlockX(15);
     }
 
-    public long getMaxBlockZ() {
+    public int getMaxBlockZ() {
         return this.getBlockZ(15);
     }
 
-    public long getRegionX() {
+    public int getRegionX() {
         return this.x >> 5;
     }
 
-    public long getRegionZ() {
+    public int getRegionZ() {
         return this.z >> 5;
     }
 
-    public static long getRegionX(final long pos) {
-        return getLongX(pos) >> 5;
+    public static int getRegionX(final long pos) {
+        return getX(pos) >> 5;
     }
 
-    public static long getRegionZ(final long pos) {
-        return getLongZ(pos) >> 5;
+    public static int getRegionZ(final long pos) {
+        return getZ(pos) >> 5;
     }
 
-    public long getRegionLocalX() {
+    public int getRegionLocalX() {
         return this.x & 31;
     }
 
-    public long getRegionLocalZ() {
+    public int getRegionLocalZ() {
         return this.z & 31;
     }
 
-    public long getBlockX(final int offset) {
+    public BlockPos getBlockAt(final int x, final int y, final int z) {
+        return new BlockPos(this.getBlockX(x), y, this.getBlockZ(z));
+    }
+
+    public int getBlockX(final int offset) {
         return SectionPos.sectionToBlockCoord(this.x, offset);
     }
 
-    public long getBlockZ(final int offset) {
+    public int getBlockZ(final int offset) {
         return SectionPos.sectionToBlockCoord(this.z, offset);
-    }
-
-    // ========== BlockPos 转换 ==========
-    public BlockPos getBlockAt(final int x, final int y, final int z) {
-        return new BlockPos(this.getBlockX(x), y, this.getBlockZ(z));
     }
 
     public BlockPos getMiddleBlockPosition(final int y) {
         return new BlockPos(this.getMiddleBlockX(), y, this.getMiddleBlockZ());
     }
 
+    public boolean contains(final BlockPos pos) {
+        return pos.getX() >= this.getMinBlockX() && pos.getZ() >= this.getMinBlockZ() && pos.getX() <= this.getMaxBlockX() && pos.getZ() <= this.getMaxBlockZ();
+    }
+
+    @Override
+    public String toString() {
+        return "[" + this.x + ", " + this.z + "]";
+    }
+
     public BlockPos getWorldPosition() {
         return new BlockPos(this.getMinBlockX(), 0, this.getMinBlockZ());
     }
 
-    public boolean contains(final BlockPos pos) {
-        long px = pos.getBigX().longValue();
-        long pz = pos.getBigZ().longValue();
-        return px >= this.getMinBlockX() && pz >= this.getMinBlockZ()
-            && px <= this.getMaxBlockX() && pz <= this.getMaxBlockZ();
-    }
-
-    // ========== 距离方法（返回 long） ==========
-    public long getChessboardDistance(final ChunkPos pos) {
+    public int getChessboardDistance(final ChunkPos pos) {
         return this.getChessboardDistance(pos.x, pos.z);
     }
 
-    public long getChessboardDistance(final long x, final long z) {
-        return Math.max(Math.abs(x - this.x), Math.abs(z - this.z));
+    public int getChessboardDistance(final int x, final int z) {
+        return Mth.chessboardDistance(x, z, this.x, this.z);
     }
 
-    public long distanceSquared(final ChunkPos pos) {
+    public int distanceSquared(final ChunkPos pos) {
         return this.distanceSquared(pos.x, pos.z);
     }
 
-    public long distanceSquared(final long pos) {
-        return this.distanceSquared(getLongX(pos), getLongZ(pos));
+    public int distanceSquared(final long pos) {
+        return this.distanceSquared(getX(pos), getZ(pos));
     }
 
-    private long distanceSquared(final long x, final long z) {
-        long dx = x - this.x;
-        long dz = z - this.z;
-        return dx * dx + dz * dz;
+    private int distanceSquared(final int x, final int z) {
+        int deltaX = x - this.x;
+        int deltaZ = z - this.z;
+        return deltaX * deltaX + deltaZ * deltaZ;
     }
 
-    // ========== Stream 方法 ==========
     public static Stream<ChunkPos> rangeClosed(final ChunkPos center, final int radius) {
-        return rangeClosed(
-            new ChunkPos(center.x - radius, center.z - radius),
-            new ChunkPos(center.x + radius, center.z + radius)
-        );
+        return rangeClosed(new ChunkPos(center.x - radius, center.z - radius), new ChunkPos(center.x + radius, center.z + radius));
     }
 
     public static Stream<ChunkPos> rangeClosed(final ChunkPos from, final ChunkPos to) {
-        long xSize = Math.abs(from.x - to.x) + 1;
-        long zSize = Math.abs(from.z - to.z) + 1;
-        final long xDiff = from.x < to.x ? 1 : -1;
-        final long zDiff = from.z < to.z ? 1 : -1;
-        return StreamSupport.stream(new AbstractSpliterator<ChunkPos>((int) (xSize * zSize), 64) {
+        int xSize = Math.abs(from.x - to.x) + 1;
+        int zSize = Math.abs(from.z - to.z) + 1;
+        final int xDiff = from.x < to.x ? 1 : -1;
+        final int zDiff = from.z < to.z ? 1 : -1;
+        return StreamSupport.stream(new AbstractSpliterator<ChunkPos>(xSize * zSize, 64) {
             private @Nullable ChunkPos pos;
 
             @Override
@@ -312,34 +217,22 @@ public final class ChunkPos {
                 if (this.pos == null) {
                     this.pos = from;
                 } else {
-                    long x = this.pos.x;
-                    long z = this.pos.z;
+                    int x = this.pos.x;
+                    int z = this.pos.z;
                     if (x == to.x) {
                         if (z == to.z) {
                             return false;
                         }
+
                         this.pos = new ChunkPos(from.x, z + zDiff);
                     } else {
                         this.pos = new ChunkPos(x + xDiff, z);
                     }
                 }
+
                 action.accept(this.pos);
                 return true;
             }
         }, false);
-    }
-
-    // ========== equals / toString ==========
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof ChunkPos)) return false;
-        ChunkPos that = (ChunkPos) obj;
-        return this.x == that.x && this.z == that.z;
-    }
-
-    @Override
-    public String toString() {
-        return "[" + this.x + ", " + this.z + "]";
     }
 }

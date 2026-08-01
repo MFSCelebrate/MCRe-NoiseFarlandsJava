@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.components;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.GameProfile;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;

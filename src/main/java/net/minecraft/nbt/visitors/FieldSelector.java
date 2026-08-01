@@ -1,5 +1,4 @@
 package net.minecraft.nbt.visitors;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import net.minecraft.nbt.TagType;

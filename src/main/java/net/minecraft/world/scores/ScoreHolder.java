@@ -1,5 +1,4 @@
 package net.minecraft.world.scores;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraft.network.chat.Component;

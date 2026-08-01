@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.options.controls;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;

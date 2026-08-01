@@ -1,5 +1,4 @@
 package net.minecraft.server.gui;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Vector;
 import javax.swing.JList;

@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;

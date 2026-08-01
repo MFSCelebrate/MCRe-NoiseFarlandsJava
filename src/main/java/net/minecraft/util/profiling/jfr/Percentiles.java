@@ -1,5 +1,4 @@
 package net.minecraft.util.profiling.jfr;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.math.Quantiles;
 import com.google.common.math.Quantiles.ScaleAndIndexes;

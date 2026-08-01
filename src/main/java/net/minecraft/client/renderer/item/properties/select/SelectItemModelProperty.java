@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.item.properties.select;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;

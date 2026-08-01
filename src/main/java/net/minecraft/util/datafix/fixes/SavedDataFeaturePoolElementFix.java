@@ -1,5 +1,4 @@
 package net.minecraft.util.datafix.fixes;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;

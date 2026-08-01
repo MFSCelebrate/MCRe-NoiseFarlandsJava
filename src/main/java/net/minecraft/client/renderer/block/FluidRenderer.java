@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.block;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;

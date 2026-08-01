@@ -1,5 +1,4 @@
 package net.minecraft.client.data.models.model;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.math.Transformation;
 import java.time.format.DateTimeFormatter;

@@ -1,5 +1,4 @@
 package net.minecraft.world.inventory;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Optional;
 import net.minecraft.resources.Identifier;

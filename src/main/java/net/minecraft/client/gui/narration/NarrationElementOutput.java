@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.narration;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableList;
 import net.minecraft.network.chat.Component;

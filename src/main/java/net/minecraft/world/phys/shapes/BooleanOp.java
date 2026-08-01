@@ -1,5 +1,4 @@
 package net.minecraft.world.phys.shapes;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface BooleanOp {
     BooleanOp FALSE = (first, second) -> false;

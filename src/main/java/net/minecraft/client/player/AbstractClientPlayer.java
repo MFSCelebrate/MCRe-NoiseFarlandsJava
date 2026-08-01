@@ -1,5 +1,4 @@
 package net.minecraft.client.player;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.Minecraft;

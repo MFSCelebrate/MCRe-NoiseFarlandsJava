@@ -1,5 +1,4 @@
 package net.minecraft.util.profiling;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public final class ResultField implements Comparable<ResultField> {
     public final double percentage;

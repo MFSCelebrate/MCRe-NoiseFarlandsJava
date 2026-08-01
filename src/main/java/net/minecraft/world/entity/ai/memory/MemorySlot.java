@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.ai.memory;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.entity.ai.Brain;
 import org.jspecify.annotations.Nullable;

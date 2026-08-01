@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.dialog;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;

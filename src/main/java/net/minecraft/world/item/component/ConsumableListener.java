@@ -1,5 +1,4 @@
 package net.minecraft.world.item.component;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;

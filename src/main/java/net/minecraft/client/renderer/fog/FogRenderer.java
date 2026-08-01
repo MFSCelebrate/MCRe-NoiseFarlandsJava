@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.fog;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.buffers.GpuBuffer;

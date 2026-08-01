@@ -1,5 +1,4 @@
 package net.minecraft.util.datafix.fixes;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.schemas.Schema;
 import com.mojang.serialization.Dynamic;

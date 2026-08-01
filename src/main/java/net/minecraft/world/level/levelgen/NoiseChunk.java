@@ -1,9 +1,8 @@
 package net.minecraft.world.level.levelgen;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,8 +32,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     private final List<NoiseChunk.NoiseInterpolator> interpolators;
     private final List<NoiseChunk.CacheAllInCell> cellCaches;
     private final Map<DensityFunction, DensityFunction> wrapped = new HashMap<>();
-    // ===== 修改：使用 Object2IntMap<ColumnPos> =====
-    private final Object2IntMap<ColumnPos> preliminarySurfaceLevelCache = new Object2IntOpenHashMap<>();
+    private final Long2IntMap preliminarySurfaceLevelCache = new Long2IntOpenHashMap();
     private final Aquifer aquifer;
     private final DensityFunction preliminarySurfaceLevel;
     private final DensityFunction fullNoiseDensity;
@@ -43,8 +41,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     private final NoiseChunk.@Nullable FlatCache blendAlpha;
     private final NoiseChunk.@Nullable FlatCache blendOffset;
     private final DensityFunctions.BeardifierOrMarker beardifier;
-    // ===== 修改：使用 ColumnPos =====
-    private ColumnPos lastBlendingDataPos = null;
+    private long lastBlendingDataPos = ChunkPos.INVALID_CHUNK_POS;
     private Blender.BlendingOutput lastBlendingOutput = new Blender.BlendingOutput(1.0, 0.0);
     private final int noiseSizeXZ;
     private final int cellWidth;
@@ -167,8 +164,6 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         }
 
         this.blockStateRule = new MaterialRuleList(builder.toArray(new NoiseChunk.BlockStateFiller[0]));
-        // ===== 初始化缓存默认值为 -1 =====
-        this.preliminarySurfaceLevelCache.defaultReturnValue(-1);
     }
 
     protected Climate.Sampler cachedClimateSampler(final NoiseRouter noises, final List<Climate.ParameterPoint> spawnTarget) {
@@ -224,21 +219,12 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     public int preliminarySurfaceLevel(final int sampleX, final int sampleZ) {
         int quantizedX = QuartPos.toBlock(QuartPos.fromBlock(sampleX));
         int quantizedZ = QuartPos.toBlock(QuartPos.fromBlock(sampleZ));
-        // ===== 使用 ColumnPos 对象作为键 =====
-        ColumnPos key = new ColumnPos(quantizedX, quantizedZ);
-        int cached = this.preliminarySurfaceLevelCache.getInt(key);
-        if (cached != this.preliminarySurfaceLevelCache.defaultReturnValue()) {
-            return cached;
-        }
-        int value = this.computePreliminarySurfaceLevel(key);
-        this.preliminarySurfaceLevelCache.put(key, value);
-        return value;
+        return this.preliminarySurfaceLevelCache.computeIfAbsent(ColumnPos.asLong(quantizedX, quantizedZ), this::computePreliminarySurfaceLevel);
     }
 
-    // ===== 参数改为 ColumnPos =====
-    private int computePreliminarySurfaceLevel(final ColumnPos key) {
-        int blockX = key.x();
-        int blockZ = key.z();
+    private int computePreliminarySurfaceLevel(final long key) {
+        int blockX = ColumnPos.getX(key);
+        int blockZ = ColumnPos.getZ(key);
         return Mth.floor(this.preliminarySurfaceLevel.compute(new DensityFunction.SinglePointContext(blockX, 0, blockZ)));
     }
 
@@ -373,10 +359,9 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         return this.cellHeight;
     }
 
-    // ===== 使用 ColumnPos 作为缓存键 =====
     private Blender.BlendingOutput getOrComputeBlendingOutput(final int blockX, final int blockZ) {
-        ColumnPos pos2D = new ColumnPos(blockX, blockZ);
-        if (pos2D.equals(this.lastBlendingDataPos)) {
+        long pos2D = ChunkPos.pack(blockX, blockZ);
+        if (this.lastBlendingDataPos == pos2D) {
             return this.lastBlendingOutput;
         }
 
@@ -410,7 +395,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
                         throw new MatchException(null, null);
                 }
             }
-            case DensityFunctions.HolderHolder(Holder<DensityFunction> holder) -> (DensityFunction) holder.value();
+            case DensityFunctions.HolderHolder(Holder<DensityFunction> holder) -> (DensityFunction)holder.value();
             default -> function == DensityFunctions.BlendAlpha.INSTANCE && this.blendAlpha != null
                 ? this.blendAlpha
                 : (
@@ -543,10 +528,9 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         @Nullable BlockState calculate(final DensityFunction.FunctionContext context);
     }
 
-    // ===== 修改 Cache2D 使用 ColumnPos =====
     private static class Cache2D implements NoiseChunk.NoiseChunkDensityFunction, DensityFunctions.MarkerOrMarked {
         private final DensityFunction function;
-        private ColumnPos lastPos2D = null;
+        private long lastPos2D = ChunkPos.INVALID_CHUNK_POS;
         private double lastValue;
 
         private Cache2D(final DensityFunction function) {
@@ -557,8 +541,8 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         public double compute(final DensityFunction.FunctionContext context) {
             int blockX = context.blockX();
             int blockZ = context.blockZ();
-            ColumnPos pos2D = new ColumnPos(blockX, blockZ);
-            if (pos2D.equals(this.lastPos2D)) {
+            long pos2D = ChunkPos.pack(blockX, blockZ);
+            if (this.lastPos2D == pos2D) {
                 return this.lastValue;
             }
 
@@ -668,7 +652,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
                 if (this.lastArray != null && this.lastArray.length == output.length) {
                     System.arraycopy(output, 0, this.lastArray, 0, output.length);
                 } else {
-                    this.lastArray = (double[]) output.clone();
+                    this.lastArray = (double[])output.clone();
                 }
 
                 this.lastArrayCounter = NoiseChunk.this.arrayInterpolationCounter;
@@ -823,9 +807,9 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
             } else {
                 return NoiseChunk.this.fillingCell
                     ? Mth.lerp3(
-                        (double) NoiseChunk.this.inCellX / NoiseChunk.this.cellWidth,
-                        (double) NoiseChunk.this.inCellY / NoiseChunk.this.cellHeight,
-                        (double) NoiseChunk.this.inCellZ / NoiseChunk.this.cellWidth,
+                        (double)NoiseChunk.this.inCellX / NoiseChunk.this.cellWidth,
+                        (double)NoiseChunk.this.inCellY / NoiseChunk.this.cellHeight,
+                        (double)NoiseChunk.this.inCellZ / NoiseChunk.this.cellWidth,
                         this.noise000,
                         this.noise100,
                         this.noise010,

@@ -1,5 +1,4 @@
 package net.minecraft.util.debugchart;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.util.debug.DebugSubscription;
 import net.minecraft.util.debug.DebugSubscriptions;

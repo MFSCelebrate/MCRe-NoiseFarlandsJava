@@ -1,5 +1,4 @@
 package net.minecraft.world.entity;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class EntityEvent {
     public static final byte JUMP = 1;

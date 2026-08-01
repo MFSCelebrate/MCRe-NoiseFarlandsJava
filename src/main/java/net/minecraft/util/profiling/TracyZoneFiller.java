@@ -1,5 +1,4 @@
 package net.minecraft.util.profiling;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.jtracy.Plot;
 import com.mojang.jtracy.TracyClient;

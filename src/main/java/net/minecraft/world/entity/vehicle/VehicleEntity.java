@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.vehicle;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.syncher.EntityDataAccessor;

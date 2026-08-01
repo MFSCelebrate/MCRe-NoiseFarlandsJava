@@ -1,5 +1,4 @@
 package net.minecraft.world.level.material;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.objects.Object2ByteLinkedOpenHashMap;

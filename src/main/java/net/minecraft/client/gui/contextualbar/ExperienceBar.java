@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.contextualbar;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;

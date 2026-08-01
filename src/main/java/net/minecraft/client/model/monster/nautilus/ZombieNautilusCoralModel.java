@@ -1,5 +1,4 @@
 package net.minecraft.client.model.monster.nautilus;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.model.animal.nautilus.NautilusModel;
 import net.minecraft.client.model.geom.ModelPart;

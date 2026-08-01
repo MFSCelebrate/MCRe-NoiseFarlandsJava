@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.structure.templatesystem.loader;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.DataFixer;
 import com.mojang.logging.LogUtils;

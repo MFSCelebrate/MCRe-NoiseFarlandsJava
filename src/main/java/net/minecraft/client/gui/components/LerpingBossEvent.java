@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.components;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.UUID;
 import net.minecraft.network.chat.Component;

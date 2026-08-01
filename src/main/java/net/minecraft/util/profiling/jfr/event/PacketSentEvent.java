@@ -1,5 +1,4 @@
 package net.minecraft.util.profiling.jfr.event;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.net.SocketAddress;
 import jdk.jfr.EventType;

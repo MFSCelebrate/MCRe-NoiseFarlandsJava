@@ -1,5 +1,4 @@
 package net.minecraft.advancements.predicates.entity;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.advancements.predicates.NbtPredicate;

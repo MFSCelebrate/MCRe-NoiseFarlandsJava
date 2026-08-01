@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.animal.equine;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.DoubleSupplier;
 import java.util.function.IntUnaryOperator;

@@ -1,5 +1,4 @@
 package net.minecraft.util.profiling;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.Supplier;
 import net.minecraft.util.profiling.metrics.MetricCategory;

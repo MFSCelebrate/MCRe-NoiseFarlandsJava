@@ -1,5 +1,4 @@
 package net.minecraft.server.permissions;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.Registry;

@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.animal.equine;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;

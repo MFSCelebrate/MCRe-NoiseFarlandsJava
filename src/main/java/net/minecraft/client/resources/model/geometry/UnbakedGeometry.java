@@ -1,5 +1,4 @@
 package net.minecraft.client.resources.model.geometry;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.renderer.block.dispatch.ModelState;
 import net.minecraft.client.resources.model.ModelBaker;

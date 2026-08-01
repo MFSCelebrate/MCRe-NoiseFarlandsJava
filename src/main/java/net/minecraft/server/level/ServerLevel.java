@@ -431,7 +431,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
                                 entity.checkDespawn();
                                 profiler.pop();
                                 if (entity instanceof ServerPlayer
-                                    || this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(entity.chunkPosition())) {
+                                    || this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(entity.chunkPosition().pack())) {
                                     Entity vehicle = entity.getVehicle();
                                     if (vehicle != null) {
                                         if (!vehicle.isRemoved() && vehicle.hasPassenger(entity)) {
@@ -469,14 +469,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
         profiler.pop();
     }
 
-    // ===== 修改：保留 long 版本但调用 ChunkPos 版本 =====
     @Override
     public boolean shouldTickBlocksAt(final long chunkPos) {
-        return this.shouldTickBlocksAt(ChunkPos.unpack(chunkPos));
-    }
-
-    // ===== 新增 ChunkPos 版本 =====
-    public boolean shouldTickBlocksAt(final ChunkPos chunkPos) {
         return this.chunkSource.chunkMap.getDistanceManager().inBlockTickingRange(chunkPos);
     }
 
@@ -1774,7 +1768,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
             this.entityManager.processPendingLoads();
 
             for (ChunkPos chunk : chunks) {
-                if (!this.areEntitiesLoaded(chunk)) {
+                if (!this.areEntitiesLoaded(chunk.pack())) {
                     return false;
                 }
             }
@@ -1798,30 +1792,20 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
         return "Chunks[S] W: " + this.chunkSource.gatherStats() + " E: " + this.entityManager.gatherStats();
     }
 
-    // ===== 修改：areEntitiesLoaded 对象化 =====
     public boolean areEntitiesLoaded(final long chunkKey) {
-        return this.areEntitiesLoaded(ChunkPos.unpack(chunkKey));
+        return this.entityManager.areEntitiesLoaded(chunkKey);
     }
 
-    public boolean areEntitiesLoaded(final ChunkPos chunkPos) {
-        return this.entityManager.areEntitiesLoaded(chunkPos);
-    }
-
-    // ===== 修改：isPositionTickingWithEntitiesLoaded 对象化 =====
     public boolean isPositionTickingWithEntitiesLoaded(final long key) {
-        return this.isPositionTickingWithEntitiesLoaded(ChunkPos.unpack(key));
-    }
-
-    public boolean isPositionTickingWithEntitiesLoaded(final ChunkPos chunkPos) {
-        return this.areEntitiesLoaded(chunkPos) && this.chunkSource.isPositionTicking(chunkPos);
+        return this.areEntitiesLoaded(key) && this.chunkSource.isPositionTicking(key);
     }
 
     public boolean isPositionEntityTicking(final BlockPos pos) {
-        return this.entityManager.canPositionTick(pos) && this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(new ChunkPos(pos));
+        return this.entityManager.canPositionTick(pos) && this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(ChunkPos.pack(pos));
     }
 
     public boolean areEntitiesActuallyLoadedAndTicking(final ChunkPos pos) {
-        return this.entityManager.isTicking(pos) && this.entityManager.areEntitiesLoaded(pos);
+        return this.entityManager.isTicking(pos) && this.entityManager.areEntitiesLoaded(pos.pack());
     }
 
     public boolean anyPlayerCloseEnoughForSpawning(final BlockPos pos) {

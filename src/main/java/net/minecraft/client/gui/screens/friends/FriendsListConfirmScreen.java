@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.friends;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import java.net.URI;

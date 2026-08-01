@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.texture;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.Collection;
 import java.util.Locale;

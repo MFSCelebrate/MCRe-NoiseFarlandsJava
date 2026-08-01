@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.feature.configurations;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.stream.Stream;
 import net.minecraft.core.Holder;

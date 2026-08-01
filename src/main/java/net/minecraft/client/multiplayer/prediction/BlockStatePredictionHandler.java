@@ -1,8 +1,7 @@
 package net.minecraft.client.multiplayer.prediction;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
@@ -14,39 +13,39 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class BlockStatePredictionHandler implements AutoCloseable {
-    // ===== 改为使用 BlockPos 作为键 =====
-    private final Object2ObjectOpenHashMap<BlockPos, BlockStatePredictionHandler.ServerVerifiedState> serverVerifiedStates = new Object2ObjectOpenHashMap<>();
+    private final Long2ObjectOpenHashMap<BlockStatePredictionHandler.ServerVerifiedState> serverVerifiedStates = new Long2ObjectOpenHashMap<>();
     private int currentSequenceNr;
     private boolean isPredicting;
     private int lastTeleportSequence = -1;
 
     public void retainKnownServerState(final BlockPos pos, final BlockState state, final LocalPlayer player) {
-        this.serverVerifiedStates.compute(
-            pos,
-            (key, serverVerifiedState) -> serverVerifiedState != null
-                ? serverVerifiedState.setSequence(this.currentSequenceNr)
-                : new BlockStatePredictionHandler.ServerVerifiedState(this.currentSequenceNr, state, player.position())
-        );
+        this.serverVerifiedStates
+            .compute(
+                pos.asLong(),
+                (key, serverVerifiedState) -> serverVerifiedState != null
+                    ? serverVerifiedState.setSequence(this.currentSequenceNr)
+                    : new BlockStatePredictionHandler.ServerVerifiedState(this.currentSequenceNr, state, player.position())
+            );
     }
 
     public boolean updateKnownServerState(final BlockPos pos, final BlockState blockState) {
-        BlockStatePredictionHandler.ServerVerifiedState serverVerifiedState = this.serverVerifiedStates.get(pos);
+        BlockStatePredictionHandler.ServerVerifiedState serverVerifiedState = this.serverVerifiedStates.get(pos.asLong());
         if (serverVerifiedState == null) {
             return false;
         }
+
         serverVerifiedState.setBlockState(blockState);
         return true;
     }
 
     public void endPredictionsUpTo(final int sequence, final ClientLevel clientLevel) {
-        ObjectIterator<Object2ObjectMap.Entry<BlockPos, BlockStatePredictionHandler.ServerVerifiedState>> stateIterator =
-            this.serverVerifiedStates.object2ObjectEntrySet().iterator();
+        ObjectIterator<Entry<BlockStatePredictionHandler.ServerVerifiedState>> stateIterator = this.serverVerifiedStates.long2ObjectEntrySet().iterator();
 
         while (stateIterator.hasNext()) {
-            Object2ObjectMap.Entry<BlockPos, BlockStatePredictionHandler.ServerVerifiedState> next = stateIterator.next();
+            Entry<BlockStatePredictionHandler.ServerVerifiedState> next = stateIterator.next();
             BlockStatePredictionHandler.ServerVerifiedState serverVerifiedState = next.getValue();
             if (serverVerifiedState.sequence <= sequence) {
-                BlockPos pos = next.getKey();
+                BlockPos pos = BlockPos.of(next.getLongKey());
                 stateIterator.remove();
                 clientLevel.syncBlockState(pos, serverVerifiedState.blockState, this.lastTeleportSequence < sequence ? serverVerifiedState.playerPos : null);
             }

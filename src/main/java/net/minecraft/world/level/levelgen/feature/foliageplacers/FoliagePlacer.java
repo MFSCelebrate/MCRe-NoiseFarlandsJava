@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.feature.foliageplacers;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.Products.P2;
 import com.mojang.serialization.Codec;

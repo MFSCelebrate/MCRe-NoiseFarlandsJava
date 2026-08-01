@@ -1,5 +1,4 @@
 package net.minecraft.data.loot.packs;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.advancements.predicates.DamageSourcePredicate;
 import net.minecraft.advancements.predicates.MinMaxBounds;

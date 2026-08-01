@@ -1,5 +1,4 @@
 package net.minecraft.world.entity.projectile;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.doubles.DoubleDoubleImmutablePair;
 import java.util.List;

@@ -1,5 +1,4 @@
 package net.minecraft.server.packs;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public enum PackType {
     CLIENT_RESOURCES("assets"),

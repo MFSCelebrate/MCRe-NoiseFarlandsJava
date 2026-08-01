@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.dialog.input;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.MapCodec;

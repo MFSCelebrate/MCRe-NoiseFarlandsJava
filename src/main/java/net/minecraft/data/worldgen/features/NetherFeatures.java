@@ -1,5 +1,4 @@
 package net.minecraft.data.worldgen.features;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.HolderSet;
 import net.minecraft.data.worldgen.BootstrapContext;

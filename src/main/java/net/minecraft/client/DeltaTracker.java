@@ -1,5 +1,4 @@
 package net.minecraft.client;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.floats.FloatUnaryOperator;
 import net.minecraftforge.api.distmarker.Dist;

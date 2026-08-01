@@ -1,5 +1,4 @@
 package net.minecraft.util.parsing.packrat;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;

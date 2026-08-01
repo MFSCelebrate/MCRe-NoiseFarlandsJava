@@ -1,9 +1,8 @@
 package net.minecraft.world.entity.ai.behavior;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.datafixers.util.Pair;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -58,8 +57,7 @@ public class AcquirePoi {
         int batchSize = 5;
         int rate = 20;
         MutableLong nextScheduledStart = new MutableLong(0L);
-        // ===== 修改：使用 BlockPos 作为键 =====
-        Object2ObjectMap<BlockPos, AcquirePoi.JitteredLinearRetry> batchCache = new Object2ObjectOpenHashMap<>();
+        Long2ObjectMap<AcquirePoi.JitteredLinearRetry> batchCache = new Long2ObjectOpenHashMap<>();
         OneShot<PathfinderMob> acquirePoi = BehaviorBuilder.create(
             i -> i.group(i.absent(memoryToAcquire))
                 .apply(
@@ -81,16 +79,17 @@ public class AcquirePoi {
 
                         nextScheduledStart.setValue(timestamp + 20L + random.nextInt(20));
                         PoiManager poiManager = level.getPoiManager();
-                        // ===== 修改：使用对象键迭代 =====
-                        batchCache.object2ObjectEntrySet().removeIf(entry -> !entry.getValue().isStillValid(timestamp));
+                        batchCache.long2ObjectEntrySet().removeIf(entry -> !entry.getValue().isStillValid(timestamp));
                         Predicate<BlockPos> cacheTest = pos -> {
-                            AcquirePoi.JitteredLinearRetry retryMarker = batchCache.get(pos);
+                            AcquirePoi.JitteredLinearRetry retryMarker = batchCache.get(pos.asLong());
                             if (retryMarker == null) {
                                 return true;
                             }
+
                             if (!retryMarker.shouldRetry(timestamp)) {
                                 return false;
                             }
+
                             retryMarker.markAttempt(timestamp);
                             return true;
                         };
@@ -98,7 +97,7 @@ public class AcquirePoi {
                                 poiType, cacheTest, body.blockPosition(), 48, PoiManager.Occupancy.HAS_SPACE
                             )
                             .limit(5L)
-                            .filter(px -> validPoi.test(level, px.getSecond()))
+                            .filter(px -> validPoi.test(level, (BlockPos)px.getSecond()))
                             .collect(Collectors.toSet());
                         Path path = findPathToPois(body, poiPositions);
                         if (path != null && path.canReach()) {
@@ -112,8 +111,7 @@ public class AcquirePoi {
                             });
                         } else {
                             for (Pair<Holder<PoiType>, BlockPos> p : poiPositions) {
-                                // ===== 修改：直接使用 BlockPos 作为键 =====
-                                batchCache.computeIfAbsent(p.getSecond(), key -> new AcquirePoi.JitteredLinearRetry(random, timestamp));
+                                batchCache.computeIfAbsent(p.getSecond().asLong(), key -> new AcquirePoi.JitteredLinearRetry(random, timestamp));
                             }
                         }
 

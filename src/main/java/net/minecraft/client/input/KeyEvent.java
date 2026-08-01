@@ -1,5 +1,4 @@
 package net.minecraft.client.input;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import java.lang.annotation.ElementType;

@@ -1,5 +1,4 @@
 package net.minecraft.world.attribute;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;

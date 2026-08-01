@@ -1,5 +1,4 @@
 package net.minecraft.client.multiplayer;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.base.Splitter;
 import io.netty.buffer.ByteBuf;

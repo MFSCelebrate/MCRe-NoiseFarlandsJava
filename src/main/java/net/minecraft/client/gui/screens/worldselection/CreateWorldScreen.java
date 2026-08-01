@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.worldselection;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonElement;

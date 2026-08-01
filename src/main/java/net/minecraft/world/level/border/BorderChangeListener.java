@@ -1,5 +1,4 @@
 package net.minecraft.world.level.border;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public interface BorderChangeListener {
     void onSetSize(WorldBorder border, double newSize);

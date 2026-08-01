@@ -1,5 +1,4 @@
 package net.minecraft.util.profiling.jfr.serialize;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

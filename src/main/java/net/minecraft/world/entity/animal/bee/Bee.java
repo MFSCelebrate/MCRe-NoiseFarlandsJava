@@ -1,8 +1,7 @@
 package net.minecraft.world.entity.animal.bee;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -1072,7 +1071,6 @@ public class Bee extends Animal implements NeutralMob {
         }
     }
 
-    // ===== 修改 BeePollinateGoal 中的 Long2LongOpenHashMap =====
     private class BeePollinateGoal extends Bee.BaseBeeGoal {
         private static final int MIN_POLLINATION_TICKS = 400;
         private static final double ARRIVAL_THRESHOLD = 0.1;
@@ -1087,8 +1085,7 @@ public class Bee extends Animal implements NeutralMob {
         private @Nullable Vec3 hoverPos;
         private int pollinatingTicks;
         private static final int MAX_POLLINATING_TICKS = 600;
-        // ===== 修改 =====
-        private Object2LongOpenHashMap<BlockPos> unreachableFlowerCache = new Object2LongOpenHashMap<>();
+        private Long2LongOpenHashMap unreachableFlowerCache = new Long2LongOpenHashMap();
 
         public BeePollinateGoal() {
             this.setFlags(EnumSet.of(Goal.Flag.MOVE));
@@ -1226,20 +1223,19 @@ public class Bee extends Animal implements NeutralMob {
 
         private Optional<BlockPos> findNearbyFlower() {
             Iterable<BlockPos> closestNearbyFlowers = BlockPos.withinManhattan(Bee.this.blockPosition(), 5, 5, 5);
-            // ===== 修改 =====
-            Object2LongOpenHashMap<BlockPos> tempCache = new Object2LongOpenHashMap<>();
+            Long2LongOpenHashMap tempCache = new Long2LongOpenHashMap();
 
             for (BlockPos pos : closestNearbyFlowers) {
-                long unreachableUntilTime = this.unreachableFlowerCache.getOrDefault(pos, Long.MIN_VALUE);
+                long unreachableUntilTime = this.unreachableFlowerCache.getOrDefault(pos.asLong(), Long.MIN_VALUE);
                 if (Bee.this.level().getGameTime() < unreachableUntilTime) {
-                    tempCache.put(pos, unreachableUntilTime);
+                    tempCache.put(pos.asLong(), unreachableUntilTime);
                 } else if (Bee.attractsBees(Bee.this.level().getBlockState(pos))) {
                     Path path = Bee.this.navigation.createPath(pos, 1);
                     if (path != null && path.canReach()) {
                         return Optional.of(pos);
                     }
 
-                    tempCache.put(pos, Bee.this.level().getGameTime() + 600L);
+                    tempCache.put(pos.asLong(), Bee.this.level().getGameTime() + 600L);
                 }
             }
 

@@ -1,5 +1,4 @@
 package net.minecraft.world.level;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -79,8 +78,7 @@ public final class NaturalSpawner {
                 MobCategory category = entity.getType().getCategory();
                 if (category != MobCategory.MISC) {
                     BlockPos pos = entity.blockPosition();
-                    // ===== 修改：使用 new ChunkPos(pos) 替代 ChunkPos.pack(pos) =====
-                    chunkGetter.query(new ChunkPos(pos), chunk -> {
+                    chunkGetter.query(ChunkPos.pack(pos), chunk -> {
                         MobSpawnSettings.MobSpawnCost mobSpawnCost = getRoughBiome(pos, chunk).getMobSettings().getMobSpawnCost(entity.getType());
                         if (mobSpawnCost != null) {
                             spawnPotential.addCharge(entity.blockPosition(), mobSpawnCost.charge());
@@ -465,10 +463,9 @@ public final class NaturalSpawner {
         void run(final Mob mob, final ChunkAccess levelChunk);
     }
 
-    // ===== 修改：ChunkGetter 接口参数类型从 long 改为 ChunkPos =====
     @FunctionalInterface
     public interface ChunkGetter {
-        void query(final ChunkPos chunkPos, Consumer<LevelChunk> output);
+        void query(final long chunkKey, Consumer<LevelChunk> output);
     }
 
     @FunctionalInterface

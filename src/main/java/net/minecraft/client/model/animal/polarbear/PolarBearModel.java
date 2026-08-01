@@ -1,5 +1,4 @@
 package net.minecraft.client.model.animal.polarbear;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.client.model.QuadrupedModel;
 import net.minecraft.client.model.geom.ModelPart;

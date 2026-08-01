@@ -1,5 +1,4 @@
 package net.minecraft.data.worldgen.features;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.List;
 import java.util.function.BiFunction;

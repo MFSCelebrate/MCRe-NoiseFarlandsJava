@@ -1,5 +1,4 @@
 package net.minecraft.client.model;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.function.Function;
 import net.minecraft.client.model.geom.ModelPart;

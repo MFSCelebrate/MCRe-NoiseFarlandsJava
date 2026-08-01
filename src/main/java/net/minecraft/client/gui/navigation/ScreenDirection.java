@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.navigation;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.ints.IntComparator;
 import net.minecraftforge.api.distmarker.Dist;

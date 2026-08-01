@@ -1,5 +1,4 @@
 package net.minecraft.data.worldgen.placement;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;

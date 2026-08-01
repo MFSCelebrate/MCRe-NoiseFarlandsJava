@@ -1,5 +1,4 @@
 package net.minecraft.client.renderer.fog.environment;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;

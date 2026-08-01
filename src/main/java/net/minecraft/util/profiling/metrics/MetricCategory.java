@@ -1,5 +1,4 @@
 package net.minecraft.util.profiling.metrics;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public enum MetricCategory {
     PATH_FINDING("pathfinding"),

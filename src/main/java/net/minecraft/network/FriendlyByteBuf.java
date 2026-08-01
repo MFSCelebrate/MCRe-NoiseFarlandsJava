@@ -1,5 +1,4 @@
 package net.minecraft.network;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -123,7 +122,7 @@ public class FriendlyByteBuf extends ByteBuf {
 
     public <T, C extends Collection<T>> C readCollection(final IntFunction<C> ctor, final StreamDecoder<? super FriendlyByteBuf, T> elementDecoder) {
         int count = this.readVarInt();
-        C result = ctor.apply(count);
+        C result = (C)ctor.apply(count);
 
         for (int i = 0; i < count; i++) {
             result.add(elementDecoder.decode(this));
@@ -164,7 +163,7 @@ public class FriendlyByteBuf extends ByteBuf {
         final IntFunction<M> ctor, final StreamDecoder<? super FriendlyByteBuf, K> keyDecoder, final StreamDecoder<? super FriendlyByteBuf, V> valueDecoder
     ) {
         int count = this.readVarInt();
-        M result = ctor.apply(count);
+        M result = (M)ctor.apply(count);
 
         for (int i = 0; i < count; i++) {
             K key = keyDecoder.decode(this);
@@ -184,8 +183,8 @@ public class FriendlyByteBuf extends ByteBuf {
     ) {
         this.writeVarInt(map.size());
         map.forEach((k, v) -> {
-            keyEncoder.encode(this, k);
-            valueEncoder.encode(this, v);
+            keyEncoder.encode(this, (K)k);
+            valueEncoder.encode(this, (V)v);
         });
     }
 
@@ -198,7 +197,7 @@ public class FriendlyByteBuf extends ByteBuf {
     }
 
     public <E extends Enum<E>> void writeEnumSet(final EnumSet<E> set, final Class<E> clazz) {
-        E[] values = clazz.getEnumConstants();
+        E[] values = (E[])clazz.getEnumConstants();
         BitSet mask = new BitSet(values.length);
 
         for (int i = 0; i < values.length; i++) {
@@ -209,7 +208,7 @@ public class FriendlyByteBuf extends ByteBuf {
     }
 
     public <E extends Enum<E>> EnumSet<E> readEnumSet(final Class<E> clazz) {
-        E[] values = clazz.getEnumConstants();
+        E[] values = (E[])clazz.getEnumConstants();
         BitSet mask = this.readFixedBitSet(values.length);
         EnumSet<E> result = EnumSet.noneOf(clazz);
 
@@ -240,10 +239,10 @@ public class FriendlyByteBuf extends ByteBuf {
     ) {
         value.ifLeft(left -> {
             this.writeBoolean(true);
-            leftWriter.encode(this, left);
+            leftWriter.encode(this, (L)left);
         }).ifRight(right -> {
             this.writeBoolean(false);
-            rightWriter.encode(this, right);
+            rightWriter.encode(this, (R)right);
         });
     }
 
@@ -383,16 +382,12 @@ public class FriendlyByteBuf extends ByteBuf {
         return output;
     }
 
-    // ===== 修改：BlockPos 传输三个 long =====
     public BlockPos readBlockPos() {
         return readBlockPos(this);
     }
 
     public static BlockPos readBlockPos(final ByteBuf input) {
-        long x = input.readLong();
-        long y = input.readLong();
-        long z = input.readLong();
-        return BlockPos.of(x, y, z);
+        return BlockPos.of(input.readLong());
     }
 
     public FriendlyByteBuf writeBlockPos(final BlockPos pos) {
@@ -401,30 +396,24 @@ public class FriendlyByteBuf extends ByteBuf {
     }
 
     public static void writeBlockPos(final ByteBuf output, final BlockPos pos) {
-        output.writeLong(pos.getBigX().longValue());
-        output.writeLong(pos.getBigY().longValue());
-        output.writeLong(pos.getBigZ().longValue());
+        output.writeLong(pos.asLong());
     }
 
-    // ===== 修改：ChunkPos 传输两个 long =====
     public ChunkPos readChunkPos() {
-        return readChunkPos(this);
-    }
-
-    public static ChunkPos readChunkPos(final ByteBuf input) {
-        long x = input.readLong();
-        long z = input.readLong();
-        return new ChunkPos(x, z);
+        return ChunkPos.unpack(this.readLong());
     }
 
     public FriendlyByteBuf writeChunkPos(final ChunkPos pos) {
-        writeChunkPos(this, pos);
+        this.writeLong(pos.pack());
         return this;
     }
 
+    public static ChunkPos readChunkPos(final ByteBuf input) {
+        return ChunkPos.unpack(input.readLong());
+    }
+
     public static void writeChunkPos(final ByteBuf output, final ChunkPos chunkPos) {
-        output.writeLong(chunkPos.x);
-        output.writeLong(chunkPos.z);
+        output.writeLong(chunkPos.pack());
     }
 
     public GlobalPos readGlobalPos() {
@@ -555,7 +544,7 @@ public class FriendlyByteBuf extends ByteBuf {
         if (result != null && !(result instanceof CompoundTag)) {
             throw new DecoderException("Not a compound tag: " + result);
         } else {
-            return (CompoundTag) result;
+            return (CompoundTag)result;
         }
     }
 
@@ -642,7 +631,7 @@ public class FriendlyByteBuf extends ByteBuf {
         boolean inside = this.readBoolean();
         boolean worldBorder = this.readBoolean();
         return new BlockHitResult(
-            new Vec3((double) pos.getX() + clickX, (double) pos.getY() + clickY, (double) pos.getZ() + clickZ), face, pos, inside, worldBorder
+            new Vec3((double)pos.getX() + clickX, (double)pos.getY() + clickY, (double)pos.getZ() + clickZ), face, pos, inside, worldBorder
         );
     }
 
@@ -651,9 +640,9 @@ public class FriendlyByteBuf extends ByteBuf {
         this.writeBlockPos(blockPos);
         this.writeEnum(blockHit.getDirection());
         Vec3 location = blockHit.getLocation();
-        this.writeFloat((float) (location.x - blockPos.getX()));
-        this.writeFloat((float) (location.y - blockPos.getY()));
-        this.writeFloat((float) (location.z - blockPos.getZ()));
+        this.writeFloat((float)(location.x - blockPos.getX()));
+        this.writeFloat((float)(location.y - blockPos.getY()));
+        this.writeFloat((float)(location.z - blockPos.getZ()));
         this.writeBoolean(blockHit.isInside());
         this.writeBoolean(blockHit.isWorldBorderHit());
     }

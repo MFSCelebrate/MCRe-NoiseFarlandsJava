@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.multiplayer;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;

@@ -1,5 +1,4 @@
 package net.minecraft.client.gui.screens.packs;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;

@@ -1,5 +1,4 @@
 package net.minecraft.world.level.levelgen.structure.templatesystem;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;

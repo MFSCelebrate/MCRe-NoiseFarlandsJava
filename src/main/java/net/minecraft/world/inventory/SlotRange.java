@@ -1,5 +1,4 @@
 package net.minecraft.world.inventory;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.util.StringRepresentable;

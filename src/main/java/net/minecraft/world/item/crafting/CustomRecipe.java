@@ -1,5 +1,4 @@
 package net.minecraft.world.item.crafting;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public abstract class CustomRecipe implements CraftingRecipe {
     @Override

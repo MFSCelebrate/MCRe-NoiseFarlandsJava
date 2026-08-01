@@ -1,5 +1,4 @@
 package net.minecraft.core.component.predicates;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.advancements.predicates.SingleComponentItemPredicate;

@@ -1,5 +1,4 @@
 package net.minecraft.data.recipes;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 public enum RecipeCategory {
     BUILDING_BLOCKS("building_blocks"),
