@@ -225,7 +225,7 @@ jobs:
             由于该改版目前主要更改均在单一分支测试，极少时会在其他分支进行测试，所以每次的构建产物均会上传到这里来~~(懒得进行分离发布了)~~
             
           files: |
-            artifacts/*
+            artifacts/26.2-Permanent.jar
 
       - name: Cleanup artifacts (only on success)
         uses: geekyeggo/delete-artifact@v5
