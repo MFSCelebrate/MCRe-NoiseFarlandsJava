@@ -184,9 +184,9 @@ jobs:
             echo "- 🎯 **Minecraft 版本**: ${{ env.MINECRAFT_VERSION }}" >> $GITHUB_STEP_SUMMARY
             echo "- 🔧 **Nightly 开关**: ${{ env.ENABLE_NIGHTLY }}" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 📋 主要类（前 10 个）" >> $GITHUB_STEP_SUMMARY
+            echo "### 📋 主要类（前 1 个）" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            jar tf build/libs/modified.jar | grep -E "\.class$" | head -10 >> $GITHUB_STEP_SUMMARY
+            jar tf build/libs/modified.jar | grep -E "\.class$" | head -1 >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **构建状态**: 失败" >> $GITHUB_STEP_SUMMARY
