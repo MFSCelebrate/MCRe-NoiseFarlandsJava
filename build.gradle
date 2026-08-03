@@ -145,6 +145,41 @@ sourceSets {
     }
 }
 
+// ===== 修改：在编译前自动更新 ModMetadata 的 BUILD_TIME =====
+tasks.register('updateBuildTime') {
+    description = '将 ModMetadata.java 中的 BUILD_TIME 更新为当前 UTC 时间'
+    doLast {
+        def targetFile = file('src/main/java/net/ModMetadata/ModMetadata.java')
+        if (!targetFile.exists()) {
+            logger.warn('⚠️ ModMetadata.java 不存在，跳过构建时间更新')
+            return
+        }
+
+        // 读取当前文件内容
+        def content = targetFile.text
+
+        // 匹配 ZonedDateTime.parse("任意内容") 
+        // 注意：原格式是 "2026-06-16T12:01:27+00:00"，我们用正则替换引号内的部分
+        def currentTime = java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC).toString()
+        // 示例输出：2026-08-03T10:00:00Z（Z 表示 UTC，ZonedDateTime.parse 完全支持）
+
+        // 正则：查找 ZonedDateTime.parse("...") 并替换为新的时间
+        def pattern = ~/ZonedDateTime\.parse\("[^"]*"\)/
+        if (content.find(pattern)) {
+            content = content.replaceAll(pattern, "ZonedDateTime.parse(\"${currentTime}\")")
+            targetFile.text = content
+            logger.lifecycle("✅ 已更新 BUILD_TIME 为: ${currentTime}")
+        } else {
+            logger.warn("⚠️ 未找到 ZonedDateTime.parse(\"...\") 模式，请检查 ModMetadata.java 格式")
+        }
+    }
+}
+
+// 让编译任务依赖于更新任务
+tasks.named('compileJava').configure {
+    dependsOn 'updateBuildTime'
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.compilerArgs += [

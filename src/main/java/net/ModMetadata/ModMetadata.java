@@ -26,12 +26,12 @@ public final class ModMetadata {
     private static final String NAME = "26.2 [Permanent]";
     private static final int WORLD_VERSION = 4903;
     private static final String SERIES_ID = "main";
-    public static final int PROTOCOL_VERSION = 776;   // ← 改为 public
+    public static final int PROTOCOL_VERSION = 776; // ← 改为 public
     private static final int RESOURCE_MAJOR = 88;
     private static final int RESOURCE_MINOR = 0;
     private static final int DATA_MAJOR = 107;
     private static final int DATA_MINOR = 1;
-    private static final Date BUILD_TIME = Date.from(ZonedDateTime.parse("2026-06-16T12:01:27+00:00").toInstant());
+    private static final Date BUILD_TIME = Date.from(ZonedDateTime.parse("2026-08-03T10:00:00Z").toInstant());
     private static final boolean STABLE = true;
 
     // ==================== MCRe Mod 扩展字段（硬编码） ====================
@@ -43,7 +43,11 @@ public final class ModMetadata {
     private static final Map<String, String> DEPENDENCIES = Map.of("minecraft", "26.2");
     private static final boolean IS_64BIT_READY = false;
 
-    // ==================== 对外暴露的 WorldVersion 单例 ====================
+    // ==================== 获取构建时间（供外部调用） ====================
+    public static Date getBuildTime() {
+        return BUILD_TIME;
+    }
+    
     // ==================== 对外暴露的 WorldVersion 单例 ====================
     public static final WorldVersion VERSION = new WorldVersion() {
         @Override
