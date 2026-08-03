@@ -45,7 +45,7 @@ public class DetectedVersion {
     }
 
     public static WorldVersion tryDetectVersion() {
-        LOGGER.info("🚀 MCRe ModMetadata loaded: {}", ModMetadata.WORLD_VERSION.id());
-        return ModMetadata.WORLD_VERSION;
+        LOGGER.info("🚀 MCRe ModMetadata loaded: {}", ModMetadata.VERSION.id());
+        return ModMetadata.VERSION;
     }
 }

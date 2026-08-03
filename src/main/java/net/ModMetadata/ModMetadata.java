@@ -13,9 +13,8 @@ import java.util.Map;
 
 /**
  * 🔥 MCRe 硬编码版本元数据 —— 完全替代 version.json
- * <p>
- * 所有数据均在类中以常量形式定义，无需读取任何外部文件。
- * 直接使用 {@link #WORLD_VERSION} 即可获得完整的 WorldVersion 实例。
+ *
+ * <p>所有数据均在类中以常量形式定义，无需读取任何外部文件。 直接使用 {@link #WORLD_VERSION} 即可获得完整的 WorldVersion 实例。
  *
  * @author MCRe Ultimate Scaler
  * @since 2026-08-03
@@ -32,8 +31,7 @@ public final class ModMetadata {
     private static final int RESOURCE_MINOR = 0;
     private static final int DATA_MAJOR = 107;
     private static final int DATA_MINOR = 1;
-    private static final Date BUILD_TIME =
-            Date.from(ZonedDateTime.parse("2026-06-16T12:01:27+00:00").toInstant());
+    private static final Date BUILD_TIME = Date.from(ZonedDateTime.parse("2026-06-16T12:01:27+00:00").toInstant());
     private static final boolean STABLE = true;
 
     // ==================== MCRe Mod 扩展字段（硬编码） ====================
@@ -41,17 +39,19 @@ public final class ModMetadata {
     private static final String MOD_VERSION = "1.0.0 - 32bit";
     private static final String DISPLAY_NAME = "MCRe NoiseFarlandsJava";
     private static final List<String> AUTHORS = List.of("MFSCelebrate_", "More.....");
-    private static final String DESCRIPTION =
-            "A Farlands Mod, designed to fully overcome the limitations of 32-bit and 64-bit integers.";
+    private static final String DESCRIPTION = "A Farlands Mod, designed to fully overcome the limitations of 32-bit and 64-bit integers.";
     private static final Map<String, String> DEPENDENCIES = Map.of("minecraft", "26.2");
     private static final boolean IS_64BIT_READY = false;
 
     // ==================== 对外暴露的 WorldVersion 单例 ====================
-    public static final WorldVersion WORLD_VERSION = new WorldVersion() {
+    // ==================== 对外暴露的 WorldVersion 单例 ====================
+    public static final WorldVersion VERSION = new WorldVersion() {
         @Override
         public DataVersion dataVersion() {
-            return new DataVersion(WORLD_VERSION, SERIES_ID);
+            return new DataVersion(WORLD_VERSION, SERIES_ID); // 这里还是用 int 常量
         }
+
+        // ... 其他方法保持不变
 
         @Override
         public String id() {
@@ -94,13 +94,33 @@ public final class ModMetadata {
     };
 
     // ==================== 可选：获取 Mod 元数据（非 WorldVersion 部分） ====================
-    public static String getModId() { return MOD_ID; }
-    public static String getModVersion() { return MOD_VERSION; }
-    public static String getDisplayName() { return DISPLAY_NAME; }
-    public static List<String> getAuthors() { return AUTHORS; }
-    public static String getDescription() { return DESCRIPTION; }
-    public static Map<String, String> getDependencies() { return DEPENDENCIES; }
-    public static boolean is64BitReady() { return IS_64BIT_READY; }
+    public static String getModId() {
+        return MOD_ID;
+    }
+
+    public static String getModVersion() {
+        return MOD_VERSION;
+    }
+
+    public static String getDisplayName() {
+        return DISPLAY_NAME;
+    }
+
+    public static List<String> getAuthors() {
+        return AUTHORS;
+    }
+
+    public static String getDescription() {
+        return DESCRIPTION;
+    }
+
+    public static Map<String, String> getDependencies() {
+        return DEPENDENCIES;
+    }
+
+    public static boolean is64BitReady() {
+        return IS_64BIT_READY;
+    }
 
     // 私有构造，防止实例化
     private ModMetadata() {}
