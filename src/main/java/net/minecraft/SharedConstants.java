@@ -8,6 +8,8 @@ import net.minecraft.commands.BrigadierExceptions;
 import net.minecraft.world.level.ChunkPos;
 import org.jspecify.annotations.Nullable;
 
+import net.ModMetadata.ModMetadata;
+
 @SuppressForbidden(reason = "System.out needed before bootstrap")
 public class SharedConstants {
     @Deprecated
