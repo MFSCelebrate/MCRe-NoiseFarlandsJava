@@ -46,6 +46,7 @@ import net.ModMetadata.ModMetadata;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import org.jspecify.annotations.Nullable;
+import java.util.Date;
 import org.slf4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
@@ -349,7 +350,7 @@ public class TitleScreen extends Screen {
                 buildTimeString,
                 2,
                 this.height - 10,
-                ARGB.fromRGBA(1.0f, 1.0f, 0.333f, widgetFade) // ← 金黄色 + 淡入淡出透明度
+                ARGB.colorFromFloat(widgetFade, 1.0f, 1.0f, 0.333f) // ← 使用 colorFromFloat
         );
         if (this.realmsNotificationsEnabled() && widgetFade >= 1.0F) {
             this.realmsNotificationsScreen.extractRenderState(graphics, mouseX, mouseY, a);
