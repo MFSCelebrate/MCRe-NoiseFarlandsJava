@@ -20,9 +20,11 @@ import java.util.UUID;
 public class DetectedVersion {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    // ❌ 删除 BUILT_IN 字段，不再需要
+    // ✅ 恢复 BUILT_IN，指向 ModMetadata 的版本，避免循环依赖
+    public static final WorldVersion BUILT_IN = ModMetadata.VERSION;
 
-    // ❌ 删除 createBuiltIn 方法（或保留但不再调用，建议删除）
+    // ❌ 删除 createBuiltIn 方法（已不再使用）
+    // ❌ 删除 createBuiltIn 的重载
 
     private static WorldVersion createFromJson(final JsonObject root) {
         JsonObject packVersion = GsonHelper.getAsJsonObject(root, "pack_version");

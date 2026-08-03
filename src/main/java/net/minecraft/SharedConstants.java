@@ -204,7 +204,7 @@ public class SharedConstants {
     }
 
     public static int getProtocolVersion() {
-        return getCurrentVersion().protocolVersion();
+        return ModMetadata.PROTOCOL_VERSION;
     }
 
     public static boolean debugVoidTerrain(final ChunkPos pos) {

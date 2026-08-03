@@ -26,7 +26,7 @@ public final class ModMetadata {
     private static final String NAME = "26.2 [Permanent]";
     private static final int WORLD_VERSION = 4903;
     private static final String SERIES_ID = "main";
-    private static final int PROTOCOL_VERSION = 776;
+    public static final int PROTOCOL_VERSION = 776;   // ← 改为 public
     private static final int RESOURCE_MAJOR = 88;
     private static final int RESOURCE_MINOR = 0;
     private static final int DATA_MAJOR = 107;
