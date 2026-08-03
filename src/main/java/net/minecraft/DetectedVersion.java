@@ -3,6 +3,12 @@ package net.minecraft;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.mojang.logging.LogUtils;
+import net.ModMetadata.ModMetadata;
+import net.minecraft.server.packs.metadata.pack.PackFormat;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.world.level.storage.DataVersion;
+import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -10,37 +16,25 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.UUID;
-import net.minecraft.server.packs.metadata.pack.PackFormat;
-import net.minecraft.util.GsonHelper;
-import net.minecraft.world.level.storage.DataVersion;
-import net.ModMetadata.ModMetadata;
-import org.slf4j.Logger;
 
 public class DetectedVersion {
     private static final Logger LOGGER = LogUtils.getLogger();
-    public static final WorldVersion BUILT_IN = createBuiltIn(UUID.randomUUID().toString().replaceAll("-", ""), "Development Version");
 
-    public static WorldVersion createBuiltIn(final String id, final String name) {
-        return createBuiltIn(id, name, true);
-    }
+    // ❌ 删除 BUILT_IN 字段，不再需要
 
-    public static WorldVersion createBuiltIn(final String id, final String name, final boolean stable) {
-        return new WorldVersion.Simple(
-        id, name, new DataVersion(4903, "main"), SharedConstants.getProtocolVersion(), PackFormat.of(88, 0), PackFormat.of(107, 1), new Date(), stable
-        );
-    }
+    // ❌ 删除 createBuiltIn 方法（或保留但不再调用，建议删除）
 
     private static WorldVersion createFromJson(final JsonObject root) {
         JsonObject packVersion = GsonHelper.getAsJsonObject(root, "pack_version");
         return new WorldVersion.Simple(
-        GsonHelper.getAsString(root, "id"),
-        GsonHelper.getAsString(root, "name"),
-        new DataVersion(GsonHelper.getAsInt(root, "world_version"), GsonHelper.getAsString(root, "series_id", "main")),
-        GsonHelper.getAsInt(root, "protocol_version"),
-        PackFormat.of(GsonHelper.getAsInt(packVersion, "resource_major"), GsonHelper.getAsInt(packVersion, "resource_minor")),
-        PackFormat.of(GsonHelper.getAsInt(packVersion, "data_major"), GsonHelper.getAsInt(packVersion, "data_minor")),
-        Date.from(ZonedDateTime.parse(GsonHelper.getAsString(root, "build_time")).toInstant()),
-        GsonHelper.getAsBoolean(root, "stable")
+                GsonHelper.getAsString(root, "id"),
+                GsonHelper.getAsString(root, "name"),
+                new DataVersion(GsonHelper.getAsInt(root, "world_version"), GsonHelper.getAsString(root, "series_id", "main")),
+                GsonHelper.getAsInt(root, "protocol_version"),
+                PackFormat.of(GsonHelper.getAsInt(packVersion, "resource_major"), GsonHelper.getAsInt(packVersion, "resource_minor")),
+                PackFormat.of(GsonHelper.getAsInt(packVersion, "data_major"), GsonHelper.getAsInt(packVersion, "data_minor")),
+                Date.from(ZonedDateTime.parse(GsonHelper.getAsString(root, "build_time")).toInstant()),
+                GsonHelper.getAsBoolean(root, "stable")
         );
     }
 

@@ -252,6 +252,9 @@ jobs:
 
             ### 🎲 构建产物
             由于该改版目前主要更改均在单一分支测试，极少时会在其他分支进行测试，所以每次的构建产物均会上传到这里来 ~~(懒得进行分离发布了)~~
+            
+            ### 🚅 快速下载
+            可能 Github 原生的下载速度过慢，需要快速下载的请点击 [这里](https://v6.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.jar)
           files: |
             artifacts/26.2-Permanent.jar
 
