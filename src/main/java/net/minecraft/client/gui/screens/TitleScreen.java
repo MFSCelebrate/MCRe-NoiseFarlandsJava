@@ -342,7 +342,7 @@ public class TitleScreen extends Screen {
         String buildTimeString = "Build Time: Unknown";
         if (buildTime != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            sdf.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai")); // 或者用 "GMT+8"
             buildTimeString = "Build Time: " + sdf.format(buildTime);
         }
         graphics.text(

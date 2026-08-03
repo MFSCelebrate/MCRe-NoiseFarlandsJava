@@ -144,8 +144,6 @@ sourceSets {
         }
     }
 }
-import java.time.ZoneId
-import java.time.ZonedDateTime
 
 // ===== 修改：在编译前自动更新 ModMetadata 的 BUILD_TIME =====
 tasks.register('updateBuildTime') {
@@ -162,7 +160,8 @@ tasks.register('updateBuildTime') {
 
         // 匹配 ZonedDateTime.parse("任意内容") 
         // 注意：原格式是 "2026-06-16T12:01:27+00:00"，我们用正则替换引号内的部分
-        def currentTime = ZonedDateTime.now(ZoneId.systemDefault()).toString()
+
+        def currentTime = java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC).toString()
         // 示例输出：2026-08-03T10:00:00Z（Z 表示 UTC，ZonedDateTime.parse 完全支持）
 
         // 正则：查找 ZonedDateTime.parse("...") 并替换为新的时间
