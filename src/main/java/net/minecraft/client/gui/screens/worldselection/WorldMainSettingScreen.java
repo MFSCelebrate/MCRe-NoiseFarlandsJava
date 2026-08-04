@@ -30,8 +30,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * 🔥 MCRe NoiseFarlands —— 世界主要设置界面
  *
- * <p>将 FarLandsTraveler 模组的所有配置项移植到世界创建流程中，
- * 允许玩家在创建世界时直接配置边境之地相关参数。</p>
+ * <p>将 FarLandsTraveler 模组的所有配置项移植到世界创建流程中， 允许玩家在创建世界时直接配置边境之地相关参数。
  *
  * @author MCRe Ultimate Scaler
  * @since 2026-08-04
@@ -73,8 +72,8 @@ public class WorldMainSettingScreen extends Screen {
         header.defaultCellSetting().alignHorizontallyCenter();
         header.addChild(new StringWidget(this.title.copy().withStyle(ChatFormatting.BOLD), this.font));
         header.addChild(new StringWidget(
-            Component.literal("§7配置边境之地相关参数"),
-            this.font
+        Component.literal("§7配置边境之地相关参数"),
+        this.font
         ));
         this.layout.addToHeader(header);
 
@@ -87,12 +86,12 @@ public class WorldMainSettingScreen extends Screen {
         // 底部按钮
         LinearLayout footer = this.layout.addToFooter(LinearLayout.horizontal().spacing(8));
         footer.addChild(Button.builder(
-            Component.literal("完成"),
-            button -> this.onDone()
+                Component.literal("完成"),
+                button -> this.onDone()
         ).build());
         footer.addChild(Button.builder(
-            Component.literal("取消"),
-            button -> this.onClose()
+                Component.literal("取消"),
+                button -> this.onClose()
         ).build());
 
         // 统一注册所有组件（照搬原版 ExperimentsScreen/DialogScreen 模式）
@@ -107,14 +106,14 @@ public class WorldMainSettingScreen extends Screen {
 
         // ========== 第一组：边境之地核心设置 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-            Component.literal("§6§l边境之地设置")
+                Component.literal("§6§l边境之地设置")
         ));
 
         // 1. 边境之地距离（滑块）
         this.scrollContent.addChild(new FarLandsDistanceSlider(CONTENT_WIDTH - 20), s -> s.paddingHorizontal(10));
         this.scrollContent.addChild(new StringWidget(
-            Component.literal("§7边境之地生成位置与世界原点的距离\n§7该设置用于各类机制的判定，不影响地形生成"),
-            this.font
+        Component.literal("§7边境之地生成位置与世界原点的距离\n§7该设置用于各类机制的判定，不影响地形生成"),
+        this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20));
 
         // 2. 条纹之地距离（滑块）
@@ -122,46 +121,46 @@ public class WorldMainSettingScreen extends Screen {
 
         // 3. 启用天空网格（开关）
         SwitchGrid.Builder skyGridBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
-            .withRowSpacing(4)
-            .withInfoUnderneath(2, true);
+                .withRowSpacing(4)
+                .withInfoUnderneath(2, true);
         skyGridBuilder.addSwitch(
-            Component.literal("启用天空网格"),
-            () -> this.configData.enableSkyGrid,
-            val -> this.configData.enableSkyGrid = val
+                Component.literal("启用天空网格"),
+                () -> this.configData.enableSkyGrid,
+                val -> this.configData.enableSkyGrid = val
         ).withInfo(Component.literal("使边缘之地生成天空网格而不是天空之桥"));
         skyGridBuilder.addSwitch(
-            Component.literal("强制生成天空网格"),
-            () -> this.configData.forceSkyGrid,
-            val -> this.configData.forceSkyGrid = val
+                Component.literal("强制生成天空网格"),
+                () -> this.configData.forceSkyGrid,
+                val -> this.configData.forceSkyGrid = val
         ).withInfo(Component.literal("即使插值前的密度值被限制，也强制生成天空网格"));
         this.scrollContent.addChild(skyGridBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第二组：世界边界设置 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-            Component.literal("§6§l世界边界设置")
+                Component.literal("§6§l世界边界设置")
         ));
 
         SwitchGrid.Builder borderBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20).withRowSpacing(4);
         borderBuilder.addSwitch(
-            Component.literal("移除世界边界"),
-            () -> this.configData.removeWorldBorder,
-            val -> this.configData.removeWorldBorder = val
+                Component.literal("移除世界边界"),
+                () -> this.configData.removeWorldBorder,
+                val -> this.configData.removeWorldBorder = val
         ).withInfo(Component.literal("移除世界边界的蓝色力场"));
         borderBuilder.addSwitch(
-            Component.literal("移除世界界限"),
-            () -> this.configData.removeWorldBoundary,
-            val -> this.configData.removeWorldBoundary = val
+                Component.literal("移除世界界限"),
+                () -> this.configData.removeWorldBoundary,
+                val -> this.configData.removeWorldBoundary = val
         ).withInfo(Component.literal("移除x,z坐标30000000处的空气墙\n§c[警告]离开世界界限太远时将造成崩溃！！！"));
         borderBuilder.addSwitch(
-            Component.literal("移除坐标限制"),
-            () -> this.configData.removeCoordinateLimits,
-            val -> this.configData.removeCoordinateLimits = val
+                Component.literal("移除坐标限制"),
+                () -> this.configData.removeCoordinateLimits,
+                val -> this.configData.removeCoordinateLimits = val
         ).withInfo(Component.literal("移除一切与坐标有关的限制，例如tp指令的坐标限制"));
         this.scrollContent.addChild(borderBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第三组：精度系统 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-            Component.literal("§b§l精度系统")
+                Component.literal("§b§l精度系统")
         ));
 
         CycleButton<String> precisionModeButton = CycleButton.builder(
@@ -172,88 +171,88 @@ public class WorldMainSettingScreen extends Screen {
                     default -> Component.literal(mode);
                 },
                 "32bit"
-            )
-            .withValues("32bit", "64bit", "256bit")
-            .create(0, 0, CONTENT_WIDTH - 20, 20,
-                Component.literal("精度模式"),
-                (button, val) -> this.configData.precisionMode = val
-            );
+        )
+                .withValues("32bit", "64bit", "256bit")
+                .create(0, 0, CONTENT_WIDTH - 20, 20,
+                        Component.literal("精度模式"),
+                        (button, val) -> this.configData.precisionMode = val
+                );
         this.scrollContent.addChild(precisionModeButton, s -> s.paddingHorizontal(10));
         this.scrollContent.addChild(new StringWidget(
-            Component.literal("§7选择坐标精度等级：32位（经典边境之地）、64位（中期改造）或256位（终极形态）"),
-            this.font
+        Component.literal("§7选择坐标精度等级：32位（经典边境之地）、64位（中期改造）或256位（终极形态）"),
+        this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20).paddingBottom(4));
 
         // ========== 第四组：假区块设置 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-            Component.literal("§d§l假区块设置")
+                Component.literal("§d§l假区块设置")
         ));
 
         SwitchGrid.Builder fcBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
-            .withRowSpacing(3)
-            .withInfoUnderneath(2, false);
+                .withRowSpacing(3)
+                .withInfoUnderneath(2, false);
         fcBuilder.addSwitch(
-            Component.literal("禁用假区块中的方块碰撞"),
-            () -> this.configData.fcDisableBlockCollision,
-            val -> this.configData.fcDisableBlockCollision = val
+                Component.literal("禁用假区块中的方块碰撞"),
+                () -> this.configData.fcDisableBlockCollision,
+                val -> this.configData.fcDisableBlockCollision = val
         ).withInfo(Component.literal("禁用假区块中的方块碰撞\n除非实体免疫假区块"));
         fcBuilder.addSwitch(
-            Component.literal("禁用假区块中的方块效果"),
-            () -> this.configData.fcDisableBlockEffect,
-            val -> this.configData.fcDisableBlockEffect = val
+                Component.literal("禁用假区块中的方块效果"),
+                () -> this.configData.fcDisableBlockEffect,
+                val -> this.configData.fcDisableBlockEffect = val
         ).withInfo(Component.literal("禁用假区块中的方块对实体的效果（如火焰、仙人掌的伤害）\n除非实体免疫假区块"));
         fcBuilder.addSwitch(
-            Component.literal("禁用假区块中的流体碰撞"),
-            () -> this.configData.fcDisableFluidCollision,
-            val -> this.configData.fcDisableFluidCollision = val
+                Component.literal("禁用假区块中的流体碰撞"),
+                () -> this.configData.fcDisableFluidCollision,
+                val -> this.configData.fcDisableFluidCollision = val
         ).withInfo(Component.literal("禁用假区块中的流体碰撞\n除非实体免疫假区块"));
         fcBuilder.addSwitch(
-            Component.literal("使流体无法流过假区块边界"),
-            () -> this.configData.fcDisableFluidFlowing,
-            val -> this.configData.fcDisableFluidFlowing = val
+                Component.literal("使流体无法流过假区块边界"),
+                () -> this.configData.fcDisableFluidFlowing,
+                val -> this.configData.fcDisableFluidFlowing = val
         ).withInfo(Component.literal("使流体无法流过假区块边界"));
         fcBuilder.addSwitch(
-            Component.literal("使实体无法与假区块中的方块交互"),
-            () -> this.configData.fcDisableBlockInteraction,
-            val -> this.configData.fcDisableBlockInteraction = val
+                Component.literal("使实体无法与假区块中的方块交互"),
+                () -> this.configData.fcDisableBlockInteraction,
+                val -> this.configData.fcDisableBlockInteraction = val
         ).withInfo(Component.literal("使实体（玩家、末影人等）无法与假区块中的方块交互\n除非他们有合适的工具"));
         fcBuilder.addSwitch(
-            Component.literal("使假区块中的方块不受爆炸影响"),
-            () -> this.configData.fcDisableExplosionEffect,
-            val -> this.configData.fcDisableExplosionEffect = val
+                Component.literal("使假区块中的方块不受爆炸影响"),
+                () -> this.configData.fcDisableExplosionEffect,
+                val -> this.configData.fcDisableExplosionEffect = val
         ).withInfo(Component.literal("使假区块中的方块免疫爆炸，且无法阻挡爆炸射线"));
         fcBuilder.addSwitch(
-            Component.literal("使假区块中的梯子无法攀爬"),
-            () -> this.configData.fcDisableLadderBehavior,
-            val -> this.configData.fcDisableLadderBehavior = val
+                Component.literal("使假区块中的梯子无法攀爬"),
+                () -> this.configData.fcDisableLadderBehavior,
+                val -> this.configData.fcDisableLadderBehavior = val
         ).withInfo(Component.literal("使假区块中的梯子类方块无法攀爬"));
         fcBuilder.addSwitch(
-            Component.literal("使假区块中的活塞无法正常工作（实验性）"),
-            () -> this.configData.fcDisablePistonBehavior,
-            val -> this.configData.fcDisablePistonBehavior = val
+                Component.literal("使假区块中的活塞无法正常工作（实验性）"),
+                () -> this.configData.fcDisablePistonBehavior,
+                val -> this.configData.fcDisablePistonBehavior = val
         ).withInfo(Component.literal("使假区块中的活塞无法正常工作\n§e该功能目前无法正常工作"));
         this.scrollContent.addChild(fcBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第五组：结构生成 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-            Component.literal("§a§l结构生成设置")
+                Component.literal("§a§l结构生成设置")
         ));
 
         SwitchGrid.Builder structBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20).withRowSpacing(4);
         structBuilder.addSwitch(
-            Component.literal("生成岩石之令实验室"),
-            () -> this.configData.generateOotsLaboratory,
-            val -> this.configData.generateOotsLaboratory = val
+                Component.literal("生成岩石之令实验室"),
+                () -> this.configData.generateOotsLaboratory,
+                val -> this.configData.generateOotsLaboratory = val
         ).withInfo(Component.literal("启用岩石之令实验室的生成"));
         this.scrollContent.addChild(structBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 底部总结 ==========
         this.scrollContent.addChild(new MultiLineTextWidget(
-            Component.literal(
+        Component.literal(
                 "§7当前配置：边境之地距离 §e" + String.format("%,d", this.configData.farLandsDistance)
-                + " §r§7| 精度模式 §b" + this.configData.precisionMode
-            ),
-            this.font
+                        + " §r§7| 精度模式 §b" + this.configData.precisionMode
+        ),
+        this.font
         ).setMaxWidth(CONTENT_WIDTH - 20).setCentered(true), s -> s.padding(10));
     }
 
@@ -270,14 +269,46 @@ public class WorldMainSettingScreen extends Screen {
     }
 
     // ==================== 渲染 ====================
-
     @Override
     public void extractRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
         // 黑色背景
         graphics.fill(0, 0, this.width, this.height, 0xFF000000);
 
-        // 渲染所有已注册的 renderable（HeaderAndFooterLayout 通过 visitWidgets 注册了全部组件）
+        // 渲染所有已注册的 renderable（标题、滚动面板、按钮等）
         super.extractRenderState(graphics, mouseX, mouseY, a);
+
+        // 顶部分割线：标题和滚动面板之间
+        if (this.scrollArea != null) {
+            int headerBottom = this.layout.getHeaderHeight();
+            int separatorY = headerBottom;
+            graphics.blit(
+                    RenderPipelines.GUI_TEXTURED,
+                    Screen.HEADER_SEPARATOR,
+                    0,
+                    separatorY,
+                    0.0F,
+                    0.0F,
+                    this.width,
+                    2,
+                    32,
+                    2
+            );
+
+            // 底部分割线：滚动面板和按钮之间
+            int footerTop = this.height - this.layout.getFooterHeight();
+            graphics.blit(
+                    RenderPipelines.GUI_TEXTURED,
+                    Screen.FOOTER_SEPARATOR,
+                    0,
+                    footerTop - 2,
+                    0.0F,
+                    0.0F,
+                    this.width,
+                    2,
+                    32,
+                    2
+            );
+        }
     }
 
     // ==================== 辅助方法 ====================
@@ -333,19 +364,19 @@ public class WorldMainSettingScreen extends Screen {
     private class FarLandsDistanceSlider extends AbstractSliderButton {
         public FarLandsDistanceSlider(final int width) {
             super(0, 0, width, 20, Component.empty(),
-                  (double)(configData.farLandsDistance - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN));
+            (double) (configData.farLandsDistance - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN));
             this.updateMessage();
         }
 
         @Override
         protected void updateMessage() {
             this.setMessage(Component.literal(
-                "边境之地距离: §e" + String.format("%,d", configData.farLandsDistance)));
+                    "边境之地距离: §e" + String.format("%,d", configData.farLandsDistance)));
         }
 
         @Override
         protected void applyValue() {
-            configData.farLandsDistance = SLIDER_MIN + (int)(this.value * (SLIDER_MAX - SLIDER_MIN));
+            configData.farLandsDistance = SLIDER_MIN + (int) (this.value * (SLIDER_MAX - SLIDER_MIN));
             this.updateMessage();
         }
     }
@@ -356,9 +387,9 @@ public class WorldMainSettingScreen extends Screen {
     private class StripeLandsSlider extends AbstractSliderButton {
         public StripeLandsSlider(final int width) {
             super(0, 0, width, 20, Component.empty(),
-                  configData.stripeLandsDistance == -1
-                      ? 0.0
-                      : (double) configData.stripeLandsDistance / STRIPE_MAX);
+            configData.stripeLandsDistance == -1
+                    ? 0.0
+                    : (double) configData.stripeLandsDistance / STRIPE_MAX);
             this.updateMessage();
         }
 
@@ -378,7 +409,7 @@ public class WorldMainSettingScreen extends Screen {
             if (this.value < 0.01) {
                 configData.stripeLandsDistance = -1;
             } else {
-                configData.stripeLandsDistance = (int)(this.value * STRIPE_MAX);
+                configData.stripeLandsDistance = (int) (this.value * STRIPE_MAX);
             }
             this.updateMessage();
         }
