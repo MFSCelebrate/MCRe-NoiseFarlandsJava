@@ -10,8 +10,10 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
+import net.minecraft.client.gui.components.ScrollableLayout;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
+import net.minecraft.client.gui.layouts.Layout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
@@ -36,15 +38,19 @@ public class WorldMainSettingScreen extends Screen {
     private static final int CONTENT_WIDTH = 320;
     private static final int SLIDER_MIN = 10000000;
     private static final int SLIDER_MAX = 33554432;
-    private static final int SLIDER_DEFAULT = 12550824;
     private static final int STRIPE_MAX = 33554432;
+    private static final int SCROLL_AREA_PADDING = 5;
 
-    private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this, 40, 50);
     private final Screen parent;
     private final WorldCreationContext settings;
 
     // ==================== 配置数据 ====================
     private final FarLandsConfigData configData;
+
+    // ==================== 布局组件 ====================
+    private final LinearLayout rootLayout = LinearLayout.vertical();
+    private ScrollableLayout scrollArea;
+    private final LinearLayout scrollContent = LinearLayout.vertical().spacing(6);
 
     // ==================== 构造函数 ====================
     public WorldMainSettingScreen(final Screen parent, final WorldCreationContext settings) {
@@ -57,31 +63,69 @@ public class WorldMainSettingScreen extends Screen {
     // ==================== 初始化 ====================
     @Override
     protected void init() {
-        // --- 头部标题 ---
-        this.layout.addTitleHeader(this.title, this.font);
+        this.rootLayout.spacing(8);
 
-        // --- 主体内容 ---
-        LinearLayout content = this.layout.addToContents(LinearLayout.vertical().spacing(6));
-        content.defaultCellSetting().alignHorizontallyCenter();
+        // --- 1. 标题（不滚动） ---
+        LinearLayout headerLine = LinearLayout.horizontal();
+        headerLine.defaultCellSetting().alignHorizontallyCenter();
+        StringWidget titleWidget = new StringWidget(this.title.copy().withStyle(ChatFormatting.BOLD), this.font);
+        headerLine.addChild(titleWidget);
+        this.rootLayout.addChild(headerLine);
+        titleWidget.visitWidgets(w -> this.addRenderableWidget(w));
+
+        // --- 2. 提示文本（不滚动） ---
+        StringWidget hintWidget = new StringWidget(
+            Component.literal("§7配置边境之地相关参数").withStyle(s -> s.withColor(-6250336)),
+            this.font
+        );
+        this.rootLayout.addChild(hintWidget);
+        hintWidget.visitWidgets(w -> this.addRenderableWidget(w));
+
+        // --- 3. 滚动区域（内容） ---
+        this.buildScrollContent();
+        this.scrollArea = new ScrollableLayout(this.minecraft, this.scrollContent, 200);
+        this.scrollArea.setMinWidth(CONTENT_WIDTH);
+        this.rootLayout.addChild(this.scrollArea);
+        this.scrollArea.visitWidgets(w -> this.addRenderableWidget(w));
+
+        // --- 4. 底部按钮（不滚动） ---
+        LinearLayout footer = LinearLayout.horizontal().spacing(8);
+        footer.defaultCellSetting().alignHorizontallyCenter();
+        footer.addChild(Button.builder(
+            Component.literal("完成"),
+            button -> this.onDone()
+        ).build());
+        footer.addChild(Button.builder(
+            Component.literal("取消"),
+            button -> this.onClose()
+        ).build());
+        this.rootLayout.addChild(footer);
+        footer.visitWidgets(w -> this.addRenderableWidget(w));
+
+        // --- 布局 ---
+        this.rootLayout.arrangeElements();
+        this.repositionElements();
+    }
+
+    // ==================== 构建滚动内容 ====================
+
+    private void buildScrollContent() {
+        this.scrollContent.defaultCellSetting().alignHorizontallyCenter();
 
         // ========== 第一组：边境之地核心设置 ==========
-        content.addChild(this.createSectionHeader(
+        this.scrollContent.addChild(this.createSectionHeader(
             Component.literal("§6§l边境之地设置")
         ));
 
         // 1. 边境之地距离（滑块）
-        content.addChild(new FarLandsDistanceSlider(
-            CONTENT_WIDTH - 20
-        ), s -> s.paddingHorizontal(10));
-        content.addChild(new StringWidget(
+        this.scrollContent.addChild(new FarLandsDistanceSlider(CONTENT_WIDTH - 20), s -> s.paddingHorizontal(10));
+        this.scrollContent.addChild(new StringWidget(
             Component.literal("§7边境之地生成位置与世界原点的距离\n§7该设置用于各类机制的判定，不影响地形生成"),
             this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20));
 
         // 2. 条纹之地距离（滑块）
-        content.addChild(new StripeLandsSlider(
-            CONTENT_WIDTH - 20
-        ), s -> s.paddingHorizontal(10));
+        this.scrollContent.addChild(new StripeLandsSlider(CONTENT_WIDTH - 20), s -> s.paddingHorizontal(10));
 
         // 3. 启用天空网格（开关）
         SwitchGrid.Builder skyGridBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
@@ -97,15 +141,14 @@ public class WorldMainSettingScreen extends Screen {
             () -> this.configData.forceSkyGrid,
             val -> this.configData.forceSkyGrid = val
         ).withInfo(Component.literal("即使插值前的密度值被限制，也强制生成天空网格"));
-        content.addChild(skyGridBuilder.build().layout(), s -> s.paddingHorizontal(10));
+        this.scrollContent.addChild(skyGridBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第二组：世界边界设置 ==========
-        content.addChild(this.createSectionHeader(
+        this.scrollContent.addChild(this.createSectionHeader(
             Component.literal("§6§l世界边界设置")
         ));
 
-        SwitchGrid.Builder borderBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
-            .withRowSpacing(4);
+        SwitchGrid.Builder borderBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20).withRowSpacing(4);
         borderBuilder.addSwitch(
             Component.literal("移除世界边界"),
             () -> this.configData.removeWorldBorder,
@@ -121,10 +164,10 @@ public class WorldMainSettingScreen extends Screen {
             () -> this.configData.removeCoordinateLimits,
             val -> this.configData.removeCoordinateLimits = val
         ).withInfo(Component.literal("移除一切与坐标有关的限制，例如tp指令的坐标限制"));
-        content.addChild(borderBuilder.build().layout(), s -> s.paddingHorizontal(10));
+        this.scrollContent.addChild(borderBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第三组：精度系统 ==========
-        content.addChild(this.createSectionHeader(
+        this.scrollContent.addChild(this.createSectionHeader(
             Component.literal("§b§l精度系统")
         ));
 
@@ -138,19 +181,18 @@ public class WorldMainSettingScreen extends Screen {
                 "32bit"
             )
             .withValues("32bit", "64bit", "256bit")
-            .create(
-                0, 0, CONTENT_WIDTH - 20, 20,
+            .create(0, 0, CONTENT_WIDTH - 20, 20,
                 Component.literal("精度模式"),
                 (button, val) -> this.configData.precisionMode = val
             );
-        content.addChild(precisionModeButton, s -> s.paddingHorizontal(10));
-        content.addChild(new StringWidget(
+        this.scrollContent.addChild(precisionModeButton, s -> s.paddingHorizontal(10));
+        this.scrollContent.addChild(new StringWidget(
             Component.literal("§7选择坐标精度等级：32位（经典边境之地）、64位（中期改造）或256位（终极形态）"),
             this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20).paddingBottom(4));
 
         // ========== 第四组：假区块设置 ==========
-        content.addChild(this.createSectionHeader(
+        this.scrollContent.addChild(this.createSectionHeader(
             Component.literal("§d§l假区块设置")
         ));
 
@@ -197,49 +239,65 @@ public class WorldMainSettingScreen extends Screen {
             () -> this.configData.fcDisablePistonBehavior,
             val -> this.configData.fcDisablePistonBehavior = val
         ).withInfo(Component.literal("使假区块中的活塞无法正常工作\n§e该功能目前无法正常工作"));
-        content.addChild(fcBuilder.build().layout(), s -> s.paddingHorizontal(10));
+        this.scrollContent.addChild(fcBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第五组：结构生成 ==========
-        content.addChild(this.createSectionHeader(
+        this.scrollContent.addChild(this.createSectionHeader(
             Component.literal("§a§l结构生成设置")
         ));
 
-        SwitchGrid.Builder structBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
-            .withRowSpacing(4);
+        SwitchGrid.Builder structBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20).withRowSpacing(4);
         structBuilder.addSwitch(
             Component.literal("生成岩石之令实验室"),
             () -> this.configData.generateOotsLaboratory,
             val -> this.configData.generateOotsLaboratory = val
         ).withInfo(Component.literal("启用岩石之令实验室的生成"));
-        content.addChild(structBuilder.build().layout(), s -> s.paddingHorizontal(10));
+        this.scrollContent.addChild(structBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 底部总结 ==========
-        content.addChild(new MultiLineTextWidget(
+        this.scrollContent.addChild(new MultiLineTextWidget(
             Component.literal(
                 "§7当前配置：边境之地距离 §e" + String.format("%,d", this.configData.farLandsDistance)
                 + " §r§7| 精度模式 §b" + this.configData.precisionMode
             ),
             this.font
         ).setMaxWidth(CONTENT_WIDTH - 20).setCentered(true), s -> s.padding(10));
+    }
 
-        // --- 底部按钮 ---
-        LinearLayout footer = this.layout.addToFooter(LinearLayout.horizontal().spacing(8));
-        footer.addChild(Button.builder(
-            Component.literal("完成"),
-            button -> this.onDone()
-        ).build());
-        footer.addChild(Button.builder(
-            Component.literal("取消"),
-            button -> this.onClose()
-        ).build());
+    // ==================== 布局调整 ====================
 
-        this.layout.visitWidgets(x$0 -> this.addRenderableWidget(x$0));
-        this.repositionElements();
+    @Override
+    public void repositionElements() {
+        // 标题在顶部
+        int topY = SCROLL_AREA_PADDING + 5;
+        int titleHeight = 9 + 4; // 标题 + 提示的高度
+
+        // 滚动区域从标题下方开始，到屏幕底部减去按钮高度和边距
+        int buttonAreaHeight = 20 + 8; // 按钮高度 + 间距
+        int scrollTop = topY + titleHeight + SCROLL_AREA_PADDING;
+        int scrollBottom = this.height - buttonAreaHeight - SCROLL_AREA_PADDING;
+        int scrollHeight = Math.max(100, scrollBottom - scrollTop);
+
+        this.scrollArea.setMaxHeight(scrollHeight);
+        this.scrollArea.setPosition(
+            (this.width - CONTENT_WIDTH) / 2,
+            scrollTop
+        );
+        this.scrollArea.setMinWidth(CONTENT_WIDTH);
+
+        // 按钮在底部居中
+        // 使用 rootLayout 重新布局
+        this.rootLayout.arrangeElements();
+        this.rootLayout.setPosition(0, 0);
     }
 
     @Override
-    protected void repositionElements() {
-        this.layout.arrangeElements();
+    public void extractRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
+        this.extractBackground(graphics, mouseX, mouseY, a);
+        // 渲染所有子组件
+        for (var widget : this.renderables) {
+            widget.extractRenderState(graphics, mouseX, mouseY, a);
+        }
     }
 
     // ==================== 辅助方法 ====================
@@ -264,7 +322,8 @@ public class WorldMainSettingScreen extends Screen {
 
     @Override
     public void extractBackground(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
-        this.extractMenuBackground(graphics);
+        // 黑色背景
+        graphics.fill(0, 0, this.width, this.height, 0xFF000000);
     }
 
     // ==================== 配置数据类 ====================
@@ -295,19 +354,19 @@ public class WorldMainSettingScreen extends Screen {
     private class FarLandsDistanceSlider extends AbstractSliderButton {
         public FarLandsDistanceSlider(final int width) {
             super(0, 0, width, 20, Component.empty(),
-                  (double)(WorldMainSettingScreen.this.configData.farLandsDistance - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN));
+                  (double)(configData.farLandsDistance - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN));
             this.updateMessage();
         }
 
         @Override
         protected void updateMessage() {
             this.setMessage(Component.literal(
-                "边境之地距离: §e" + String.format("%,d", WorldMainSettingScreen.this.configData.farLandsDistance)));
+                "边境之地距离: §e" + String.format("%,d", configData.farLandsDistance)));
         }
 
         @Override
         protected void applyValue() {
-            WorldMainSettingScreen.this.configData.farLandsDistance = SLIDER_MIN + (int)(this.value * (SLIDER_MAX - SLIDER_MIN));
+            configData.farLandsDistance = SLIDER_MIN + (int)(this.value * (SLIDER_MAX - SLIDER_MIN));
             this.updateMessage();
         }
     }
@@ -318,19 +377,19 @@ public class WorldMainSettingScreen extends Screen {
     private class StripeLandsSlider extends AbstractSliderButton {
         public StripeLandsSlider(final int width) {
             super(0, 0, width, 20, Component.empty(),
-                  WorldMainSettingScreen.this.configData.stripeLandsDistance == -1
+                  configData.stripeLandsDistance == -1
                       ? 0.0
-                      : (double) WorldMainSettingScreen.this.configData.stripeLandsDistance / STRIPE_MAX);
+                      : (double) configData.stripeLandsDistance / STRIPE_MAX);
             this.updateMessage();
         }
 
         @Override
         protected void updateMessage() {
             String text;
-            if (WorldMainSettingScreen.this.configData.stripeLandsDistance == -1) {
+            if (configData.stripeLandsDistance == -1) {
                 text = "条纹之地距离: §c禁用";
             } else {
-                text = "条纹之地距离: §e" + String.format("%,d", WorldMainSettingScreen.this.configData.stripeLandsDistance);
+                text = "条纹之地距离: §e" + String.format("%,d", configData.stripeLandsDistance);
             }
             this.setMessage(Component.literal(text));
         }
@@ -338,9 +397,9 @@ public class WorldMainSettingScreen extends Screen {
         @Override
         protected void applyValue() {
             if (this.value < 0.01) {
-                WorldMainSettingScreen.this.configData.stripeLandsDistance = -1;
+                configData.stripeLandsDistance = -1;
             } else {
-                WorldMainSettingScreen.this.configData.stripeLandsDistance = (int)(this.value * STRIPE_MAX);
+                configData.stripeLandsDistance = (int)(this.value * STRIPE_MAX);
             }
             this.updateMessage();
         }
