@@ -30,7 +30,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * 🔥 MCRe NoiseFarlands —— 世界主要设置界面
  *
- * <p>将 FarLandsTraveler 模组的所有配置项移植到世界创建流程中， 允许玩家在创建世界时直接配置边境之地相关参数。
+ * <p>将 FarLandsTraveler 模组的所有配置项移植到世界创建流程中，
+ * 允许玩家在创建世界时直接配置边境之地相关参数。<p>
  *
  * @author MCRe Ultimate Scaler
  * @since 2026-08-04
@@ -320,9 +321,13 @@ public class WorldMainSettingScreen extends Screen {
         return widget;
     }
 
-    // ==================== 回调 ====================
+   // ==================== onDone 回调 ====================
 
     private void onDone() {
+        // 保存当前配置到静态字段，供世界生成时读取
+        FarLandsConfigData.activeConfig = this.configData;
+
+        // 返回上级屏幕
         Minecraft.getInstance().gui.setScreen(this.parent);
     }
 
@@ -335,6 +340,8 @@ public class WorldMainSettingScreen extends Screen {
     public void extractBackground(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
         // 空实现，直接在 extractRenderState 中画黑色背景
     }
+
+    // ==================== 配置数据类 ====================
 
     // ==================== 配置数据类 ====================
 
@@ -356,6 +363,10 @@ public class WorldMainSettingScreen extends Screen {
         public boolean fcDisableLadderBehavior = true;
         public boolean fcDisablePistonBehavior = true;
         public boolean generateOotsLaboratory = true;
+
+        // ========== 静态字段：保存当前活动的配置 ==========
+        /** 当前活动的 FarLands 配置，由 WorldMainSettingScreen.onDone() 写入 */
+        public static FarLandsConfigData activeConfig = new FarLandsConfigData();
     }
 
     // ==================== 边境之地距离滑块 ====================

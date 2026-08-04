@@ -16,6 +16,7 @@ import java.util.stream.IntStream;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.PositionalRandomFactory;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 
 public class PerlinNoise {
@@ -185,7 +186,23 @@ public class PerlinNoise {
         return this.noiseLevels[this.noiseLevels.length - 1 - i];
     }
 
+    /**
+     * 🔥 MCRe NoiseFarlands —— 坐标折叠函数
+     *
+     * <p>根据精度模式决定行为：
+     * <ul>
+     *   <li>32bit：直接返回 x（不折叠，产生经典边境之地）</li>
+     *   <li>64bit：折叠到 ±16,777,216 范围内（消除 32-bit 溢出，保留 64-bit 精度）</li>
+     * </ul>
+     * </p>
+     */
     public static double wrap(final double x) {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        if (config != null && "64bit".equals(config.precisionMode)) {
+            // 64-bit 模式：折叠到 ±16,777,216 范围内
+            return x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7;
+        }
+        // 32-bit 模式（默认）：不折叠，直接返回 x
         return x;
     }
 
