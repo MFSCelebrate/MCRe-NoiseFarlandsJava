@@ -321,7 +321,7 @@ public class WorldMainSettingScreen extends Screen {
         }
 
         // 渲染滚动区域（特殊处理，确保在正确位置）
-        this.scrollArea.extractRenderState(graphics, mouseX, mouseY, a);
+        //this.scrollArea.extractRenderState(graphics, mouseX, mouseY, a);
     }
 
     // ==================== 辅助方法 ====================
