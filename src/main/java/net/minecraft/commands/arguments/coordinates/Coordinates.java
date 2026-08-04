@@ -19,4 +19,14 @@ public interface Coordinates {
     boolean isYRelative();
 
     boolean isZRelative();
+
+    // 在 Coordinates 或 Vec3Argument 中
+    private static double parseCoordinate(String input) {
+        return switch (input.toLowerCase(Locale.ROOT)) {
+            case "infinity", "+infinity" -> Double.POSITIVE_INFINITY;
+            case "-infinity" -> Double.NEGATIVE_INFINITY;
+            case "nan" -> Double.NaN;
+            default -> Double.parseDouble(input);
+        };
+    }
 }

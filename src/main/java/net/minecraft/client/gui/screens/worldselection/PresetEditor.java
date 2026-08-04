@@ -29,23 +29,27 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public interface PresetEditor {
     Map<Optional<ResourceKey<WorldPreset>>, PresetEditor> EDITORS = Map.of(
-        Optional.of(WorldPresets.FLAT),
-        (parent, settings) -> {
-            ChunkGenerator overworld = settings.selectedDimensions().overworld();
-            RegistryAccess registryAccess = settings.worldgenLoadContext();
-            HolderGetter<Biome> biomes = registryAccess.lookupOrThrow(Registries.BIOME);
-            HolderGetter<StructureSet> structureSets = registryAccess.lookupOrThrow(Registries.STRUCTURE_SET);
-            HolderGetter<PlacedFeature> placedFeatures = registryAccess.lookupOrThrow(Registries.PLACED_FEATURE);
-            return new CreateFlatWorldScreen(
+            Optional.of(WorldPresets.FLAT),
+            (parent, settings) -> {
+                ChunkGenerator overworld = settings.selectedDimensions().overworld();
+                RegistryAccess registryAccess = settings.worldgenLoadContext();
+                HolderGetter<Biome> biomes = registryAccess.lookupOrThrow(Registries.BIOME);
+                HolderGetter<
+                        StructureSet> structureSets = registryAccess.lookupOrThrow(Registries.STRUCTURE_SET);
+                HolderGetter<
+                        PlacedFeature> placedFeatures = registryAccess.lookupOrThrow(Registries.PLACED_FEATURE);
+                return new CreateFlatWorldScreen(
                 parent,
                 flatWorldSettings -> parent.getUiState().updateDimensions(flatWorldConfigurator(flatWorldSettings)),
                 overworld instanceof FlatLevelSource flatLevelSource
-                    ? flatLevelSource.settings()
-                    : FlatLevelGeneratorSettings.getDefault(biomes, structureSets, placedFeatures)
-            );
-        },
-        Optional.of(WorldPresets.SINGLE_BIOME_SURFACE),
-        (parent, settings) -> new CreateBuffetWorldScreen(parent, settings, biome -> parent.getUiState().updateDimensions(fixedBiomeConfigurator(biome)))
+                        ? flatLevelSource.settings()
+                        : FlatLevelGeneratorSettings.getDefault(biomes, structureSets, placedFeatures)
+                );
+            },
+            Optional.of(WorldPresets.SINGLE_BIOME_SURFACE),
+            (parent, settings) -> new CreateBuffetWorldScreen(parent, settings, biome -> parent.getUiState().updateDimensions(fixedBiomeConfigurator(biome))),
+            Optional.of(WorldPresets.NORMAL),
+            (parent, settings) -> new WorldMainSettingScreen(parent, settings)
     );
 
     Screen createEditScreen(final CreateWorldScreen parent, final WorldCreationContext settings);
@@ -57,10 +61,13 @@ public interface PresetEditor {
         };
     }
 
-    private static WorldCreationContext.DimensionsUpdater fixedBiomeConfigurator(final Holder<Biome> biome) {
+    private static WorldCreationContext.DimensionsUpdater fixedBiomeConfigurator(final Holder<
+                    Biome> biome) {
         return (registryAccess, dimensions) -> {
-            Registry<NoiseGeneratorSettings> noiseGeneratorSettings = registryAccess.lookupOrThrow(Registries.NOISE_SETTINGS);
-            Holder<NoiseGeneratorSettings> noiseSettings = noiseGeneratorSettings.getOrThrow(NoiseGeneratorSettings.OVERWORLD);
+            Registry<
+                    NoiseGeneratorSettings> noiseGeneratorSettings = registryAccess.lookupOrThrow(Registries.NOISE_SETTINGS);
+            Holder<
+                    NoiseGeneratorSettings> noiseSettings = noiseGeneratorSettings.getOrThrow(NoiseGeneratorSettings.OVERWORLD);
             BiomeSource biomeSource = new FixedBiomeSource(biome);
             ChunkGenerator generator = new NoiseBasedChunkGenerator(biomeSource, noiseSettings);
             return dimensions.replaceOverworldGenerator(registryAccess, generator);
