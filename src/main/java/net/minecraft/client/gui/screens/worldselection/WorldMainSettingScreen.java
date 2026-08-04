@@ -6,7 +6,9 @@ import java.util.function.DoubleUnaryOperator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractScrollArea;
 import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.AbstractTextAreaWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
@@ -16,6 +18,7 @@ import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.Layout;
+import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
@@ -42,10 +45,8 @@ public class WorldMainSettingScreen extends Screen {
     private static final int SLIDER_MIN = 10000000;
     private static final int SLIDER_MAX = 33554432;
     private static final int STRIPE_MAX = 33554432;
-    private static final int TITLE_HEIGHT = 20; // 标题行高度
-    private static final int HINT_HEIGHT = 12;  // 提示行高度
-    private static final int BUTTON_HEIGHT = 20; // 按钮高度
-    private static final int PADDING = 8;       // 通用边距
+    private static final int MARGIN_TOP = 16;
+    private static final int MARGIN_BOTTOM = 16;
 
     private final Screen parent;
     private final WorldCreationContext settings;
@@ -59,7 +60,7 @@ public class WorldMainSettingScreen extends Screen {
     // ==================== 独立组件引用 ====================
     private StringWidget titleWidget;
     private StringWidget hintWidget;
-    private ScrollableLayout scrollArea;
+    private WorldMainSettingScreen.ConfigScrollPanel scrollPanel;
     private final LinearLayout scrollContent = LinearLayout.vertical().spacing(6);
     private Button doneButton;
     private Button cancelButton;
@@ -98,13 +99,16 @@ public class WorldMainSettingScreen extends Screen {
         );
         this.addChild(this.hintWidget);
 
-        // --- 3. 滚动区域（中间） ---
+        // --- 3. 构建滚动内容 ---
         this.buildScrollContent();
-        this.scrollArea = new ScrollableLayout(this.minecraft, this.scrollContent, 300);
-        this.scrollArea.setMinWidth(CONTENT_WIDTH);
-        this.scrollArea.visitWidgets(w -> this.addChild(w));
 
-        // --- 4. 按钮（底部居中） ---
+        // --- 4. 滚动面板（占据中间区域） ---
+        this.scrollPanel = new WorldMainSettingScreen.ConfigScrollPanel(
+            0, 0, CONTENT_WIDTH, 200, this.scrollContent
+        );
+        this.addChild(this.scrollPanel);
+
+        // --- 5. 按钮 ---
         this.doneButton = Button.builder(
             Component.literal("完成"),
             button -> this.onDone()
@@ -116,7 +120,7 @@ public class WorldMainSettingScreen extends Screen {
         this.addChild(this.doneButton);
         this.addChild(this.cancelButton);
 
-        // --- 5. 布局定位 ---
+        // --- 6. 布局定位 ---
         this.repositionElements();
     }
 
@@ -277,36 +281,33 @@ public class WorldMainSettingScreen extends Screen {
         ).setMaxWidth(CONTENT_WIDTH - 20).setCentered(true), s -> s.padding(10));
     }
 
-    // ==================== 布局定位（核心修复） ====================
+    // ==================== 布局定位 ====================
 
     @Override
     public void repositionElements() {
         int centerX = this.width / 2;
         int contentLeft = centerX - CONTENT_WIDTH / 2;
-        int contentRight = centerX + CONTENT_WIDTH / 2;
 
-        // --- 1. 标题（顶部居中） ---
-        int titleY = PADDING;
+        // 1. 标题
+        int titleY = MARGIN_TOP;
         this.titleWidget.setPosition(centerX - this.titleWidget.getWidth() / 2, titleY);
 
-        // --- 2. 提示（标题下方） ---
-        int hintY = titleY + TITLE_HEIGHT;
+        // 2. 提示
+        int hintY = titleY + 14;
         this.hintWidget.setPosition(centerX - this.hintWidget.getWidth() / 2, hintY);
 
-        // --- 3. 滚动区域（中间撑满） ---
-        int scrollTop = hintY + HINT_HEIGHT + PADDING;
-        int bottomAreaHeight = BUTTON_HEIGHT + PADDING;
-        int scrollBottom = this.height - bottomAreaHeight;
-        int scrollHeight = Math.max(150, scrollBottom - scrollTop - PADDING);
+        // 3. 滚动面板
+        int scrollTop = hintY + 14 + 5;
+        int scrollBottom = this.height - MARGIN_BOTTOM - 28; // 28 = 按钮高度 + 边距
+        int scrollHeight = Math.max(150, scrollBottom - scrollTop);
 
-        this.scrollArea.setPosition(contentLeft, scrollTop);
-        this.scrollArea.setMinWidth(CONTENT_WIDTH);
-        this.scrollArea.setMaxHeight(scrollHeight);
+        this.scrollPanel.setPosition(contentLeft, scrollTop);
+        this.scrollPanel.setSize(CONTENT_WIDTH, scrollHeight);
 
-        // --- 4. 按钮（底部居中） ---
-        int buttonsY = this.height - BUTTON_HEIGHT - PADDING;
-        this.doneButton.setPosition(centerX - 100 - 4, buttonsY);  // 左按钮
-        this.cancelButton.setPosition(centerX + 4, buttonsY);      // 右按钮
+        // 4. 按钮
+        int buttonsY = this.height - MARGIN_BOTTOM - 20;
+        this.doneButton.setPosition(centerX - 100 - 4, buttonsY);
+        this.cancelButton.setPosition(centerX + 4, buttonsY);
     }
 
     @Override
@@ -345,6 +346,91 @@ public class WorldMainSettingScreen extends Screen {
     @Override
     public void extractBackground(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
         graphics.fill(0, 0, this.width, this.height, 0xFF000000);
+    }
+
+    // ==================== 滚动面板（核心修复！） ====================
+
+    /**
+     * 自定义滚动面板——继承 AbstractScrollArea，包装内部 LayoutElement 集合
+     */
+    @OnlyIn(Dist.CLIENT)
+    private class ConfigScrollPanel extends AbstractScrollArea {
+        private final LinearLayout content;
+        private final java.util.List<LayoutElement> contentChildren = new java.util.ArrayList<>();
+
+        public ConfigScrollPanel(int x, int y, int width, int height, LinearLayout content) {
+            super(x, y, width, height, Component.empty(), AbstractScrollArea.defaultSettings(10));
+            this.content = content;
+            this.content.arrangeElements();
+            this.collectChildren();
+        }
+
+        private void collectChildren() {
+            this.contentChildren.clear();
+            this.content.visitChildren(child -> this.contentChildren.add(child));
+        }
+
+        public void setSize(int width, int height) {
+            this.setWidth(width);
+            this.setHeight(height);
+            this.refreshScrollAmount();
+        }
+
+        @Override
+        protected int contentHeight() {
+            return this.content.getHeight() + 10;
+        }
+
+        @Override
+        protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+            // 先渲染滚动条背景
+            this.extractScrollbar(graphics, mouseX, mouseY);
+
+            // 启用裁剪：只显示面板区域内的内容
+            graphics.enableScissor(this.getX(), this.getY(), this.getRight(), this.getBottom());
+
+            // 平移坐标系到滚动偏移量
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(0.0F, (float)(-this.scrollAmount()));
+
+            // 渲染内容子组件
+            for (LayoutElement child : this.contentChildren) {
+                if (child instanceof Renderable renderable) {
+                    // 只有在可见区域内的才渲染
+                    int childY = child.getY();
+                    int childBottom = childY + child.getHeight();
+                    if (childBottom - this.scrollAmount() >= this.getY() 
+                        && childY - this.scrollAmount() <= this.getBottom()) {
+                        renderable.extractRenderState(graphics, mouseX, mouseY, a);
+                    }
+                }
+            }
+
+            graphics.pose().popMatrix();
+            graphics.disableScissor();
+
+            // 再渲染滚动条（覆盖裁剪层之上）
+            this.extractScrollbar(graphics, mouseX, mouseY);
+        }
+
+        @Override
+        public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
+            if (this.isMouseOver(mx, my)) {
+                this.setScrollAmount(this.scrollAmount() - scrollY * 10.0);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean isMouseOver(double mx, double my) {
+            return mx >= this.getX() && mx < this.getRight() 
+                && my >= this.getY() && my < this.getBottom();
+        }
+
+        @Override
+        protected void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput output) {
+        }
     }
 
     // ==================== 配置数据类 ====================
