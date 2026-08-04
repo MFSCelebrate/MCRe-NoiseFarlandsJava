@@ -79,10 +79,8 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollArea = new ScrollableLayout(this.minecraft, this.scrollContent, 200);
         this.scrollArea.setMinWidth(CONTENT_WIDTH);
 
-        // 手动将 ScrollableLayout 内部的子组件注册到 Screen
-        // ScrollableLayout 内部是个 Container（AbstractContainerWidget），
-        // 它的子组件可以在 ScrollableLayout.visitWidgets 中获取
-        this.scrollContent.visitWidgets(w -> this.addRenderableWidget(w));
+        // 直接注册 ScrollableLayout 本身（Container 已改为 public）
+        this.addRenderableWidget(this.scrollArea);
 
         // 完成按钮
         this.doneButton = Button.builder(
@@ -276,8 +274,7 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollArea.setMinWidth(CONTENT_WIDTH);
 
         // 确认/取消按钮：底部分隔线下方居中
-        int footerSeparatorTop = buttonsY;
-        int buttonY = footerSeparatorTop + SEPARATOR_HEIGHT + BUTTONS_Y_OFFSET_FROM_BOTTOM;
+        int buttonY = buttonsY + SEPARATOR_HEIGHT + BUTTONS_Y_OFFSET_FROM_BOTTOM;
         int buttonSpacing = 8;
         int totalButtonsWidth = 150 + buttonSpacing + 150;
         int buttonsStartX = (this.width - totalButtonsWidth) / 2;
@@ -320,7 +317,7 @@ public class WorldMainSettingScreen extends Screen {
             SEPARATOR_HEIGHT
         );
 
-        // 渲染所有已注册的 renderable（包括 scrollContent 的子组件、按钮等）
+        // 渲染所有已注册的 renderable（滚动面板 + 按钮）
         super.extractRenderState(graphics, mouseX, mouseY, a);
 
         // 底部分割线：按钮上方
@@ -337,42 +334,6 @@ public class WorldMainSettingScreen extends Screen {
             32,
             SEPARATOR_HEIGHT
         );
-    }
-
-    // ==================== 鼠标事件转发给 ScrollableLayout ====================
-
-    @Override
-    public boolean mouseScrolled(final double x, final double y, final double scrollX, final double scrollY) {
-        // 将滚轮事件转发给滚动面板
-        if (this.scrollArea != null && this.scrollArea.isMouseOver(x, y)) {
-            return this.scrollArea.mouseScrolled(x, y, scrollX, scrollY);
-        }
-        return super.mouseScrolled(x, y, scrollX, scrollY);
-    }
-
-    @Override
-    public boolean mouseClicked(final double x, final double y, final int button) {
-        if (this.scrollArea != null && this.scrollArea.isMouseOver(x, y)) {
-            // 手动触发滚动面板的点击（用于拖动滚动条）
-            this.scrollArea.mouseClicked(x, y, button);
-        }
-        return super.mouseClicked(x, y, button);
-    }
-
-    @Override
-    public boolean mouseDragged(final double x, final double y, final int button, final double dragX, final double dragY) {
-        if (this.scrollArea != null && this.scrollArea.isMouseOver(x, y)) {
-            this.scrollArea.mouseDragged(x, y, button, dragX, dragY);
-        }
-        return super.mouseDragged(x, y, button, dragX, dragY);
-    }
-
-    @Override
-    public boolean mouseReleased(final double x, final double y, final int button) {
-        if (this.scrollArea != null) {
-            this.scrollArea.mouseReleased(x, y, button);
-        }
-        return super.mouseReleased(x, y, button);
     }
 
     // ==================== 辅助方法 ====================

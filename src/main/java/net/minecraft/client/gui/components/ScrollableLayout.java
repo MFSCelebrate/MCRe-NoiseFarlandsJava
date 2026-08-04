@@ -117,7 +117,7 @@ public class ScrollableLayout implements Layout {
     }
 
     @OnlyIn(Dist.CLIENT)
-    private class Container extends AbstractContainerWidget {
+    public class Container extends AbstractContainerWidget {
         private final Minecraft minecraft;
         private final List<AbstractWidget> children = new ArrayList<>();
 
