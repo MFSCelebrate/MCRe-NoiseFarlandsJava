@@ -266,11 +266,13 @@ public class WorldMainSettingScreen extends Screen {
         int scrollAreaBottom = buttonsY - SEPARATOR_HEIGHT - PADDING;
         int scrollAreaHeight = Math.max(150, scrollAreaBottom - scrollAreaTop);
 
-        this.scrollArea.getContainer().setMaxHeight(scrollAreaHeight);
-        this.scrollArea.getContainer().setPosition(
+        // 直接调用 ScrollableLayout 的 setMaxHeight 和 setPosition
+        this.scrollArea.setMaxHeight(scrollAreaHeight);
+        this.scrollArea.setPosition(
             (this.width - CONTENT_WIDTH) / 2,
             scrollAreaTop
         );
+        this.scrollArea.setMinWidth(CONTENT_WIDTH);
 
         // 确认/取消按钮：底部分隔线下方居中
         int buttonY = buttonsY + SEPARATOR_HEIGHT + BUTTONS_Y_OFFSET_FROM_BOTTOM;
