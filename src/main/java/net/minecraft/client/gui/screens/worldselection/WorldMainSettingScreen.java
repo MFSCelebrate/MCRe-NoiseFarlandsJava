@@ -1,8 +1,8 @@
 package net.minecraft.client.gui.screens.worldselection;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
+import java.util.function.DoubleSupplier;
+import java.util.function.DoubleUnaryOperator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -14,10 +14,14 @@ import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.ScrollableLayout;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
+import net.minecraft.client.gui.layouts.Layout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -38,11 +42,10 @@ public class WorldMainSettingScreen extends Screen {
     private static final int SLIDER_MIN = 10000000;
     private static final int SLIDER_MAX = 33554432;
     private static final int STRIPE_MAX = 33554432;
-    private static final int PADDING = 5;
-    private static final int TITLE_HEIGHT = 9;
-    private static final int HINT_HEIGHT = 9;
-    private static final int BUTTON_HEIGHT = 20;
-    private static final int BOTTOM_BAR_HEIGHT = BUTTON_HEIGHT + PADDING * 2;
+    private static final int TITLE_HEIGHT = 20; // 标题行高度
+    private static final int HINT_HEIGHT = 12;  // 提示行高度
+    private static final int BUTTON_HEIGHT = 20; // 按钮高度
+    private static final int PADDING = 8;       // 通用边距
 
     private final Screen parent;
     private final WorldCreationContext settings;
@@ -50,14 +53,14 @@ public class WorldMainSettingScreen extends Screen {
     // ==================== 配置数据 ====================
     private final FarLandsConfigData configData;
 
-    // ==================== 布局组件 ====================
-    private ScrollableLayout scrollArea;
-    private final LinearLayout scrollContent = LinearLayout.vertical().spacing(6);
-    private final List<GuiEventListener> allChildren = new ArrayList<>();
+    // ==================== 子组件列表 ====================
+    private final java.util.ArrayList<GuiEventListener> allChildren = new java.util.ArrayList<>();
 
-    // ==================== 不滚动的组件 ====================
+    // ==================== 独立组件引用 ====================
     private StringWidget titleWidget;
     private StringWidget hintWidget;
+    private ScrollableLayout scrollArea;
+    private final LinearLayout scrollContent = LinearLayout.vertical().spacing(6);
     private Button doneButton;
     private Button cancelButton;
 
@@ -81,40 +84,39 @@ public class WorldMainSettingScreen extends Screen {
     protected void init() {
         this.allChildren.clear();
 
-        // --- 1. 标题（不滚动） ---
+        // --- 1. 标题（顶部居中） ---
         this.titleWidget = new StringWidget(
             this.title.copy().withStyle(ChatFormatting.BOLD),
             this.font
         );
         this.addChild(this.titleWidget);
 
-        // --- 2. 提示文本（不滚动） ---
+        // --- 2. 提示文本（标题下方居中） ---
         this.hintWidget = new StringWidget(
             Component.literal("§7配置边境之地相关参数"),
             this.font
         );
         this.addChild(this.hintWidget);
 
-        // --- 3. 滚动区域（内容） ---
+        // --- 3. 滚动区域（中间） ---
         this.buildScrollContent();
-        this.scrollArea = new ScrollableLayout(this.minecraft, this.scrollContent, 200);
+        this.scrollArea = new ScrollableLayout(this.minecraft, this.scrollContent, 300);
         this.scrollArea.setMinWidth(CONTENT_WIDTH);
         this.scrollArea.visitWidgets(w -> this.addChild(w));
 
-        // --- 4. 底部按钮（不滚动） ---
+        // --- 4. 按钮（底部居中） ---
         this.doneButton = Button.builder(
             Component.literal("完成"),
             button -> this.onDone()
-        ).build();
-        this.addChild(this.doneButton);
-
+        ).width(100).build();
         this.cancelButton = Button.builder(
             Component.literal("取消"),
             button -> this.onClose()
-        ).build();
+        ).width(100).build();
+        this.addChild(this.doneButton);
         this.addChild(this.cancelButton);
 
-        // --- 布局 ---
+        // --- 5. 布局定位 ---
         this.repositionElements();
     }
 
@@ -275,53 +277,49 @@ public class WorldMainSettingScreen extends Screen {
         ).setMaxWidth(CONTENT_WIDTH - 20).setCentered(true), s -> s.padding(10));
     }
 
-    // ==================== 绝对定位布局 ====================
+    // ==================== 布局定位（核心修复） ====================
 
     @Override
     public void repositionElements() {
         int centerX = this.width / 2;
         int contentLeft = centerX - CONTENT_WIDTH / 2;
+        int contentRight = centerX + CONTENT_WIDTH / 2;
 
-        // --- 顶部：标题 ---
-        int titleY = PADDING + 5;
+        // --- 1. 标题（顶部居中） ---
+        int titleY = PADDING;
         this.titleWidget.setPosition(centerX - this.titleWidget.getWidth() / 2, titleY);
 
-        // --- 顶部：提示 ---
-        int hintY = titleY + TITLE_HEIGHT + PADDING;
+        // --- 2. 提示（标题下方） ---
+        int hintY = titleY + TITLE_HEIGHT;
         this.hintWidget.setPosition(centerX - this.hintWidget.getWidth() / 2, hintY);
 
-        // --- 滚动区域：在标题和按钮之间 ---
-        int scrollTop = hintY + HINT_HEIGHT + PADDING + 2;
-        int scrollBottom = this.height - BOTTOM_BAR_HEIGHT - PADDING;
-        int scrollHeight = Math.max(100, scrollBottom - scrollTop);
+        // --- 3. 滚动区域（中间撑满） ---
+        int scrollTop = hintY + HINT_HEIGHT + PADDING;
+        int bottomAreaHeight = BUTTON_HEIGHT + PADDING;
+        int scrollBottom = this.height - bottomAreaHeight;
+        int scrollHeight = Math.max(150, scrollBottom - scrollTop - PADDING);
 
         this.scrollArea.setPosition(contentLeft, scrollTop);
         this.scrollArea.setMinWidth(CONTENT_WIDTH);
         this.scrollArea.setMaxHeight(scrollHeight);
 
-        // --- 底部：按钮（居中） ---
-        int buttonY = this.height - BUTTON_HEIGHT - PADDING;
-        int buttonsWidth = this.doneButton.getWidth() + 8 + this.cancelButton.getWidth();
-        int buttonsX = centerX - buttonsWidth / 2;
-
-        this.doneButton.setPosition(buttonsX, buttonY);
-        this.cancelButton.setPosition(buttonsX + this.doneButton.getWidth() + 8, buttonY);
+        // --- 4. 按钮（底部居中） ---
+        int buttonsY = this.height - BUTTON_HEIGHT - PADDING;
+        this.doneButton.setPosition(centerX - 100 - 4, buttonsY);  // 左按钮
+        this.cancelButton.setPosition(centerX + 4, buttonsY);      // 右按钮
     }
 
     @Override
     public void extractRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
-        // 先画黑色背景
+        // 黑色背景
         this.extractBackground(graphics, mouseX, mouseY, a);
 
-        // 手动渲染所有子组件
+        // 渲染所有子组件
         for (GuiEventListener child : this.allChildren) {
             if (child instanceof Renderable renderable) {
                 renderable.extractRenderState(graphics, mouseX, mouseY, a);
             }
         }
-
-        // 渲染滚动区域（特殊处理，确保在正确位置）
-        //this.scrollArea.extractRenderState(graphics, mouseX, mouseY, a);
     }
 
     // ==================== 辅助方法 ====================
@@ -346,7 +344,6 @@ public class WorldMainSettingScreen extends Screen {
 
     @Override
     public void extractBackground(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
-        // 黑色背景
         graphics.fill(0, 0, this.width, this.height, 0xFF000000);
     }
 
