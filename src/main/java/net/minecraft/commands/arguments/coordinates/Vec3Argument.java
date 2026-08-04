@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import java.util.Locale;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 

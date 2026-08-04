@@ -1,41 +1,24 @@
 package net.minecraft.client.gui.screens.worldselection;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
-import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.Locale;
+import java.util.function.DoubleSupplier;
+import java.util.function.DoubleUnaryOperator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ActiveTextCollector;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.layouts.FrameLayout;
-import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
-import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.layouts.LinearLayout;
-import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 🔥 MCRe NoiseFarlands —— 世界主要设置界面
@@ -51,6 +34,10 @@ public class WorldMainSettingScreen extends Screen {
 
     // ==================== 界面布局常量 ====================
     private static final int CONTENT_WIDTH = 320;
+    private static final int SLIDER_MIN = 10000000;
+    private static final int SLIDER_MAX = 33554432;
+    private static final int SLIDER_DEFAULT = 12550824;
+    private static final int STRIPE_MAX = 33554432;
 
     private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this, 40, 50);
     private final Screen parent;
@@ -61,7 +48,6 @@ public class WorldMainSettingScreen extends Screen {
 
     // ==================== 构造函数 ====================
     public WorldMainSettingScreen(final Screen parent, final WorldCreationContext settings) {
-        // 翻译键：边境旅者 配置
         super(Component.literal("边境旅者 配置"));
         this.parent = parent;
         this.settings = settings;
@@ -84,17 +70,11 @@ public class WorldMainSettingScreen extends Screen {
         ));
 
         // 1. 边境之地距离（滑块）
-        content.addChild(new ConfigSlider(
-            CONTENT_WIDTH - 20,
-            () -> "边境之地距离: §e" + String.format("%,d", this.configData.farLandsDistance),
-            val -> {
-                this.configData.farLandsDistance = 10000000 + (int)(val * 23554432);
-                return (double)(this.configData.farLandsDistance - 10000000) / 23554432;
-            },
-            0.108 // 12550824 的归一化值
+        content.addChild(new FarLandsDistanceSlider(
+            CONTENT_WIDTH - 20
         ), s -> s.paddingHorizontal(10));
         content.addChild(new StringWidget(
-            Component.literal("§7边境之地生成位置与世界原点的距离\n§7该设置用于各类机制的判定，不影响地形生成").withStyle(s -> s.withColor(-6250336)),
+            Component.literal("§7边境之地生成位置与世界原点的距离\n§7该设置用于各类机制的判定，不影响地形生成"),
             this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20));
 
@@ -148,15 +128,12 @@ public class WorldMainSettingScreen extends Screen {
             Component.literal("§b§l精度系统")
         ));
 
-        // 精度模式选择
         CycleButton<String> precisionModeButton = CycleButton.builder(
-                mode -> {
-                    return switch (mode) {
-                        case "32bit" -> Component.literal("32 位");
-                        case "64bit" -> Component.literal("64 位");
-                        case "256bit" -> Component.literal("256 位");
-                        default -> Component.literal(mode);
-                    };
+                mode -> switch (mode) {
+                    case "32bit" -> Component.literal("32 位");
+                    case "64bit" -> Component.literal("64 位");
+                    case "256bit" -> Component.literal("256 位");
+                    default -> Component.literal(mode);
                 },
                 "32bit"
             )
@@ -168,8 +145,7 @@ public class WorldMainSettingScreen extends Screen {
             );
         content.addChild(precisionModeButton, s -> s.paddingHorizontal(10));
         content.addChild(new StringWidget(
-            Component.literal("§7选择坐标精度等级：32位（经典边境之地）、64位（中期改造）或256位（终极形态）")
-                .withStyle(s -> s.withColor(-6250336)),
+            Component.literal("§7选择坐标精度等级：32位（经典边境之地）、64位（中期改造）或256位（终极形态）"),
             this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20).paddingBottom(4));
 
@@ -241,7 +217,7 @@ public class WorldMainSettingScreen extends Screen {
         content.addChild(new MultiLineTextWidget(
             Component.literal(
                 "§7当前配置：边境之地距离 §e" + String.format("%,d", this.configData.farLandsDistance)
-                + "§r§7 | 精度模式 §b" + this.configData.precisionMode
+                + " §r§7| 精度模式 §b" + this.configData.precisionMode
             ),
             this.font
         ).setMaxWidth(CONTENT_WIDTH - 20).setCentered(true), s -> s.padding(10));
@@ -278,7 +254,6 @@ public class WorldMainSettingScreen extends Screen {
     // ==================== 回调 ====================
 
     private void onDone() {
-        // TODO: 将 configData 应用到世界生成设置中
         Minecraft.getInstance().gui.setScreen(this.parent);
     }
 
@@ -294,25 +269,15 @@ public class WorldMainSettingScreen extends Screen {
 
     // ==================== 配置数据类 ====================
 
-    /**
-     * 存储所有 FarLands 配置的数据类
-     */
     public static class FarLandsConfigData {
-        // 边境之地核心
         public int farLandsDistance = 12550824;
         public int stripeLandsDistance = 16777216;
         public boolean enableSkyGrid = false;
         public boolean forceSkyGrid = false;
-
-        // 世界边界
         public boolean removeWorldBorder = true;
         public boolean removeWorldBoundary = true;
         public boolean removeCoordinateLimits = true;
-
-        // 精度系统
         public String precisionMode = "32bit";
-
-        // 假区块
         public boolean fcDisableBlockCollision = true;
         public boolean fcDisableBlockEffect = true;
         public boolean fcDisableFluidCollision = true;
@@ -321,22 +286,41 @@ public class WorldMainSettingScreen extends Screen {
         public boolean fcDisableExplosionEffect = true;
         public boolean fcDisableLadderBehavior = true;
         public boolean fcDisablePistonBehavior = true;
-
-        // 结构
         public boolean generateOotsLaboratory = true;
+    }
+
+    // ==================== 边境之地距离滑块 ====================
+
+    @OnlyIn(Dist.CLIENT)
+    private class FarLandsDistanceSlider extends AbstractSliderButton {
+        public FarLandsDistanceSlider(final int width) {
+            super(0, 0, width, 20, Component.empty(),
+                  (double)(WorldMainSettingScreen.this.configData.farLandsDistance - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN));
+            this.updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            this.setMessage(Component.literal(
+                "边境之地距离: §e" + String.format("%,d", WorldMainSettingScreen.this.configData.farLandsDistance)));
+        }
+
+        @Override
+        protected void applyValue() {
+            WorldMainSettingScreen.this.configData.farLandsDistance = SLIDER_MIN + (int)(this.value * (SLIDER_MAX - SLIDER_MIN));
+            this.updateMessage();
+        }
     }
 
     // ==================== 条纹之地距离滑块 ====================
 
     @OnlyIn(Dist.CLIENT)
     private class StripeLandsSlider extends AbstractSliderButton {
-        private static final int MAX_DISTANCE = 33554432;
-
         public StripeLandsSlider(final int width) {
             super(0, 0, width, 20, Component.empty(),
-                  WorldMainSettingScreen.this.configData.stripeLandsDistance == -1 
-                      ? 0.0 
-                      : (double) WorldMainSettingScreen.this.configData.stripeLandsDistance / MAX_DISTANCE);
+                  WorldMainSettingScreen.this.configData.stripeLandsDistance == -1
+                      ? 0.0
+                      : (double) WorldMainSettingScreen.this.configData.stripeLandsDistance / STRIPE_MAX);
             this.updateMessage();
         }
 
@@ -356,7 +340,7 @@ public class WorldMainSettingScreen extends Screen {
             if (this.value < 0.01) {
                 WorldMainSettingScreen.this.configData.stripeLandsDistance = -1;
             } else {
-                WorldMainSettingScreen.this.configData.stripeLandsDistance = (int)(this.value * MAX_DISTANCE);
+                WorldMainSettingScreen.this.configData.stripeLandsDistance = (int)(this.value * STRIPE_MAX);
             }
             this.updateMessage();
         }

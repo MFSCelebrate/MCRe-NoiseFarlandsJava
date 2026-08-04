@@ -3,6 +3,7 @@ package net.minecraft.commands.arguments.coordinates;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec2;
+import java.util.Locale;
 import net.minecraft.world.phys.Vec3;
 
 public interface Coordinates {
