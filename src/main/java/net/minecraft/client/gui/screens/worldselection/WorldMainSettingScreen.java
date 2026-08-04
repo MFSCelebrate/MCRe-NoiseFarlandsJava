@@ -79,8 +79,8 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollArea = new ScrollableLayout(this.minecraft, this.scrollContent, 200);
         this.scrollArea.setMinWidth(CONTENT_WIDTH);
 
-        // 直接注册 ScrollableLayout 本身（Container 已改为 public）
-        this.addRenderableWidget(this.scrollArea);
+        // 通过 getContainer() 获取内部容器并注册（Container 已改为 public）
+        this.addRenderableWidget(this.scrollArea.getContainer());
 
         // 完成按钮
         this.doneButton = Button.builder(
@@ -266,12 +266,11 @@ public class WorldMainSettingScreen extends Screen {
         int scrollAreaBottom = buttonsY - SEPARATOR_HEIGHT - PADDING;
         int scrollAreaHeight = Math.max(150, scrollAreaBottom - scrollAreaTop);
 
-        this.scrollArea.setMaxHeight(scrollAreaHeight);
-        this.scrollArea.setPosition(
+        this.scrollArea.getContainer().setMaxHeight(scrollAreaHeight);
+        this.scrollArea.getContainer().setPosition(
             (this.width - CONTENT_WIDTH) / 2,
             scrollAreaTop
         );
-        this.scrollArea.setMinWidth(CONTENT_WIDTH);
 
         // 确认/取消按钮：底部分隔线下方居中
         int buttonY = buttonsY + SEPARATOR_HEIGHT + BUTTONS_Y_OFFSET_FROM_BOTTOM;
@@ -317,7 +316,7 @@ public class WorldMainSettingScreen extends Screen {
             SEPARATOR_HEIGHT
         );
 
-        // 渲染所有已注册的 renderable（滚动面板 + 按钮）
+        // 渲染所有已注册的 renderable（滚动面板容器 + 按钮）
         super.extractRenderState(graphics, mouseX, mouseY, a);
 
         // 底部分割线：按钮上方

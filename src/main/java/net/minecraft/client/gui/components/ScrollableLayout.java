@@ -20,14 +20,14 @@ import org.jspecify.annotations.Nullable;
 
 @OnlyIn(Dist.CLIENT)
 public class ScrollableLayout implements Layout {
-    private static final int DEFAULT_SCROLLBAR_SPACING = 4;
-    private final Layout content;
-    private final ScrollableLayout.Container container;
-    private final ScrollableLayout.ReserveStrategy reserveStrategy;
-    private int scrollbarSpacing = 4;
-    private int minWidth;
-    private int minHeight;
-    private int maxHeight;
+    public static final int DEFAULT_SCROLLBAR_SPACING = 4;
+    public final Layout content;
+    public final ScrollableLayout.Container container;
+    public final ScrollableLayout.ReserveStrategy reserveStrategy;
+    public int scrollbarSpacing = 4;
+    public int minWidth;
+    public int minHeight;
+    public int maxHeight;
 
     public ScrollableLayout(final Minecraft minecraft, final Layout content, final int maxHeight) {
         this(minecraft, content, maxHeight, ScrollableLayout.ReserveStrategy.BOTH);
@@ -52,6 +52,11 @@ public class ScrollableLayout implements Layout {
     public void setMinHeight(final int minHeight) {
         this.minHeight = minHeight;
         this.container.setHeight(Math.max(this.content.getHeight(), minHeight));
+    }
+
+    // 在 ScrollableLayout.java 中添加：
+    public Container getContainer() {
+        return this.container;
     }
 
     public void setMaxHeight(final int maxHeight) {
@@ -118,8 +123,8 @@ public class ScrollableLayout implements Layout {
 
     @OnlyIn(Dist.CLIENT)
     public class Container extends AbstractContainerWidget {
-        private final Minecraft minecraft;
-        private final List<AbstractWidget> children = new ArrayList<>();
+        public final Minecraft minecraft;
+        public final List<AbstractWidget> children = new ArrayList<>();
 
         public Container(final Minecraft minecraft, final int width, final int height, final AbstractScrollArea.ScrollbarSettings scrollbarSettings) {
             super(0, 0, width, height, CommonComponents.EMPTY, scrollbarSettings);
@@ -133,12 +138,12 @@ public class ScrollableLayout implements Layout {
         }
 
         @Override
-        protected int contentHeight() {
+        public int contentHeight() {
             return ScrollableLayout.this.content.getHeight();
         }
 
         @Override
-        protected void extractWidgetRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
+        public void extractWidgetRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
             graphics.enableScissor(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height);
 
             for (AbstractWidget child : this.children) {
@@ -150,15 +155,14 @@ public class ScrollableLayout implements Layout {
         }
 
         @Override
-        protected void updateWidgetNarration(final NarrationElementOutput output) {
-        }
+        public void updateWidgetNarration(final NarrationElementOutput output) {}
 
         @Override
         public ScreenRectangle getBorderForArrowNavigation(final ScreenDirection opposite) {
             GuiEventListener focused = this.getFocused();
             return focused != null
-                ? focused.getBorderForArrowNavigation(opposite)
-                : new ScreenRectangle(this.getX(), this.getY(), this.width, this.contentHeight()).getBorder(opposite);
+                    ? focused.getBorderForArrowNavigation(opposite)
+                    : new ScreenRectangle(this.getX(), this.getY(), this.width, this.contentHeight()).getBorder(opposite);
         }
 
         @Override
@@ -182,23 +186,23 @@ public class ScrollableLayout implements Layout {
         public void setX(final int x) {
             super.setX(x);
             ScrollableLayout.this.content
-                .setX(x + (ScrollableLayout.this.reserveStrategy == ScrollableLayout.ReserveStrategy.BOTH ? this.scrollbarReserve() : 0));
+                    .setX(x + (ScrollableLayout.this.reserveStrategy == ScrollableLayout.ReserveStrategy.BOTH ? this.scrollbarReserve() : 0));
         }
 
         @Override
         public void setY(final int y) {
             super.setY(y);
-            ScrollableLayout.this.content.setY(y - (int)this.scrollAmount());
+            ScrollableLayout.this.content.setY(y - (int) this.scrollAmount());
         }
 
-        private int scrollbarReserve() {
+        public int scrollbarReserve() {
             return ScrollableLayout.this.scrollbarSpacing + this.scrollbarWidth();
         }
 
         @Override
         public void setScrollAmount(final double scrollAmount) {
             super.setScrollAmount(scrollAmount);
-            ScrollableLayout.this.content.setY(this.getRectangle().top() - (int)this.scrollAmount());
+            ScrollableLayout.this.content.setY(this.getRectangle().top() - (int) this.scrollAmount());
         }
 
         @Override
