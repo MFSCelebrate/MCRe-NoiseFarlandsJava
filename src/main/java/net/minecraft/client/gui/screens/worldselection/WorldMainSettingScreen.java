@@ -79,8 +79,9 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollArea = new ScrollableLayout(this.minecraft, this.scrollContent, 200);
         this.scrollArea.setMinWidth(CONTENT_WIDTH);
 
-        // 直接注册 ScrollableLayout 本身，它内部自己管理子组件
-        this.addRenderableWidget(this.scrollArea);
+        // 分开注册：渲染 + 事件
+        this.addRenderableOnly(this.scrollArea);
+        this.addWidget(this.scrollArea);
 
         // 完成按钮
         this.doneButton = Button.builder(
@@ -318,9 +319,7 @@ public class WorldMainSettingScreen extends Screen {
             SEPARATOR_HEIGHT
         );
 
-        // 渲染滚动面板（通过 addRenderableWidget 注册的，Screen 自动渲染）
-        // Screen 的 render() 方法会自动遍历 this.renderables 并调用 extractRenderState
-        // 所以我们只需要调用 super.extractRenderState 即可
+        // 渲染所有已注册的 renderable（包括滚动面板、按钮等）
         super.extractRenderState(graphics, mouseX, mouseY, a);
 
         // 底部分割线：按钮上方
