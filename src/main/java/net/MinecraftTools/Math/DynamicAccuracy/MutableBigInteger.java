@@ -1,7 +1,7 @@
 package net.MinecraftTools.Math.DynamicAccuracy;
 
-import static java.math.BigDecimal.INFLATED;
-import static java.math.BigInteger.LONG_MASK;
+import static net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.INFLATED;
+import static net.MinecraftTools.Math.DynamicAccuracy.BigInteger.LONG_MASK;
 import java.util.Arrays;
 
 class MutableBigInteger {

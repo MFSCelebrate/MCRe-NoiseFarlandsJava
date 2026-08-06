@@ -1,6 +1,7 @@
 package net.MinecraftTools.Math.DynamicAccuracy;
 
-import static java.math.BigInteger.LONG_MASK;
+
+import static net.MinecraftTools.Math.DynamicAccuracy.BigInteger.LONG_MASK;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -11,13 +12,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.math.FormattedFPDecimal;
-import jdk.internal.util.DecimalDigits;
+// MCRe NoiseFarlands: removed jdk.internal.* imports, using inline replacements
 
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    // MCRe NoiseFarlands: JLA replaced with simple new String(byte[], charset)
     // 在 FarLandsConfigData 中加一个缓存控制
     public static boolean enablePerformanceOptimizations = true;
 
@@ -611,14 +609,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             throw new NumberFormatException("Infinite or NaN");
         }
 
-        var fmt = FormattedFPDecimal.valueForDoubleToString(Math.abs(val));
-        long s = fmt.getSignificand();
-        if (val < 0) {
-
-            s = -s;
-        }
-
-        return valueOf(s, -fmt.getExp(), fmt.getPrecision());
+        // MCRe NoiseFarlands: FormattedFPDecimal removed, using Double.toString conversion
+        String ds = Double.toString(Math.abs(val));
+        return new BigDecimal(ds);
     }
 
     public BigDecimal add(BigDecimal augend) {
@@ -882,7 +875,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         Math.abs((long) this.scale() - divisor.scale()) + 2,
                         Integer.MAX_VALUE);
         // 🔧 池化：原 new MathContext(maxDigits, RoundingMode.DOWN)
-        BigDecimal quotient = this.divide(divisor, MathContext.getContext(maxDigits,
+        BigDecimal quotient = this.divide(divisor, MathContext.getCached(maxDigits,
                 RoundingMode.DOWN));
         if (quotient.scale > 0) {
             quotient = quotient.setScale(0, RoundingMode.DOWN);
@@ -1810,15 +1803,20 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (scale == 2 &&
                 intCompact >= 0 && intCompact < Integer.MAX_VALUE) {
 
-            int lowInt = (int) intCompact % 100;
-            int highInt = (int) intCompact / 100;
-            int highIntSize = DecimalDigits.stringSize(highInt);
+            // MCRe NoiseFarlands: DecimalDigits replaced with simple String conversion
+            String compactStr = String.valueOf(intCompact);
+            int dotPos = compactStr.indexOf('.');
+            if (dotPos < 0) dotPos = compactStr.length();
+            int highIntSize = dotPos;
             byte[] buf = new byte[highIntSize + 3];
-            DecimalDigits.uncheckedGetCharsLatin1(highInt, highIntSize, buf);
+            byte[] tmpBytes = compactStr.substring(0, dotPos).getBytes(StandardCharsets.ISO_8859_1);
+            System.arraycopy(tmpBytes, 0, buf, 0, tmpBytes.length);
             buf[highIntSize] = '.';
-            DecimalDigits.uncheckedPutPairLatin1(buf, highIntSize + 1, lowInt);
+            int lowInt = (int) Math.abs(intCompact) % 100;
+            byte[] lowBytes = String.format("%02d", lowInt).getBytes(StandardCharsets.ISO_8859_1);
+            System.arraycopy(lowBytes, 0, buf, highIntSize + 1, 2);
             try {
-                return JLA.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+                return new String(buf, StandardCharsets.ISO_8859_1);
             } catch (CharacterCodingException cce) {
                 throw new AssertionError(cce);
             }
@@ -1830,7 +1828,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (intCompact != INFLATED) {
 
             coeff = new char[19];
-            offset = DecimalDigits.getChars(Math.abs(intCompact), coeff.length, coeff);
+            // MCRe: DecimalDigits replaced with manual conversion
+            long tmp = Math.abs(intCompact);
+            offset = coeff.length;
+            do {
+                coeff[--offset] = (char) ('0' + (tmp % 10));
+                tmp /= 10;
+            } while (tmp > 0 && offset > 0);
         } else {
             offset = 0;
             coeff = intVal.abs().toString().toCharArray();
@@ -2050,19 +2054,39 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     private static class UnsafeHolder {
-        private static final jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
-        private static final long intCompactOffset = unsafe.objectFieldOffset(BigDecimal.class, "intCompact");
-        private static final long intValOffset = unsafe.objectFieldOffset(BigDecimal.class, "intVal");
-        private static final long scaleOffset = unsafe.objectFieldOffset(BigDecimal.class, "scale");
+        // MCRe NoiseFarlands: replaced jdk.internal.misc.Unsafe with reflection
+        private static final java.lang.reflect.Field intCompactField;
+        private static final java.lang.reflect.Field intValField;
+        private static final java.lang.reflect.Field scaleField;
+        static {
+            try {
+                intCompactField = BigDecimal.class.getDeclaredField("intCompact");
+                intValField = BigDecimal.class.getDeclaredField("intVal");
+                scaleField = BigDecimal.class.getDeclaredField("scale");
+                intCompactField.setAccessible(true);
+                intValField.setAccessible(true);
+                scaleField.setAccessible(true);
+            } catch (NoSuchFieldException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
 
         static void setIntValAndScale(BigDecimal bd, BigInteger intVal, int scale) {
-            unsafe.putReference(bd, intValOffset, intVal);
-            unsafe.putInt(bd, scaleOffset, scale);
-            unsafe.putLong(bd, intCompactOffset, compactValFor(intVal));
+            try {
+                intValField.set(bd, intVal);
+                scaleField.setInt(bd, scale);
+                intCompactField.setLong(bd, compactValFor(intVal));
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         static void setIntValVolatile(BigDecimal bd, BigInteger val) {
-            unsafe.putReferenceVolatile(bd, intValOffset, val);
+            try {
+                intValField.set(bd, val);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
