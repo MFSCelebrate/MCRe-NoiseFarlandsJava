@@ -23,7 +23,7 @@ public final class PrecisionConfig {
     private static volatile boolean autoUpgrade = true;
 
     /** 浮点运算时的舍入模式 */
-    private static volatile RoundingMode roundingMode = RoundingMode.NEAREST_EVEN;
+    private static volatile RoundingMode roundingMode = RoundingMode.HALF_EVEN;
 
     /** 打印数字时的最大小数位数 */
     private static volatile int maxDecimalPlaces = 10;

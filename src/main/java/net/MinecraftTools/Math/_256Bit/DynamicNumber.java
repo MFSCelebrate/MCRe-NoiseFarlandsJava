@@ -3,17 +3,13 @@ package net.MinecraftTools.Math._256Bit;
 import net.MinecraftTools.Math.DynamicAccuracy.BigInteger;
 import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 
-import java.util.Objects;
-
 /**
  * DynamicNumber — 统一数字容器
- * 
- * 包装 6 种数字类型：Long, Int256, UInt256, Float256, UFloat256, BigInteger
- * 根据 PrecisionConfig 自动选择运算精度
- * 
- * 所有运算返回新的 DynamicNumber，不可变
- * 
- * INF32768 / MCRe NoiseFarlands 项目
+ *
+ * <p>包装 6 种数字类型：Long, Int256, UInt256, Float256, UFloat256, BigInteger
+ * 根据 PrecisionConfig 自动选择运算精度，所有运算返回新的 DynamicNumber（不可变）
+ *
+ * <p>INF32768 / MCRe NoiseFarlands 项目
  */
 public final class DynamicNumber extends Number implements Comparable<DynamicNumber> {
 
@@ -23,7 +19,7 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
 
     // ──────── 缓存 ────────
     private transient int hash;
-    private static final int HASH_UNCACHED = Integer.MIN_VALUE;
+    private static final int HASH_NOT_CACHED = Integer.MIN_VALUE;
 
     // ──────── 常量 ────────
     public static final DynamicNumber ZERO = new DynamicNumber(NumberType.LONG, 0L);
@@ -117,7 +113,7 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
             case LONG       -> Int256.of((long) value);
             case INT256     -> (Int256) value;
             case UINT256    -> ((UInt256) value).toInt256();
-            case FLOAT256, UFLOAT256 -> Int256.of(toLong());
+            case FLOAT256, UFLOAT256 -> Int256.of(toBigInteger());
             case BIGINTEGER -> Int256.of(((BigInteger) value).toByteArray());
         };
     }
@@ -127,7 +123,7 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
             case LONG       -> UInt256.of((long) value);
             case INT256     -> UInt256.fromInt256((Int256) value);
             case UINT256    -> (UInt256) value;
-            case FLOAT256, UFLOAT256 -> UInt256.of(toLong());
+            case FLOAT256, UFLOAT256 -> UInt256.of(toBigInteger());
             case BIGINTEGER -> UInt256.of(((BigInteger) value).toByteArray());
         };
     }
@@ -136,7 +132,7 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
         return switch (type) {
             case LONG       -> Float256.of((long) value);
             case INT256     -> Float256.of((Int256) value);
-            case UINT256    -> Float256.of(((UInt256) value).toBigIndia());
+            case UINT256    -> Float256.of((UInt256) value);
             case FLOAT256   -> (Float256) value;
             case UFLOAT256  -> ((UFloat256) value).toFloat256();
             case BIGINTEGER -> Float256.of((BigInteger) value);
@@ -145,10 +141,10 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
 
     public UFloat256 toUFloat256() {
         return switch (type) {
-            case LONG       -> UFloat256.of((long) value);
+            case LONG       -> UFloat256.of(Math.abs((long) value));
             case INT256     -> UFloat256.of(((Int256) value).abs());
             case UINT256    -> UFloat256.of((UInt256) value);
-            case FLOAT256   -> UFloat256.of(((Float256) value).abs());
+            case FLOAT256   -> ((Float256) value).toUFloat256();
             case UFLOAT256  -> (UFloat256) value;
             case BIGINTEGER -> UFloat256.of(((BigInteger) value).abs());
         };
@@ -168,7 +164,7 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
     // ═══════════ 核心运算 ═══════════
 
     public DynamicNumber add(DynamicNumber o) {
-        NumberType resultType = ResultType(type, o.type);
+        NumberType resultType = NumberType.wider(type, o.type);
         return switch (resultType) {
             case LONG       -> of(toLong() + o.toLong());
             case INT256     -> of(toInt256().add(o.toInt256()));
@@ -179,8 +175,8 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
         };
     }
 
-    public DynamicNumber subtract(DynamicNumber other) {
-        NumberType resultType = ResultType(type, o.type);
+    public DynamicNumber subtract(DynamicNumber o) {
+        NumberType resultType = NumberType.wider(type, o.type);
         return switch (resultType) {
             case LONG       -> DynamicNumber.of(toLong() - o.toLong());
             case INT256     -> DynamicNumber.of(toInt256().subtract(o.toInt256()));
@@ -191,8 +187,8 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
         };
     }
 
-    public DynamicNumber multiply(DynamicNumber other) {
-        NumberType resultType = ResultType(type, o.type);
+    public DynamicNumber multiply(DynamicNumber o) {
+        NumberType resultType = NumberType.wider(type, o.type);
         return switch (resultType) {
             case LONG       -> DynamicNumber.of(toLong() * o.toLong());
             case INT256     -> DynamicNumber.of(toInt256().multiply(o.toInt256()));
@@ -203,15 +199,39 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
         };
     }
 
-    public DynamicNumber divide(DynamicNumber other) {
-        NumberType resultType = ResultType(type, o.type);
+    public DynamicNumber divide(DynamicNumber o) {
+        NumberType resultType = NumberType.wider(type, o.type);
         return switch (resultType) {
-            case LONG       -> of((double) toLong() / o.toLong());
+            case LONG       -> of(toLong() / o.toLong());
             case INT256     -> of(toInt256().divide(o.toInt256()));
             case UINT256    -> of(toUInt256().divide(o.toUInt256()));
             case FLOAT256   -> of(toFloat256().divide(o.toFloat256()));
             case UFLOAT256  -> of(toUFloat256().divide(o.toUFloat256()));
             case BIGINTEGER -> of(toBigInteger().divide(o.toBigInteger()));
+        };
+    }
+
+    /** 取绝对值 */
+    public DynamicNumber abs() {
+        return switch (type) {
+            case LONG       -> of(Math.abs((long) value));
+            case INT256     -> of(((Int256) value).abs());
+            case UINT256    -> this;
+            case FLOAT256   -> of(((Float256) value).abs());
+            case UFLOAT256  -> this;
+            case BIGINTEGER -> of(((BigInteger) value).abs());
+        };
+    }
+
+    /** 取负（无符号类型不支持） */
+    public DynamicNumber negate() {
+        return switch (type) {
+            case LONG       -> of(-(long) value);
+            case INT256     -> of(((Int256) value).negate());
+            case FLOAT256   -> of(((Float256) value).negate());
+            case BIGINTEGER -> of(((BigInteger) value).negate());
+            case UINT256, UFLOAT256 ->
+                throw new ArithmeticException("cannot negate unsigned type: " + type);
         };
     }
 
@@ -241,7 +261,7 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
 
     @Override
     public int compareTo(DynamicNumber o) {
-        NumberType common = ResultType(type, o.type);
+        NumberType common = NumberType.wider(type, o.type);
         return switch (common) {
             case LONG       -> Long.compare(toLong(), o.toLong());
             case INT256     -> toInt256().compareTo(o.toInt256());
@@ -281,30 +301,12 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
     }
 
     // ═══════════ 类型提升 ═══════════
+    // 提升规则见 NumberType.wider()：LONG < INT256 < UINT256 < FLOAT256 < UFLOAT256 < BIGINTEGER
 
-    private static NumberType ResultType(NumberType a, NumberType b) {
-        if (a == b) return a;
-        // 提升规则：Long < Int256 < UInt256 < Float256 < UFloat256 < BigInteger
-        int rankA = rank(a);
-        int rankB = rank(b);
-        return rankA >= rankB ? a : b;
-    }
-
-    private static int rank(NumberType t) {
-        return switch (t) {
-            case LONG       -> 0;
-            case INT256     -> 1;
-            case UINT256    -> 2;
-            case FLOAT256   -> 3;
-            case UFLOAT256  -> 4;
-            case BIGINTEGER -> 5;
-        };
-    }
-
-    // ══════════════════════ 配置接口 ══════════════════════
+    // ═══════════ 配置接口 ═══════════
 
     /**
-     * 连接到 PrecisionConfig（后续实现）
+     * 转换到目标类型（配合 PrecisionConfig 使用）
      */
     public DynamicNumber convertTo(NumberType targetType) {
         return switch (targetType) {
@@ -328,5 +330,7 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
         System.out.println("a + b = " + a.add(b));
         System.out.println("a * b = " + a.multiply(b));
         System.out.println("type of a + b = " + a.add(b).type());
+        System.out.println("abs(-5) = " + DynamicNumber.of(-5).abs());
+        System.out.println("0.1 + 0.2 = " + DynamicNumber.of(0.1).add(DynamicNumber.of(0.2)));
     }
 }

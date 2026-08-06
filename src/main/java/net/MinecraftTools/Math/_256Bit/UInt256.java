@@ -3,13 +3,11 @@ package net.MinecraftTools.Math._256Bit;
 import net.MinecraftTools.Math.DynamicAccuracy.BigInteger;
 import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 
-import java.util.Objects;
-
 /**
  * UInt256 — 无符号 256-bit 整数
  *
- * <p>内部: long[4] = {hiHi, hiLo, loHi, loLo}，纯无符号解释 范围: [0, 2^256 - 1] 零 GC，全 long 运算，无 BigInteger
- * 依赖（除 toString）
+ * <p>内部: long[4] = {a, b, c, d} = {bits 255..192, 191..128, 127..64, 63..0}，纯无符号解释
+ * 范围: [0, 2^256 - 1] 零 GC，全 long 运算，无 BigInteger 依赖（除 toString）
  *
  * <p>用途: 块坐标映射、哈希、距离计算、无符号噪声
  *
@@ -25,8 +23,9 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
 
     // ──────── 缓存 ────────
     private transient BigInteger cachedBigInteger;
+    private transient BigDecimal cachedBigDecimal;
     private transient int hash;
-    private static final int HASH_UNCACHED = Integer.MIN_VALUE;
+    private static final int HASH_NOT_CACHED = Integer.MIN_VALUE;
 
     // ──────── 常量 ────────
     public static final UInt256 ZERO = new UInt256(0L, 0L, 0L, 0L);
@@ -53,7 +52,7 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
         this.b = b;
         this.c = c;
         this.d = d;
-        this.hash = HASH_UNCACHED;
+        this.hash = HASH_NOT_CACHED;
     }
 
     @Override
@@ -77,8 +76,6 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
         return cachedBigDecimal = new BigDecimal(toBigInteger());
     }
 
-    private transient BigDecimal cachedBigDecimal;
-
     // ──────── 工厂 ────────
 
     /** 从无符号 long（零扩展） */
@@ -95,23 +92,27 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
     /** 大端 32 字节 */
     public static UInt256 of(byte[] bytes) {
         if (bytes.length != 32) throw new IllegalArgumentException("need 32 bytes");
-        return new UInt256(
-        ((long) (bytes[0] & 0xFF) << 56) | ((long) (bytes[1] & 0xFF) << 48)
-                | ((long) (bytes[2] & 0xFF) << 40) | ((long) (bytes[3] & 0xFF) << 32)
-                | ((long) (bytes[4] & 0xFF) << 24) | ((long) (bytes[5] & 0xFF) << 16)
-                | ((long) (bytes[6] & 0xFF) << 8) | (long) (bytes[7] & 0xFF),
-        ((long) (bytes[8] & 0xFF) << 56) | ((long) (bytes[9] & 0xFF) << 48)
-                | ((long) (bytes[10] & 0xFF) << 40) | ((long) (bytes[11] & 0xFF) << 32)
-                | ((long) (bytes[12] & 0xFF) << 24) | ((long) (bytes[13] & 0xFF) << 16)
-                | ((long) (bytes[14] & 0xFF) << 8) | (long) (bytes[15] & 0xFF),
-        ((long) (bytes[16] & 0xFF) << 56) | ((long) (bytes[17] & 0xFF) << 48)
-                | ((long) (bytes[18] & 0xFF) << 40) | ((long) (bytes[19] & 0xFF) << 32)
-                | ((long) (bytes[20] & 0xFF) << 24) | ((long) (bytes[21] & 0xFF) << 16)
-                | ((long) (bytes[22] & 0xFF) << 8) | (long) (bytes[23] & 0xFF),
-        ((long) (bytes[24] & 0xFF) << 56) | ((long) (bytes[25] & 0xFF) << 48)
-                | ((long) (bytes[26] & 0xFF) << 40) | ((long) (bytes[27] & 0xFF) << 32)
-                | ((long) (bytes[28] & 0xFF) << 24) | ((long) (bytes[29] & 0xFF) << 16)
-                | ((long) (bytes[30] & 0xFF) << 8) | (long) (bytes[31] & 0xFF));
+        return new UInt256(aggregate(bytes, 0), aggregate(bytes, 8),
+                aggregate(bytes, 16), aggregate(bytes, 24));
+    }
+
+    /** 从 BigInteger（取低 256 位，无符号截断） */
+    public static UInt256 of(BigInteger value) {
+        byte[] mag = value.toByteArray();
+        byte[] buf = new byte[32];
+        if (mag.length >= 32) {
+            System.arraycopy(mag, mag.length - 32, buf, 0, 32);
+        } else {
+            System.arraycopy(mag, 0, buf, 32 - mag.length, mag.length);
+        }
+        return of(buf);
+    }
+
+    private static long aggregate(byte[] b, int off) {
+        return ((long) (b[off] & 0xFF) << 56) | ((long) (b[off + 1] & 0xFF) << 48)
+                | ((long) (b[off + 2] & 0xFF) << 40) | ((long) (b[off + 3] & 0xFF) << 32)
+                | ((long) (b[off + 4] & 0xFF) << 24) | ((long) (b[off + 5] & 0xFF) << 16)
+                | ((long) (b[off + 6] & 0xFF) << 8) | (long) (b[off + 7] & 0xFF);
     }
 
     /** 从 Int256 按位模式转换（符号位变数值） */
@@ -127,10 +128,10 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
         long c0 = (Long.compareUnsigned(d0, d) < 0) ? 1L : 0L;
         long c1 = c + o.c + c0;
         long c2 = (c0 != 0 && Long.compareUnsigned(c1, c) <= 0) ||
-                        (c0 == 0 && Long.compareUnsigned(c1, c) < 0) ? 1L : 0L;
+                (c0 == 0 && Long.compareUnsigned(c1, c) < 0) ? 1L : 0L;
         long b1 = b + o.b + c2;
         long c3 = (c2 != 0 && Long.compareUnsigned(b1, b) <= 0) ||
-                        (c2 == 0 && Long.compareUnsigned(b1, b) < 0) ? 1L : 0L;
+                (c2 == 0 && Long.compareUnsigned(b1, b) < 0) ? 1L : 0L;
         long a1 = a + o.a + c3;
         return new UInt256(a1, b1, c1, d0);
     }
@@ -141,43 +142,48 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
         long b0 = Long.compareUnsigned(d, o.d) < 0 ? 1L : 0L;
         long c1 = c - o.c - b0;
         long b1 = (b0 != 0 && Long.compareUnsigned(c, c1) <= 0) ||
-                        (b0 == 0 && Long.compareUnsigned(c, c1) < 0) ? 1L : 0L;
+                (b0 == 0 && Long.compareUnsigned(c, c1) < 0) ? 1L : 0L;
         long b1val = b - o.b - b1;
         long b2 = (b1 != 0 && Long.compareUnsigned(b, b1val) <= 0) ||
-                        (b1 == 0 && Long.compareUnsigned(b, b1val) < 0) ? 1L : 0L;
+                (b1 == 0 && Long.compareUnsigned(b, b1val) < 0) ? 1L : 0L;
         long a1 = a - o.a - b2;
         return new UInt256(a1, b1val, c1, d0);
     }
 
     /* ==================== 乘法 ==================== */
     public UInt256 multiply(UInt256 o) {
-        // 与 Int256 相同——无符号乘法的低 256 bit 天然正确
-        long p0 = d * o.d;
-        long hi0 = Math.unsignedMultiplyHigh(d, o.d);
+        // 4×4 无符号 limb 乘法 → 512-bit 中间结果（小端 r[0..7]），取低 256 bit。
+        long[] x = {d, c, b, a};   // 小端
+        long[] y = {o.d, o.c, o.b, o.a};
+        long[] r = new long[8];
+        for (int i = 0; i < 4; i++) {
+            long xi = x[i];
+            if (xi == 0) continue;
+            for (int j = 0; j < 4; j++) {
+                long yj = y[j];
+                if (yj == 0) continue;
+                long lo = xi * yj;
+                long hi = Math.unsignedMultiplyHigh(xi, yj);
+                addTo(r, i + j, lo, hi);
+            }
+        }
+        return new UInt256(r[7], r[6], r[5], r[4]);
+    }
 
-        long sum1 = hi0;
-        sum1 += d * o.c;
-        sum1 += c * o.d;
-        long p1 = sum1;
-        long hi1 = Math.unsignedMultiplyHigh(d, o.c) + Math.unsignedMultiplyHigh(c, o.d)
-                + (Long.compareUnsigned(sum1, hi0) < 0 ? 1L : 0L);
-
-        long sum2 = hi1;
-        sum2 += d * o.b;
-        sum2 += c * o.c;
-        sum2 += b * o.d;
-        long p2 = sum2;
-        long hi2 = Math.unsignedMultiplyHigh(d, o.b) + Math.unsignedMultiplyHigh(c, o.c)
-                + Math.unsignedMultiplyHigh(b, o.d);
-
-        long sum3 = hi2;
-        sum3 += d * o.a;
-        sum3 += c * o.b;
-        sum3 += b * o.c;
-        sum3 += a * o.d;
-        long p3 = sum3;
-
-        return new UInt256(p3, p3_hi, p2, p1, p0);
+    /** 512-bit 累加器：r[idx..idx+1] += (hi << 64 | lo)，进位向高位传播 */
+    private static void addTo(long[] r, int idx, long lo, long hi) {
+        long carry = 0;
+        long s = r[idx] + lo;
+        if (Long.compareUnsigned(s, r[idx]) < 0) carry++;
+        r[idx] = s;
+        s = r[idx + 1] + hi;
+        if (Long.compareUnsigned(s, r[idx + 1]) < 0) carry++;
+        r[idx + 1] = s;
+        for (int k = idx + 2; carry != 0 && k < r.length; k++) {
+            s = r[k] + carry;
+            carry = Long.compareUnsigned(s, r[k]) < 0 ? 1 : 0;
+            r[k] = s;
+        }
     }
 
     /* ==================== 除法 ==================== */
@@ -187,7 +193,7 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
         if (divisor.equals(ONE)) return this;
         if (this.compareTo(divisor) < 0) return ZERO;
 
-        // 二分搜索
+        // 二分搜索（256 次迭代封顶）
         UInt256 low = ZERO;
         UInt256 high = this;
         while (low.compareTo(high) <= 0) {
@@ -208,8 +214,8 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
     /* ==================== 移位 ==================== */
     public UInt256 shiftLeft(int n) {
         if (n == 0) return this;
-        if (n >= 256) return ZERO;
         if (n < 0) return shiftRight(-n);
+        if (n >= 256) return ZERO;
         int w = n / 64;
         int b = n % 64;
         if (b == 0) {
@@ -233,8 +239,8 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
 
     public UInt256 shiftRight(int n) {
         if (n == 0) return this;
-        if (n >= 256) return ZERO;
         if (n < 0) return shiftLeft(-n);
+        if (n >= 256) return ZERO;
         int w = n / 64;
         int b = n % 64;
         if (b == 0) {
@@ -274,6 +280,39 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
         return new UInt256(~a, ~b, ~c, ~d);
     }
 
+    /** 低 mask 位全 1 的掩码（mask ≤ 256），超出部分为 0 */
+    public UInt256 maskBelow(int mask) {
+        if (mask <= 0) return ZERO;
+        if (mask >= 256) return MAX_VALUE;
+        int w = mask / 64;
+        int r = mask % 64;
+        long m0 = 0L, m1 = 0L, m2 = 0L, m3 = 0L;
+        if (w >= 1) m3 = -1L;
+        if (w >= 2) m2 = -1L;
+        if (w >= 3) m1 = -1L;
+        if (r > 0) {
+            long low = (1L << r) - 1;
+            switch (w) {
+                case 0 -> m3 = low;
+                case 1 -> m2 = low;
+                case 2 -> m1 = low;
+                case 3 -> m0 = low;
+            }
+        }
+        return new UInt256(m0, m1, m2, m3);
+    }
+
+    /** 第 idx 个 64-bit limb（0 = 最高 a，3 = 最低 d） */
+    public long component(int idx) {
+        return switch (idx) {
+            case 0 -> a;
+            case 1 -> b;
+            case 2 -> c;
+            case 3 -> d;
+            default -> throw new IndexOutOfBoundsException("limb index: " + idx);
+        };
+    }
+
     /* ==================== 比较 ==================== */
     @Override
     public int compareTo(UInt256 o) {
@@ -290,9 +329,46 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
         return a == 0 && b == 0 && c == 0 && d == 0;
     }
 
+    public boolean isOne() {
+        return a == 0 && b == 0 && c == 0 && d == 1;
+    }
+
+    /** 无符号比较的 signum（0 或 1） */
+    public int signum() {
+        return isZero() ? 0 : 1;
+    }
+
+    /* ==================== 位判断 ==================== */
+    public boolean testBit(int n) {
+        if (n < 0 || n >= 256) throw new IndexOutOfBoundsException("bit: " + n);
+        return (component(n / 64) & (1L << (n & 63))) != 0;
+    }
+
+    public long lowBit() {
+        return d & 1L;
+    }
+
+    /** 最低置位位的位置（-1 表示 0） */
+    public int getLowestSetBit() {
+        if (d != 0) return Long.numberOfTrailingZeros(d);
+        if (c != 0) return 64 + Long.numberOfTrailingZeros(c);
+        if (b != 0) return 128 + Long.numberOfTrailingZeros(b);
+        if (a != 0) return 192 + Long.numberOfTrailingZeros(a);
+        return -1;
+    }
+
+    /** 无符号 bitLength：最高非零位位置 + 1 */
+    public int bitLength() {
+        if (a != 0) return 256 - Long.numberOfLeadingZeros(a);
+        if (b != 0) return 192 - Long.numberOfLeadingZeros(b);
+        if (c != 0) return 128 - Long.numberOfLeadingZeros(c);
+        if (d != 0) return 64 - Long.numberOfLeadingZeros(d);
+        return 0;
+    }
+
     /* ==================== 转换 ==================== */
     public long longValue() {
-        if (a == 0 && b == 0 && c == 0 && d >= 0) return d;
+        if (a == 0 && b == 0 && c == 0) return d;
         throw new ArithmeticException("UInt256 out of long range");
     }
 
@@ -341,7 +417,7 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
 
     @Override
     public int hashCode() {
-        if (hash == HASH_UNCACHED) hash = (int) (a ^ b ^ c ^ d);
+        if (hash == HASH_NOT_CACHED) hash = (int) (a ^ b ^ c ^ d);
         return hash;
     }
 
@@ -353,7 +429,10 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
         System.out.println("MAX + 1 = " + MAX_VALUE.add(ONE));
         System.out.println("2^128   = " + ONE.shiftLeft(128));
         System.out.println("2^128/2 = " + ONE.shiftLeft(128).divide(TWO));
-        System.out.println("(2^128 - 1) * 2 = " + MAX_VALUE.shiftRight(128).multiply(TWO));
+        System.out.println("2^128 * 2^128 = " + ONE.shiftLeft(128).multiply(ONE.shiftLeft(128)));
         System.out.println("1000 * 1000 = " + UInt256.of(1000).multiply(UInt256.of(1000)));
+        System.out.println("0xFFFF_FFFF.bitLength = " + UInt256.of(0xFFFF_FFFFL).bitLength());
+        System.out.println("-1L 作为无符号 = " + UInt256.of(-1L));
+        System.out.println("(-1L 无符号).bitLength = " + UInt256.of(-1L).bitLength());
     }
 }

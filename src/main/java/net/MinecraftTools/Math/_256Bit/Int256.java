@@ -9,8 +9,8 @@ import java.util.Objects;
 /**
  * Int256 — 有符号 256-bit 整数（补码）
  *
- * <p>内部: long[4] = {hiHi, hiLo, loHi, loLo}，最高位 = 符号 范围: [-2^255, 2^255 - 1] 零 GC，全 long 运算，无
- * BigInteger 依赖（除 toString）
+ * <p>内部: long[4] = {a, b, c, d} = {bits 255..192, 191..128, 127..64, 63..0}，最高位 = 符号
+ * 范围: [-2^255, 2^255 - 1] 零 GC，全 long 运算，无 BigInteger 依赖（除 toString）
  *
  * <p>INF32768 / MCRe NoiseFarlands 项目
  */
@@ -25,8 +25,9 @@ public final class Int256 extends Number implements Comparable<Int256> {
     // ──────── 缓存 ────────
     private transient Int256 cachedNegate;
     private transient BigInteger cachedBigInteger;
+    private transient BigDecimal cachedBigDecimal;
     private transient int hash;
-    private static final int HASH_UNCACHED = Integer.MIN_VALUE;
+    private static final int HASH_NOT_CACHED = Integer.MIN_VALUE;
 
     // ──────── 常量 ────────
     public static final Int256 ZERO = new Int256(0L, 0L, 0L, 0L);
@@ -38,9 +39,10 @@ public final class Int256 extends Number implements Comparable<Int256> {
     public static final Int256 TEN = new Int256(0L, 0L, 0L, 10L);
     public static final Int256 MINUS_ONE = new Int256(-1L, -1L, -1L, -1L);
     public static final Int256 NEG_ONE = MINUS_ONE;
-
-    // ──────── 内联工具 ────────
-    private static final long LONG_MASK = 0xFFFF_FFFF_FFFF_FFFFL;
+    /** 最大值 2^255 - 1 */
+    public static final Int256 MAX_VALUE = new Int256(0x7FFF_FFFF_FFFF_FFFFL, -1L, -1L, -1L);
+    /** 最小值 -2^255 */
+    public static final Int256 MIN_VALUE = new Int256(0x8000_0000_0000_0000L, 0L, 0L, 0L);
 
     // ──────── 小值缓存 (-128..127) ────────
     private static final Int256[] SMALL = new Int256[256];
@@ -85,8 +87,6 @@ public final class Int256 extends Number implements Comparable<Int256> {
         return cachedBigDecimal = new BigDecimal(toBigInteger());
     }
 
-    private transient BigDecimal cachedBigDecimal;
-
     // ──────── 工厂 ────────
 
     /** 从 long（符号扩展） */
@@ -101,11 +101,25 @@ public final class Int256 extends Number implements Comparable<Int256> {
         return new Int256(w0, w1, w2, w3);
     }
 
-    /** 大端 32 字节 */
+    /** 大端 32 字节（补码） */
     public static Int256 of(byte[] bytes) {
         if (bytes.length != 32) throw new IllegalArgumentException("need 32 bytes");
         return new Int256(aggregate(bytes, 0), aggregate(bytes, 8),
-        aggregate(bytes, 16), aggregate(bytes, 24));
+                aggregate(bytes, 16), aggregate(bytes, 24));
+    }
+
+    /** 从 BigInteger（取低 256 位，符号扩展） */
+    public static Int256 of(BigInteger value) {
+        byte[] mag = value.toByteArray();
+        byte[] buf = new byte[32];
+        if (mag.length >= 32) {
+            System.arraycopy(mag, mag.length - 32, buf, 0, 32);
+        } else {
+            byte fill = value.signum() < 0 ? (byte) 0xFF : 0x00;
+            Arrays.fill(buf, fill);
+            System.arraycopy(mag, 0, buf, 32 - mag.length, mag.length);
+        }
+        return of(buf);
     }
 
     private static long aggregate(byte[] b, int off) {
@@ -143,48 +157,39 @@ public final class Int256 extends Number implements Comparable<Int256> {
 
     /* ==================== 乘法 ==================== */
     public Int256 multiply(Int256 o) {
-        // Karatsuba 启发 — 分 4 块
-        long x0 = d;
-        long x1 = c;
-        long x2 = b;
-        long x3 = a;
-        long y0 = o.d;
-        long y1 = o.c;
-        long y2 = o.b;
-        long y3 = o.a;
+        // 4×4 无符号 limb 乘法 → 512-bit 中间结果（小端 r[0..7]），取低 256 bit。
+        // 补码乘法的低 256 bit 与无符号乘法一致，天然正确。
+        long[] x = {d, c, b, a};   // 小端
+        long[] y = {o.d, o.c, o.b, o.a};
+        long[] r = new long[8];
+        for (int i = 0; i < 4; i++) {
+            long xi = x[i];
+            if (xi == 0) continue;
+            for (int j = 0; j < 4; j++) {
+                long yj = y[j];
+                if (yj == 0) continue;
+                long lo = xi * yj;
+                long hi = Math.unsignedMultiplyHigh(xi, yj);
+                addTo(r, i + j, lo, hi);
+            }
+        }
+        return new Int256(r[7], r[6], r[5], r[4]);
+    }
 
-        // 乘积的低 4 字（256 bit）
-        long p0, p1, p2, p3;
-        long carry;
-
-        // dword 0: x0*y0
-        p0 = x0 * y0;
-        long hi0 = Math.unsignedMultiplyHigh(x0, y0);
-
-        // dword 1: x0*y1 + x1*y0 + hi0
-        long sum1 = hi0;
-        sum1 = unsignedAdd(sum1, x0 * y1);
-        sum1 = unsignedAdd(sum1, x1 * y0);
-        p1 = sum1;
-        long hi1 = (sum1 < hi0 ? 1L : 0L) + Math.unsignedMultiplyHigh(x0, y1) + Math.unsignedMultiplyHigh(x1, y0);
-
-        // dword 2: x0*y2 + x1*y1 + x2*y0 + hi1
-        long sum2 = hi1;
-        sum2 = unsignedAdd(sum2, x0 * y2);
-        sum2 = unsignedAdd(sum2, x1 * y1);
-        sum2 = unsignedAdd(sum2, x2 * y0);
-        p2 = sum2;
-        long hi2 = Math.unsignedMultiplyHigh(x0, y2) + Math.unsignedMultiplyHigh(x1, y1) + Math.unsignedMultiplyHigh(x2, y0);
-
-        // dword 3: x0*y3 + x1*y2 + x2*y1 + x3*y0 + hi2
-        long sum3 = hi2;
-        sum3 = unsignedAdd(sum3, x0 * y3);
-        sum3 = unsignedAdd(sum3, x1 * y2);
-        sum3 = unsignedAdd(sum3, x2 * y1);
-        sum3 = unsignedAdd(sum3, x3 * y0);
-        p3 = sum3;
-
-        return new Int256(p3, p2, p1, p0);
+    /** 512-bit 累加器：r[idx..idx+1] += (hi << 64 | lo)，进位向高位传播 */
+    private static void addTo(long[] r, int idx, long lo, long hi) {
+        long carry = 0;
+        long s = r[idx] + lo;
+        if (Long.compareUnsigned(s, r[idx]) < 0) carry++;
+        r[idx] = s;
+        s = r[idx + 1] + hi;
+        if (Long.compareUnsigned(s, r[idx + 1]) < 0) carry++;
+        r[idx + 1] = s;
+        for (int k = idx + 2; carry != 0 && k < r.length; k++) {
+            s = r[k] + carry;
+            carry = Long.compareUnsigned(s, r[k]) < 0 ? 1 : 0;
+            r[k] = s;
+        }
     }
 
     /* ==================== 除法 ==================== */
@@ -200,7 +205,7 @@ public final class Int256 extends Number implements Comparable<Int256> {
 
         if (num.compareTo(den) < 0) return ZERO;
 
-        // 二分搜索商
+        // 二分搜索商（256 次迭代封顶）
         Int256 low = ZERO;
         Int256 high = num;
         while (low.compareTo(high) <= 0) {
@@ -308,13 +313,46 @@ public final class Int256 extends Number implements Comparable<Int256> {
         return new Int256(~a, ~b, ~c, ~d);
     }
 
+    /** 低 mask 位全 1 的掩码（mask ≤ 256），超出部分为 0 */
+    public Int256 maskBelow(int mask) {
+        if (mask <= 0) return ZERO;
+        if (mask >= 256) return new Int256(-1L, -1L, -1L, -1L);
+        int w = mask / 64;
+        int r = mask % 64;
+        long m0 = 0L, m1 = 0L, m2 = 0L, m3 = 0L;
+        if (w >= 1) m3 = -1L;
+        if (w >= 2) m2 = -1L;
+        if (w >= 3) m1 = -1L;
+        if (r > 0) {
+            long low = (1L << r) - 1;
+            switch (w) {
+                case 0 -> m3 = low;
+                case 1 -> m2 = low;
+                case 2 -> m1 = low;
+                case 3 -> m0 = low;
+            }
+        }
+        return new Int256(m0, m1, m2, m3);
+    }
+
+    /** 第 idx 个 64-bit limb（0 = 最高 a，3 = 最低 d） */
+    public long component(int idx) {
+        return switch (idx) {
+            case 0 -> a;
+            case 1 -> b;
+            case 2 -> c;
+            case 3 -> d;
+            default -> throw new IndexOutOfBoundsException("limb index: " + idx);
+        };
+    }
+
     /* ==================== 比较 ==================== */
     @Override
     public int compareTo(Int256 o) {
-        if (unsignedCmp(a, o.a) != 0) return a < o.a ? -1 : 1;
-        if (unsignedCmp(b, o.b) != 0) return b < o.b ? -1 : 1;
-        if (unsignedCmp(c, o.c) != 0) return c < o.c ? -1 : 1;
-        if (unsignedCmp(d, o.d) != 0) return d < o.d ? -1 : 1;
+        if (a != o.a) return a < o.a ? -1 : 1; // 符号位在最高 limb
+        if (b != o.b) return Long.compareUnsigned(b, o.b) < 0 ? -1 : 1;
+        if (c != o.c) return Long.compareUnsigned(c, o.c) < 0 ? -1 : 1;
+        if (d != o.d) return Long.compareUnsigned(d, o.d) < 0 ? -1 : 1;
         return 0;
     }
 
@@ -326,30 +364,52 @@ public final class Int256 extends Number implements Comparable<Int256> {
         return a == 0 && b == 0 && c == 0 && d == 0;
     }
 
+    public boolean isOne() {
+        return a == 0 && b == 0 && c == 0 && d == 1;
+    }
+
     public int signum() {
         return isZero() ? 0 : (a < 0 ? -1 : 1);
     }
 
     /* ==================== 位判断 ==================== */
     public boolean testBit(int n) {
+        if (n < 0 || n >= 256) throw new IndexOutOfBoundsException("bit: " + n);
         return (component(n / 64) & (1L << (n & 63))) != 0;
     }
 
+    /** 最低位（0 或 1） */
+    public long lowBit() {
+        return d & 1L;
+    }
+
+    /** 最低置位位的位置（-1 表示 0） */
+    public int getLowestSetBit() {
+        if (d != 0) return Long.numberOfTrailingZeros(d);
+        if (c != 0) return 64 + Long.numberOfTrailingZeros(c);
+        if (b != 0) return 128 + Long.numberOfTrailingZeros(b);
+        if (a != 0) return 192 + Long.numberOfTrailingZeros(a);
+        return -1;
+    }
+
+    /**
+     * 补码表示中除去符号位所需的位数（BigInteger.bitLength 语义）
+     * 正数: 最高有效位位置 + 1；负数: 最高 0 位位置 + 1；0: 0
+     */
     public int bitLength() {
-        if (isZero()) return 0;
-        if (isNegative()) {
-            // 补码负数：取反后的 bitLength
-            Int256 abs = negate();
-            if (abs.a != 0) return 256 - Long.numberOfLeadingZeros(abs.a);
-            if (abs.b != 0) return 192 - Long.numberOfLeadingZeros(abs.b);
-            if (abs.c != 0) return 128 - Long.numberOfLeadingZeros(abs.c);
-            return 64 - Long.numberOfLeadingZeros(abs.d);
+        if (a == 0 && b == 0 && c == 0 && d == 0) return 0;
+        if (!isNegative()) {
+            if (a != 0) return 256 - Long.numberOfLeadingZeros(a);
+            if (b != 0) return 192 - Long.numberOfLeadingZeros(b);
+            if (c != 0) return 128 - Long.numberOfLeadingZeros(c);
+            return 64 - Long.numberOfLeadingZeros(d);
         }
-        // 正数
-        if (a != 0) return 256 - Long.numberOfLeadingZeros(a);
-        if (b != 0) return 192 - Long.numberOfLeadingZeros(b);
-        if (c != 0) return 128 - Long.numberOfLeadingZeros(c);
-        return 64 - Long.numberOfLeadingZeros(d);
+        // 负数: 找最高 0 位（~value 的最高 1 位）。避免 negate 在 MIN_VALUE 时溢出。
+        if (a != -1L) return 256 - Long.numberOfLeadingZeros(~a);
+        if (b != -1L) return 192 - Long.numberOfLeadingZeros(~b);
+        if (c != -1L) return 128 - Long.numberOfLeadingZeros(~c);
+        if (d != -1L) return 64 - Long.numberOfLeadingZeros(~d);
+        return 0; // -1
     }
 
     /* ==================== 转换 ==================== */
@@ -410,7 +470,7 @@ public final class Int256 extends Number implements Comparable<Int256> {
     }
 
     private static boolean unsignedLessOrEqual(long x, long y) {
-        return Long.compareUnsigned(x, y) >= 0;
+        return Long.compareUnsigned(x, y) <= 0;
     }
 
     private static boolean unsignedGreaterThan(long x, long y) {
@@ -421,15 +481,6 @@ public final class Int256 extends Number implements Comparable<Int256> {
         return Long.compareUnsigned(x, y) >= 0;
     }
 
-    private static int unsignedCmp(long x, long y) {
-        return Long.compareUnsigned(x, y);
-    }
-
-    private static long unsignedAdd(long a, long b) {
-        long sum = a + b;
-        return sum;
-    }
-
     // ══════════════════════ 测试 ══════════════════════
     public static void main(String[] args) {
         System.out.println("=== Int256 测试 ===");
@@ -437,7 +488,14 @@ public final class Int256 extends Number implements Comparable<Int256> {
         System.out.println("ONE  = " + ONE);
         System.out.println("MAX_LONG + 1 = " + of(Long.MAX_VALUE).add(ONE));
         System.out.println("2 * MAX_LONG = " + of(Long.MAX_VALUE).multiply(TWO));
-        System.out.println("(2^128) = " + ONE.shiftLeft(128));
-        System.out.println("(2^128)/2 = " + ONE.shiftLeft(128).divide(TWO));
+        System.out.println("2^128 = " + ONE.shiftLeft(128));
+        System.out.println("2^128/2 = " + ONE.shiftLeft(128).divide(TWO));
+        System.out.println("2^128 * 2^128 = " + ONE.shiftLeft(128).multiply(ONE.shiftLeft(128)));
+        System.out.println("MIN_VALUE = " + MIN_VALUE);
+        System.out.println("MIN_VALUE.negate() = " + MIN_VALUE.negate());
+        System.out.println("MIN_VALUE.bitLength() = " + MIN_VALUE.bitLength());
+        System.out.println("-1.bitLength() = " + MINUS_ONE.bitLength());
+        System.out.println("-2.bitLength() = " + of(-2).bitLength());
+        System.out.println("MAX_VALUE = " + MAX_VALUE);
     }
 }

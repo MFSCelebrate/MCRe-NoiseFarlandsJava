@@ -4,47 +4,50 @@ import net.MinecraftTools.Math.DynamicAccuracy.BigInteger;
 import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 import net.MinecraftTools.Math.DynamicAccuracy.MathContext;
 
-import java.util.Objects;
-
 /**
  * UFloat256 — 无符号 256-bit 浮点数 (IEEE 754 风格)
  *
- * <p>布局: 64 指数 + 192 尾数 偏置: 2^63 - 1 舍入: RN (Round to Nearest, Even) + GRS 保护位 零 GC，全整数运算实现
+ * <p>布局: 64 指数 + 192 尾数，偏置 2^63-1，RN(GRS) 向偶舍入，零 GC
+ * 范围: [0, 2^(2^63)] 精度: 192 bit ≈ 57 位十进制
  *
- * <p>范围: [0, 2^(2^63)] ≈ [0, 10^2.7e18] 精度: 192 bit ≈ 57 位十进制
+ * <p>位映射（连续）:
+ * <pre>
+ *   a = [exp:64]
+ *   b = [mantHi:64]
+ *   c = [mantMid:64]
+ *   d = [mantLo:64]
+ * </pre>
  *
  * <p>INF32768 / MCRe NoiseFarlands 项目
  */
 public final class UFloat256 extends Number implements Comparable<UFloat256> {
 
     // ═══════════ 位布局常量 ═══════════
-    // bit 255..192:  指数 (64 bit)
-    // bit 191..0:    尾数 (192 bit)
-    private static final int EXPONENT_BITS = 64;
-    private static final int MANTISSA_BITS = 192;
-    private static final long EXPONENT_MASK = 0xFFFF_FFFF_FFFF_FFFFL;
-    private static final long EXPONENT_BIAS = (1L << 63) - 1;
+    private static final int MANT_BITS = 192;
+    private static final int MANT_IMPLIED = MANT_BITS + 1; // 193（含隐含位）
+    private static final long EXPONENT_BIAS = 0x7FFF_FFFF_FFFF_FFFFL; // 2^63-1
     private static final long EXPONENT_ALL_ONES = 0xFFFF_FFFF_FFFF_FFFFL;
-    private static final long MANT_HI_MASK = 0xFFFF_FFFF_FFFF_FFFFL;
+    private static final long MANT_MASK = 0xFFFF_FFFF_FFFF_FFFFL;
 
     // ──────── 内部存储 ────────
-    final long a; // [exp:64] 高位 ← 指数 64 bit
-    final long b; // [mantHi:64] 高位
-    final long c; // [mantMid:64] 中位
-    final long d; // [mantLo:64] 低位
+    final long a; // [exp:64]（无符号）
+    final long b; // [mantHi:64]
+    final long c; // [mantMid:64]
+    final long d; // [mantLo:64]
 
     // ──────── 缓存 ────────
     private transient int hash;
-    private static final int HASH_UNCACHED = Integer.MIN_VALUE;
+    private static final int HASH_NOT_CACHED = Integer.MIN_VALUE;
+    private transient BigDecimal cachedBigDecimal;
 
     // ──────── 常量 ────────
     public static final UFloat256 ZERO = new UFloat256(0L, 0L, 0L, 0L);
-    public static final UFloat256 ONE = UFloat256.of(1L);
-    public static final UFloat256 TWO = UFloat256.of(2L);
+    public static final UFloat256 ONE = make(EXPONENT_BIAS, 0L, 0L, 0L);
+    public static final UFloat256 TWO = make(EXPONENT_BIAS + 1, 0L, 0L, 0L);
     public static final UFloat256 THREE = UFloat256.of(3L);
     public static final UFloat256 TEN = UFloat256.of(10L);
-    public static final UFloat256 INF = UFloat256.make(EXPONENT_ALL_ONES, 0L, 0L, 0L);
-    public static final UFloat256 NaN = UFloat256.make(EXPONENT_ALL_ONES, 1L, 0L, 0L);
+    public static final UFloat256 INF = make(EXPONENT_ALL_ONES, 0L, 0L, 0L);
+    public static final UFloat256 NaN = make(EXPONENT_ALL_ONES, 1L, 0L, 0L);
 
     // ──────── 构造 ────────
     private UFloat256(long a, long b, long c, long d) {
@@ -52,7 +55,7 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
         this.b = b;
         this.c = c;
         this.d = d;
-        this.hash = HASH_UNCACHED;
+        this.hash = HASH_NOT_CACHED;
     }
 
     private static UFloat256 make(long exp, long mantHi, long mantMid, long mantLo) {
@@ -62,12 +65,8 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
     @Override
     public long longValue() {
         if (isZero()) return 0L;
-        long exp = exponent() - EXPONENT_BIAS;
-        if (exp < 0) return 0L;
-        UInt256 mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-        mant = mant.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
-        mant = mant.shiftLeft((int) exp);
-        return mant.longValue();
+        UInt256 u = toUInt256();
+        return u.longValue();
     }
 
     @Override
@@ -83,60 +82,17 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
     @Override
     public double doubleValue() {
         if (isZero()) return 0.0;
+        if (isNaN()) return Double.NaN;
+        if (isInfinity()) return Double.POSITIVE_INFINITY;
         return toBigDecimal().doubleValue();
-    }
-
-    // ═══════════ 工厂 ═══════════
-
-    /** 从 double（近似，走 BigDecimal 中间） */
-    public static UFloat256 of(double value) {
-        if (value <= 0.0) return ZERO;
-        if (Double.isNaN(value) || Double.isInfinite(value)) return NaN;
-        return of(BigDecimal.valueOf(value));
-    }
-
-    /** 从无符号 long（精确） */
-    public static UFloat256 of(long value) {
-        if (value == 0) return ZERO;
-        int bitLen = 64 - Long.numberOfLeadingZeros(value);
-        long mant = value << (MANTISSA_BITS - bitLen + 1);
-        long exp = EXPONENT_BIAS + bitLen - 1;
-        return make(exp, mant >>> 128, (mant >>> 64) & MANT_HI_MASK, mant & MANT_HI_MASK);
-    }
-
-    /** 从 BigDecimal（舍入） */
-    public static UFloat256 of(BigDecimal value) {
-        if (value.signum() <= 0) return ZERO;
-        // Convert via BigInteger mantissa approach
-        return of(value.toBigInteger());
-    }
-
-    /** 从 UInt256（精确） */
-    public static UFloat256 of(UInt256 value) {
-        if (value.isZero()) return ZERO;
-        int bitLen = value.bitLength();
-        UInt256 mant = value.shiftLeft(MANTISSA_BITS - bitLen + 1);
-        long exp = EXPONENT_BIAS + bitLen - 1;
-        return make(exp, mant.a, mant.b, mant.c);
     }
 
     // ═══════════ 字段提取 ═══════════
 
-    private long exponent() {
-        return a;
-    }
-
-    private long mantissaHi() {
-        return b;
-    }
-
-    private long mantissaMid() {
-        return c;
-    }
-
-    private long mantissaLo() {
-        return d;
-    }
+    private long exponent() { return a; }
+    private long mantissaHi() { return b; }
+    private long mantissaMid() { return c; }
+    private long mantissaLo() { return d; }
 
     private boolean isZero() {
         return a == 0L && b == 0L && c == 0L && d == 0L;
@@ -150,61 +106,130 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
         return a == EXPONENT_ALL_ONES && (b != 0L || c != 0L || d != 0L);
     }
 
+    /** 实际指数（有符号）：exp - BIAS（64-bit 补码，无符号下溢自动回绕为负数） */
+    private long realExponent() {
+        return a - EXPONENT_BIAS;
+    }
+
+    // ═══════════ 工厂 ═══════════
+
+    /** 从 double（精确：IEEE 754 位模式转换，53-bit 尾数完整保留） */
+    public static UFloat256 of(double value) {
+        if (value <= 0.0) return ZERO;
+        if (Double.isNaN(value) || Double.isInfinite(value)) return NaN;
+        long bits = Double.doubleToRawLongBits(value);
+        int expBits = (int) ((bits >>> 52) & 0x7FF);
+        long mantBits = bits & 0xFFFF_FFFF_FFFFFL;
+        if (expBits == 0) {
+            // 次正规: mantBits × 2^-1074
+            if (mantBits == 0) return ZERO;
+            return of(UInt256.of(mantBits)).scaleExp(-1074);
+        }
+        if (expBits == 0x7FF) return NaN;
+        // 正规: (2^52 | mantBits) × 2^(expBits - 1023 - 52)
+        UInt256 mant = UInt256.of(0, 0, 0, mantBits).or(UInt256.of(0, 0, 1L << 52, 0L));
+        return of(mant).scaleExp(expBits - 1075);
+    }
+
+    /** 从无符号 long（精确） */
+    public static UFloat256 of(long value) {
+        if (value == 0) return ZERO;
+        return of(UInt256.of(value));
+    }
+
+    /** 从 UInt256（精确） */
+    public static UFloat256 of(UInt256 value) {
+        if (value.isZero()) return ZERO;
+        int bitLen = value.bitLength();
+        UInt256 mant = value.shiftLeft(MANT_IMPLIED - bitLen); // 最高位 → bit192（隐含位）
+        long exp = EXPONENT_BIAS + bitLen - 1;
+        return make(exp, mant.b, mant.c, mant.d);
+    }
+
+    /** 从 Int256（要求非负） */
+    public static UFloat256 of(Int256 value) {
+        if (value.isNegative()) throw new IllegalArgumentException("UFloat256 cannot be negative: " + value);
+        if (value.isZero()) return ZERO;
+        return of(UInt256.fromInt256(value));
+    }
+
+    /** 从 BigInteger（要求非负；超 256 bit 时截断高 256 bit 并补偿指数） */
+    public static UFloat256 of(BigInteger value) {
+        if (value.signum() < 0) throw new IllegalArgumentException("UFloat256 cannot be negative");
+        if (value.signum() == 0) return ZERO;
+        int bitLen = value.bitLength();
+        if (bitLen <= 256) {
+            return of(UInt256.of(value));
+        }
+        UInt256 top = UInt256.of(value.shiftRight(bitLen - 256));
+        return of(top).scaleExp(bitLen - 256);
+    }
+
+    /** 从 BigDecimal（scale 按 log2(10) 近似调整指数） */
+    public static UFloat256 of(BigDecimal value) {
+        if (value.signum() <= 0) return ZERO;
+        UFloat256 f = of(value.unscaledValue());
+        int scale = value.scale();
+        if (scale != 0) {
+            f = f.scaleExp(-(long) (scale * 3.321928094887362)); // * log2(10)
+        }
+        return f;
+    }
+
+    /** 指数加 delta（有符号 long），下溢→0，上溢→Inf */
+    private UFloat256 scaleExp(long delta) {
+        if (delta == 0) return this;
+        long exp = a + delta; // 补码回绕
+        if (delta > 0) {
+            if (Long.compareUnsigned(exp, a) < 0) return INF;            // 回绕 → 上溢
+            if (Long.compareUnsigned(exp, EXPONENT_ALL_ONES) >= 0) return INF;
+        } else {
+            if (Long.compareUnsigned(exp, a) > 0) return ZERO;            // 回绕 → 数学负 → 极小
+        }
+        return make(exp, b, c, d);
+    }
+
     // ═══════════ 舍入核心 (GRS + RN) ═══════════
 
-    /** 将尾数舍入到 192 bit + 隐含 1，返回 (exp, mantHi, mantMid, mantLo) */
+    /** 将 mant（UInt256）舍入到 193 bit（含隐含位），RN 向偶舍入，打包为 UFloat256 */
     private static UFloat256 roundAndPack(long exp, UInt256 mant) {
         if (mant.isZero()) return ZERO;
 
         int bitLen = mant.bitLength();
-        int shift = bitLen - (MANTISSA_BITS + 1); // +1 隐含位
-
-        long G = 0, R = 0, S = 0;
+        int shift = bitLen - MANT_IMPLIED;
 
         if (shift > 0) {
-            // 提取 GRS 位
-            UInt256 shifted = mant.shiftRight(shift - 2);
-            G = shifted.d & 2L;
-            R = shifted.d & 1L;
-            // Sticky: 所有被移位的低位 OR 起来
-            long mask = (1L << (shift - 2)) - 1;
-            if (mask > 0) {
-                S = mant.and(UInt256.of(0L, 0L, 0L, mask)).isZero() ? 0L : 1L;
-            } else {
-                S = 0;
-            }
+            long G = mant.testBit(shift - 1) ? 1L : 0L;
+            long R = shift >= 2 && mant.testBit(shift - 2) ? 1L : 0L;
+            long S = (shift >= 2 && !mant.and(mant.maskBelow(shift - 2)).isZero()) ? 1L : 0L;
             mant = mant.shiftRight(shift);
-        }
-
-        // RN 舍入判断
-        if (G == 1L) {
-            boolean increment;
-            if (R == 1L || S == 1L) {
-                increment = true;
-            } else {
-                // G=1, R=0, S=0: tie → 向偶
-                increment = (mant.d & 1L) != 0;
-            }
+            // 归一化：指数 + shift（64-bit 无符号）
+            exp += shift;
+            if (Long.compareUnsigned(exp, EXPONENT_ALL_ONES) >= 0) return INF;
+            boolean increment = G == 1 && (R == 1 || S == 1 || mant.lowBit() == 1);
             if (increment) {
                 mant = mant.add(UInt256.ONE);
-                if (mant.bitLength() > MANTISSA_BITS + 1) {
+                if (mant.bitLength() > MANT_IMPLIED) {
                     mant = mant.shiftRight(1);
                     exp++;
+                    if (Long.compareUnsigned(exp, EXPONENT_ALL_ONES) >= 0) return INF;
                 }
             }
+        } else if (shift < 0) {
+            // 理论上不会发生（调用方保证归一化），防御性左移
+            mant = mant.shiftLeft(-shift);
+            exp += shift; // 负
+            if (Long.compareUnsigned(exp, EXPONENT_ALL_ONES) >= 0) return ZERO; // 回绕下溢
         }
 
-        // 去掉隐含 1
-        mant = mant.and(UInt256.of(0L, 0x7FFF_FFFF_FFFF_FFFFL, 0xFFFF_FFFF_FFFF_FFFFL, 0x7FFF_FFFF_FFFF_FFFFL));
+        // 去掉隐含位：保留低 192 bit
+        mant = mant.and(mant.maskBelow(MANT_BITS));
 
-        // 指数范围处理
-        if (exp >= EXPONENT_ALL_ONES) return INF;
-        if (exp == 0) {
-            mant = mant.shiftRight(1);
-            if (mant.isZero()) return ZERO;
-        }
+        // 上溢 → Inf（exp 编码 ≥ 2^64-1）
+        if (Long.compareUnsigned(exp, EXPONENT_ALL_ONES) >= 0) return INF;
+        // exp 编码是 64-bit 无符号，任意值（含 exp < BIAS 的小数指数）都合法
 
-        return make(exp, mant.a, mant.b, mant.c);
+        return make(exp, mant.b, mant.c, mant.d);
     }
 
     // ═══════════ 加法 ═══════════
@@ -213,56 +238,60 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
         if (isNaN() || o.isNaN()) return NaN;
         if (isZero()) return o;
         if (o.isZero()) return this;
-        if (isInfinity() && o.isInfinity()) return INF;
         if (isInfinity() || o.isInfinity()) return INF;
 
         long exp1 = exponent();
         long exp2 = o.exponent();
 
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-        M1 = M1.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
-        M2 = M2.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
+        UInt256 M1 = mantissaWithImplied();
+        UInt256 M2 = o.mantissaWithImplied();
 
-        // 对齐指数
-        if (exp1 > exp2) {
-            M2 = M2.shiftRight((int) (exp1 - exp2));
-            exp2 = exp1;
-        } else if (exp2 > exp1) {
-            M1 = M1.shiftRight((int) (exp2 - exp1));
+        // 对齐指数（无符号比较）
+        int cmp = Long.compareUnsigned(exp1, exp2);
+        if (cmp > 0) {
+            long diff = exp1 - exp2;
+            M2 = diff > 300 ? UInt256.ZERO : M2.shiftRight((int) diff);
+        } else if (cmp < 0) {
+            long diff = exp2 - exp1;
+            M1 = diff > 300 ? UInt256.ZERO : M1.shiftRight((int) diff);
             exp1 = exp2;
         }
 
-        UInt256 resultMant = M1.add(M2);
-
-        return roundAndPack(exp1, resultMant);
+        return roundAndPack(exp1, M1.add(M2));
     }
 
-    // ═══════════ 减法 ═══════════
+    // ═══════════ 减法（无符号，下溢归零） ═══════════
 
     public UFloat256 subtract(UFloat256 o) {
         if (isNaN() || o.isNaN()) return NaN;
         if (o.isZero()) return this;
-        if (this.compareTo(o) < 0) return ZERO; // 无符号下溢
+        if (isZero()) return ZERO;
+        if (isInfinity() && o.isInfinity()) return NaN;
+        if (isInfinity()) return INF;
+        if (this.compareTo(o) < 0) return ZERO;
 
         long exp1 = exponent();
         long exp2 = o.exponent();
 
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-        M1 = M1.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
-        M2 = M2.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
+        UInt256 M1 = mantissaWithImplied();
+        UInt256 M2 = o.mantissaWithImplied();
 
-        if (exp1 > exp2) {
-            M2 = M2.shiftRight((int) (exp1 - exp2));
-        } else if (exp2 > exp1) {
-            M1 = M1.shiftRight((int) (exp2 - exp1));
+        int cmp = Long.compareUnsigned(exp1, exp2);
+        if (cmp > 0) {
+            long diff = exp1 - exp2;
+            M2 = diff > 300 ? UInt256.ZERO : M2.shiftRight((int) diff);
+        } else if (cmp < 0) {
+            long diff = exp2 - exp1;
+            M1 = diff > 300 ? UInt256.ZERO : M1.shiftRight((int) diff);
             exp1 = exp2;
         }
 
-        UInt256 resultMant = M1.subtract(M2);
+        return roundAndPack(exp1, M1.subtract(M2));
+    }
 
-        return roundAndPack(exp1, resultMant);
+    /** 尾数 + 隐含位（UInt256，隐含位在 bit192 = a 的 bit0） */
+    private UInt256 mantissaWithImplied() {
+        return UInt256.of(0L, b, c, d).or(UInt256.of(1L, 0L, 0L, 0L));
     }
 
     // ═══════════ 乘法 ═══════════
@@ -272,15 +301,22 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
         if (isZero() || o.isZero()) return ZERO;
         if (isInfinity() || o.isInfinity()) return INF;
 
-        long exp = exponent() + o.exponent() - EXPONENT_BIAS;
+        // E_in = re1 + re2 + BIAS（realExp 域运算，防 64-bit 无符号加法回绕）
+        long re1 = a - EXPONENT_BIAS; // 补码 realExp
+        long re2 = o.a - EXPONENT_BIAS;
+        long re;
+        try {
+            re = Math.addExact(re1, re2);
+        } catch (ArithmeticException ex) {
+            // 同号溢出：同负 → 下溢 ZERO；同正 → 上溢 INF
+            return (re1 < 0) ? ZERO : INF;
+        }
+        if (re < -(EXPONENT_BIAS)) return ZERO; // E_in < 0 → 极小值归零
+        long exp = re + EXPONENT_BIAS;          // 无符号 64-bit（re ≤ 2^63-1 → exp ≤ 2^64-2）
 
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-        M1 = M1.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
-        M2 = M2.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
-
-        UInt256 product = M1.multiply(M2);
-        exp += 1; // 两个 192×192 尾数相乘
+        UInt256 M1 = mantissaWithImplied();
+        UInt256 M2 = o.mantissaWithImplied();
+        UInt256 product = M1.multiply(M2); // 193×193 → 386 bit
 
         return roundAndPack(exp, product);
     }
@@ -296,16 +332,24 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
             return INF;
         }
 
-        long exp = exponent() - o.exponent() + EXPONENT_BIAS;
+        // E_in = re1 - re2 + BIAS - 1
+        long re1 = a - EXPONENT_BIAS; // 补码 realExp
+        long re2 = o.a - EXPONENT_BIAS;
+        long re;
+        try {
+            re = Math.subtractExact(re1, re2);
+        } catch (ArithmeticException ex) {
+            // 异号溢出：re1 负且 re2 正 → 极小 ZERO；re1 正且 re2 负 → 巨大 INF
+            return (re1 < 0) ? ZERO : INF;
+        }
+        if (re < 1 - EXPONENT_BIAS) return ZERO; // E_in < 0 → 极小值归零
+        long exp = re + EXPONENT_BIAS - 1;       // 无符号 64-bit
+        if (Long.compareUnsigned(exp, EXPONENT_ALL_ONES) >= 0) return INF;
 
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-        M1 = M1.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
-        M2 = M2.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
-
-        M1 = M1.shiftLeft(192);
+        UInt256 M1 = mantissaWithImplied();
+        UInt256 M2 = o.mantissaWithImplied();
+        M1 = M1.shiftLeft(MANT_IMPLIED); // 商精度 193 bit
         UInt256 quot = M1.divide(M2);
-        exp -= 192;
 
         return roundAndPack(exp, quot);
     }
@@ -320,45 +364,81 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
         if (cmp != 0) return cmp;
         cmp = Long.compareUnsigned(mantissaHi(), o.mantissaHi());
         if (cmp != 0) return cmp;
-        return Long.compareUnsigned(mantissaMid(), o.mantissaMid());
+        cmp = Long.compareUnsigned(mantissaMid(), o.mantissaMid());
+        if (cmp != 0) return cmp;
+        return Long.compareUnsigned(mantissaLo(), o.mantissaLo());
     }
 
     // ═══════════ 转换 ═══════════
 
+    /** 直接位转换：mant 192→176 bit（GRS 舍入）+ 指数 re-bias（2^78-2^63） */
     public Float256 toFloat256() {
         if (isZero()) return Float256.ZERO;
         if (isNaN()) return Float256.NaN;
         if (isInfinity()) return Float256.POS_INF;
 
-        UInt256 mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-        mant = mant.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
-        long exp = exponent() - EXPONENT_BIAS;
-
-        BigDecimal dec = new BigDecimal(mant.toBigInteger(), (int) exp);
-        return Float256.of(dec);
+        UInt256 mant = mantissaWithImplied();
+        // 192+1 → 176+1：右移 16 bit
+        long G = mant.testBit(15) ? 1L : 0L;
+        long R = mant.testBit(14) ? 1L : 0L;
+        long S = !mant.and(mant.maskBelow(14)).isZero() ? 1L : 0L;
+        mant = mant.shiftRight(16);
+        boolean inc = G == 1 && (R == 1 || S == 1 || mant.lowBit() == 1);
+        boolean carryExp = false;
+        if (inc) {
+            mant = mant.add(UInt256.ONE);
+            if (mant.bitLength() > 177) {
+                mant = mant.shiftRight(1);
+                carryExp = true;
+            }
+        }
+        // 指数 re-bias: e' = e + 2^78 - 2^63（79-bit (hi, lo) 表示）
+        long hi = (a >>> 16) + 0x3FFF_8000_0000_0000L;
+        long lo = a & 0xFFFF;
+        if (carryExp) {
+            lo++;
+            if (lo > 0xFFFF) {
+                lo = 0;
+                hi++;
+                if (hi > 0x7FFF_FFFF_FFFF_FFFFL) return Float256.POS_INF;
+            }
+        }
+        return Float256.make(hi, lo, mant.b & 0x0000_FFFF_FFFF_FFFFL, mant.c, mant.d, 1);
     }
 
     public UInt256 toUInt256() {
         if (isZero()) return UInt256.ZERO;
-
-        UInt256 mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-        mant = mant.or(UInt256.ONE.shiftLeft(MANTISSA_BITS));
-
-        long shift = exponent() - EXPONENT_BIAS;
-        if (shift >= 0) return mant.shiftLeft((int) shift);
-        else return mant.shiftRight((int) -shift);
+        if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
+        UInt256 mant = mantissaWithImplied();
+        long realExp = realExponent();
+        if (realExp >= 0) {
+            if (realExp > 255) throw new ArithmeticException("UFloat256 out of UInt256 range");
+            return mant.shiftLeft((int) realExp);
+        }
+        if (realExp < -256) return UInt256.ZERO; // 右移超范围 → 0
+        return mant.shiftRight((int) -realExp);
     }
 
     public BigDecimal toBigDecimal() {
         if (isZero()) return BigDecimal.ZERO;
-        if (isNaN() || isInfinity()) throw new ArithmeticException("Not a finite number");
-
-        BigInteger mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo())
-                .or(UInt256.ONE.shiftLeft(MANTISSA_BITS))
-                .toBigInteger();
-
-        long exp = exponent() - EXPONENT_BIAS - MANTISSA_BITS;
-        return new BigDecimal(mant, (int) exp);
+        if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
+        BigInteger mant = mantissaWithImplied().toBigInteger();
+        long realExp = realExponent() - MANT_BITS;
+        BigDecimal dec = new BigDecimal(mant, 0);
+        if (realExp > 0) {
+            if (realExp < 1024) {
+                dec = dec.multiply(BigDecimal.valueOf(Math.pow(2, realExp)));
+            } else {
+                dec = dec.scaleByPowerOfTen((int) (realExp * 0.3010299956639812));
+            }
+        } else if (realExp < 0) {
+            if (realExp > -1024) {
+                dec = dec.divide(BigDecimal.valueOf(Math.pow(2, -realExp)), MathContext.DECIMAL128);
+            } else {
+                dec = dec.scaleByPowerOfTen((int) (realExp * 0.3010299956639812));
+            }
+        }
+        return dec;
     }
 
     @Override
@@ -379,15 +459,8 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
 
     @Override
     public int hashCode() {
-        if (hash == HASH_UNCACHED) hash = (int) (a ^ b ^ c ^ d);
+        if (hash == HASH_NOT_CACHED) hash = (int) (a ^ b ^ c ^ d);
         return hash;
-    }
-
-    // ══════════════════════ 辅助 ══════════════════════
-
-    // 快速构造：直接位模式
-    private static UFloat256 pack(long exp, long mantHi, long mantMid, long mantLo) {
-        return new UFloat256(exp, mantHi, mantMid, mantLo);
     }
 
     // ═══════════════════════ 测试 ═══════════════════════
@@ -396,10 +469,17 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
         System.out.println("=== UFloat256 验证 (含舍入) ===");
         UFloat256 a = UFloat256.of(1);
         UFloat256 b = UFloat256.of(3);
+        System.out.println("1   = " + ONE);
+        System.out.println("2   = " + TWO);
         System.out.println("1/3 = " + a.divide(b));
+        System.out.println("1/3*3 = " + a.divide(b).multiply(UFloat256.of(3)));
         System.out.println("1+2 = " + a.add(UFloat256.of(2)));
         System.out.println("2^100 = " + UFloat256.of(UInt256.ONE.shiftLeft(100)));
-        System.out.println("MAX  = " + INF);
+        System.out.println("0.1+0.2 = " + of(0.1).add(of(0.2)));
+        System.out.println("toFloat256(1.5) = " + of(1.5).toFloat256());
+        System.out.println("toUInt256(2^100) = " + of(UInt256.ONE.shiftLeft(100)).toUInt256());
         System.out.println("MAX+1 = " + INF.add(UFloat256.of(1)));
+        System.out.println("1/0 = " + ONE.divide(ZERO));
+        System.out.println("0/0 = " + ZERO.divide(ZERO));
     }
 }

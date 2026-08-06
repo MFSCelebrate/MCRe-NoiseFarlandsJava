@@ -1,379 +1,74 @@
 
 > Task :compileJava
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:95: error: variable cachedBigDecimal is already defined in class UFloat256
-    private transient BigDecimal cachedBigDecimal;
-                                 ^
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:346: error: method toBigDecimal() is already defined in class UFloat256
-    public BigDecimal toBigDecimal() {
-                      ^
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:25: error: cannot find symbol
-    private static volatile RoundingMode roundingMode = RoundingMode.NEAREST_EVEN;
-                            ^
-  symbol:   class RoundingMode
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:48: error: cannot find symbol
-    public static RoundingMode getRoundingMode() { return roundingMode; }
-                  ^
-  symbol:   class RoundingMode
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:50: error: cannot find symbol
-    public static void setRoundingMode(RoundingMode mode) {
-                                       ^
-  symbol:   class RoundingMode
-  location: class PrecisionConfig
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/DynamicAccuracy/BigInteger.java:22: error: duplicate class: net.MinecraftTools.Math.DynamicAccuracy.BigInteger
+public class BigInteger extends Number implements Comparable<BigInteger> {
+       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:18: error: duplicate class: net.MinecraftTools.Math._256Bit.UFloat256
+public final class UFloat256 extends Number implements Comparable<UFloat256> {
+             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Float256.java:19: error: duplicate class: net.MinecraftTools.Math._256Bit.Float256
+public final class Float256 extends Number implements Comparable<Float256> {
+             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/PrecisionConfig.java:15: error: duplicate class: net.MinecraftTools.Math._256Bit.PrecisionConfig
+public final class PrecisionConfig {
+             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/BitSieve.java:9: error: duplicate class: net.MinecraftTools.Math.DynamicAccuracy.BitSieve
+final class BitSieve {
+      ^
 /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/biome/BiomeSpecialEffects.java:90: warning: [removal] BIOME_INFO_NOISE in Biome has been deprecated and marked for removal
+                double groundValue = Biome.BIOME_INFO_NOISE.getValue(x * 0.0225, z * 0.0225, false);
+                                          ^
 --
                                 return Advancement.Builder.recipeAdvancement().parent(RecipeBuilder.ROOT_RECIPE_ADVANCEMENT);
                                                                               ^
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/DynamicAccuracy/BigInteger.java:1863: error: cannot find symbol
-                MutableBigInteger t1 = MutableBigInteger.borrowTemp();
-                                                        ^
-  symbol:   method borrowTemp()
-  location: class MutableBigInteger
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/DynamicAccuracy/BigInteger.java:1865: error: cannot find symbol
-                work.multiply(MutableBigInteger.borrowTempB().shallowCopy(y1), t1);
-                                               ^
-  symbol:   method borrowTempB()
-  location: class MutableBigInteger
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/DynamicAccuracy/BigInteger.java:1867: error: cannot find symbol
-                MutableBigInteger t2 = MutableBigInteger.borrowTempC();
-                                                        ^
-  symbol:   method borrowTempC()
-  location: class MutableBigInteger
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/DynamicAccuracy/BigInteger.java:1868: error: cannot find symbol
-                MutableBigInteger work2 = MutableBigInteger.borrowTempD().shallowCopy(a2.multiply(m1));
-                                                           ^
-  symbol:   method borrowTempD()
-  location: class MutableBigInteger
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/DynamicAccuracy/BigInteger.java:1869: error: cannot find symbol
-                work2.multiply(MutableBigInteger.borrowTempE().shallowCopy(y2), t2);
-                                                ^
-  symbol:   method borrowTempE()
-  location: class MutableBigInteger
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/DynamicAccuracy/BitSieve.java:146: error: cannot find symbol
-                BigInteger candidate = initValue.add(cachedBigInt(offset));
-                                                     ^
-  symbol:   method cachedBigInt(long)
-  location: class BitSieve
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:92: error: cannot find symbol
-        return cachedBigDecimal = new BigDecimal(toBigInteger());
-                                                 ^
-  symbol:   method toBigInteger()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:111: error: cannot find symbol
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/UFloat256.java:111: error: no suitable method found for of(BigInteger)
+        return of(value.toBigInteger());
+               ^
+    method UFloat256.of(double) is not applicable
+      (argument mismatch; BigInteger cannot be converted to double)
+    method UFloat256.of(long) is not applicable
+--
+    method UFloat256.of(UInt256) is not applicable
+      (argument mismatch; BigInteger cannot be converted to UInt256)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/UFloat256.java:117: error: cannot find symbol
         int bitLen = value.bitLength();
                           ^
   symbol:   method bitLength()
   location: variable value of type UInt256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:153: error: cannot find symbol
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/UFloat256.java:159: error: cannot find symbol
         int bitLen = mant.bitLength();
                          ^
   symbol:   method bitLength()
   location: variable mant of type UInt256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:184: error: cannot find symbol
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/UFloat256.java:190: error: cannot find symbol
                 if (mant.bitLength() > MANTISSA_BITS + 1) {
                         ^
   symbol:   method bitLength()
   location: variable mant of type UInt256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:245: error: cannot find symbol
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                    ^
-  symbol:   method mantissaHi()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:245: error: cannot find symbol
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                                  ^
-  symbol:   method mantissaMid()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:245: error: cannot find symbol
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                                                 ^
-  symbol:   method mantissaLo()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:246: error: cannot find symbol
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-                                     ^
-  symbol:   method mantissaHi()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:246: error: cannot find symbol
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-                                                     ^
-  symbol:   method mantissaMid()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:246: error: cannot find symbol
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-                                                                      ^
-  symbol:   method mantissaLo()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:271: error: cannot find symbol
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                    ^
-  symbol:   method mantissaHi()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:271: error: cannot find symbol
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                                  ^
-  symbol:   method mantissaMid()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:271: error: cannot find symbol
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                                                 ^
-  symbol:   method mantissaLo()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:272: error: cannot find symbol
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-                                     ^
-  symbol:   method mantissaHi()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:272: error: cannot find symbol
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-                                                     ^
-  symbol:   method mantissaMid()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:272: error: cannot find symbol
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-                                                                      ^
-  symbol:   method mantissaLo()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:293: error: cannot find symbol
-        long exp = exponent() - o.expinate() + EXPONENT_BIAS;
-                                 ^
-  symbol:   method expinate()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:295: error: cannot find symbol
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                    ^
-  symbol:   method mantissaHi()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:295: error: cannot find symbol
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                                  ^
-  symbol:   method mantissaMid()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:295: error: cannot find symbol
-        UInt256 M1 = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                                                 ^
-  symbol:   method mantissaLo()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:296: error: cannot find symbol
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-                                     ^
-  symbol:   method mantissaHi()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:296: error: cannot find symbol
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-                                                     ^
-  symbol:   method mantissaMid()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:296: error: cannot find symbol
-        UInt256 M2 = UInt256.of(0L, o.mantissaHi(), o.mantissaMid(), o.mantissaLo());
-                                                                      ^
-  symbol:   method mantissaLo()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:315: error: cannot find symbol
-        cmp = Long.compareUnsigned(mantissaHi(), o.mantissaHi());
-                                   ^
-  symbol:   method mantissaHi()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:315: error: cannot find symbol
-        cmp = Long.compareUnsigned(mantissaHi(), o.mantissaHi());
-                                                  ^
-  symbol:   method mantissaHi()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:317: error: cannot find symbol
-        return Long.compareUnsigned(mantissaMid(), o.mantissaMid());
-                                    ^
-  symbol:   method mantissaMid()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:317: error: cannot find symbol
-        return Long.compareUnsigned(mantissaMid(), o.mantissaMid());
-                                                    ^
-  symbol:   method mantissaMid()
-  location: variable o of type UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:327: error: cannot find symbol
-        UInt256 mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                      ^
-  symbol:   method mantissaHi()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:327: error: cannot find symbol
-        UInt256 mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                                    ^
-  symbol:   method mantissaMid()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:327: error: cannot find symbol
-        UInt256 mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                                                   ^
-  symbol:   method mantissaLo()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:338: error: cannot find symbol
-        UInt256 mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                      ^
-  symbol:   method mantissaHi()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:338: error: cannot find symbol
-        UInt256 mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                                    ^
-  symbol:   method mantissaMid()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:338: error: cannot find symbol
-        UInt256 mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo());
-                                                                   ^
-  symbol:   method mantissaLo()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:350: error: cannot find symbol
-        BigInteger mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo())
-                                         ^
-  symbol:   method mantissaHi()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:350: error: cannot find symbol
-        BigInteger mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo())
-                                                       ^
-  symbol:   method mantissaMid()
-  location: class UFloat256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:350: error: cannot find symbol
-        BigInteger mant = UInt256.of(0L, mantissaHi(), mantissaMid(), mantissaLo())
-                                                                      ^
-  symbol:   method mantissaLo()
-  location: class UFloat256
 /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UInt256.java:180: error: cannot find symbol
         return new UInt256(p3, p3_hi, p2, p1, p0);
                                ^
   symbol:   variable p3_hi
   location: class UInt256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:62: error: cannot find symbol
-    public static final Float256 NaN = Float256.make(EXPONENT_MASK, 1L, 0L, 0L, 1);
-                                                     ^
-  symbol:   variable EXPONENT_MASK
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:63: error: cannot find symbol
-    public static final Float256 POS_INF = Float256.make(EXPONENT_MASK, 0L, 0L, 0L, 1);
-                                                         ^
-  symbol:   variable EXPONENT_MASK
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:64: error: cannot find symbol
-    public static final Float256 NEG_INF = Float256.make(EXPONENT_MASK, 0L, 0L, 0L, -1);
-                                                         ^
-  symbol:   variable EXPONENT_MASK
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:80: error: cannot find symbol
-        long a = sign | (expHi << 48) | (mantHi & MANT_HI_MASK);
-                                                  ^
-  symbol:   variable MANT_HI_MASK
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:123: error: cannot find symbol
-        return valueOf(value);
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:134: error: no suitable method found for of(BigInteger)
+        return of(unscaled);
                ^
-  symbol:   method valueOf(BigDecimal)
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:137: error: cannot find symbol
-        return a & MANT_HI_MASK;
-                   ^
-  symbol:   variable MANT_HI_MASK
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:153: error: cannot find symbol
-        return exponent() == EXPONENT_MASK && (mantissaHi() != 0 || mantissaMid() != 0 || mantissaLo() != 0);
-                             ^
-  symbol:   variable EXPONENT_MASK
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:157: error: cannot find symbol
-        return exponent() == EXPONENT_MASK && mantissaHi() == 0 && mantissaMid() == 0 && mantissaLo() == 0;
-                             ^
-  symbol:   variable EXPONENT_MASK
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:176: error: cannot find symbol
-            this.hi = mantHi;
-                ^
-  symbol: variable hi
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:177: error: cannot find symbol
-            this.mid = mantMid;
-                ^
-  symbol: variable mid
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:178: error: cannot find symbol
-            this.lo = mantLo;
-                ^
-  symbol: variable lo
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:200: error: cannot find symbol
+    method Float256.of(double) is not applicable
+      (argument mismatch; BigInteger cannot be converted to double)
+    method Float256.of(long) is not applicable
+--
+    method Float256.of(BigDecimal) is not applicable
+      (argument mismatch; BigInteger cannot be converted to BigDecimal)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:211: error: cannot find symbol
             S = mant.maskBelow(shift - 2).isZero() ? 0L : 1L;
                     ^
   symbol:   method maskBelow(int)
   location: variable mant of type Int256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:210: error: cannot find symbol
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:221: error: cannot find symbol
                 increment = (mant.lowBit() & 1L) != 0;
                                  ^
   symbol:   method lowBit()
   location: variable mant of type Int256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:226: error: cannot find symbol
-        if (exp >= EXPONENT_MASK) return signum < 0 ? NEG_INF : POS_INF;
-                   ^
-  symbol:   variable EXPONENT_MASK
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:229: error: incompatible types: possible lossy conversion from long to int
-            mant = mant.shiftRight(-exp + 1);
-                                        ^
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:233: error: cannot find symbol
-        long mantHi = (mant.a & MANT_HI_MASK);
-                                ^
-  symbol:   variable MANT_HI_MASK
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:329: error: cannot find symbol
-        long exp = exponent1() - o.exponent1() + EXPONENT_BIAS;
-                   ^
-  symbol:   method exponent1()
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:329: error: cannot find symbol
-        long exp = exponent1() - o.exponent1() + EXPONENT_BIAS;
-                                  ^
-  symbol:   method exponent1()
-  location: variable o of type Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:341: error: cannot find symbol
-        return roundAndPack(exp, quotient, resultSign);
-                                 ^
-  symbol:   variable quotient
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:381: error: cannot find symbol
-        long exp = JNE_exponent() - EXPONENT_BIAS;
-                   ^
-  symbol:   method JNE_exponent()
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:383: error: cannot find symbol
-        Int256 mant = Int256.of(0, mantHi(), mantMid(), mantLo());
-                                   ^
-  symbol:   method mantHi()
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:383: error: cannot find symbol
-        Int256 mant = Int256.of(0, mantHi(), mantMid(), mantLo());
-                                             ^
-  symbol:   method mantMid()
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:383: error: cannot find symbol
-        Int256 mant = Int256.of(0, mantHi(), mantMid(), mantLo());
-                                                        ^
-  symbol:   method mantLo()
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:393: error: cannot find symbol
-        BigInteger mant = Int256.of(0, mantHi(), mantMid(), mantLo())
-                                       ^
-  symbol:   method mantHi()
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:393: error: cannot find symbol
-        BigInteger mant = Int256.of(0, mantHi(), mantMid(), mantLo())
-                                                 ^
-  symbol:   method mantMid()
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:393: error: cannot find symbol
-        BigInteger mant = Int256.of(0, mantHi(), mantMid(), mantLo())
-                                                            ^
-  symbol:   method mantLo()
-  location: class Float256
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Float256.java:397: error: no suitable constructor found for BigDecimal(BigInteger,long)
-        BigDecimal dec = new BigDecimal(mant, -exp);
-                         ^
-    constructor BigDecimal.BigDecimal(char[],MathContext) is not applicable
-      (argument mismatch; BigInteger cannot be converted to char[])
-    constructor BigDecimal.BigDecimal(String,MathContext) is not applicable
---
-    constructor BigDecimal.BigDecimal(long,MathContext) is not applicable
-      (argument mismatch; BigInteger cannot be converted to long)
 /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/Int256.java:62: error: cannot find symbol
         this.hash = HASH_NOT_CACHED;
                     ^
@@ -394,15 +89,6 @@
                     ^
   symbol:   variable HASH_NOT_CACHED
   location: class DynamicNumber
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/DynamicNumber.java:58: error: no suitable method found for of(double)
-        return new DynamicNumber(NumberType.FLOAT256, Float256.of(val));
-                                                              ^
-    method Float256.of(long) is not applicable
-      (argument mismatch; possible lossy conversion from double to long)
-    method Float256.of(Int256) is not applicable
---
-    method Float256.of(BigDecimal) is not applicable
-      (argument mismatch; double cannot be converted to BigDecimal)
 /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/DynamicNumber.java:139: error: cannot find symbol
             case UINT256    -> Float256.of(((UInt256) value).toBigIndia());
                                                             ^
@@ -411,17 +97,19 @@
 /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/DynamicNumber.java:142: error: no suitable method found for of(BigInteger)
             case BIGINTEGER -> Float256.of((BigInteger) value);
                                        ^
+    method Float256.of(double) is not applicable
+      (argument mismatch; BigInteger cannot be converted to double)
     method Float256.of(long) is not applicable
-      (argument mismatch; BigInteger cannot be converted to long)
-    method Float256.of(Int256) is not applicable
 --
     method Float256.of(BigDecimal) is not applicable
       (argument mismatch; BigInteger cannot be converted to BigDecimal)
 /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/DynamicNumber.java:149: error: no suitable method found for of(Int256)
             case INT256     -> UFloat256.of(((Int256) value).abs());
                                         ^
+    method UFloat256.of(double) is not applicable
+      (argument mismatch; Int256 cannot be converted to double)
     method UFloat256.of(long) is not applicable
-      (argument mismatch; Int256 cannot be converted to long)
+--
     method UFloat256.of(UInt256) is not applicable
       (argument mismatch; Int256 cannot be converted to UInt256)
 /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/DynamicNumber.java:151: error: cannot find symbol
@@ -432,13 +120,12 @@
 /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/DynamicNumber.java:153: error: no suitable method found for of(BigInteger)
             case BIGINTEGER -> UFloat256.of(((BigInteger) value).abs());
                                         ^
+    method UFloat256.of(double) is not applicable
+      (argument mismatch; BigInteger cannot be converted to double)
     method UFloat256.of(long) is not applicable
-      (argument mismatch; BigInteger cannot be converted to long)
+--
     method UFloat256.of(UInt256) is not applicable
       (argument mismatch; BigInteger cannot be converted to UInt256)
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/DynamicNumber.java:163: error: toBigDecimal() has private access in UFloat256
-            case UFLOAT256  -> ((UFloat256) value).toBigDecimal().toBigInteger();
-                                                  ^
 /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/DynamicNumber.java:183: error: cannot find symbol
         NumberType resultType = ResultType(type, o.type);
                                                  ^
@@ -549,68 +236,12 @@
                     ^
   symbol:   variable HASH_NOT_CACHED
   location: class DynamicNumber
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:25: error: cannot find symbol
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:26: error: cannot find symbol
     private static volatile RoundingMode roundingMode = RoundingMode.NEAREST_EVEN;
-                                                        ^
-  symbol:   variable RoundingMode
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:35: error: cannot find symbol
-    public static NumberType getDefaultType() { return defaultConfigType; }
-                                                       ^
-  symbol:   variable defaultConfigType
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:39: error: cannot find symbol
-        defaultConfigType = type;
-        ^
-  symbol:   variable defaultConfigType
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:72: error: cannot find symbol
-        defaultConfigType = NumberType.INT256;
-        ^
-  symbol:   variable defaultConfigType
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:78: error: cannot find symbol
-        defaultConfigType = NumberType.INT256;
-        ^
-  symbol:   variable defaultConfigType
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:84: error: cannot find symbol
-        defaultConfigType = NumberType.BIGINTEGER;
-        ^
-  symbol:   variable defaultConfigType
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:90: error: cannot find symbol
-        defaultConfigType = NumberType.FLOAT256;
-        ^
-  symbol:   variable defaultConfigType
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:98: error: cannot find symbol
-        return switch (defaultConfigType) {
-                       ^
-  symbol:   variable defaultConfigType
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:102: error: no suitable method found for of(double)
-            case FLOAT256   -> DynamicNumber.of(Float256.of(coord));
-                                                        ^
-    method Float256.of(long) is not applicable
-      (argument mismatch; possible lossy conversion from double to long)
-    method Float256.of(Int256) is not applicable
---
-    method Float256.of(BigDecimal) is not applicable
-      (argument mismatch; double cannot be converted to BigDecimal)
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:103: error: no suitable method found for of(double)
-            case UFLOAT256  -> DynamicNumber.of(UFloat256.of(Math.abs((double) coord)));
-                                                         ^
-    method UFloat256.of(long) is not applicable
-      (argument mismatch; possible lossy conversion from double to long)
-    method UFloat256.of(UInt256) is not applicable
-      (argument mismatch; double cannot be converted to UInt256)
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:110: error: cannot find symbol
-        return switch (defaultConfigType) {
-                       ^
-  symbol:   variable defaultConfigType
-  location: class PrecisionConfig
-/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:145: error: cannot find symbol
+                                                                    ^
+  symbol:   variable NEAREST_EVEN
+  location: class RoundingMode
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/PrecisionConfig.java:146: error: cannot find symbol
                 if (u256.bitLength() >= 255)
                         ^
   symbol:   method bitLength()
@@ -619,9 +250,9 @@
 --
 Execution failed for task ':compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
 > Compilation failed; see the compiler output below.
-  /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/UFloat256.java:95: error: variable cachedBigDecimal is already defined in class UFloat256
-      private transient BigDecimal cachedBigDecimal;
-                                   ^
-  120 errors
+  /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/DynamicAccuracy/BigInteger.java:22: error: duplicate class: net.MinecraftTools.Math.DynamicAccuracy.BigInteger
+  public class BigInteger extends Number implements Comparable<BigInteger> {
+         ^
+  46 errors
   70 warnings
 
