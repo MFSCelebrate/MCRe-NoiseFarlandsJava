@@ -7,7 +7,6 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.StreamCorruptedException;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
@@ -1815,11 +1814,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             int lowInt = (int) Math.abs(intCompact) % 100;
             byte[] lowBytes = String.format("%02d", lowInt).getBytes(StandardCharsets.ISO_8859_1);
             System.arraycopy(lowBytes, 0, buf, highIntSize + 1, 2);
-            try {
-                return new String(buf, StandardCharsets.ISO_8859_1);
-            } catch (CharacterCodingException cce) {
-                throw new AssertionError(cce);
-            }
+            return new String(buf, StandardCharsets.ISO_8859_1);
         }
 
         char[] coeff;

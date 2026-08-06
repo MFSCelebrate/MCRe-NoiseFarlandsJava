@@ -58,7 +58,7 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
         this.hash = HASH_NOT_CACHED;
     }
 
-    private static UFloat256 make(long exp, long mantHi, long mantMid, long mantLo) {
+    static UFloat256 make(long exp, long mantHi, long mantMid, long mantLo) {
         return new UFloat256(exp, mantHi, mantMid, mantLo);
     }
 

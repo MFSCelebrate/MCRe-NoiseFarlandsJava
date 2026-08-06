@@ -73,7 +73,7 @@ public final class Float256 extends Number implements Comparable<Float256> {
     }
 
     /** 底层构造：raw 位模式（sign: ±1，expHi/expLo 为 79-bit 指数的拆对） */
-    private static Float256 make(long expHi, long expLo, long mantHi, long mantMid, long mantLo, int sign) {
+    static Float256 make(long expHi, long expLo, long mantHi, long mantMid, long mantLo, int sign) {
         long a = (sign < 0 ? SIGN_MASK : 0L) | (expHi & EXP_HI_MASK);
         long b = ((expLo & 0xFFFF) << 48) | (mantHi & MANT_HI_MASK);
         return new Float256(a, b, mantMid, mantLo);
