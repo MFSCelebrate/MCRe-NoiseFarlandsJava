@@ -45,7 +45,11 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
                     layer = this.getDataLayer(sections, sectionNode);
                 }
 
-                blockNode = flatNode;
+                return layer.get(
+                    SectionPos.sectionRelative(flatNode.getX()),
+                    SectionPos.sectionRelative(flatNode.getY()),
+                    SectionPos.sectionRelative(flatNode.getZ())
+                );
             }
 
             return layer.get(
