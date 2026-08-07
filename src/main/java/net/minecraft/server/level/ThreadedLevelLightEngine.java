@@ -26,6 +26,10 @@ import org.slf4j.Logger;
 public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable {
     public static final int DEFAULT_BATCH_SIZE = 1000;
     private static final Logger LOGGER = LogUtils.getLogger();
+    // MCRe far lands：2^31 方块坐标 = 134217728 chunk。边界前 128 chunk（2048 格）内
+    // 方块坐标将溢出 int（光照传播/区块加载坐标错乱 → 无限循环 → OOM），
+    // 光照直接标记完成，跳过传播（far lands 区块光照降级，区块可正常加载）。
+    private static final long FAR_LANDS_CHUNK_LIMIT = 134217600L;
     private final ConsecutiveExecutor consecutiveExecutor;
     private final ObjectList<Pair<ThreadedLevelLightEngine.TaskType, Runnable>> lightTasks = new ObjectArrayList<>();
     private final ChunkMap chunkMap;
@@ -141,8 +145,18 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
         );
     }
 
+    private static boolean isFarLandsChunk(final ChunkPos pos) {
+        return Math.abs(pos.x()) > FAR_LANDS_CHUNK_LIMIT || Math.abs(pos.z()) > FAR_LANDS_CHUNK_LIMIT;
+    }
+
     public CompletableFuture<ChunkAccess> initializeLight(final ChunkAccess chunk, final boolean lighted) {
         ChunkPos pos = chunk.getPos();
+        // far lands：跳过光照初始化（方块坐标溢出 int → 传播无法收敛）
+        if (isFarLandsChunk(pos)) {
+            chunk.setLightCorrect(lighted);
+            return CompletableFuture.completedFuture(chunk);
+        }
+
         this.addTask((int)pos.x(), (int)pos.z(), ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
             LevelChunkSection[] sections = chunk.getSections();
 
@@ -163,6 +177,12 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
 
     public CompletableFuture<ChunkAccess> lightChunk(final ChunkAccess centerChunk, final boolean lighted) {
         ChunkPos pos = centerChunk.getPos();
+        // far lands：跳过光照传播（坐标溢出 → 任务无限循环 → OOM），直接标记完成
+        if (isFarLandsChunk(pos)) {
+            centerChunk.setLightCorrect(true);
+            return CompletableFuture.completedFuture(centerChunk);
+        }
+
         centerChunk.setLightCorrect(false);
         this.addTask((int)pos.x(), (int)pos.z(), ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
             if (!lighted) {

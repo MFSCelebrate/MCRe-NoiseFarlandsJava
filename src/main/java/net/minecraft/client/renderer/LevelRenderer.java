@@ -537,12 +537,18 @@ public class LevelRenderer implements AutoCloseable {
                         if (slice != null && draw != null && (!draw.hasCustomIndexBuffer() || slice.indexBuffer() != null)) {
                             if (uboIndex == -1) {
                                 uboIndex = sectionInfos.size();
+                                // MCRe far lands：ChunkPosition 传「相机相对」偏移（±视距，int 安全）。
+                                // 原版传绝对坐标依赖 GLSL int 溢出 mod 2^32（未定义行为，驱动差异会堆叠渲染）。
+                                Vec3 cameraPos = this.levelRenderState.cameraRenderState.pos;
+                                long camFloorX = Mth.lfloor(cameraPos.x);
+                                long camFloorY = Mth.lfloor(cameraPos.y);
+                                long camFloorZ = Mth.lfloor(cameraPos.z);
                                 sectionInfos.add(
                                     new DynamicUniforms.ChunkSectionInfo(
                                         new Matrix4f(modelViewMatrix),
-                                        (int)renderOffset.x,
-                                        (int)renderOffset.y,
-                                        (int)renderOffset.z,
+                                        (int)(renderOffset.x - camFloorX),
+                                        (int)(renderOffset.y - camFloorY),
+                                        (int)(renderOffset.z - camFloorZ),
                                         section.getVisibility(now),
                                         textureAtlasWidth,
                                         textureAtlasHeight
@@ -829,10 +835,12 @@ public class LevelRenderer implements AutoCloseable {
             options.getEffectiveRenderDistance(),
             this.sectionOcclusionGraph
         );
-        this.sectionOcclusionGraph().waitAndReset(this.viewArea);
-        this.clearVisibleSections();
+        // MCRe：必须先 repositionCamera（初始化 grid → 世界坐标）再 waitAndReset，
+        // 否则 GraphState/Octree 用初始 MIN_VALUE 相机中心构建 → 可见性错乱（网格状）
         SectionPos cameraSectionPos = SectionPos.of(camera.position());
         this.viewArea.repositionCamera(cameraSectionPos);
+        this.sectionOcclusionGraph().waitAndReset(this.viewArea);
+        this.clearVisibleSections();
     }
 
     private @Nullable PostChain getTransparencyChain() {
