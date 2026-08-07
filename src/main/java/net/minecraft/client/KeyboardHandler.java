@@ -557,6 +557,10 @@ public class KeyboardHandler {
                             KeyMapping.set(key, true);
                             KeyMapping.click(key);
                         }
+                    } else if (key == options.keyChat.key || key == options.keyCommand.key) {
+                        // MCRe：任何界面（主界面/暂停/设置）聊天键都能触发 KeyMapping，聊天框随时可打开
+                        KeyMapping.set(key, true);
+                        KeyMapping.click(key);
                     } else if (key == options.keyDebugModifier.key) {
                         options.keyDebugModifier.setDown(!didDebugAction);
                     }
