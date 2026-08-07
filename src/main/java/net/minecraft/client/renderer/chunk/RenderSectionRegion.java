@@ -38,7 +38,7 @@ public class RenderSectionRegion implements BlockAndTintGetter {
 
     @Override
     public BlockState getBlockState(final BlockPos pos) {
-        return this.getSection(
+        return this.getSectionRelative(
                 this.relativeSection(pos.getX(), this.minSectionX),
                 this.relativeSection(pos.getY(), this.minSectionY),
                 this.relativeSection(pos.getZ(), this.minSectionZ)
@@ -48,7 +48,7 @@ public class RenderSectionRegion implements BlockAndTintGetter {
 
     @Override
     public FluidState getFluidState(final BlockPos pos) {
-        return this.getSection(
+        return this.getSectionRelative(
                 this.relativeSection(pos.getX(), this.minSectionX),
                 this.relativeSection(pos.getY(), this.minSectionY),
                 this.relativeSection(pos.getZ(), this.minSectionZ)
@@ -75,10 +75,6 @@ public class RenderSectionRegion implements BlockAndTintGetter {
                 this.relativeSection(pos.getZ(), this.minSectionZ)
             )
             .getBlockEntity(pos);
-    }
-
-    private SectionCopy getSection(final int sectionX, final int sectionY, final int sectionZ) {
-        return this.sections[index(this.minSectionX, this.minSectionY, this.minSectionZ, sectionX, sectionY, sectionZ)];
     }
 
     private SectionCopy getSectionRelative(final int relSectionX, final int relSectionY, final int relSectionZ) {
