@@ -601,7 +601,9 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     }
 
     private byte markPosition(final ChunkPos pos, final ChunkType type) {
-        return this.chunkTypeCache.put(pos, (byte)(type == ChunkType.PROTOCHUNK ? -1 : 1));
+        // 对象化：HashMap.put 返回旧值（不存在时 null），需对齐原版 defaultReturnValue(0)
+        Byte prev = this.chunkTypeCache.put(pos, (byte)(type == ChunkType.PROTOCHUNK ? -1 : 1));
+        return prev == null ? (byte)0 : prev;
     }
 
     @Override
