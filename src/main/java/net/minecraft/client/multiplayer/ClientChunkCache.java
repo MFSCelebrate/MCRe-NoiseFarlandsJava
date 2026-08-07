@@ -1,11 +1,13 @@
 package net.minecraft.client.multiplayer;
 
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -177,19 +179,19 @@ public class ClientChunkCache extends ChunkSource {
         Minecraft.getInstance().levelExtractor.setSectionDirty(pos.x(), pos.y(), pos.z());
     }
 
-    public LongOpenHashSet addedEmptySections() {
+    public Set<SectionPos> addedEmptySections() {
         return this.storage.addedEmptySections[this.storage.updatingSetsIndex];
     }
 
-    public LongOpenHashSet removedEmptySections() {
+    public Set<SectionPos> removedEmptySections() {
         return this.storage.removedEmptySections[this.storage.updatingSetsIndex];
     }
 
-    public LongOpenHashSet addedLoadedChunks() {
+    public Set<ChunkPos> addedLoadedChunks() {
         return this.storage.addedLoadedChunks[this.storage.updatingSetsIndex];
     }
 
-    public LongOpenHashSet removedLoadedChunks() {
+    public Set<ChunkPos> removedLoadedChunks() {
         return this.storage.removedLoadedChunks[this.storage.updatingSetsIndex];
     }
 
@@ -210,10 +212,10 @@ public class ClientChunkCache extends ChunkSource {
     private final class Storage {
         private static final int UPDATE_TRACKING_BUFFERS = 2;
         private final AtomicReferenceArray<@Nullable LevelChunk> chunks;
-        private final LongOpenHashSet[] addedEmptySections = new LongOpenHashSet[2];
-        private final LongOpenHashSet[] removedEmptySections = new LongOpenHashSet[2];
-        private final LongOpenHashSet[] addedLoadedChunks = new LongOpenHashSet[2];
-        private final LongOpenHashSet[] removedLoadedChunks = new LongOpenHashSet[2];
+        private final Set<SectionPos>[] addedEmptySections = new Set[2];
+        private final Set<SectionPos>[] removedEmptySections = new Set[2];
+        private final Set<ChunkPos>[] addedLoadedChunks = new Set[2];
+        private final Set<ChunkPos>[] removedLoadedChunks = new Set[2];
         private int updatingSetsIndex;
         private final int chunkRadius;
         private final int viewRange;
@@ -227,10 +229,10 @@ public class ClientChunkCache extends ChunkSource {
             this.chunks = new AtomicReferenceArray<>(this.viewRange * this.viewRange);
 
             for (int i = 0; i < 2; i++) {
-                this.addedEmptySections[i] = new LongOpenHashSet();
-                this.removedEmptySections[i] = new LongOpenHashSet();
-                this.addedLoadedChunks[i] = new LongOpenHashSet();
-                this.removedLoadedChunks[i] = new LongOpenHashSet();
+                this.addedEmptySections[i] = new HashSet<>();
+                this.removedEmptySections[i] = new HashSet<>();
+                this.addedLoadedChunks[i] = new HashSet<>();
+                this.removedLoadedChunks[i] = new HashSet<>();
             }
         }
 
@@ -263,7 +265,7 @@ public class ClientChunkCache extends ChunkSource {
 
         public void onSectionEmptinessChanged(final int sectionX, final int sectionY, final int sectionZ, final boolean empty) {
             if (this.inRange(sectionX, sectionZ)) {
-                long sectionNode = SectionPos.asLong(sectionX, sectionY, sectionZ);
+                SectionPos sectionNode = SectionPos.of(sectionX, sectionY, sectionZ);
                 if (empty) {
                     this.addedEmptySections[this.updatingSetsIndex].add(sectionNode);
                 } else {
@@ -274,25 +276,25 @@ public class ClientChunkCache extends ChunkSource {
 
         private void onChunkRemoved(final LevelChunk chunk) {
             ChunkPos chunkPos = chunk.getPos();
-            this.removedLoadedChunks[this.updatingSetsIndex].add(chunkPos.pack());
+            this.removedLoadedChunks[this.updatingSetsIndex].add(chunkPos);
             LevelChunkSection[] sections = chunk.getSections();
 
             for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
                 this.removedEmptySections[this.updatingSetsIndex]
-                    .add(SectionPos.asLong(chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), chunkPos.z()));
+                    .add(SectionPos.of((int)chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), (int)chunkPos.z()));
             }
         }
 
         private void onChunkAdded(final LevelChunk chunk) {
             ChunkPos chunkPos = chunk.getPos();
-            this.addedLoadedChunks[this.updatingSetsIndex].add(chunkPos.pack());
+            this.addedLoadedChunks[this.updatingSetsIndex].add(chunkPos);
             LevelChunkSection[] sections = chunk.getSections();
 
             for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
                 LevelChunkSection section = sections[sectionIndex];
                 if (section.hasOnlyAir()) {
                     this.addedEmptySections[this.updatingSetsIndex]
-                        .add(SectionPos.asLong(chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), chunkPos.z()));
+                        .add(SectionPos.of((int)chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), (int)chunkPos.z()));
                 }
             }
         }
@@ -303,7 +305,7 @@ public class ClientChunkCache extends ChunkSource {
 
             for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
                 LevelChunkSection section = sections[sectionIndex];
-                long sectionNode = SectionPos.asLong(chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), chunkPos.z());
+                SectionPos sectionNode = SectionPos.of((int)chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), (int)chunkPos.z());
                 if (section.hasOnlyAir()) {
                     this.addedEmptySections[this.updatingSetsIndex].add(sectionNode);
                 } else {

@@ -46,7 +46,7 @@ public class ShelfRenderer implements BlockEntityRenderer<ShelfBlockEntity, Shel
         state.alignToBottom = blockEntity.getAlignItemsToBottom();
         state.facing = blockEntity.getBlockState().getValue(ShelfBlock.FACING);
         NonNullList<ItemStack> items = blockEntity.getItems();
-        int seed = HashCommon.long2int(blockEntity.getBlockPos().asLong());
+        int seed = blockEntity.getBlockPos().hashCode();
 
         for (int slot = 0; slot < items.size(); slot++) {
             ItemStack itemStack = items.get(slot);

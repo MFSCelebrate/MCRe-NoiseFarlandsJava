@@ -1,7 +1,7 @@
 package net.minecraft.world.level;
 
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
+
+
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -183,14 +183,14 @@ public interface BlockGetter extends LevelHeightAccessor {
 
             return true;
         } else {
-            LongSet visitedBlocks = new LongOpenHashSet();
+            Set<BlockPos> visitedBlocks = new HashSet<>();
 
             for (BlockPos blockPos : BlockPos.betweenCornersInDirection(aabbAtTarget.move(travel.scale(-1.0)), travel)) {
                 if (!visitor.visit(blockPos, 0)) {
                     return false;
                 }
 
-                visitedBlocks.add(blockPos.asLong());
+                visitedBlocks.add(blockPos);
             }
 
             int iterations = addCollisionsAlongTravel(visitedBlocks, travel, aabbAtTarget, visitor);
@@ -199,7 +199,7 @@ public interface BlockGetter extends LevelHeightAccessor {
             }
 
             for (BlockPos blockPos : BlockPos.betweenCornersInDirection(aabbAtTarget, travel)) {
-                if (visitedBlocks.add(blockPos.asLong()) && !visitor.visit(blockPos, iterations + 1)) {
+                if (visitedBlocks.add(blockPos) && !visitor.visit(blockPos, iterations + 1)) {
                     return false;
                 }
             }
@@ -209,7 +209,7 @@ public interface BlockGetter extends LevelHeightAccessor {
     }
 
     private static int addCollisionsAlongTravel(
-        final LongSet visitedBlocks, final Vec3 deltaMove, final AABB aabbAtTarget, final BlockGetter.BlockStepVisitor visitor
+        final Set<BlockPos> visitedBlocks, final Vec3 deltaMove, final AABB aabbAtTarget, final BlockGetter.BlockStepVisitor visitor
     ) {
         double boxSizeX = aabbAtTarget.getXsize();
         double boxSizeY = aabbAtTarget.getYsize();
@@ -277,7 +277,7 @@ public interface BlockGetter extends LevelHeightAccessor {
                 for (BlockPos pos : BlockPos.betweenCornersInDirection(
                     cornerVisitedBlockX, cornerVisitedBlockY, cornerVisitedBlockZ, oppositeCornerX, oppositeCornerY, oppositeCornerZ, deltaMove
                 )) {
-                    if (visitedBlocks.add(pos.asLong()) && !visitor.visit(pos, currentIteration)) {
+                    if (visitedBlocks.add(pos) && !visitor.visit(pos, currentIteration)) {
                         return -1;
                     }
                 }

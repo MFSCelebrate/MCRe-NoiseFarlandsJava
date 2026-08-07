@@ -387,7 +387,7 @@ public class FriendlyByteBuf extends ByteBuf {
     }
 
     public static BlockPos readBlockPos(final ByteBuf input) {
-        return BlockPos.of(input.readLong());
+        return new BlockPos(input.readInt(), input.readInt(), input.readInt());
     }
 
     public FriendlyByteBuf writeBlockPos(final BlockPos pos) {
@@ -396,24 +396,28 @@ public class FriendlyByteBuf extends ByteBuf {
     }
 
     public static void writeBlockPos(final ByteBuf output, final BlockPos pos) {
-        output.writeLong(pos.asLong());
+        output.writeInt(pos.getX());
+        output.writeInt(pos.getY());
+        output.writeInt(pos.getZ());
     }
 
     public ChunkPos readChunkPos() {
-        return ChunkPos.unpack(this.readLong());
+        return new ChunkPos(this.readLong(), this.readLong());
     }
 
     public FriendlyByteBuf writeChunkPos(final ChunkPos pos) {
-        this.writeLong(pos.pack());
+        this.writeLong(pos.x());
+        this.writeLong(pos.z());
         return this;
     }
 
     public static ChunkPos readChunkPos(final ByteBuf input) {
-        return ChunkPos.unpack(input.readLong());
+        return new ChunkPos(input.readLong(), input.readLong());
     }
 
     public static void writeChunkPos(final ByteBuf output, final ChunkPos chunkPos) {
-        output.writeLong(chunkPos.pack());
+        output.writeLong(chunkPos.x());
+        output.writeLong(chunkPos.z());
     }
 
     public GlobalPos readGlobalPos() {

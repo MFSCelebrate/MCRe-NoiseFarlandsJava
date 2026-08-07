@@ -42,7 +42,7 @@ public class CampfireRenderer implements BlockEntityRenderer<CampfireBlockEntity
     ) {
         BlockEntityRenderer.super.extractRenderState(blockEntity, state, partialTicks, cameraPosition, breakProgress);
         state.facing = blockEntity.getBlockState().getValue(CampfireBlock.FACING);
-        int seed = (int)blockEntity.getBlockPos().asLong();
+        int seed = blockEntity.getBlockPos().hashCode();
         state.items = new ArrayList<>();
 
         for (int slot = 0; slot < blockEntity.getItems().size(); slot++) {

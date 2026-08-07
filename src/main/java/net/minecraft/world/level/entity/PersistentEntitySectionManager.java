@@ -4,16 +4,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +27,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import org.slf4j.Logger;
 
+/**
+ * PersistentEntitySectionManager — 持久实体区块管理器（MCRe NoiseFarlands 对象化版）
+ * 原版以 long 打包键（ChunkPos.pack / SectionPos.asLong），本版以 ChunkPos/SectionPos 对象为键。
+ */
 public class PersistentEntitySectionManager<T extends EntityAccess> implements AutoCloseable {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final Set<UUID> knownUuids = Sets.newHashSet();
@@ -37,22 +39,20 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     private final EntityLookup<T> visibleEntityStorage;
     private final EntitySectionStorage<T> sectionStorage;
     private final LevelEntityGetter<T> entityGetter;
-    private final Long2ObjectMap<Visibility> chunkVisibility = new Long2ObjectOpenHashMap<>();
-    private final Long2ObjectMap<PersistentEntitySectionManager.ChunkLoadStatus> chunkLoadStatuses = new Long2ObjectOpenHashMap<>();
-    private final LongSet chunksToUnload = new LongOpenHashSet();
+    private final Map<ChunkPos, Visibility> chunkVisibility = new HashMap<>();
+    private final Map<ChunkPos, PersistentEntitySectionManager.ChunkLoadStatus> chunkLoadStatuses = new HashMap<>();
+    private final Set<ChunkPos> chunksToUnload = new HashSet<>();
     private final Queue<ChunkEntities<T>> loadingInbox = Queues.newConcurrentLinkedQueue();
 
     public PersistentEntitySectionManager(final Class<T> entityClass, final LevelCallback<T> callbacks, final EntityPersistentStorage<T> permanentStorage) {
         this.visibleEntityStorage = new EntityLookup<>();
-        this.sectionStorage = new EntitySectionStorage<>(entityClass, this.chunkVisibility);
-        this.chunkVisibility.defaultReturnValue(Visibility.HIDDEN);
-        this.chunkLoadStatuses.defaultReturnValue(PersistentEntitySectionManager.ChunkLoadStatus.FRESH);
+        this.sectionStorage = new EntitySectionStorage<>(entityClass, this.chunkVisibility::get);
         this.callbacks = callbacks;
         this.permanentStorage = permanentStorage;
         this.entityGetter = new LevelEntityGetterAdapter<>(this.visibleEntityStorage, this.sectionStorage);
     }
 
-    private void removeSectionIfEmpty(final long sectionPos, final EntitySection<T> section) {
+    private void removeSectionIfEmpty(final SectionPos sectionPos, final EntitySection<T> section) {
         if (section.isEmpty()) {
             this.sectionStorage.remove(sectionPos);
         }
@@ -76,7 +76,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
             return false;
         }
 
-        long sectionKey = SectionPos.asLong(entity.blockPosition());
+        SectionPos sectionKey = SectionPos.of(entity.blockPosition());
         EntitySection<T> entitySection = this.sectionStorage.getOrCreateSection(sectionKey);
         entitySection.add(entity);
         entity.setLevelCallback(new PersistentEntitySectionManager.Callback(entity, sectionKey, entitySection));
@@ -101,7 +101,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     }
 
     public boolean isTicking(final ChunkPos pos) {
-        return this.chunkVisibility.get(pos.pack()).isTicking();
+        return this.chunkVisibility.getOrDefault(pos, Visibility.HIDDEN).isTicking();
     }
 
     public void addLegacyChunkEntities(final Stream<T> entities) {
@@ -136,7 +136,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     }
 
     public void updateChunkStatus(final ChunkPos pos, final Visibility chunkStatus) {
-        long chunkPosKey = pos.pack();
+        ChunkPos chunkPosKey = pos;
         if (chunkStatus == Visibility.HIDDEN) {
             this.chunkVisibility.remove(chunkPosKey);
             this.chunksToUnload.add(chunkPosKey);
@@ -168,15 +168,15 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
         });
     }
 
-    private void ensureChunkQueuedForLoad(final long chunkPos) {
-        PersistentEntitySectionManager.ChunkLoadStatus chunkLoadStatus = this.chunkLoadStatuses.get(chunkPos);
+    private void ensureChunkQueuedForLoad(final ChunkPos chunkPos) {
+        PersistentEntitySectionManager.ChunkLoadStatus chunkLoadStatus = this.chunkLoadStatuses.getOrDefault(chunkPos, PersistentEntitySectionManager.ChunkLoadStatus.FRESH);
         if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.FRESH) {
             this.requestChunkLoad(chunkPos);
         }
     }
 
-    private boolean storeChunkSections(final long chunkPos, final Consumer<T> savedEntityVisitor) {
-        PersistentEntitySectionManager.ChunkLoadStatus chunkLoadStatus = this.chunkLoadStatuses.get(chunkPos);
+    private boolean storeChunkSections(final ChunkPos chunkPos, final Consumer<T> savedEntityVisitor) {
+        PersistentEntitySectionManager.ChunkLoadStatus chunkLoadStatus = this.chunkLoadStatuses.getOrDefault(chunkPos, PersistentEntitySectionManager.ChunkLoadStatus.FRESH);
         if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.PENDING) {
             return false;
         }
@@ -187,7 +187,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
             .collect(Collectors.toList());
         if (rootEntitiesToSave.isEmpty()) {
             if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.LOADED) {
-                this.permanentStorage.storeEntities(new ChunkEntities<>(ChunkPos.unpack(chunkPos), ImmutableList.of()));
+                this.permanentStorage.storeEntities(new ChunkEntities<>(chunkPos, ImmutableList.of()));
             }
 
             return true;
@@ -195,22 +195,21 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
             this.requestChunkLoad(chunkPos);
             return false;
         } else {
-            this.permanentStorage.storeEntities(new ChunkEntities<>(ChunkPos.unpack(chunkPos), rootEntitiesToSave));
+            this.permanentStorage.storeEntities(new ChunkEntities<>(chunkPos, rootEntitiesToSave));
             rootEntitiesToSave.forEach(savedEntityVisitor);
             return true;
         }
     }
 
-    private void requestChunkLoad(final long chunkKey) {
+    private void requestChunkLoad(final ChunkPos chunkKey) {
         this.chunkLoadStatuses.put(chunkKey, PersistentEntitySectionManager.ChunkLoadStatus.PENDING);
-        ChunkPos pos = ChunkPos.unpack(chunkKey);
-        this.permanentStorage.loadEntities(pos).thenAccept(this.loadingInbox::add).exceptionally(t -> {
-            LOGGER.error("Failed to read chunk {}", pos, t);
+        this.permanentStorage.loadEntities(chunkKey).thenAccept(this.loadingInbox::add).exceptionally(t -> {
+            LOGGER.error("Failed to read chunk {}", chunkKey, t);
             return null;
         });
     }
 
-    private boolean processChunkUnload(final long chunkKey) {
+    private boolean processChunkUnload(final ChunkPos chunkKey) {
         boolean storeSuccessful = this.storeChunkSections(chunkKey, entity -> entity.getPassengersAndSelf().forEach(this::unloadEntity));
         if (!storeSuccessful) {
             return false;
@@ -226,14 +225,14 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     }
 
     private void processUnloads() {
-        this.chunksToUnload.removeIf((long chunkKey) -> this.chunkVisibility.get(chunkKey) != Visibility.HIDDEN ? true : this.processChunkUnload(chunkKey));
+        this.chunksToUnload.removeIf(chunkKey -> this.chunkVisibility.getOrDefault(chunkKey, Visibility.HIDDEN) != Visibility.HIDDEN ? true : this.processChunkUnload(chunkKey));
     }
 
     public void processPendingLoads() {
         ChunkEntities<T> loadedChunk;
         while ((loadedChunk = this.loadingInbox.poll()) != null) {
             loadedChunk.getEntities().forEach(e -> this.addEntity((T)e, true));
-            this.chunkLoadStatuses.put(loadedChunk.getPos().pack(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
+            this.chunkLoadStatuses.put(loadedChunk.getPos(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
         }
     }
 
@@ -242,12 +241,12 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
         this.processUnloads();
     }
 
-    private LongSet getAllChunksToSave() {
-        LongSet result = this.sectionStorage.getAllChunksWithExistingSections();
+    private Set<ChunkPos> getAllChunksToSave() {
+        Set<ChunkPos> result = this.sectionStorage.getAllChunksWithExistingSections();
 
-        for (Entry<PersistentEntitySectionManager.ChunkLoadStatus> entry : Long2ObjectMaps.fastIterable(this.chunkLoadStatuses)) {
+        for (Map.Entry<ChunkPos, PersistentEntitySectionManager.ChunkLoadStatus> entry : this.chunkLoadStatuses.entrySet()) {
             if (entry.getValue() == PersistentEntitySectionManager.ChunkLoadStatus.LOADED) {
-                result.add(entry.getLongKey());
+                result.add(entry.getKey());
             }
         }
 
@@ -255,8 +254,8 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     }
 
     public void autoSave() {
-        this.getAllChunksToSave().forEach((long chunkKey) -> {
-            boolean shouldUnload = this.chunkVisibility.get(chunkKey) == Visibility.HIDDEN;
+        this.getAllChunksToSave().forEach(chunkKey -> {
+            boolean shouldUnload = this.chunkVisibility.getOrDefault(chunkKey, Visibility.HIDDEN) == Visibility.HIDDEN;
             if (shouldUnload) {
                 this.processChunkUnload(chunkKey);
             } else {
@@ -266,13 +265,13 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     }
 
     public void saveAll() {
-        LongSet chunksToSave = this.getAllChunksToSave();
+        Set<ChunkPos> chunksToSave = this.getAllChunksToSave();
 
         while (!chunksToSave.isEmpty()) {
             this.permanentStorage.flush(false);
             this.processPendingLoads();
-            chunksToSave.removeIf((long chunkKey) -> {
-                boolean shouldUnload = this.chunkVisibility.get(chunkKey) == Visibility.HIDDEN;
+            chunksToSave.removeIf(chunkKey -> {
+                boolean shouldUnload = this.chunkVisibility.getOrDefault(chunkKey, Visibility.HIDDEN) == Visibility.HIDDEN;
                 return shouldUnload ? this.processChunkUnload(chunkKey) : this.storeChunkSections(chunkKey, e -> {});
             });
         }
@@ -295,15 +294,15 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     }
 
     public boolean canPositionTick(final BlockPos pos) {
-        return this.chunkVisibility.get(ChunkPos.pack(pos)).isTicking();
+        return this.chunkVisibility.getOrDefault(ChunkPos.containing(pos), Visibility.HIDDEN).isTicking();
     }
 
     public boolean canPositionTick(final ChunkPos pos) {
-        return this.chunkVisibility.get(pos.pack()).isTicking();
+        return this.chunkVisibility.getOrDefault(pos, Visibility.HIDDEN).isTicking();
     }
 
-    public boolean areEntitiesLoaded(final long chunkKey) {
-        return this.chunkLoadStatuses.get(chunkKey) == PersistentEntitySectionManager.ChunkLoadStatus.LOADED;
+    public boolean areEntitiesLoaded(final ChunkPos chunkKey) {
+        return this.chunkLoadStatuses.getOrDefault(chunkKey, PersistentEntitySectionManager.ChunkLoadStatus.FRESH) == PersistentEntitySectionManager.ChunkLoadStatus.LOADED;
     }
 
     public void dumpSections(final Writer output) throws IOException {
@@ -318,19 +317,19 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
         this.sectionStorage
             .getAllChunksWithExistingSections()
             .forEach(
-                (long chunkKey) -> {
-                    PersistentEntitySectionManager.ChunkLoadStatus loadStatus = this.chunkLoadStatuses.get(chunkKey);
+                (ChunkPos chunkKey) -> {
+                    PersistentEntitySectionManager.ChunkLoadStatus loadStatus = this.chunkLoadStatuses.getOrDefault(chunkKey, PersistentEntitySectionManager.ChunkLoadStatus.FRESH);
                     this.sectionStorage
                         .getExistingSectionPositionsInChunk(chunkKey)
                         .forEach(
-                            (long sectionKey) -> {
+                            (SectionPos sectionKey) -> {
                                 EntitySection<T> section = this.sectionStorage.getSection(sectionKey);
                                 if (section != null) {
                                     try {
                                         csvOutput.writeRow(
-                                            SectionPos.x(sectionKey),
-                                            SectionPos.y(sectionKey),
-                                            SectionPos.z(sectionKey),
+                                            sectionKey.x(),
+                                            sectionKey.y(),
+                                            sectionKey.z(),
                                             section.getStatus(),
                                             loadStatus,
                                             section.size()
@@ -369,10 +368,10 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
 
     private class Callback implements EntityInLevelCallback {
         private final T entity;
-        private long currentSectionKey;
+        private SectionPos currentSectionKey;
         private EntitySection<T> currentSection;
 
-        private Callback(final T entity, final long currentSectionKey, final EntitySection<T> currentSection) {
+        private Callback(final T entity, final SectionPos currentSectionKey, final EntitySection<T> currentSection) {
             this.entity = entity;
             this.currentSectionKey = currentSectionKey;
             this.currentSection = currentSection;
@@ -381,12 +380,12 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
         @Override
         public void onMove() {
             BlockPos pos = this.entity.blockPosition();
-            long newSectionPos = SectionPos.asLong(pos);
-            if (newSectionPos != this.currentSectionKey) {
+            SectionPos newSectionPos = SectionPos.of(pos);
+            if (!newSectionPos.equals(this.currentSectionKey)) {
                 Visibility previousStatus = this.currentSection.getStatus();
                 if (!this.currentSection.remove(this.entity)) {
                     PersistentEntitySectionManager.LOGGER
-                        .warn("Entity {} wasn't found in section {} (moving to {})", this.entity, SectionPos.of(this.currentSectionKey), newSectionPos);
+                        .warn("Entity {} wasn't found in section {} (moving to {})", this.entity, this.currentSectionKey, newSectionPos);
                 }
 
                 PersistentEntitySectionManager.this.removeSectionIfEmpty(this.currentSectionKey, this.currentSection);
@@ -432,7 +431,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
         public void onRemove(final Entity.RemovalReason reason) {
             if (!this.currentSection.remove(this.entity)) {
                 PersistentEntitySectionManager.LOGGER
-                    .warn("Entity {} wasn't found in section {} (destroying due to {})", this.entity, SectionPos.of(this.currentSectionKey), reason);
+                    .warn("Entity {} wasn't found in section {} (destroying due to {})", this.entity, this.currentSectionKey, reason);
             }
 
             Visibility status = PersistentEntitySectionManager.getEffectiveStatus(this.entity, this.currentSection.getStatus());

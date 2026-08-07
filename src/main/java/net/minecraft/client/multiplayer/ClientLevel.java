@@ -175,7 +175,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     private final WorldBorder worldBorder = new WorldBorder();
     private final EnvironmentAttributeSystem environmentAttributes;
     private final Int2ObjectMap<BlockDestructionProgress> destroyingBlocks = new Int2ObjectOpenHashMap<>();
-    private final Long2ObjectMap<SortedSet<BlockDestructionProgress>> destructionProgress = new Long2ObjectOpenHashMap<>();
+    private final Map<BlockPos, SortedSet<BlockDestructionProgress>> destructionProgress = new HashMap<>();
     private final int seaLevel;
     private static final Set<Item> MARKER_PARTICLE_ITEMS = Set.of(Items.BARRIER, Items.LIGHT);
 
@@ -424,7 +424,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     private void removeProgress(final BlockDestructionProgress block) {
-        long pos = block.getPos().asLong();
+        BlockPos pos = block.getPos();
         Set<BlockDestructionProgress> progresses = this.destructionProgress.get(pos);
         progresses.remove(block);
         if (progresses.isEmpty()) {
@@ -432,7 +432,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
         }
     }
 
-    public Long2ObjectMap<SortedSet<BlockDestructionProgress>> destructionProgress() {
+    public Map<BlockPos, SortedSet<BlockDestructionProgress>> destructionProgress() {
         return this.destructionProgress;
     }
 
@@ -864,7 +864,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
 
             entry.setProgress(progress);
             entry.updateTick(this.getGameTime());
-            this.destructionProgress.computeIfAbsent(entry.getPos().asLong(), k -> Sets.newTreeSet()).add(entry);
+            this.destructionProgress.computeIfAbsent(entry.getPos(), k -> Sets.newTreeSet()).add(entry);
         } else {
             BlockDestructionProgress removed = this.destroyingBlocks.remove(id);
             if (removed != null) {

@@ -33,7 +33,7 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
     private final PriorityConsecutiveExecutor consecutiveExecutor;
     private final RegionFileStorage storage;
     private final SequencedMap<ChunkPos, IOWorker.PendingStore> pendingWrites = new LinkedHashMap<>();
-    private final Long2ObjectLinkedOpenHashMap<CompletableFuture<BitSet>> regionCacheForBlender = new Long2ObjectLinkedOpenHashMap<>();
+    private final LinkedHashMap<ChunkPos, CompletableFuture<BitSet>> regionCacheForBlender = new LinkedHashMap<>();
     private static final int REGION_CACHE_SIZE = 1024;
 
     protected IOWorker(final RegionStorageInfo info, final Path dir, final boolean sync) {
@@ -71,7 +71,7 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
     }
 
     private CompletableFuture<BitSet> getOrCreateOldDataForRegion(final int regionX, final int regionZ) {
-        long regionPos = ChunkPos.pack(regionX, regionZ);
+        ChunkPos regionPos = new ChunkPos(regionX, regionZ);
         synchronized (this.regionCacheForBlender) {
             CompletableFuture<BitSet> result = this.regionCacheForBlender.getAndMoveToFirst(regionPos);
             if (result == null) {

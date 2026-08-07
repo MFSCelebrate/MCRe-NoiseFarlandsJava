@@ -13,14 +13,14 @@ public final class TranslucencyPointOfView {
     private int y;
     private int z;
 
-    public static TranslucencyPointOfView of(final Vec3 cameraPos, final long sectionNode) {
+    public static TranslucencyPointOfView of(final Vec3 cameraPos, final SectionPos sectionNode) {
         return new TranslucencyPointOfView().set(cameraPos, sectionNode);
     }
 
-    public TranslucencyPointOfView set(final Vec3 cameraPos, final long sectionPos) {
-        this.x = getCoordinate(cameraPos.x(), SectionPos.x(sectionPos));
-        this.y = getCoordinate(cameraPos.y(), SectionPos.y(sectionPos));
-        this.z = getCoordinate(cameraPos.z(), SectionPos.z(sectionPos));
+    public TranslucencyPointOfView set(final Vec3 cameraPos, final SectionPos sectionPos) {
+        this.x = getCoordinate(cameraPos.x(), sectionPos.x());
+        this.y = getCoordinate(cameraPos.y(), sectionPos.y());
+        this.z = getCoordinate(cameraPos.z(), sectionPos.z());
         return this;
     }
 

@@ -10,6 +10,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LightChunk;
 import net.minecraft.world.level.chunk.LightChunkGetter;
 
+/**
+ * BlockLightEngine — 方块光照引擎（MCRe NoiseFarlands 对象化版）
+ */
 public final class BlockLightEngine extends LightEngine<BlockLightSectionStorage.BlockDataLayerStorageMap, BlockLightSectionStorage> {
     private final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
@@ -23,8 +26,8 @@ public final class BlockLightEngine extends LightEngine<BlockLightSectionStorage
     }
 
     @Override
-    protected void checkNode(final long blockNode) {
-        long sectionNode = SectionPos.blockToSection(blockNode);
+    protected void checkNode(final BlockPos blockNode) {
+        SectionPos sectionNode = SectionPos.of(blockNode);
         if (this.storage.storingLightForSection(sectionNode)) {
             BlockState state = this.getState(this.mutablePos.set(blockNode));
             int lightEmission = this.getEmission(blockNode, state);
@@ -43,13 +46,13 @@ public final class BlockLightEngine extends LightEngine<BlockLightSectionStorage
     }
 
     @Override
-    protected void propagateIncrease(final long fromNode, final long increaseData, final int fromLevel) {
+    protected void propagateIncrease(final BlockPos fromNode, final long increaseData, final int fromLevel) {
         BlockState fromState = null;
 
         for (Direction propagationDirection : PROPAGATION_DIRECTIONS) {
             if (LightEngine.QueueEntry.shouldPropagateInDirection(increaseData, propagationDirection)) {
-                long toNode = BlockPos.offset(fromNode, propagationDirection);
-                if (this.storage.storingLightForSection(SectionPos.blockToSection(toNode))) {
+                BlockPos toNode = fromNode.offset(propagationDirection);
+                if (this.storage.storingLightForSection(SectionPos.of(toNode))) {
                     int toLevel = this.storage.getStoredLevel(toNode);
                     int maxPossibleNewToLevel = fromLevel - 1;
                     if (maxPossibleNewToLevel > toLevel) {
@@ -80,13 +83,13 @@ public final class BlockLightEngine extends LightEngine<BlockLightSectionStorage
     }
 
     @Override
-    protected void propagateDecrease(final long fromNode, final long decreaseData) {
+    protected void propagateDecrease(final BlockPos fromNode, final long decreaseData) {
         int oldFromLevel = LightEngine.QueueEntry.getFromLevel(decreaseData);
 
         for (Direction propagationDirection : PROPAGATION_DIRECTIONS) {
             if (LightEngine.QueueEntry.shouldPropagateInDirection(decreaseData, propagationDirection)) {
-                long toNode = BlockPos.offset(fromNode, propagationDirection);
-                if (this.storage.storingLightForSection(SectionPos.blockToSection(toNode))) {
+                BlockPos toNode = fromNode.offset(propagationDirection);
+                if (this.storage.storingLightForSection(SectionPos.of(toNode))) {
                     int toLevel = this.storage.getStoredLevel(toNode);
                     if (toLevel != 0) {
                         if (toLevel <= oldFromLevel - 1) {
@@ -109,19 +112,19 @@ public final class BlockLightEngine extends LightEngine<BlockLightSectionStorage
         }
     }
 
-    private int getEmission(final long blockNode, final BlockState state) {
+    private int getEmission(final BlockPos blockNode, final BlockState state) {
         int emission = state.getLightEmission();
-        return emission > 0 && this.storage.lightOnInSection(SectionPos.blockToSection(blockNode)) ? emission : 0;
+        return emission > 0 && this.storage.lightOnInSection(SectionPos.of(blockNode)) ? emission : 0;
     }
 
     @Override
     public void propagateLightSources(final ChunkPos pos) {
         this.setLightEnabled(pos, true);
-        LightChunk chunk = this.chunkSource.getChunkForLighting(pos.x(), pos.z());
+        LightChunk chunk = this.chunkSource.getChunkForLighting((int)pos.x(), (int)pos.z());
         if (chunk != null) {
             chunk.findBlockLightSources((lightPos, state) -> {
                 int lightEmission = state.getLightEmission();
-                this.enqueueIncrease(lightPos.asLong(), LightEngine.QueueEntry.increaseLightFromEmission(lightEmission, isEmptyShape(state)));
+                this.enqueueIncrease(lightPos, LightEngine.QueueEntry.increaseLightFromEmission(lightEmission, isEmptyShape(state)));
             });
         }
     }

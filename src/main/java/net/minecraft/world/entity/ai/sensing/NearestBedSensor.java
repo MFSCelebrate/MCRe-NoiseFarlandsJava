@@ -2,8 +2,10 @@ package net.minecraft.world.entity.ai.sensing;
 
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
-import it.unimi.dsi.fastutil.longs.Long2LongMap;
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
+
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -23,7 +25,7 @@ public class NearestBedSensor extends Sensor<Mob> {
     private static final int CACHE_TIMEOUT = 40;
     private static final int BATCH_SIZE = 5;
     private static final int RATE = 20;
-    private final Long2LongMap batchCache = new Long2LongOpenHashMap();
+    private final Map<BlockPos, Long> batchCache = new HashMap<>();
     private int triedCount;
     private long lastUpdate;
 
@@ -42,7 +44,7 @@ public class NearestBedSensor extends Sensor<Mob> {
             this.lastUpdate = level.getGameTime() + level.getRandom().nextInt(20);
             PoiManager poiManager = level.getPoiManager();
             Predicate<BlockPos> cacheTest = pos -> {
-                long key = pos.asLong();
+                BlockPos key = pos;
                 if (this.batchCache.containsKey(key)) {
                     return false;
                 }
@@ -66,7 +68,7 @@ public class NearestBedSensor extends Sensor<Mob> {
                     body.getBrain().setMemory(MemoryModuleType.NEAREST_BED, targetPos);
                 }
             } else if (this.triedCount < 5) {
-                this.batchCache.long2LongEntrySet().removeIf(entry -> entry.getLongValue() < this.lastUpdate);
+                this.batchCache.entrySet().removeIf(entry -> entry.getValue() < this.lastUpdate);
             }
         }
     }

@@ -6,7 +6,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
+
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import java.util.ArrayList;
@@ -448,9 +448,9 @@ public abstract class ChunkGenerator {
     public WeightedList<MobSpawnSettings.SpawnerData> getMobsAt(
         final Holder<Biome> biome, final StructureManager structureManager, final MobCategory mobCategory, final BlockPos pos
     ) {
-        Map<Structure, LongSet> structures = structureManager.getAllStructuresAt(pos);
+        Map<Structure, Set<ChunkPos>> structures = structureManager.getAllStructuresAt(pos);
 
-        for (Entry<Structure, LongSet> entry : structures.entrySet()) {
+        for (Entry<Structure, Set<ChunkPos>> entry : structures.entrySet()) {
             Structure structure = entry.getKey();
             StructureSpawnOverride override = structure.spawnOverrides().get(mobCategory);
             if (override != null) {
@@ -617,7 +617,7 @@ public abstract class ChunkGenerator {
 
         for (int sourceX = targetX - 8; sourceX <= targetX + 8; sourceX++) {
             for (int sourceZ = targetZ - 8; sourceZ <= targetZ + 8; sourceZ++) {
-                long sourceChunkKey = ChunkPos.pack(sourceX, sourceZ);
+                ChunkPos sourceChunkKey = new ChunkPos(sourceX, sourceZ);
 
                 for (StructureStart start : level.getChunk(sourceX, sourceZ).getAllStarts().values()) {
                     try {

@@ -3,9 +3,8 @@ package net.minecraft.gametest.framework;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.LongArraySet;
-import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.Collection;
+import java.util.Set;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -115,8 +114,8 @@ public class GameTestRunner {
                 private void testCompleted(final GameTestInfo testInfo) {
                     if (currentBatchTracker.isDone()) {
                         GameTestRunner.this.batchListeners.forEach(listener -> listener.testBatchFinished(currentBatch));
-                        LongSet forcedChunks = new LongArraySet(GameTestRunner.this.level.getForceLoadedChunks());
-                        forcedChunks.forEach(pos -> GameTestRunner.this.level.setChunkForced(ChunkPos.getX(pos), ChunkPos.getZ(pos), false));
+                        Set<ChunkPos> forcedChunks = GameTestRunner.this.level.getForceLoadedChunks();
+                        forcedChunks.forEach(pos -> GameTestRunner.this.level.setChunkForced((int)pos.x(), (int)pos.z(), false));
                         GameTestRunner.this.runBatch(batchIndex + 1);
                     }
                 }
@@ -135,8 +134,8 @@ public class GameTestRunner {
                 public void testFailed(final GameTestInfo testInfo, final GameTestRunner runner) {
                     if (GameTestRunner.this.haltOnError) {
                         GameTestRunner.this.endCurrentEnvironment();
-                        LongSet forcedChunks = new LongArraySet(GameTestRunner.this.level.getForceLoadedChunks());
-                        forcedChunks.forEach(pos -> GameTestRunner.this.level.setChunkForced(ChunkPos.getX(pos), ChunkPos.getZ(pos), false));
+                        Set<ChunkPos> forcedChunks = GameTestRunner.this.level.getForceLoadedChunks();
+                        forcedChunks.forEach(pos -> GameTestRunner.this.level.setChunkForced((int)pos.x(), (int)pos.z(), false));
                         GameTestTicker.SINGLETON.clear();
                     } else {
                         this.testCompleted(testInfo);

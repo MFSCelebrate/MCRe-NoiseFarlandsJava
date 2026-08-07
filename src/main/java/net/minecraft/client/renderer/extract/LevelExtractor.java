@@ -140,7 +140,7 @@ public class LevelExtractor implements ResourceManagerReloadListener {
             this.levelRenderState.chunkLoadingRenderState.addedLoadedChunks = chunkCache.addedLoadedChunks();
             this.levelRenderState.chunkLoadingRenderState.removedLoadedChunks = chunkCache.removedLoadedChunks();
             chunkCache.flipUpdateTrackingSets();
-            LongCollection expectedChunks = this.levelRenderer.expectedChunks();
+            java.util.Collection<ChunkPos> expectedChunks = this.levelRenderer.expectedChunks();
             expectedChunks.forEach(expectedChunk -> {
                 if (chunkCache.hasChunk(ChunkPos.getX(expectedChunk), ChunkPos.getZ(expectedChunk))) {
                     this.levelRenderState.chunkLoadingRenderState.loadedExpectedChunks.add(expectedChunk);
@@ -276,7 +276,7 @@ public class LevelExtractor implements ResourceManagerReloadListener {
             if (!renderableBlockEntities.isEmpty() && !(section.getVisibility(Util.getMillis()) < 0.3F)) {
                 for (BlockEntity blockEntity : renderableBlockEntities) {
                     BlockPos blockPos = blockEntity.getBlockPos();
-                    SortedSet<BlockDestructionProgress> progresses = this.level.destructionProgress().get(blockPos.asLong());
+                    SortedSet<BlockDestructionProgress> progresses = this.level.destructionProgress().get(blockPos);
                     ModelFeatureRenderer.CrumblingOverlay breakProgress;
                     if (progresses != null && !progresses.isEmpty()) {
                         poseStack.pushPose();
@@ -321,8 +321,8 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         double camZ = cameraPos.z();
         levelRenderState.blockBreakingRenderStates.clear();
 
-        for (Entry<SortedSet<BlockDestructionProgress>> entry : this.level.destructionProgress().long2ObjectEntrySet()) {
-            BlockPos pos = BlockPos.of(entry.getLongKey());
+        for (java.util.Map.Entry<BlockPos, SortedSet<BlockDestructionProgress>> entry : this.level.destructionProgress().entrySet()) {
+            BlockPos pos = entry.getKey();
             if (!(pos.distToCenterSqr(camX, camY, camZ) > 1024.0)) {
                 SortedSet<BlockDestructionProgress> progresses = entry.getValue();
                 if (progresses != null && !progresses.isEmpty()) {

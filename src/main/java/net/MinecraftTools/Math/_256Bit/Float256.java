@@ -87,7 +87,7 @@ public final class Float256 extends Number implements Comparable<Float256> {
     private long mantMid() { return c; }
     private long mantLo() { return d; }
 
-    private int signum() {
+    public int signum() {
         return (a & SIGN_MASK) != 0 ? -1 : 1;
     }
 
@@ -103,19 +103,19 @@ public final class Float256 extends Number implements Comparable<Float256> {
         return expHi() == EXP_ALL_HI && expLo() == EXP_ALL_LO;
     }
 
-    private boolean isZero() {
+    public boolean isZero() {
         return a == 0L && b == 0L && c == 0L && d == 0L;
     }
 
-    private boolean isNaN() {
+    public boolean isNaN() {
         return expIsAll() && (mantHi() != 0 || mantMid() != 0 || mantLo() != 0);
     }
 
-    private boolean isInfinity() {
+    public boolean isInfinity() {
         return expIsAll() && mantHi() == 0 && mantMid() == 0 && mantLo() == 0;
     }
 
-    private boolean isFinite() {
+    public boolean isFinite() {
         return !isNaN() && !isInfinity();
     }
 
@@ -583,6 +583,98 @@ public final class Float256 extends Number implements Comparable<Float256> {
         return signum() < 0 ? dec.negate() : dec;
     }
 
+    // ═══════════ 精确取整（返回 Int256，零损失） ═══════════
+
+    /** 向零截断 */
+    public Int256 truncate() {
+        if (isZero()) return Int256.ZERO;
+        if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
+        Int256 v = truncateAbs();
+        return signum() < 0 ? v.negate() : v;
+    }
+
+    /** 向下取整（-∞ 方向） */
+    public Int256 floor() {
+        if (isZero()) return Int256.ZERO;
+        if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
+        long realExp = realExponent();
+        if (realExp >= 0) return truncate();
+        Int256 mant = mantissaWithImplied();
+        Int256 abs = mant.shiftRight((int) -realExp);
+        boolean dropped = !mant.and(mant.maskBelow((int) -realExp)).isZero();
+        if (dropped && signum() < 0) abs = abs.add(Int256.ONE);
+        return signum() < 0 ? abs.negate() : abs;
+    }
+
+    /** 向上取整（+∞ 方向） */
+    public Int256 ceil() {
+        if (isZero()) return Int256.ZERO;
+        if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
+        long realExp = realExponent();
+        if (realExp >= 0) return truncate();
+        Int256 mant = mantissaWithImplied();
+        Int256 abs = mant.shiftRight((int) -realExp);
+        boolean dropped = !mant.and(mant.maskBelow((int) -realExp)).isZero();
+        if (dropped && signum() > 0) abs = abs.add(Int256.ONE);
+        return signum() < 0 ? abs.negate() : abs;
+    }
+
+    /** 四舍五入（half-up，与 Math.round 一致） */
+    public Int256 round() {
+        return this.add(Float256.of(0.5)).floor();
+    }
+
+    /** 绝对值截断（内部用） */
+    private Int256 truncateAbs() {
+        long realExp = realExponent();
+        Int256 mant = mantissaWithImplied();
+        if (realExp >= 0) {
+            if (realExp > 255) throw new ArithmeticException("Float256 too large for Int256");
+            return mant.shiftLeft((int) realExp);
+        }
+        if (realExp < -255) return Int256.ZERO; // 极小值 → 0
+        return mant.shiftRight((int) -realExp);
+    }
+
+    /**
+     * 精确十进制展开：值 = mant × 2^e → mant × 5^(-e) / 10^(-e)
+     * 完整保留 53-bit double 尾数（0.1 → 0.1000000000000000055511151231257827021181583404541015625）
+     * 用于调试屏幕坐标显示，尽量减少精度损失
+     */
+    public String toExactString() {
+        if (isZero()) return "0";
+        if (isNaN()) return "NaN";
+        if (isInfinity()) return signum() < 0 ? "-Infinity" : "Infinity";
+        BigInteger m = mantissaWithImplied().toBigInteger();
+        long e = realExponent() - MANT_BITS; // 值 = m × 2^e
+        StringBuilder sb = new StringBuilder(32);
+        if (signum() < 0) sb.append('-');
+        if (e >= 0) {
+            if (e > 1L << 30) return toBigDecimal().toString(); // 超大指数走近似
+            sb.append(m.shiftLeft((int) e));
+            return sb.toString();
+        }
+        long negE = -e;
+        if (negE > 1L << 30) return toBigDecimal().toString(); // 超小指数走近似
+        // m × 5^k / 10^k
+        BigInteger scaled = m.multiply(BigInteger.valueOf(5).pow((int) negE));
+        String s = scaled.toString();
+        int shift = (int) negE;
+        if (s.length() <= shift) {
+            sb.append("0.");
+            for (int i = 0; i < shift - s.length(); i++) sb.append('0');
+            sb.append(s);
+        } else {
+            sb.append(s, 0, s.length() - shift).append('.').append(s, s.length() - shift, s.length());
+        }
+        // 去掉小数尾随 0
+        int len = sb.length();
+        while (len > 0 && sb.charAt(len - 1) == '0') len--;
+        if (len > 0 && sb.charAt(len - 1) == '.') len--;
+        sb.setLength(len);
+        return sb.toString();
+    }
+
     @Override
     public String toString() {
         if (isNaN()) return "NaN";
@@ -615,6 +707,9 @@ public final class Float256 extends Number implements Comparable<Float256> {
         System.out.println("1/3*3 = " + ONE.divide(of(3)).multiply(of(3)));
         System.out.println("2^100 = " + of(Int256.ONE.shiftLeft(100)));
         System.out.println("0.1+0.2 = " + of(0.1).add(of(0.2)));
+        System.out.println("0.1 exact = " + of(0.1).toExactString());
+        System.out.println("1.5 exact = " + of(1.5).toExactString());
+        System.out.println("12550821.123456789 exact = " + of(12550821.123456789).toExactString());
         System.out.println("sqrt(2) = " + of(2).sqrt());
         System.out.println("Long.MAX = " + of(Long.MAX_VALUE));
         System.out.println("Long.MAX+1 = " + of(Long.MAX_VALUE).add(ONE));

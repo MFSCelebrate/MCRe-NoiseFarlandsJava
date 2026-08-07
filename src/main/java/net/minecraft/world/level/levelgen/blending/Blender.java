@@ -3,8 +3,9 @@ package net.minecraft.world.level.levelgen.blending;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.ImmutableMap.Builder;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
@@ -34,7 +35,7 @@ import org.apache.commons.lang3.mutable.MutableObject;
 import org.jspecify.annotations.Nullable;
 
 public class Blender {
-    private static final Blender EMPTY = new Blender(new Long2ObjectOpenHashMap(), new Long2ObjectOpenHashMap()) {
+    private static final Blender EMPTY = new Blender(new HashMap<>(), new HashMap<>()) {
         @Override
         public Blender.BlendingOutput blendOffsetAndFactor(final int blockX, final int blockZ) {
             return new Blender.BlendingOutput(1.0, 0.0);
@@ -56,8 +57,8 @@ public class Blender {
     private static final int DENSITY_BLENDING_RANGE_CELLS = 2;
     private static final int DENSITY_BLENDING_RANGE_CHUNKS = QuartPos.toSection(5);
     private static final double OLD_CHUNK_XZ_RADIUS = 8.0;
-    private final Long2ObjectOpenHashMap<BlendingData> heightAndBiomeBlendingData;
-    private final Long2ObjectOpenHashMap<BlendingData> densityBlendingData;
+    private final Map<ChunkPos, BlendingData> heightAndBiomeBlendingData;
+    private final Map<ChunkPos, BlendingData> densityBlendingData;
 
     public static Blender empty() {
         return EMPTY;
@@ -70,23 +71,23 @@ public class Blender {
                 return EMPTY;
             }
 
-            Long2ObjectOpenHashMap<BlendingData> heightAndBiomeData = new Long2ObjectOpenHashMap<>();
-            Long2ObjectOpenHashMap<BlendingData> densityData = new Long2ObjectOpenHashMap<>();
+            Map<ChunkPos, BlendingData> heightAndBiomeData = new HashMap<>();
+            Map<ChunkPos, BlendingData> densityData = new HashMap<>();
             int maxDistSq = Mth.square(HEIGHT_BLENDING_RANGE_CHUNKS + 1);
 
             for (int dx = -HEIGHT_BLENDING_RANGE_CHUNKS; dx <= HEIGHT_BLENDING_RANGE_CHUNKS; dx++) {
                 for (int dz = -HEIGHT_BLENDING_RANGE_CHUNKS; dz <= HEIGHT_BLENDING_RANGE_CHUNKS; dz++) {
                     if (dx * dx + dz * dz <= maxDistSq) {
-                        int chunkX = centerPos.x() + dx;
-                        int chunkZ = centerPos.z() + dz;
+                        int chunkX = (int)centerPos.x() + dx;
+                        int chunkZ = (int)centerPos.z() + dz;
                         BlendingData blendingData = BlendingData.getOrUpdateBlendingData(region, chunkX, chunkZ);
                         if (blendingData != null) {
-                            heightAndBiomeData.put(ChunkPos.pack(chunkX, chunkZ), blendingData);
+                            heightAndBiomeData.put(new ChunkPos(chunkX, chunkZ), blendingData);
                             if (dx >= -DENSITY_BLENDING_RANGE_CHUNKS
                                 && dx <= DENSITY_BLENDING_RANGE_CHUNKS
                                 && dz >= -DENSITY_BLENDING_RANGE_CHUNKS
                                 && dz <= DENSITY_BLENDING_RANGE_CHUNKS) {
-                                densityData.put(ChunkPos.pack(chunkX, chunkZ), blendingData);
+                                densityData.put(new ChunkPos(chunkX, chunkZ), blendingData);
                             }
                         }
                     }
@@ -99,7 +100,7 @@ public class Blender {
         }
     }
 
-    private Blender(final Long2ObjectOpenHashMap<BlendingData> heightAndBiomeBlendingData, final Long2ObjectOpenHashMap<BlendingData> densityBlendingData) {
+    private Blender(final Map<ChunkPos, BlendingData> heightAndBiomeBlendingData, final Map<ChunkPos, BlendingData> densityBlendingData) {
         this.heightAndBiomeBlendingData = heightAndBiomeBlendingData;
         this.densityBlendingData = densityBlendingData;
     }
@@ -223,7 +224,7 @@ public class Blender {
     private double getBlendingDataValue(
         final Blender.CellValueGetter cellValueGetter, final int chunkX, final int chunkZ, final int cellX, final int cellY, final int cellZ
     ) {
-        BlendingData blendingData = this.heightAndBiomeBlendingData.get(ChunkPos.pack(chunkX, chunkZ));
+        BlendingData blendingData = this.heightAndBiomeBlendingData.get(new ChunkPos(chunkX, chunkZ));
         return blendingData != null
             ? cellValueGetter.get(blendingData, cellX - QuartPos.fromSection(chunkX), cellY, cellZ - QuartPos.fromSection(chunkZ))
             : Double.MAX_VALUE;

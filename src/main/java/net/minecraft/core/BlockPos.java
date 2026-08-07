@@ -3,12 +3,12 @@ package net.minecraft.core;
 import com.google.common.collect.AbstractIterator;
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -26,8 +26,18 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.MinecraftTools.Math._256Bit.Int256;
+import net.MinecraftTools.Math._256Bit.util.Vec3d256;
 import org.apache.commons.lang3.Validate;
 
+/**
+ * BlockPos — 方块坐标（MCRe NoiseFarlands 对象化版）
+ *
+ * <p>原版用 asLong() 将 (int x, int y, int z) 打包进 long（26+12+26 位），
+ * 坐标上限被锁死在 ±33,554,431（2^25）。本版：移除打包系统，BlockPos 对象
+ * 本身即键（不可变 + hashCode/equals），坐标以 int 存储（32 位，为后续
+ * long/256-bit 升级保留），并适配 256-bit（Int256 / Vec3d256）。
+ */
 @Immutable
 public class BlockPos extends Vec3i {
     public static final Codec<BlockPos> CODEC = Codec.INT_STREAM
@@ -45,15 +55,6 @@ public class BlockPos extends Vec3i {
         }
     };
     public static final BlockPos ZERO = new BlockPos(0, 0, 0);
-    public static final int PACKED_HORIZONTAL_LENGTH = 1 + Mth.log2(Mth.smallestEncompassingPowerOfTwo(30000000));
-    public static final int PACKED_Y_LENGTH = 64 - 2 * PACKED_HORIZONTAL_LENGTH;
-    private static final long PACKED_X_MASK = (1L << PACKED_HORIZONTAL_LENGTH) - 1L;
-    private static final long PACKED_Y_MASK = (1L << PACKED_Y_LENGTH) - 1L;
-    private static final long PACKED_Z_MASK = (1L << PACKED_HORIZONTAL_LENGTH) - 1L;
-    private static final int Y_OFFSET = 0;
-    private static final int Z_OFFSET = PACKED_Y_LENGTH;
-    private static final int X_OFFSET = PACKED_Y_LENGTH + PACKED_HORIZONTAL_LENGTH;
-    public static final int MAX_HORIZONTAL_COORDINATE = (1 << PACKED_HORIZONTAL_LENGTH) / 2 - 1;
 
     public BlockPos(final int x, final int y, final int z) {
         super(x, y, z);
@@ -61,30 +62,6 @@ public class BlockPos extends Vec3i {
 
     public BlockPos(final Vec3i vec3i) {
         this(vec3i.getX(), vec3i.getY(), vec3i.getZ());
-    }
-
-    public static long offset(final long blockNode, final Direction offset) {
-        return offset(blockNode, offset.getStepX(), offset.getStepY(), offset.getStepZ());
-    }
-
-    public static long offset(final long blockNode, final int stepX, final int stepY, final int stepZ) {
-        return asLong(getX(blockNode) + stepX, getY(blockNode) + stepY, getZ(blockNode) + stepZ);
-    }
-
-    public static int getX(final long blockNode) {
-        return (int)(blockNode << 64 - X_OFFSET - PACKED_HORIZONTAL_LENGTH >> 64 - PACKED_HORIZONTAL_LENGTH);
-    }
-
-    public static int getY(final long blockNode) {
-        return (int)(blockNode << 64 - PACKED_Y_LENGTH >> 64 - PACKED_Y_LENGTH);
-    }
-
-    public static int getZ(final long blockNode) {
-        return (int)(blockNode << 64 - Z_OFFSET - PACKED_HORIZONTAL_LENGTH >> 64 - PACKED_HORIZONTAL_LENGTH);
-    }
-
-    public static BlockPos of(final long blockNode) {
-        return new BlockPos(getX(blockNode), getY(blockNode), getZ(blockNode));
     }
 
     public static BlockPos containing(final double x, final double y, final double z) {
@@ -101,21 +78,6 @@ public class BlockPos extends Vec3i {
 
     public static BlockPos max(final BlockPos a, final BlockPos b) {
         return new BlockPos(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
-    }
-
-    public long asLong() {
-        return asLong(this.getX(), this.getY(), this.getZ());
-    }
-
-    public static long asLong(final int x, final int y, final int z) {
-        long node = 0L;
-        node |= (x & PACKED_X_MASK) << X_OFFSET;
-        node |= (y & PACKED_Y_MASK) << 0;
-        return node | (z & PACKED_Z_MASK) << Z_OFFSET;
-    }
-
-    public static long getFlatIndex(final long neighborBlockNode) {
-        return neighborBlockNode & -16L;
     }
 
     public BlockPos offset(final int x, final int y, final int z) {
@@ -480,6 +442,7 @@ public class BlockPos extends Vec3i {
         };
     }
 
+    /** 广度优先遍历（对象化：visited 用 HashSet<BlockPos>，替代原 LongSet 打包） */
     public static int breadthFirstTraversal(
         final BlockPos startPos,
         final int maxDepth,
@@ -491,7 +454,7 @@ public class BlockPos extends Vec3i {
         }
 
         Queue<Node> nodes = new ArrayDeque<>();
-        LongSet visited = new LongOpenHashSet();
+        Set<BlockPos> visited = new HashSet<>();
         nodes.add(new Node(startPos, 0));
         int count = 0;
 
@@ -499,8 +462,7 @@ public class BlockPos extends Vec3i {
             Node node = nodes.poll();
             BlockPos currentPos = node.pos;
             int depth = node.depth;
-            long currentPosLong = currentPos.asLong();
-            if (visited.add(currentPosLong)) {
+            if (visited.add(currentPos.immutable())) {
                 BlockPos.TraversalNodeStatus next = nodeProcessor.apply(currentPos);
                 if (next != BlockPos.TraversalNodeStatus.SKIP) {
                     if (next == BlockPos.TraversalNodeStatus.STOP) {
@@ -512,7 +474,7 @@ public class BlockPos extends Vec3i {
                     }
 
                     if (depth < maxDepth) {
-                        neighbourProvider.accept(currentPos, pos -> nodes.add(new Node(pos, depth + 1)));
+                        neighbourProvider.accept(currentPos, pos -> nodes.add(new Node(pos.immutable(), depth + 1)));
                     }
                 }
             }
@@ -615,6 +577,31 @@ public class BlockPos extends Vec3i {
         };
     }
 
+    // ═══════════ 256-bit 适配（MCRe NoiseFarlands） ═══════════
+
+    /** 方块坐标精确转 Int256 */
+    public Int256 x256() {
+        return Int256.of(this.getX());
+    }
+
+    public Int256 y256() {
+        return Int256.of(this.getY());
+    }
+
+    public Int256 z256() {
+        return Int256.of(this.getZ());
+    }
+
+    /** 转 256-bit 向量 */
+    public Vec3d256 to256() {
+        return Vec3d256.ofInt(this.x256(), this.y256(), this.z256());
+    }
+
+    /** 256-bit 向量 → BlockPos（floor） */
+    public static BlockPos from256(final Vec3d256 pos) {
+        return new BlockPos((int)pos.x.floor().longValue(), (int)pos.y.floor().longValue(), (int)pos.z.floor().longValue());
+    }
+
     public static class MutableBlockPos extends BlockPos {
         public MutableBlockPos() {
             this(0, 0, 0);
@@ -666,10 +653,6 @@ public class BlockPos extends Vec3i {
 
         public BlockPos.MutableBlockPos set(final Vec3i vec) {
             return this.set(vec.getX(), vec.getY(), vec.getZ());
-        }
-
-        public BlockPos.MutableBlockPos set(final long pos) {
-            return this.set(getX(pos), getY(pos), getZ(pos));
         }
 
         public BlockPos.MutableBlockPos set(final AxisCycle transform, final int x, final int y, final int z) {

@@ -1,18 +1,22 @@
 package net.minecraft.world.level.lighting;
 
-import it.unimi.dsi.fastutil.longs.Long2ByteMap;
-import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.function.LongPredicate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import net.minecraft.util.Mth;
 
-public abstract class DynamicGraphMinFixedPoint {
-    public static final long SOURCE = Long.MAX_VALUE;
+/**
+ * DynamicGraphMinFixedPoint — 动态图最短固定点算法（MCRe NoiseFarlands 泛型对象化版）
+ * 原版以 long 节点（打包坐标），本版泛型化为任意对象节点（ChunkPos/SectionPos）。
+ * 哨兵节点统一用 null（子类可覆盖 isSource 改用具名常量）。
+ */
+public abstract class DynamicGraphMinFixedPoint<N> {
     private static final int NO_COMPUTED_LEVEL = 255;
     protected final int levelCount;
-    private final LeveledPriorityQueue priorityQueue;
-    private final Long2ByteMap computedLevels;
+    private final LeveledPriorityQueue<N> priorityQueue;
+    private final HashMap<N, Byte> computedLevels;
     private volatile boolean hasWork;
 
     protected DynamicGraphMinFixedPoint(final int levelCount, final int minQueueSize, final int minMapSize) {
@@ -21,20 +25,13 @@ public abstract class DynamicGraphMinFixedPoint {
         }
 
         this.levelCount = levelCount;
-        this.priorityQueue = new LeveledPriorityQueue(levelCount, minQueueSize);
-        this.computedLevels = new Long2ByteOpenHashMap(minMapSize, 0.5F) {
-            @Override
-            protected void rehash(final int newN) {
-                if (newN > minMapSize) {
-                    super.rehash(newN);
-                }
-            }
-        };
-        this.computedLevels.defaultReturnValue((byte)-1);
+        this.priorityQueue = new LeveledPriorityQueue<>(levelCount, minQueueSize);
+        this.computedLevels = new HashMap<>(Math.max(minMapSize, 16), 0.5F);
     }
 
-    protected void removeFromQueue(final long node) {
-        int computedLevel = this.computedLevels.remove(node) & 255;
+    protected void removeFromQueue(final N node) {
+        Byte removed = this.computedLevels.remove(node);
+        int computedLevel = removed == null ? 255 : removed & 255;
         if (computedLevel != 255) {
             int level = this.getLevel(node);
             int priority = this.calculatePriority(level, computedLevel);
@@ -43,30 +40,30 @@ public abstract class DynamicGraphMinFixedPoint {
         }
     }
 
-    public void removeIf(final LongPredicate pred) {
-        LongList nodesToRemove = new LongArrayList();
-        this.computedLevels.keySet().forEach((long node) -> {
+    public void removeIf(final Predicate<N> pred) {
+        List<N> nodesToRemove = new ArrayList<>();
+        this.computedLevels.keySet().forEach(node -> {
             if (pred.test(node)) {
                 nodesToRemove.add(node);
             }
         });
-        nodesToRemove.forEach((java.util.function.LongConsumer)this::removeFromQueue);
+        nodesToRemove.forEach((Consumer<N>)this::removeFromQueue);
     }
 
     private int calculatePriority(final int level, final int computedLevel) {
         return Math.min(Math.min(level, computedLevel), this.levelCount - 1);
     }
 
-    protected void checkNode(final long node) {
+    protected void checkNode(final N node) {
         this.checkEdge(node, node, this.levelCount - 1, false);
     }
 
-    protected void checkEdge(final long from, final long to, final int newLevelFrom, final boolean onlyDecreased) {
-        this.checkEdge(from, to, newLevelFrom, this.getLevel(to), this.computedLevels.get(to) & 255, onlyDecreased);
+    protected void checkEdge(final N from, final N to, final int newLevelFrom, final boolean onlyDecreased) {
+        this.checkEdge(from, to, newLevelFrom, this.getLevel(to), this.computedLevels.getOrDefault(to, (byte)-1) & 255, onlyDecreased);
         this.hasWork = !this.priorityQueue.isEmpty();
     }
 
-    private void checkEdge(final long from, final long to, int newLevelFrom, int levelTo, int oldComputedLevel, final boolean onlyDecreased) {
+    private void checkEdge(final N from, final N to, int newLevelFrom, int levelTo, int oldComputedLevel, final boolean onlyDecreased) {
         if (!this.isSource(to)) {
             newLevelFrom = Mth.clamp(newLevelFrom, 0, this.levelCount - 1);
             levelTo = Mth.clamp(levelTo, 0, this.levelCount - 1);
@@ -98,8 +95,8 @@ public abstract class DynamicGraphMinFixedPoint {
         }
     }
 
-    protected final void checkNeighbor(final long from, final long to, final int level, final boolean onlyDecreased) {
-        int storedOldComputedLevel = this.computedLevels.get(to) & 255;
+    protected final void checkNeighbor(final N from, final N to, final int level, final boolean onlyDecreased) {
+        int storedOldComputedLevel = this.computedLevels.getOrDefault(to, (byte)-1) & 255;
         int levelFrom = Mth.clamp(this.computeLevelFromNeighbor(from, to, level), 0, this.levelCount - 1);
         if (onlyDecreased) {
             this.checkEdge(from, to, levelFrom, this.getLevel(to), storedOldComputedLevel, onlyDecreased);
@@ -129,7 +126,7 @@ public abstract class DynamicGraphMinFixedPoint {
 
         while (!this.priorityQueue.isEmpty() && count > 0) {
             count--;
-            long node = this.priorityQueue.removeFirstLong();
+            N node = this.priorityQueue.removeFirst();
             int level = Mth.clamp(this.getLevel(node), 0, this.levelCount - 1);
             int computedLevel = this.computedLevels.remove(node) & 255;
             if (computedLevel < level) {
@@ -154,17 +151,18 @@ public abstract class DynamicGraphMinFixedPoint {
         return this.computedLevels.size();
     }
 
-    protected boolean isSource(final long node) {
-        return node == Long.MAX_VALUE;
+    /** 哨兵节点判断（默认 null；子类可覆盖用具名常量） */
+    protected boolean isSource(final N node) {
+        return node == null;
     }
 
-    protected abstract int getComputedLevel(final long node, final long knownParent, final int knownLevelFromParent);
+    protected abstract int getComputedLevel(final N node, final N knownParent, final int knownLevelFromParent);
 
-    protected abstract void checkNeighborsAfterUpdate(final long node, final int level, final boolean onlyDecrease);
+    protected abstract void checkNeighborsAfterUpdate(final N node, final int level, final boolean onlyDecrease);
 
-    protected abstract int getLevel(long node);
+    protected abstract int getLevel(N node);
 
-    protected abstract void setLevel(long node, int level);
+    protected abstract void setLevel(N node, int level);
 
-    protected abstract int computeLevelFromNeighbor(long from, long to, final int fromLevel);
+    protected abstract int computeLevelFromNeighbor(N from, N to, final int fromLevel);
 }

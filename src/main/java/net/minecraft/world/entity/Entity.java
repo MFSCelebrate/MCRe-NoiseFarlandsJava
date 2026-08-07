@@ -9,8 +9,8 @@ import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.floats.FloatArraySet;
 import it.unimi.dsi.fastutil.floats.FloatArrays;
 import it.unimi.dsi.fastutil.floats.FloatSet;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
+
+
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -305,7 +306,7 @@ public abstract class Entity
     public static final int MAX_MOVEMENTS_HANDELED_PER_TICK = 100;
     private final ArrayDeque<Entity.Movement> movementThisTick = new ArrayDeque<>(100);
     private final List<Entity.Movement> finalMovementsThisTick = new ObjectArrayList<>();
-    private final LongSet visitedBlocks = new LongOpenHashSet();
+    private final Set<BlockPos> visitedBlocks = new HashSet<>();
     private final InsideBlockEffectApplier.StepBasedCollector insideEffectCollector = new InsideBlockEffectApplier.StepBasedCollector();
     private CustomData customData = CustomData.EMPTY;
 
@@ -1291,7 +1292,7 @@ public abstract class Entity
     private void checkInsideBlocks(final List<
                     Entity.Movement> movements, final InsideBlockEffectApplier.StepBasedCollector effectCollector) {
         if (this.isAffectedByBlocks()) {
-            LongSet visitedBlocks = this.visitedBlocks;
+            Set<BlockPos> visitedBlocks = this.visitedBlocks;
 
             for (Entity.Movement movement : movements) {
                 Vec3 pos = movement.from;
@@ -1325,7 +1326,7 @@ public abstract class Entity
             final Vec3 from,
             final Vec3 to,
             final InsideBlockEffectApplier.StepBasedCollector effectCollector,
-            final LongSet visitedBlocks,
+            final Set<BlockPos> visitedBlocks,
             final int maxMovementIterations) {
         AABB deflatedBoundingBoxAtTarget = this.makeBoundingBox(to).deflate(1.0E-5F);
         boolean movedFar = from.distanceToSqr(to) > Mth.square(0.9999900000002526);
@@ -1358,7 +1359,7 @@ public abstract class Entity
                         boolean insideBlock = intersectShape == Shapes.block()
                                 || this.collidedWithShapeMovingFrom(from, to, intersectShape.move(new Vec3(blockIntersection)).toAabbs());
                         boolean insideFluid = this.collidedWithFluid(state.getFluidState(), blockIntersection, from, to);
-                        if ((insideBlock || insideFluid) && visitedBlocks.add(blockIntersection.asLong())) {
+                        if ((insideBlock || insideFluid) && visitedBlocks.add(blockIntersection.immutable())) {
                             if (insideBlock) {
                                 try {
                                     boolean isPrecise = movedFar || deflatedBoundingBoxAtTarget.intersects(blockIntersection);

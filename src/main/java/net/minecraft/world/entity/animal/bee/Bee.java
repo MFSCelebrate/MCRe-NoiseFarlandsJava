@@ -1,7 +1,8 @@
 package net.minecraft.world.entity.animal.bee;
 
 import com.google.common.collect.Lists;
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
+
+import java.util.HashMap;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -1085,7 +1086,7 @@ public class Bee extends Animal implements NeutralMob {
         private @Nullable Vec3 hoverPos;
         private int pollinatingTicks;
         private static final int MAX_POLLINATING_TICKS = 600;
-        private Long2LongOpenHashMap unreachableFlowerCache = new Long2LongOpenHashMap();
+        private HashMap<BlockPos, Long> unreachableFlowerCache = new HashMap<>();
 
         public BeePollinateGoal() {
             this.setFlags(EnumSet.of(Goal.Flag.MOVE));
@@ -1223,19 +1224,19 @@ public class Bee extends Animal implements NeutralMob {
 
         private Optional<BlockPos> findNearbyFlower() {
             Iterable<BlockPos> closestNearbyFlowers = BlockPos.withinManhattan(Bee.this.blockPosition(), 5, 5, 5);
-            Long2LongOpenHashMap tempCache = new Long2LongOpenHashMap();
+            HashMap<BlockPos, Long> tempCache = new HashMap<>();
 
             for (BlockPos pos : closestNearbyFlowers) {
-                long unreachableUntilTime = this.unreachableFlowerCache.getOrDefault(pos.asLong(), Long.MIN_VALUE);
+                long unreachableUntilTime = this.unreachableFlowerCache.getOrDefault(pos, Long.MIN_VALUE);
                 if (Bee.this.level().getGameTime() < unreachableUntilTime) {
-                    tempCache.put(pos.asLong(), unreachableUntilTime);
+                    tempCache.put(pos, unreachableUntilTime);
                 } else if (Bee.attractsBees(Bee.this.level().getBlockState(pos))) {
                     Path path = Bee.this.navigation.createPath(pos, 1);
                     if (path != null && path.canReach()) {
                         return Optional.of(pos);
                     }
 
-                    tempCache.put(pos.asLong(), Bee.this.level().getGameTime() + 600L);
+                    tempCache.put(pos, Bee.this.level().getGameTime() + 600L);
                 }
             }
 

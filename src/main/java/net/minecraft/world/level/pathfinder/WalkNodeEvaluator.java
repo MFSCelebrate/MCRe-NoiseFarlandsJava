@@ -1,9 +1,11 @@
 package net.minecraft.world.level.pathfinder;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+
+
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.EnumSet;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
@@ -31,7 +33,7 @@ import org.jspecify.annotations.Nullable;
 public class WalkNodeEvaluator extends NodeEvaluator {
     public static final double SPACE_BETWEEN_WALL_POSTS = 0.5;
     private static final double DEFAULT_MOB_JUMP_HEIGHT = 1.125;
-    private final Long2ObjectMap<PathType> pathTypesByPosCacheByMob = new Long2ObjectOpenHashMap<>();
+    private final Map<BlockPos, PathType> pathTypesByPosCacheByMob = new HashMap<>();
     private final Object2BooleanMap<AABB> collisionCache = new Object2BooleanOpenHashMap<>();
     private final Node[] reusableNeighbors = new Node[Direction.Plane.HORIZONTAL.length()];
 
@@ -378,7 +380,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
     }
 
     protected PathType getCachedPathType(final int x, final int y, final int z) {
-        return this.pathTypesByPosCacheByMob.computeIfAbsent(BlockPos.asLong(x, y, z), k -> this.getPathTypeOfMob(this.currentContext, x, y, z, this.mob));
+        return this.pathTypesByPosCacheByMob.computeIfAbsent(new BlockPos(x, y, z), k -> this.getPathTypeOfMob(this.currentContext, x, y, z, this.mob));
     }
 
     @Override

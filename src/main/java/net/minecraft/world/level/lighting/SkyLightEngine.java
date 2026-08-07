@@ -13,6 +13,10 @@ import net.minecraft.world.level.chunk.LightChunk;
 import net.minecraft.world.level.chunk.LightChunkGetter;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * SkyLightEngine — 天空光照引擎（MCRe NoiseFarlands 对象化版）
+ * blockNode/sectionNode(long 打包) → BlockPos/SectionPos 对象。
+ */
 public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.SkyDataLayerStorageMap, SkyLightSectionStorage> {
     private static final long REMOVE_TOP_SKY_SOURCE_ENTRY = LightEngine.QueueEntry.decreaseAllDirections(15);
     private static final long REMOVE_SKY_SOURCE_ENTRY = LightEngine.QueueEntry.decreaseSkipOneDirection(15, Direction.UP);
@@ -45,11 +49,11 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
     }
 
     @Override
-    protected void checkNode(final long blockNode) {
-        int x = BlockPos.getX(blockNode);
-        int y = BlockPos.getY(blockNode);
-        int z = BlockPos.getZ(blockNode);
-        long sectionNode = SectionPos.blockToSection(blockNode);
+    protected void checkNode(final BlockPos blockNode) {
+        int x = blockNode.getX();
+        int y = blockNode.getY();
+        int z = blockNode.getZ();
+        SectionPos sectionNode = SectionPos.of(blockNode);
         int lowestSourceY = this.storage.lightOnInSection(sectionNode) ? this.getLowestSourceY(x, z, Integer.MAX_VALUE) : Integer.MAX_VALUE;
         if (lowestSourceY != Integer.MAX_VALUE) {
             this.updateSourcesInColumn(x, z, lowestSourceY);
@@ -85,12 +89,12 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
             int startY = lowestSourceY - 1;
 
             for (int sectionY = SectionPos.blockToSectionCoord(startY); this.storage.hasLightDataAtOrBelow(sectionY); sectionY--) {
-                if (this.storage.storingLightForSection(SectionPos.asLong(sectionX, sectionY, sectionZ))) {
+                if (this.storage.storingLightForSection(SectionPos.of(sectionX, sectionY, sectionZ))) {
                     int sectionBottomY = SectionPos.sectionToBlockCoord(sectionY);
                     int sectionTopY = sectionBottomY + 15;
 
                     for (int y = Math.min(sectionTopY, startY); y >= sectionBottomY; y--) {
-                        long blockNode = BlockPos.asLong(x, y, z);
+                        BlockPos blockNode = new BlockPos(x, y, z);
                         if (!isSourceLevel(this.storage.getStoredLevel(blockNode))) {
                             return;
                         }
@@ -112,16 +116,16 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         );
         int startY = Math.max(lowestSourceY, worldBottomY);
 
-        for (long sectionNode = SectionPos.asLong(sectionX, SectionPos.blockToSectionCoord(startY), sectionZ);
+        for (SectionPos sectionNode = SectionPos.of(sectionX, SectionPos.blockToSectionCoord(startY), sectionZ);
             !this.storage.isAboveData(sectionNode);
-            sectionNode = SectionPos.offset(sectionNode, Direction.UP)
+            sectionNode = sectionNode.offset(0, 1, 0)
         ) {
             if (this.storage.storingLightForSection(sectionNode)) {
-                int sectionBottomY = SectionPos.sectionToBlockCoord(SectionPos.y(sectionNode));
+                int sectionBottomY = SectionPos.sectionToBlockCoord(sectionNode.y());
                 int sectionTopY = sectionBottomY + 15;
 
                 for (int y = Math.max(sectionBottomY, startY); y <= sectionTopY; y++) {
-                    long blockNode = BlockPos.asLong(x, y, z);
+                    BlockPos blockNode = new BlockPos(x, y, z);
                     if (isSourceLevel(this.storage.getStoredLevel(blockNode))) {
                         return;
                     }
@@ -136,14 +140,14 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
     }
 
     @Override
-    protected void propagateIncrease(final long fromNode, final long increaseData, final int fromLevel) {
+    protected void propagateIncrease(final BlockPos fromNode, final long increaseData, final int fromLevel) {
         BlockState fromState = null;
         int emptySectionsBelow = this.countEmptySectionsBelowIfAtBorder(fromNode);
 
         for (Direction propagationDirection : PROPAGATION_DIRECTIONS) {
             if (LightEngine.QueueEntry.shouldPropagateInDirection(increaseData, propagationDirection)) {
-                long toNode = BlockPos.offset(fromNode, propagationDirection);
-                if (this.storage.storingLightForSection(SectionPos.blockToSection(toNode))) {
+                BlockPos toNode = fromNode.offset(propagationDirection);
+                if (this.storage.storingLightForSection(SectionPos.of(toNode))) {
                     int toLevel = this.storage.getStoredLevel(toNode);
                     int maxPossibleNewToLevel = fromLevel - 1;
                     if (maxPossibleNewToLevel > toLevel) {
@@ -176,14 +180,14 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
     }
 
     @Override
-    protected void propagateDecrease(final long fromNode, final long decreaseData) {
+    protected void propagateDecrease(final BlockPos fromNode, final long decreaseData) {
         int emptySectionsBelow = this.countEmptySectionsBelowIfAtBorder(fromNode);
         int oldFromLevel = LightEngine.QueueEntry.getFromLevel(decreaseData);
 
         for (Direction propagationDirection : PROPAGATION_DIRECTIONS) {
             if (LightEngine.QueueEntry.shouldPropagateInDirection(decreaseData, propagationDirection)) {
-                long toNode = BlockPos.offset(fromNode, propagationDirection);
-                if (this.storage.storingLightForSection(SectionPos.blockToSection(toNode))) {
+                BlockPos toNode = fromNode.offset(propagationDirection);
+                if (this.storage.storingLightForSection(SectionPos.of(toNode))) {
                     int toLevel = this.storage.getStoredLevel(toNode);
                     if (toLevel != 0) {
                         if (toLevel <= oldFromLevel - 1) {
@@ -199,15 +203,15 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         }
     }
 
-    private int countEmptySectionsBelowIfAtBorder(final long blockNode) {
-        int y = BlockPos.getY(blockNode);
+    private int countEmptySectionsBelowIfAtBorder(final BlockPos blockNode) {
+        int y = blockNode.getY();
         int localY = SectionPos.sectionRelative(y);
         if (localY != 0) {
             return 0;
         }
 
-        int x = BlockPos.getX(blockNode);
-        int z = BlockPos.getZ(blockNode);
+        int x = blockNode.getX();
+        int z = blockNode.getZ();
         int localX = SectionPos.sectionRelative(x);
         int localZ = SectionPos.sectionRelative(z);
         if (localX != 0 && localX != 15 && localZ != 0 && localZ != 15) {
@@ -220,7 +224,7 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         int emptySectionsBelow = 0;
 
         while (
-            !this.storage.storingLightForSection(SectionPos.asLong(sectionX, sectionY - emptySectionsBelow - 1, sectionZ))
+            !this.storage.storingLightForSection(SectionPos.of(sectionX, sectionY - emptySectionsBelow - 1, sectionZ))
                 && this.storage.hasLightDataAtOrBelow(sectionY - emptySectionsBelow - 1)
         ) {
             emptySectionsBelow++;
@@ -230,26 +234,26 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
     }
 
     private void propagateFromEmptySections(
-        final long toNode, final Direction propagationDirection, final int toLevel, final boolean increase, final int emptySectionsBelow
+        final BlockPos toNode, final Direction propagationDirection, final int toLevel, final boolean increase, final int emptySectionsBelow
     ) {
         if (emptySectionsBelow != 0) {
-            int x = BlockPos.getX(toNode);
-            int z = BlockPos.getZ(toNode);
+            int x = toNode.getX();
+            int z = toNode.getZ();
             if (crossedSectionEdge(propagationDirection, SectionPos.sectionRelative(x), SectionPos.sectionRelative(z))) {
-                int y = BlockPos.getY(toNode);
+                int y = toNode.getY();
                 int sectionX = SectionPos.blockToSectionCoord(x);
                 int sectionZ = SectionPos.blockToSectionCoord(z);
                 int sectionY = SectionPos.blockToSectionCoord(y) - 1;
                 int bottomSectionY = sectionY - emptySectionsBelow + 1;
 
                 while (sectionY >= bottomSectionY) {
-                    if (!this.storage.storingLightForSection(SectionPos.asLong(sectionX, sectionY, sectionZ))) {
+                    if (!this.storage.storingLightForSection(SectionPos.of(sectionX, sectionY, sectionZ))) {
                         sectionY--;
                     } else {
                         int sectionMinY = SectionPos.sectionToBlockCoord(sectionY);
 
                         for (int localY = 15; localY >= 0; localY--) {
-                            long blockNode = BlockPos.asLong(x, sectionMinY + localY, z);
+                            BlockPos blockNode = new BlockPos(x, sectionMinY + localY, z);
                             if (increase) {
                                 this.storage.setStoredLevel(blockNode, toLevel);
                                 if (toLevel > 1) {
@@ -284,15 +288,15 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
     public void setLightEnabled(final ChunkPos pos, final boolean enable) {
         super.setLightEnabled(pos, enable);
         if (enable) {
-            ChunkSkyLightSources sources = Objects.requireNonNullElse(this.getChunkSources(pos.x(), pos.z()), this.emptyChunkSources);
+            ChunkSkyLightSources sources = Objects.requireNonNullElse(this.getChunkSources((int)pos.x(), (int)pos.z()), this.emptyChunkSources);
             int highestNonSourceY = sources.getHighestLowestSourceY() - 1;
             int lowestFullySourceSectionY = SectionPos.blockToSectionCoord(highestNonSourceY) + 1;
-            long zeroNode = SectionPos.getZeroNode(pos.x(), pos.z());
+            SectionPos zeroNode = SectionPos.of((int)pos.x(), 0, (int)pos.z());
             int topSectionY = this.storage.getTopSectionY(zeroNode);
             int bottomSectionY = Math.max(this.storage.getBottomSectionY(), lowestFullySourceSectionY);
 
             for (int sectionY = topSectionY - 1; sectionY >= bottomSectionY; sectionY--) {
-                DataLayer dataLayer = this.storage.getDataLayerToWrite(SectionPos.asLong(pos.x(), sectionY, pos.z()));
+                DataLayer dataLayer = this.storage.getDataLayerToWrite(SectionPos.of((int)pos.x(), sectionY, (int)pos.z()));
                 if (dataLayer != null && dataLayer.isEmpty()) {
                     dataLayer.fill(15);
                 }
@@ -302,20 +306,20 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
 
     @Override
     public void propagateLightSources(final ChunkPos pos) {
-        long zeroNode = SectionPos.getZeroNode(pos.x(), pos.z());
+        SectionPos zeroNode = SectionPos.of((int)pos.x(), 0, (int)pos.z());
         this.storage.setLightEnabled(zeroNode, true);
-        ChunkSkyLightSources sources = Objects.requireNonNullElse(this.getChunkSources(pos.x(), pos.z()), this.emptyChunkSources);
-        ChunkSkyLightSources northSources = Objects.requireNonNullElse(this.getChunkSources(pos.x(), pos.z() - 1), this.emptyChunkSources);
-        ChunkSkyLightSources southSources = Objects.requireNonNullElse(this.getChunkSources(pos.x(), pos.z() + 1), this.emptyChunkSources);
-        ChunkSkyLightSources westSources = Objects.requireNonNullElse(this.getChunkSources(pos.x() - 1, pos.z()), this.emptyChunkSources);
-        ChunkSkyLightSources eastSources = Objects.requireNonNullElse(this.getChunkSources(pos.x() + 1, pos.z()), this.emptyChunkSources);
+        ChunkSkyLightSources sources = Objects.requireNonNullElse(this.getChunkSources((int)pos.x(), (int)pos.z()), this.emptyChunkSources);
+        ChunkSkyLightSources northSources = Objects.requireNonNullElse(this.getChunkSources((int)pos.x(), (int)pos.z() - 1), this.emptyChunkSources);
+        ChunkSkyLightSources southSources = Objects.requireNonNullElse(this.getChunkSources((int)pos.x(), (int)pos.z() + 1), this.emptyChunkSources);
+        ChunkSkyLightSources westSources = Objects.requireNonNullElse(this.getChunkSources((int)pos.x() - 1, (int)pos.z()), this.emptyChunkSources);
+        ChunkSkyLightSources eastSources = Objects.requireNonNullElse(this.getChunkSources((int)pos.x() + 1, (int)pos.z()), this.emptyChunkSources);
         int topSectionY = this.storage.getTopSectionY(zeroNode);
         int bottomSectionY = this.storage.getBottomSectionY();
-        int sectionMinX = SectionPos.sectionToBlockCoord(pos.x());
-        int sectionMinZ = SectionPos.sectionToBlockCoord(pos.z());
+        int sectionMinX = SectionPos.sectionToBlockCoord((int)pos.x());
+        int sectionMinZ = SectionPos.sectionToBlockCoord((int)pos.z());
 
         for (int sectionY = topSectionY - 1; sectionY >= bottomSectionY; sectionY--) {
-            long sectionNode = SectionPos.asLong(pos.x(), sectionY, pos.z());
+            SectionPos sectionNode = SectionPos.of((int)pos.x(), sectionY, (int)pos.z());
             DataLayer dataLayer = this.storage.getDataLayerToWrite(sectionNode);
             if (dataLayer != null) {
                 int sectionMinY = SectionPos.sectionToBlockCoord(sectionY);
@@ -337,7 +341,7 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
                             for (int y = sectionMaxY; y >= Math.max(sectionMinY, lowestSourceY); y--) {
                                 dataLayer.set(x, SectionPos.sectionRelative(y), z, 15);
                                 if (y == lowestSourceY || y < neighborLowestSourceY) {
-                                    long blockNode = BlockPos.asLong(sectionMinX + x, y, sectionMinZ + z);
+                                    BlockPos blockNode = new BlockPos(sectionMinX + x, y, sectionMinZ + z);
                                     this.enqueueIncrease(
                                         blockNode,
                                         LightEngine.QueueEntry.increaseSkySourceInDirections(

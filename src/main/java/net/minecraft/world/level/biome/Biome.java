@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import it.unimi.dsi.fastutil.longs.Long2FloatLinkedOpenHashMap;
+
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -70,13 +70,9 @@ public final class Biome {
     private final MobSpawnSettings mobSettings;
     private final EnvironmentAttributeMap attributes;
     private final BiomeSpecialEffects specialEffects;
-    private final ThreadLocal<Long2FloatLinkedOpenHashMap> temperatureCache = ThreadLocal.withInitial(() -> {
-        Long2FloatLinkedOpenHashMap map = new Long2FloatLinkedOpenHashMap(1024, 0.25F) {
-            @Override
-            protected void rehash(final int newN) {
-            }
-        };
-        map.defaultReturnValue(Float.NaN);
+    private final ThreadLocal<LinkedHashMap<BlockPos, Float>> temperatureCache = ThreadLocal.withInitial(() -> {
+        LinkedHashMap<BlockPos, Float> map = new LinkedHashMap<>(1024);
+        // 默认 NaN 由调用处 getOrDefault 处理
         return map;
     });
 
@@ -123,16 +119,16 @@ public final class Biome {
 
     @Deprecated
     private float getTemperature(final BlockPos pos, final int seaLevel) {
-        long key = pos.asLong();
-        Long2FloatLinkedOpenHashMap cache = this.temperatureCache.get();
-        float cached = cache.get(key);
+        BlockPos key = pos;
+        LinkedHashMap<BlockPos, Float> cache = this.temperatureCache.get();
+        float cached = cache.getOrDefault(key, Float.NaN);
         if (!Float.isNaN(cached)) {
             return cached;
         }
 
         float temp = this.getHeightAdjustedTemperature(pos, seaLevel);
         if (cache.size() == 1024) {
-            cache.removeFirstFloat();
+            cache.remove(cache.keySet().iterator().next());
         }
 
         cache.put(key, temp);

@@ -4,11 +4,6 @@ import com.google.common.collect.Maps;
 import com.mojang.datafixers.schemas.Schema;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.OptionalDynamic;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongList;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,6 +38,11 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
 
+/**
+ * LegacyStructureFileFix — 旧版结构存档修复（MCRe NoiseFarlands 对象化版）
+ * 原版以 long 打包键（ChunkPos.pack），本版以 ChunkPos 对象为键；
+ * References 存档格式改为 [x0, z0, x1, z1, ...] long 数组（与 SerializableChunkData 一致）。
+ */
 public class LegacyStructureFileFix extends FileFix {
     public static final int STRUCTURE_RANGE = 8;
     public static final List<String> OVERWORLD_LEGACY_STRUCTURES = List.of("Monument", "Stronghold", "Mineshaft", "Temple", "Mansion");
@@ -96,10 +96,10 @@ public class LegacyStructureFileFix extends FileFix {
                             levelData.get(),
                             List.of(
                                 new LegacyStructureFileFix.DimensionFixEntry(
-                                    OVERWORLD_KEY, overworldStructureData, overworldChunks, new Long2ObjectOpenHashMap<>()
+                                    OVERWORLD_KEY, overworldStructureData, overworldChunks, new HashMap<>()
                                 ),
-                                new LegacyStructureFileFix.DimensionFixEntry(NETHER_KEY, netherStructureData, netherChunks, new Long2ObjectOpenHashMap<>()),
-                                new LegacyStructureFileFix.DimensionFixEntry(END_KEY, endStructureData, endChunks, new Long2ObjectOpenHashMap<>())
+                                new LegacyStructureFileFix.DimensionFixEntry(NETHER_KEY, netherStructureData, netherChunks, new HashMap<>()),
+                                new LegacyStructureFileFix.DimensionFixEntry(END_KEY, endStructureData, endChunks, new HashMap<>())
                             ),
                             upgradeProgress
                         );
@@ -115,7 +115,7 @@ public class LegacyStructureFileFix extends FileFix {
         upgradeProgress.setStatus(UpgradeProgress.Status.COUNTING);
 
         for (LegacyStructureFileFix.DimensionFixEntry dimensionFixEntry : dimensionFixEntries) {
-            Long2ObjectOpenHashMap<LegacyStructureFileFix.LegacyStructureData> structures = dimensionFixEntry.structures;
+            Map<ChunkPos, LegacyStructureFileFix.LegacyStructureData> structures = dimensionFixEntry.structures;
 
             for (FileAccess<SavedDataNbt> structureDataFileAccess : dimensionFixEntry.structureFileAccess) {
                 SavedDataNbt targetFile = structureDataFileAccess.getOnlyFile();
@@ -160,13 +160,13 @@ public class LegacyStructureFileFix extends FileFix {
     }
 
     private static void extractLegacyStructureData(
-        final Dynamic<Tag> structureData, final Long2ObjectMap<LegacyStructureFileFix.LegacyStructureData> extractedDataContainer
+        final Dynamic<Tag> structureData, final Map<ChunkPos, LegacyStructureFileFix.LegacyStructureData> extractedDataContainer
     ) {
         OptionalDynamic<Tag> features = structureData.get("Features");
         Map<Dynamic<Tag>, Dynamic<Tag>> map = features.asMap(Function.identity(), Function.identity());
 
         for (Dynamic<Tag> value : map.values()) {
-            long pos = ChunkPos.pack(value.get("ChunkX").asInt(0), value.get("ChunkZ").asInt(0));
+            ChunkPos pos = new ChunkPos(value.get("ChunkX").asInt(0), value.get("ChunkZ").asInt(0));
             List<Dynamic<Tag>> childList = value.get("Children").asList(Function.identity());
             if (!childList.isEmpty()) {
                 Optional<String> id = childList.getFirst().get("id").asString().result().map(LEGACY_TO_CURRENT_MAP::get);
@@ -182,10 +182,10 @@ public class LegacyStructureFileFix extends FileFix {
                     id -> {
                         extractedDataContainer.computeIfAbsent(pos, l -> new LegacyStructureFileFix.LegacyStructureData()).addStart(id, finalValue);
 
-                        for (int neighborX = ChunkPos.getX(pos) - 8; neighborX <= ChunkPos.getX(pos) + 8; neighborX++) {
-                            for (int neighborZ = ChunkPos.getZ(pos) - 8; neighborZ <= ChunkPos.getZ(pos) + 8; neighborZ++) {
+                        for (long neighborX = pos.x() - 8; neighborX <= pos.x() + 8; neighborX++) {
+                            for (long neighborZ = pos.z() - 8; neighborZ <= pos.z() + 8; neighborZ++) {
                                 extractedDataContainer.computeIfAbsent(
-                                        ChunkPos.pack(neighborX, neighborZ), l -> new LegacyStructureFileFix.LegacyStructureData()
+                                        new ChunkPos(neighborX, neighborZ), l -> new LegacyStructureFileFix.LegacyStructureData()
                                     )
                                     .addIndex(id, pos);
                             }
@@ -196,31 +196,31 @@ public class LegacyStructureFileFix extends FileFix {
     }
 
     private static void storeLegacyStructureDataToChunks(
-        final Long2ObjectMap<LegacyStructureFileFix.LegacyStructureData> structures,
+        final Map<ChunkPos, LegacyStructureFileFix.LegacyStructureData> structures,
         final ChunkNbt chunksAccess,
         final CompoundTag dataFixContext,
         final UpgradeProgress upgradeProgress
     ) {
-        List<Entry<LegacyStructureFileFix.LegacyStructureData>> entries = structures.long2ObjectEntrySet()
+        List<Map.Entry<ChunkPos, LegacyStructureFileFix.LegacyStructureData>> entries = structures.entrySet()
             .stream()
-            .sorted(Comparator.comparingLong(entryx -> ChunkPos.pack(ChunkPos.getRegionX(entryx.getLongKey()), ChunkPos.getRegionZ(entryx.getLongKey()))))
+            .sorted(Comparator.comparingLong(entryx -> (entryx.getKey().getRegionX() << 32) ^ (entryx.getKey().getRegionZ() & 0xFFFFFFFFL)))
             .toList();
         LegacyStructureFileFix.IncrementalFutureSequence futures = new LegacyStructureFileFix.IncrementalFutureSequence(8);
 
-        for (Entry<LegacyStructureFileFix.LegacyStructureData> entry : entries) {
+        for (Map.Entry<ChunkPos, LegacyStructureFileFix.LegacyStructureData> entry : entries) {
             if (upgradeProgress.isCanceled()) {
                 throw new CanceledFileFixException();
             }
 
-            long pos = entry.getLongKey();
+            ChunkPos pos = entry.getKey();
             LegacyStructureFileFix.LegacyStructureData legacyData = entry.getValue();
-            int finished = futures.push(chunksAccess.updateChunk(ChunkPos.unpack(pos), dataFixContext, tag -> {
+            int finished = futures.push(chunksAccess.updateChunk(pos, dataFixContext, tag -> {
                 CompoundTag levelTag = tag.getCompoundOrEmpty("Level");
                 CompoundTag structureTag = levelTag.getCompoundOrEmpty("Structures");
                 CompoundTag startTag = structureTag.getCompoundOrEmpty("Starts");
                 CompoundTag referencesTag = structureTag.getCompoundOrEmpty("References");
                 legacyData.starts().forEach((id, value) -> startTag.put(id, value.convert(NbtOps.INSTANCE).getValue()));
-                legacyData.indexes().forEach((id, indexes) -> referencesTag.putLongArray(id, indexes.toLongArray()));
+                legacyData.indexes().forEach((id, indexes) -> referencesTag.putLongArray(id, packChunkPosArray(indexes)));
                 structureTag.put("Starts", startTag);
                 structureTag.put("References", referencesTag);
                 levelTag.put("Structures", structureTag);
@@ -233,11 +233,22 @@ public class LegacyStructureFileFix extends FileFix {
         upgradeProgress.incrementFinishedOperationsBy(futures.waitForAll());
     }
 
+    /** 结构引用序列化：ChunkPos 存为 [x0, z0, x1, z1, ...] long 数组 */
+    private static long[] packChunkPosArray(final List<ChunkPos> positions) {
+        long[] arr = new long[positions.size() * 2];
+        int i = 0;
+        for (ChunkPos pos : positions) {
+            arr[i++] = pos.x();
+            arr[i++] = pos.z();
+        }
+        return arr;
+    }
+
     private record DimensionFixEntry(
         ResourceKey<Level> dimensionKey,
         List<FileAccess<SavedDataNbt>> structureFileAccess,
         FileAccess<ChunkNbt> chunkFileAccess,
-        Long2ObjectOpenHashMap<LegacyStructureFileFix.LegacyStructureData> structures
+        Map<ChunkPos, LegacyStructureFileFix.LegacyStructureData> structures
     ) {
     }
 
@@ -275,7 +286,7 @@ public class LegacyStructureFileFix extends FileFix {
         }
     }
 
-    public record LegacyStructureData(Map<String, Dynamic<?>> starts, Map<String, LongList> indexes) {
+    public record LegacyStructureData(Map<String, Dynamic<?>> starts, Map<String, List<ChunkPos>> indexes) {
         public LegacyStructureData() {
             this(new HashMap<>(), new HashMap<>());
         }
@@ -284,8 +295,8 @@ public class LegacyStructureFileFix extends FileFix {
             this.starts.put(id, data);
         }
 
-        public void addIndex(final String id, final long sourcePos) {
-            this.indexes.computeIfAbsent(id, l -> new LongArrayList()).add(sourcePos);
+        public void addIndex(final String id, final ChunkPos sourcePos) {
+            this.indexes.computeIfAbsent(id, l -> new ArrayList<>()).add(sourcePos);
         }
     }
 }

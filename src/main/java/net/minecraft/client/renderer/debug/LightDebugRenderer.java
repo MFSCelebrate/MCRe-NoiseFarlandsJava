@@ -35,18 +35,18 @@ public class LightDebugRenderer implements DebugRenderer.SimpleDebugRenderer {
     ) {
         Level level = this.minecraft.level;
         BlockPos playerPos = BlockPos.containing(camX, camY, camZ);
-        LongSet set = new LongOpenHashSet();
+        Set<SectionPos> set = new java.util.HashSet<>();
 
         for (BlockPos blockPos : BlockPos.betweenClosed(playerPos.offset(-10, -10, -10), playerPos.offset(10, 10, 10))) {
             int skyBrightness = level.getBrightness(LightLayer.SKY, blockPos);
-            long sectionNode = SectionPos.blockToSection(blockPos.asLong());
+            SectionPos sectionNode = SectionPos.of(blockPos);
             if (set.add(sectionNode)) {
                 Gizmos.billboardText(
-                    level.getChunkSource().getLightEngine().getDebugData(LightLayer.SKY, SectionPos.of(sectionNode)),
+                    level.getChunkSource().getLightEngine().getDebugData(LightLayer.SKY, sectionNode),
                     new Vec3(
-                        SectionPos.sectionToBlockCoord(SectionPos.x(sectionNode), 8),
-                        SectionPos.sectionToBlockCoord(SectionPos.y(sectionNode), 8),
-                        SectionPos.sectionToBlockCoord(SectionPos.z(sectionNode), 8)
+                        SectionPos.sectionToBlockCoord(sectionNode.x(), 8),
+                        SectionPos.sectionToBlockCoord(sectionNode.y(), 8),
+                        SectionPos.sectionToBlockCoord(sectionNode.z(), 8)
                     ),
                     TextGizmo.Style.forColorAndCentered(-65536).withScale(4.8F)
                 );

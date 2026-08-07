@@ -1,8 +1,10 @@
 package net.minecraft.client.multiplayer.prediction;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+
+
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -13,7 +15,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class BlockStatePredictionHandler implements AutoCloseable {
-    private final Long2ObjectOpenHashMap<BlockStatePredictionHandler.ServerVerifiedState> serverVerifiedStates = new Long2ObjectOpenHashMap<>();
+    private final Map<BlockPos, BlockStatePredictionHandler.ServerVerifiedState> serverVerifiedStates = new HashMap<>();
     private int currentSequenceNr;
     private boolean isPredicting;
     private int lastTeleportSequence = -1;
@@ -21,7 +23,7 @@ public class BlockStatePredictionHandler implements AutoCloseable {
     public void retainKnownServerState(final BlockPos pos, final BlockState state, final LocalPlayer player) {
         this.serverVerifiedStates
             .compute(
-                pos.asLong(),
+                pos,
                 (key, serverVerifiedState) -> serverVerifiedState != null
                     ? serverVerifiedState.setSequence(this.currentSequenceNr)
                     : new BlockStatePredictionHandler.ServerVerifiedState(this.currentSequenceNr, state, player.position())
@@ -29,7 +31,7 @@ public class BlockStatePredictionHandler implements AutoCloseable {
     }
 
     public boolean updateKnownServerState(final BlockPos pos, final BlockState blockState) {
-        BlockStatePredictionHandler.ServerVerifiedState serverVerifiedState = this.serverVerifiedStates.get(pos.asLong());
+        BlockStatePredictionHandler.ServerVerifiedState serverVerifiedState = this.serverVerifiedStates.get(pos);
         if (serverVerifiedState == null) {
             return false;
         }
@@ -39,13 +41,13 @@ public class BlockStatePredictionHandler implements AutoCloseable {
     }
 
     public void endPredictionsUpTo(final int sequence, final ClientLevel clientLevel) {
-        ObjectIterator<Entry<BlockStatePredictionHandler.ServerVerifiedState>> stateIterator = this.serverVerifiedStates.long2ObjectEntrySet().iterator();
+        var stateIterator = this.serverVerifiedStates.entrySet().iterator();
 
         while (stateIterator.hasNext()) {
-            Entry<BlockStatePredictionHandler.ServerVerifiedState> next = stateIterator.next();
+            var next = stateIterator.next();
             BlockStatePredictionHandler.ServerVerifiedState serverVerifiedState = next.getValue();
             if (serverVerifiedState.sequence <= sequence) {
-                BlockPos pos = BlockPos.of(next.getLongKey());
+                BlockPos pos = next.getKey();
                 stateIterator.remove();
                 clientLevel.syncBlockState(pos, serverVerifiedState.blockState, this.lastTeleportSequence < sequence ? serverVerifiedState.playerPos : null);
             }

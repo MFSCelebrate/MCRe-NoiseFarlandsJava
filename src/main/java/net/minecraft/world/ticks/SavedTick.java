@@ -44,8 +44,8 @@ public record SavedTick<T>(T type, BlockPos pos, int delay, TickPriority priorit
     }
 
     public static <T> List<SavedTick<T>> filterTickListForChunk(final List<SavedTick<T>> savedTicks, final ChunkPos chunkPos) {
-        long posKey = chunkPos.pack();
-        return savedTicks.stream().filter(tick -> ChunkPos.pack(tick.pos()) == posKey).toList();
+        ChunkPos posKey = chunkPos;
+        return savedTicks.stream().filter(tick -> ChunkPos.containing(tick.pos()).equals(posKey)).toList();
     }
 
     public ScheduledTick<T> unpack(final long currentTick, final long currentSubTick) {

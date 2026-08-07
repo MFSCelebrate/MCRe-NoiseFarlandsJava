@@ -94,15 +94,15 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
     private long mantissaMid() { return c; }
     private long mantissaLo() { return d; }
 
-    private boolean isZero() {
+    public boolean isZero() {
         return a == 0L && b == 0L && c == 0L && d == 0L;
     }
 
-    private boolean isInfinity() {
+    public boolean isInfinity() {
         return a == EXPONENT_ALL_ONES && b == 0L && c == 0L && d == 0L;
     }
 
-    private boolean isNaN() {
+    public boolean isNaN() {
         return a == EXPONENT_ALL_ONES && (b != 0L || c != 0L || d != 0L);
     }
 
@@ -439,6 +439,48 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
             }
         }
         return dec;
+    }
+
+    // ═══════════ 精确取整（返回 UInt256，零损失） ═══════════
+
+    /** 向零截断（无符号下即向下取整） */
+    public UInt256 truncate() {
+        if (isZero()) return UInt256.ZERO;
+        if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
+        UInt256 mant = mantissaWithImplied();
+        long realExp = realExponent();
+        if (realExp >= 0) {
+            if (realExp > 255) throw new ArithmeticException("UFloat256 too large for UInt256");
+            return mant.shiftLeft((int) realExp);
+        }
+        if (realExp < -256) return UInt256.ZERO; // 极小值 → 0
+        return mant.shiftRight((int) -realExp);
+    }
+
+    /** 向下取整（无符号下即截断） */
+    public UInt256 floor() {
+        return truncate();
+    }
+
+    /** 向上取整（+∞ 方向） */
+    public UInt256 ceil() {
+        if (isZero()) return UInt256.ZERO;
+        if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
+        UInt256 mant = mantissaWithImplied();
+        long realExp = realExponent();
+        if (realExp >= 0) {
+            if (realExp > 255) throw new ArithmeticException("UFloat256 too large for UInt256");
+            return mant.shiftLeft((int) realExp);
+        }
+        if (realExp < -256) return UInt256.ZERO; // 极小值 → 0
+        UInt256 abs = mant.shiftRight((int) -realExp);
+        boolean dropped = !mant.and(mant.maskBelow((int) -realExp)).isZero();
+        return dropped ? abs.add(UInt256.ONE) : abs;
+    }
+
+    /** 四舍五入（half-up） */
+    public UInt256 round() {
+        return this.add(UFloat256.of(0.5)).floor();
     }
 
     @Override

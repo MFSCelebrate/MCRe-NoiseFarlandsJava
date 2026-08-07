@@ -1,7 +1,9 @@
 package net.minecraft.client.renderer.chunk;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+
+
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.Level;
@@ -11,12 +13,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class RenderRegionCache {
-    private final Long2ObjectMap<SectionCopy> sectionCopyCache = new Long2ObjectOpenHashMap<>();
+    private final Map<SectionPos, SectionCopy> sectionCopyCache = new HashMap<>();
 
-    public RenderSectionRegion createRegion(final ClientLevel level, final long sectionNode) {
-        int sectionX = SectionPos.x(sectionNode);
-        int sectionY = SectionPos.y(sectionNode);
-        int sectionZ = SectionPos.z(sectionNode);
+    public RenderSectionRegion createRegion(final ClientLevel level, final SectionPos sectionNode) {
+        int sectionX = sectionNode.x();
+        int sectionY = sectionNode.y();
+        int sectionZ = sectionNode.z();
         int minSectionX = sectionX - 1;
         int minSectionY = sectionY - 1;
         int minSectionZ = sectionZ - 1;
@@ -38,7 +40,7 @@ public class RenderRegionCache {
     }
 
     private SectionCopy getSectionDataCopy(final Level level, final int sectionX, final int sectionY, final int sectionZ) {
-        return this.sectionCopyCache.computeIfAbsent(SectionPos.asLong(sectionX, sectionY, sectionZ), k -> {
+        return this.sectionCopyCache.computeIfAbsent(SectionPos.of(sectionX, sectionY, sectionZ), k -> {
             LevelChunk chunk = level.getChunk(sectionX, sectionZ);
             return new SectionCopy(chunk, chunk.getSectionIndexFromSectionY(sectionY));
         });

@@ -35,7 +35,7 @@ public class ChunkGenerationTask {
     public static ChunkGenerationTask create(final GeneratingChunkMap chunkMap, final ChunkStatus targetStatus, final ChunkPos pos) {
         int worstCaseRadius = ChunkPyramid.GENERATION_PYRAMID.getStepTo(targetStatus).getAccumulatedRadiusOf(ChunkStatus.EMPTY);
         StaticCache2D<GenerationChunkHolder> cache = StaticCache2D.create(
-            pos.x(), pos.z(), worstCaseRadius, (x, z) -> chunkMap.acquireGeneration(ChunkPos.pack(x, z))
+            (int)pos.x(), (int)pos.z(), worstCaseRadius, (x, z) -> chunkMap.acquireGeneration(new ChunkPos(x, z))
         );
         return new ChunkGenerationTask(chunkMap, targetStatus, pos, cache);
     }
@@ -76,7 +76,7 @@ public class ChunkGenerationTask {
     }
 
     private void releaseClaim() {
-        GenerationChunkHolder chunkHolder = this.cache.get(this.pos.x(), this.pos.z());
+        GenerationChunkHolder chunkHolder = this.cache.get((int)this.pos.x(), (int)this.pos.z());
         chunkHolder.removeTask(this);
         this.cache.forEach(this.chunkMap::releaseGeneration);
     }
@@ -86,13 +86,13 @@ public class ChunkGenerationTask {
             return true;
         }
 
-        ChunkStatus highestGeneratedStatus = this.cache.get(this.pos.x(), this.pos.z()).getPersistedStatus();
+        ChunkStatus highestGeneratedStatus = this.cache.get((int)this.pos.x(), (int)this.pos.z()).getPersistedStatus();
         if (highestGeneratedStatus != null && !highestGeneratedStatus.isBefore(this.targetStatus)) {
             ChunkDependencies dependencies = ChunkPyramid.LOADING_PYRAMID.getStepTo(this.targetStatus).accumulatedDependencies();
             int range = dependencies.getRadius();
 
-            for (int x = this.pos.x() - range; x <= this.pos.x() + range; x++) {
-                for (int z = this.pos.z() - range; z <= this.pos.z() + range; z++) {
+            for (int x = (int)this.pos.x() - range; x <= (int)this.pos.x() + range; x++) {
+                for (int z = (int)this.pos.z() - range; z <= (int)this.pos.z() + range; z++) {
                     int distance = this.pos.getChessboardDistance(x, z);
                     ChunkStatus requiredStatus = dependencies.get(distance);
                     ChunkStatus persistedStatus = this.cache.get(x, z).getPersistedStatus();
@@ -109,7 +109,7 @@ public class ChunkGenerationTask {
     }
 
     public GenerationChunkHolder getCenter() {
-        return this.cache.get(this.pos.x(), this.pos.z());
+        return this.cache.get((int)this.pos.x(), (int)this.pos.z());
     }
 
     private void scheduleLayer(final ChunkStatus status, final boolean needsGeneration) {
@@ -117,8 +117,8 @@ public class ChunkGenerationTask {
             zone.addText(status::getName);
             int radius = this.getRadiusForLayer(status, needsGeneration);
 
-            for (int x = this.pos.x() - radius; x <= this.pos.x() + radius; x++) {
-                for (int z = this.pos.z() - radius; z <= this.pos.z() + radius; z++) {
+            for (int x = (int)this.pos.x() - radius; x <= (int)this.pos.x() + radius; x++) {
+                for (int z = (int)this.pos.z() - radius; z <= (int)this.pos.z() + radius; z++) {
                     GenerationChunkHolder chunkHolder = this.cache.get(x, z);
                     if (this.markedForCancellation || !this.scheduleChunkInLayer(status, needsGeneration, chunkHolder)) {
                         return;

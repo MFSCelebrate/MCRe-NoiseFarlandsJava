@@ -1,9 +1,9 @@
 package net.minecraft.world.level.lighting;
 
-import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -17,6 +17,11 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * LightEngine — 光照引擎基类（MCRe NoiseFarlands 对象化版）
+ * blockNode(long 打包) → BlockPos 对象；sectionNode(long 打包) → SectionPos 对象。
+ * BFS 队列拆为节点队列 + 数据队列两个 ArrayDeque。QueueEntry 的位打包（光照等级/方向）保留。
+ */
 public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends LayerLightSectionStorage<M>> implements LayerLightEventListener {
     public static final int MAX_LEVEL = 15;
     protected static final int MIN_OPACITY = 1;
@@ -25,11 +30,13 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
     protected static final Direction[] PROPAGATION_DIRECTIONS = Direction.values();
     protected final LightChunkGetter chunkSource;
     protected final S storage;
-    private final LongOpenHashSet blockNodesToCheck = new LongOpenHashSet(512, 0.5F);
-    private final LongArrayFIFOQueue decreaseQueue = new LongArrayFIFOQueue();
-    private final LongArrayFIFOQueue increaseQueue = new LongArrayFIFOQueue();
+    private final Set<BlockPos> blockNodesToCheck = new HashSet<>();
+    private final ArrayDeque<BlockPos> decreaseQueueNodes = new ArrayDeque<>();
+    private final ArrayDeque<Long> decreaseQueueData = new ArrayDeque<>();
+    private final ArrayDeque<BlockPos> increaseQueueNodes = new ArrayDeque<>();
+    private final ArrayDeque<Long> increaseQueueData = new ArrayDeque<>();
     private static final int CACHE_SIZE = 2;
-    private final long[] lastChunkPos = new long[2];
+    private final ChunkPos[] lastChunkPos = new ChunkPos[2];
     private final LightChunk[] lastChunk = new LightChunk[2];
 
     protected LightEngine(final LightChunkGetter chunkSource, final S storage) {
@@ -85,10 +92,10 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
     }
 
     protected @Nullable LightChunk getChunk(final int chunkX, final int chunkZ) {
-        long pos = ChunkPos.pack(chunkX, chunkZ);
+        ChunkPos pos = new ChunkPos(chunkX, chunkZ);
 
         for (int i = 0; i < 2; i++) {
-            if (pos == this.lastChunkPos[i]) {
+            if (pos.equals(this.lastChunkPos[i])) {
                 return this.lastChunk[i];
             }
         }
@@ -106,43 +113,40 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
     }
 
     private void clearChunkCache() {
-        Arrays.fill(this.lastChunkPos, ChunkPos.INVALID_CHUNK_POS);
+        Arrays.fill(this.lastChunkPos, null);
         Arrays.fill(this.lastChunk, null);
     }
 
     @Override
     public void checkBlock(final BlockPos pos) {
-        this.blockNodesToCheck.add(pos.asLong());
+        this.blockNodesToCheck.add(pos);
     }
 
-    public void queueSectionData(final long pos, final @Nullable DataLayer data) {
+    public void queueSectionData(final SectionPos pos, final @Nullable DataLayer data) {
         this.storage.queueSectionData(pos, data);
     }
 
     public void retainData(final ChunkPos pos, final boolean retain) {
-        this.storage.retainData(SectionPos.getZeroNode(pos.x(), pos.z()), retain);
+        this.storage.retainData(SectionPos.of((int)pos.x(), 0, (int)pos.z()), retain);
     }
 
     @Override
     public void updateSectionStatus(final SectionPos pos, final boolean sectionEmpty) {
-        this.storage.updateSectionStatus(pos.asLong(), sectionEmpty);
+        this.storage.updateSectionStatus(pos, sectionEmpty);
     }
 
     @Override
     public void setLightEnabled(final ChunkPos pos, final boolean enable) {
-        this.storage.setLightEnabled(SectionPos.getZeroNode(pos.x(), pos.z()), enable);
+        this.storage.setLightEnabled(SectionPos.of((int)pos.x(), 0, (int)pos.z()), enable);
     }
 
     @Override
     public int runLightUpdates() {
-        LongIterator iterator = this.blockNodesToCheck.iterator();
-
-        while (iterator.hasNext()) {
-            this.checkNode(iterator.nextLong());
+        for (BlockPos pos : this.blockNodesToCheck) {
+            this.checkNode(pos);
         }
 
         this.blockNodesToCheck.clear();
-        this.blockNodesToCheck.trim(512);
         int count = 0;
         count += this.propagateDecreases();
         count += this.propagateIncreases();
@@ -154,9 +158,9 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
 
     private int propagateIncreases() {
         int count;
-        for (count = 0; !this.increaseQueue.isEmpty(); count++) {
-            long fromNode = this.increaseQueue.dequeueLong();
-            long increaseData = this.increaseQueue.dequeueLong();
+        for (count = 0; !this.increaseQueueNodes.isEmpty(); count++) {
+            BlockPos fromNode = this.increaseQueueNodes.poll();
+            long increaseData = this.increaseQueueData.poll();
             int fromLevel = this.storage.getStoredLevel(fromNode);
             int fromTargetLevel = LightEngine.QueueEntry.getFromLevel(increaseData);
             if (LightEngine.QueueEntry.isIncreaseFromEmission(increaseData) && fromLevel < fromTargetLevel) {
@@ -174,53 +178,56 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
 
     private int propagateDecreases() {
         int count;
-        for (count = 0; !this.decreaseQueue.isEmpty(); count++) {
-            long fromNode = this.decreaseQueue.dequeueLong();
-            long decreaseData = this.decreaseQueue.dequeueLong();
+        for (count = 0; !this.decreaseQueueNodes.isEmpty(); count++) {
+            BlockPos fromNode = this.decreaseQueueNodes.poll();
+            long decreaseData = this.decreaseQueueData.poll();
             this.propagateDecrease(fromNode, decreaseData);
         }
 
         return count;
     }
 
-    protected void enqueueDecrease(final long fromNode, final long decreaseData) {
-        this.decreaseQueue.enqueue(fromNode);
-        this.decreaseQueue.enqueue(decreaseData);
+    protected void enqueueDecrease(final BlockPos fromNode, final long decreaseData) {
+        this.decreaseQueueNodes.add(fromNode);
+        this.decreaseQueueData.add(decreaseData);
     }
 
-    protected void enqueueIncrease(final long fromNode, final long increaseData) {
-        this.increaseQueue.enqueue(fromNode);
-        this.increaseQueue.enqueue(increaseData);
+    protected void enqueueIncrease(final BlockPos fromNode, final long increaseData) {
+        this.increaseQueueNodes.add(fromNode);
+        this.increaseQueueData.add(increaseData);
     }
 
     @Override
     public boolean hasLightWork() {
-        return this.storage.hasInconsistencies() || !this.blockNodesToCheck.isEmpty() || !this.decreaseQueue.isEmpty() || !this.increaseQueue.isEmpty();
+        return this.storage.hasInconsistencies()
+            || !this.blockNodesToCheck.isEmpty()
+            || !this.decreaseQueueNodes.isEmpty()
+            || !this.increaseQueueNodes.isEmpty();
     }
 
     @Override
     public @Nullable DataLayer getDataLayerData(final SectionPos pos) {
-        return this.storage.getDataLayerData(pos.asLong());
+        return this.storage.getDataLayerData(pos);
     }
 
     @Override
     public int getLightValue(final BlockPos pos) {
-        return this.storage.getLightValue(pos.asLong());
+        return this.storage.getLightValue(pos);
     }
 
-    public String getDebugData(final long sectionNode) {
+    public String getDebugData(final SectionPos sectionNode) {
         return this.getDebugSectionType(sectionNode).display();
     }
 
-    public LayerLightSectionStorage.SectionType getDebugSectionType(final long sectionNode) {
+    public LayerLightSectionStorage.SectionType getDebugSectionType(final SectionPos sectionNode) {
         return this.storage.getDebugSectionType(sectionNode);
     }
 
-    protected abstract void checkNode(long blockNode);
+    protected abstract void checkNode(BlockPos blockNode);
 
-    protected abstract void propagateIncrease(long fromNode, long increaseData, int fromLevel);
+    protected abstract void propagateIncrease(BlockPos fromNode, long increaseData, int fromLevel);
 
-    protected abstract void propagateDecrease(long fromNode, long decreaseData);
+    protected abstract void propagateDecrease(BlockPos fromNode, long decreaseData);
 
     public static class QueueEntry {
         private static final int FROM_LEVEL_BITS = 4;

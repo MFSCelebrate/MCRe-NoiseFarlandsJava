@@ -1,10 +1,12 @@
 package net.minecraft.world.level.chunk.storage;
 
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
+
+
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +35,7 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
     private static final String POSITION_TAG = "Position";
     private final ServerLevel level;
     private final SimpleRegionStorage simpleRegionStorage;
-    private final LongSet emptyChunks = new LongOpenHashSet();
+    private final Set<ChunkPos> emptyChunks = new HashSet<>();
     private final ConsecutiveExecutor entityDeserializerQueue;
 
     public EntityStorage(final SimpleRegionStorage simpleRegionStorage, final ServerLevel level, final Executor mainThreadExecutor) {
@@ -44,7 +46,7 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
 
     @Override
     public CompletableFuture<ChunkEntities<Entity>> loadEntities(final ChunkPos pos) {
-        if (this.emptyChunks.contains(pos.pack())) {
+        if (this.emptyChunks.contains(pos)) {
             return CompletableFuture.completedFuture(emptyChunk(pos));
         }
 
@@ -52,7 +54,7 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
         this.reportLoadFailureIfPresent(loadFuture, pos);
         return loadFuture.thenApplyAsync(tag -> {
             if (tag.isEmpty()) {
-                this.emptyChunks.add(pos.pack());
+                this.emptyChunks.add(pos);
                 return emptyChunk(pos);
             }
 
@@ -86,7 +88,7 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
     public void storeEntities(final ChunkEntities<Entity> chunk) {
         ChunkPos pos = chunk.getPos();
         if (chunk.isEmpty()) {
-            if (this.emptyChunks.add(pos.pack())) {
+            if (this.emptyChunks.add(pos)) {
                 this.reportSaveFailureIfPresent(this.simpleRegionStorage.write(pos, IOWorker.STORE_EMPTY), pos);
             }
         } else {
@@ -103,7 +105,7 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
                 chunkTag.put("Entities", entities);
                 chunkTag.store("Position", ChunkPos.CODEC, pos);
                 this.reportSaveFailureIfPresent(this.simpleRegionStorage.write(pos, chunkTag), pos);
-                this.emptyChunks.remove(pos.pack());
+                this.emptyChunks.remove(pos);
             }
         }
     }

@@ -67,7 +67,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     }
 
     protected void updateChunkStatus(final ChunkPos pos) {
-        this.addTask(pos.x(), pos.z(), () -> 0, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+        this.addTask((int)pos.x(), (int)pos.z(), () -> 0, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
             super.retainData(pos, false);
             super.setLightEnabled(pos, false);
 
@@ -85,8 +85,8 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     @Override
     public void updateSectionStatus(final SectionPos pos, final boolean sectionEmpty) {
         this.addTask(
-            pos.x(),
-            pos.z(),
+            (int)pos.x(),
+            (int)pos.z(),
             () -> 0,
             ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
             Util.name(() -> super.updateSectionStatus(pos, sectionEmpty), () -> "updateSectionStatus " + pos + " " + sectionEmpty)
@@ -96,15 +96,15 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     @Override
     public void propagateLightSources(final ChunkPos pos) {
         this.addTask(
-            pos.x(), pos.z(), ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> super.propagateLightSources(pos), () -> "propagateLight " + pos)
+            (int)pos.x(), (int)pos.z(), ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> super.propagateLightSources(pos), () -> "propagateLight " + pos)
         );
     }
 
     @Override
     public void setLightEnabled(final ChunkPos pos, final boolean enable) {
         this.addTask(
-            pos.x(),
-            pos.z(),
+            (int)pos.x(),
+            (int)pos.z(),
             ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
             Util.name(() -> super.setLightEnabled(pos, enable), () -> "enableLight " + pos + " " + enable)
         );
@@ -113,8 +113,8 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     @Override
     public void queueSectionData(final LightLayer layer, final SectionPos pos, final @Nullable DataLayer data) {
         this.addTask(
-            pos.x(),
-            pos.z(),
+            (int)pos.x(),
+            (int)pos.z(),
             () -> 0,
             ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
             Util.name(() -> super.queueSectionData(layer, pos, data), () -> "queueData " + pos)
@@ -122,7 +122,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     }
 
     private void addTask(final int chunkX, final int chunkZ, final ThreadedLevelLightEngine.TaskType type, final Runnable runnable) {
-        this.addTask(chunkX, chunkZ, this.chunkMap.getChunkQueueLevel(ChunkPos.pack(chunkX, chunkZ)), type, runnable);
+        this.addTask(chunkX, chunkZ, this.chunkMap.getChunkQueueLevel(new ChunkPos(chunkX, chunkZ)), type, runnable);
     }
 
     private void addTask(final int chunkX, final int chunkZ, final IntSupplier level, final ThreadedLevelLightEngine.TaskType type, final Runnable runnable) {
@@ -131,19 +131,19 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
             if (this.lightTasks.size() >= 1000) {
                 this.runUpdate();
             }
-        }, ChunkPos.pack(chunkX, chunkZ), level);
+        }, new ChunkPos(chunkX, chunkZ), level);
     }
 
     @Override
     public void retainData(final ChunkPos pos, final boolean retain) {
         this.addTask(
-            pos.x(), pos.z(), () -> 0, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> super.retainData(pos, retain), () -> "retainData " + pos)
+            (int)pos.x(), (int)pos.z(), () -> 0, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> super.retainData(pos, retain), () -> "retainData " + pos)
         );
     }
 
     public CompletableFuture<ChunkAccess> initializeLight(final ChunkAccess chunk, final boolean lighted) {
         ChunkPos pos = chunk.getPos();
-        this.addTask(pos.x(), pos.z(), ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+        this.addTask((int)pos.x(), (int)pos.z(), ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
             LevelChunkSection[] sections = chunk.getSections();
 
             for (int sectionIndex = 0; sectionIndex < chunk.getSectionsCount(); sectionIndex++) {
@@ -158,13 +158,13 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
             super.setLightEnabled(pos, lighted);
             super.retainData(pos, false);
             return chunk;
-        }, r -> this.addTask(pos.x(), pos.z(), ThreadedLevelLightEngine.TaskType.POST_UPDATE, r));
+        }, r -> this.addTask((int)pos.x(), (int)pos.z(), ThreadedLevelLightEngine.TaskType.POST_UPDATE, r));
     }
 
     public CompletableFuture<ChunkAccess> lightChunk(final ChunkAccess centerChunk, final boolean lighted) {
         ChunkPos pos = centerChunk.getPos();
         centerChunk.setLightCorrect(false);
-        this.addTask(pos.x(), pos.z(), ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+        this.addTask((int)pos.x(), (int)pos.z(), ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
             if (!lighted) {
                 super.propagateLightSources(pos);
             }
@@ -176,7 +176,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
         return CompletableFuture.supplyAsync(() -> {
             centerChunk.setLightCorrect(true);
             return centerChunk;
-        }, r -> this.addTask(pos.x(), pos.z(), ThreadedLevelLightEngine.TaskType.POST_UPDATE, r));
+        }, r -> this.addTask((int)pos.x(), (int)pos.z(), ThreadedLevelLightEngine.TaskType.POST_UPDATE, r));
     }
 
     public void tryScheduleUpdate() {

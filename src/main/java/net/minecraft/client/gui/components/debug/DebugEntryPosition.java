@@ -1,7 +1,5 @@
 package net.minecraft.client.gui.components.debug;
 
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.longs.LongSets;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.Camera;
@@ -18,11 +16,25 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.MinecraftTools.Math._256Bit.Float256;
 import org.jspecify.annotations.Nullable;
 
 @OnlyIn(Dist.CLIENT)
 public class DebugEntryPosition implements DebugScreenEntry {
     public static final Identifier GROUP = Identifier.withDefaultNamespace("position");
+
+    /** 精确显示小数部分的最大位数（超出截断 + 省略号） */
+    private static final int MAX_FRAC_DIGITS = 25;
+
+    /** double → Float256 → 精确十进制（完整 52-bit 尾数展开，限长显示） */
+    private static String fmtExact(final double value) {
+        String s = Float256.of(value).toExactString();
+        int dot = s.indexOf('.');
+        if (dot < 0) return s;
+        int frac = s.length() - dot - 1;
+        if (frac <= MAX_FRAC_DIGITS) return s;
+        return s.substring(0, dot + MAX_FRAC_DIGITS + 1) + "…";
+    }
 
     @Override
     public void display(
@@ -51,7 +63,7 @@ public class DebugEntryPosition implements DebugScreenEntry {
                 case EAST -> "Towards positive X";
                 default -> "Invalid";
             };
-            LongSet chunks = serverOrClientLevel instanceof ServerLevel serverLevel ? serverLevel.getForceLoadedChunks() : LongSets.EMPTY_SET;
+            java.util.Set<ChunkPos> chunks = serverOrClientLevel instanceof ServerLevel serverLevel ? serverLevel.getForceLoadedChunks() : java.util.Set.of();
 
             // ===== 精度计算 =====
             long maxAbs = (long)Math.max(
@@ -67,21 +79,10 @@ public class DebugEntryPosition implements DebugScreenEntry {
             displayer.addToGroup(
                 GROUP,
                 List.of(
-                    String.format(
-                        Locale.ROOT,
-                        "XYZ: %.15f / %.10f / %.15f",
-                        entity.getX(),
-                        entity.getY(),
-                        entity.getZ()
-                    ),
-                    // ===== 新增摄像机坐标行 =====
-                    String.format(
-                        Locale.ROOT,
-                        "XYZ(Camera): %.15f / %.10f / %.15f",
-                        camX,
-                        camY,
-                        camZ
-                    ),
+                    // ===== 256-bit 精确坐标（完整展开 double 的 52-bit 尾数） =====
+                    "XYZ: " + fmtExact(entity.getX()) + " / " + fmtExact(entity.getY()) + " / " + fmtExact(entity.getZ()),
+                    // ===== 256-bit 精确摄像机坐标 =====
+                    "XYZ(Camera): " + fmtExact(camX) + " / " + fmtExact(camY) + " / " + fmtExact(camZ),
                     String.format(Locale.ROOT, "Block: %d %d %d", feetPos.getX(), feetPos.getY(), feetPos.getZ()),
                     String.format(
                         Locale.ROOT,

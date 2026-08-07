@@ -111,9 +111,9 @@ public class Octree {
 
         public boolean add(final SectionRenderDispatcher.RenderSection section) {
             long sectionNode = section.getSectionNode();
-            boolean sectionXDiffNegative = SectionPos.sectionToBlockCoord(SectionPos.x(sectionNode)) - this.bbCenterX < 0;
-            boolean sectionYDiffNegative = SectionPos.sectionToBlockCoord(SectionPos.y(sectionNode)) - this.bbCenterY < 0;
-            boolean sectionZDiffNegative = SectionPos.sectionToBlockCoord(SectionPos.z(sectionNode)) - this.bbCenterZ < 0;
+            boolean sectionXDiffNegative = SectionPos.sectionToBlockCoord(sectionNode.x()) - this.bbCenterX < 0;
+            boolean sectionYDiffNegative = SectionPos.sectionToBlockCoord(sectionNode.y()) - this.bbCenterY < 0;
+            boolean sectionZDiffNegative = SectionPos.sectionToBlockCoord(sectionNode.z()) - this.bbCenterZ < 0;
             boolean xDiffsOppositeSides = sectionXDiffNegative != this.cameraXDiffNegative;
             boolean yDiffsOppositeSides = sectionYDiffNegative != this.cameraYDiffNegative;
             boolean zDiffsOppositeSides = sectionZDiffNegative != this.cameraZDiffNegative;

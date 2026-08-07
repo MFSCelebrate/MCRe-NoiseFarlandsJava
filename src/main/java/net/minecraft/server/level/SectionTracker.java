@@ -3,19 +3,23 @@ package net.minecraft.server.level;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.lighting.DynamicGraphMinFixedPoint;
 
-public abstract class SectionTracker extends DynamicGraphMinFixedPoint {
+/**
+ * SectionTracker — 区块节追踪器（MCRe NoiseFarlands 对象化版）
+ * 原版以 long 打包键（SectionPos.asLong），本版以 SectionPos 对象为节点，哨兵为 null。
+ */
+public abstract class SectionTracker extends DynamicGraphMinFixedPoint<SectionPos> {
     protected SectionTracker(final int levelCount, final int minQueueSize, final int minMapSize) {
         super(levelCount, minQueueSize, minMapSize);
     }
 
     @Override
-    protected void checkNeighborsAfterUpdate(final long node, final int level, final boolean onlyDecrease) {
+    protected void checkNeighborsAfterUpdate(final SectionPos node, final int level, final boolean onlyDecrease) {
         if (!onlyDecrease || level < this.levelCount - 2) {
             for (int offsetX = -1; offsetX <= 1; offsetX++) {
                 for (int offsetY = -1; offsetY <= 1; offsetY++) {
                     for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-                        long neighbor = SectionPos.offset(node, offsetX, offsetY, offsetZ);
-                        if (neighbor != node) {
+                        SectionPos neighbor = node.offset(offsetX, offsetY, offsetZ);
+                        if (!neighbor.equals(node)) {
                             this.checkNeighbor(node, neighbor, level, onlyDecrease);
                         }
                     }
@@ -25,18 +29,18 @@ public abstract class SectionTracker extends DynamicGraphMinFixedPoint {
     }
 
     @Override
-    protected int getComputedLevel(final long node, final long knownParent, final int knownLevelFromParent) {
+    protected int getComputedLevel(final SectionPos node, final SectionPos knownParent, final int knownLevelFromParent) {
         int computedLevel = knownLevelFromParent;
 
         for (int offsetX = -1; offsetX <= 1; offsetX++) {
             for (int offsetY = -1; offsetY <= 1; offsetY++) {
                 for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-                    long neighbor = SectionPos.offset(node, offsetX, offsetY, offsetZ);
-                    if (neighbor == node) {
-                        neighbor = Long.MAX_VALUE;
+                    SectionPos neighbor = node.offset(offsetX, offsetY, offsetZ);
+                    if (neighbor.equals(node)) {
+                        neighbor = null;
                     }
 
-                    if (neighbor != knownParent) {
+                    if (!java.util.Objects.equals(neighbor, knownParent)) {
                         int costFromNeighbor = this.computeLevelFromNeighbor(neighbor, node, this.getLevel(neighbor));
                         if (computedLevel > costFromNeighbor) {
                             computedLevel = costFromNeighbor;
@@ -54,13 +58,13 @@ public abstract class SectionTracker extends DynamicGraphMinFixedPoint {
     }
 
     @Override
-    protected int computeLevelFromNeighbor(final long from, final long to, final int fromLevel) {
+    protected int computeLevelFromNeighbor(final SectionPos from, final SectionPos to, final int fromLevel) {
         return this.isSource(from) ? this.getLevelFromSource(to) : fromLevel + 1;
     }
 
-    protected abstract int getLevelFromSource(long to);
+    protected abstract int getLevelFromSource(SectionPos to);
 
-    public void update(final long node, final int newLevelFrom, final boolean onlyDecreased) {
-        this.checkEdge(Long.MAX_VALUE, node, newLevelFrom, onlyDecreased);
+    public void update(final SectionPos node, final int newLevelFrom, final boolean onlyDecreased) {
+        this.checkEdge(null, node, newLevelFrom, onlyDecreased);
     }
 }

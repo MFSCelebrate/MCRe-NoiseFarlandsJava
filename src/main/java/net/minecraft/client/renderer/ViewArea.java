@@ -88,7 +88,7 @@ public class ViewArea {
         return this.sections.getValueAt(pos);
     }
 
-    protected SectionRenderDispatcher.@Nullable RenderSection getRenderSection(final long sectionNode) {
+    protected SectionRenderDispatcher.@Nullable RenderSection getRenderSection(final SectionPos sectionNode) {
         return this.sections.getValue(sectionNode);
     }
 }

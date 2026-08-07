@@ -85,7 +85,7 @@ public interface Aquifer {
         private final DensityFunction lavaNoise;
         private final PositionalRandomFactory positionalRandomFactory;
         private final Aquifer.@Nullable FluidStatus[] aquiferCache;
-        private final long[] aquiferLocationCache;
+        private final BlockPos[] aquiferLocationCache;
         private final Aquifer.FluidPicker globalFluidPicker;
         private final DensityFunction erosion;
         private final DensityFunction depth;
@@ -129,8 +129,8 @@ public interface Aquifer {
             this.gridSizeZ = maxGridZ - this.minGridZ + 1;
             int totalGridSize = this.gridSizeX * gridSizeY * this.gridSizeZ;
             this.aquiferCache = new Aquifer.FluidStatus[totalGridSize];
-            this.aquiferLocationCache = new long[totalGridSize];
-            Arrays.fill(this.aquiferLocationCache, Long.MAX_VALUE);
+            this.aquiferLocationCache = new BlockPos[totalGridSize];
+            // 对象数组默认 null 即空
             int maxAdjustedSurfaceLevel = this.adjustSurfaceLevel(
                 noiseChunk.maxPreliminarySurfaceLevel(fromGridX(this.minGridX, 0), fromGridZ(this.minGridZ, 0), fromGridX(maxGridX, 9), fromGridZ(maxGridZ, 9))
             );
@@ -185,13 +185,13 @@ public interface Aquifer {
                         int spacedGridY = yAnchor + y1;
                         int spacedGridZ = zAnchor + z1;
                         int index = this.getIndex(spacedGridX, spacedGridY, spacedGridZ);
-                        long existingLocation = this.aquiferLocationCache[index];
-                        long location;
-                        if (existingLocation != Long.MAX_VALUE) {
+                        BlockPos existingLocation = this.aquiferLocationCache[index];
+                        BlockPos location;
+                        if (existingLocation != null) {
                             location = existingLocation;
                         } else {
                             RandomSource random = this.positionalRandomFactory.at(spacedGridX, spacedGridY, spacedGridZ);
-                            location = BlockPos.asLong(
+                            location = new BlockPos(
                                 fromGridX(spacedGridX, random.nextInt(10)),
                                 fromGridY(spacedGridY, random.nextInt(9)),
                                 fromGridZ(spacedGridZ, random.nextInt(10))
@@ -199,9 +199,9 @@ public interface Aquifer {
                             this.aquiferLocationCache[index] = location;
                         }
 
-                        int dx = BlockPos.getX(location) - posX;
-                        int dy = BlockPos.getY(location) - posY;
-                        int dz = BlockPos.getZ(location) - posZ;
+                        int dx = location.getX() - posX;
+                        int dy = location.getY() - posY;
+                        int dz = location.getZ() - posZ;
                         int newDistance = dx * dx + dy * dy + dz * dz;
                         if (distanceSqr1 >= newDistance) {
                             closestIndex4 = closestIndex3;
@@ -396,8 +396,8 @@ public interface Aquifer {
                 return oldStatus;
             }
 
-            long location = this.aquiferLocationCache[index];
-            Aquifer.FluidStatus status = this.computeFluid(BlockPos.getX(location), BlockPos.getY(location), BlockPos.getZ(location));
+            BlockPos location = this.aquiferLocationCache[index];
+            Aquifer.FluidStatus status = this.computeFluid(location.getX(), location.getY(), location.getZ());
             this.aquiferCache[index] = status;
             return status;
         }

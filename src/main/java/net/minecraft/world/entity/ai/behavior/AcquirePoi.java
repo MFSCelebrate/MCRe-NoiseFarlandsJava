@@ -1,9 +1,11 @@
 package net.minecraft.world.entity.ai.behavior;
 
 import com.mojang.datafixers.util.Pair;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+
+
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
@@ -57,7 +59,7 @@ public class AcquirePoi {
         int batchSize = 5;
         int rate = 20;
         MutableLong nextScheduledStart = new MutableLong(0L);
-        Long2ObjectMap<AcquirePoi.JitteredLinearRetry> batchCache = new Long2ObjectOpenHashMap<>();
+        Map<BlockPos, AcquirePoi.JitteredLinearRetry> batchCache = new HashMap<>();
         OneShot<PathfinderMob> acquirePoi = BehaviorBuilder.create(
             i -> i.group(i.absent(memoryToAcquire))
                 .apply(
@@ -79,9 +81,9 @@ public class AcquirePoi {
 
                         nextScheduledStart.setValue(timestamp + 20L + random.nextInt(20));
                         PoiManager poiManager = level.getPoiManager();
-                        batchCache.long2ObjectEntrySet().removeIf(entry -> !entry.getValue().isStillValid(timestamp));
+                        batchCache.entrySet().removeIf(entry -> !entry.getValue().isStillValid(timestamp));
                         Predicate<BlockPos> cacheTest = pos -> {
-                            AcquirePoi.JitteredLinearRetry retryMarker = batchCache.get(pos.asLong());
+                            AcquirePoi.JitteredLinearRetry retryMarker = batchCache.get(pos);
                             if (retryMarker == null) {
                                 return true;
                             }
@@ -111,7 +113,7 @@ public class AcquirePoi {
                             });
                         } else {
                             for (Pair<Holder<PoiType>, BlockPos> p : poiPositions) {
-                                batchCache.computeIfAbsent(p.getSecond().asLong(), key -> new AcquirePoi.JitteredLinearRetry(random, timestamp));
+                                batchCache.computeIfAbsent(p.getSecond(), key -> new AcquirePoi.JitteredLinearRetry(random, timestamp));
                             }
                         }
 

@@ -3,8 +3,6 @@ package net.minecraft.world.level.chunk;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
@@ -60,7 +58,7 @@ import org.slf4j.Logger;
 public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeManager.NoiseBiomeSource {
     public static final int NO_FILLED_SECTION = -1;
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final LongSet EMPTY_REFERENCE_SET = new LongOpenHashSet();
+    private static final Set<ChunkPos> EMPTY_REFERENCE_SET = java.util.Collections.emptySet();
     protected final @Nullable ShortList[] postProcessing;
     private volatile boolean unsaved;
     private volatile boolean isLightCorrect;
@@ -74,7 +72,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     protected final Map<Heightmap.Types, Heightmap> heightmaps = Maps.newEnumMap(Heightmap.Types.class);
     protected ChunkSkyLightSources skyLightSources;
     private final Map<Structure, StructureStart> structureStarts = Maps.newHashMap();
-    private final Map<Structure, LongSet> structuresRefences = Maps.newHashMap();
+    private final Map<Structure, Set<ChunkPos>> structuresRefences = Maps.newHashMap();
     protected final Map<BlockPos, CompoundTag> pendingBlockEntities = Maps.newHashMap();
     protected final Map<BlockPos, BlockEntity> blockEntities = new Object2ObjectOpenHashMap<>();
     protected final LevelHeightAccessor levelHeightAccessor;
@@ -219,23 +217,23 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     }
 
     @Override
-    public LongSet getReferencesForStructure(final Structure structure) {
+    public Set<ChunkPos> getReferencesForStructure(final Structure structure) {
         return this.structuresRefences.getOrDefault(structure, EMPTY_REFERENCE_SET);
     }
 
     @Override
-    public void addReferenceForStructure(final Structure structure, final long reference) {
-        this.structuresRefences.computeIfAbsent(structure, k -> new LongOpenHashSet()).add(reference);
+    public void addReferenceForStructure(final Structure structure, final ChunkPos reference) {
+        this.structuresRefences.computeIfAbsent(structure, k -> new java.util.HashSet<>()).add(reference);
         this.markUnsaved();
     }
 
     @Override
-    public Map<Structure, LongSet> getAllReferences() {
+    public Map<Structure, Set<ChunkPos>> getAllReferences() {
         return Collections.unmodifiableMap(this.structuresRefences);
     }
 
     @Override
-    public void setAllReferences(final Map<Structure, LongSet> data) {
+    public void setAllReferences(final Map<Structure, Set<ChunkPos>> data) {
         this.structuresRefences.clear();
         this.structuresRefences.putAll(data);
         this.markUnsaved();

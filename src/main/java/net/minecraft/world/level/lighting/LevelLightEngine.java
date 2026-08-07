@@ -102,10 +102,10 @@ public class LevelLightEngine implements LightEventListener {
     public String getDebugData(final LightLayer layer, final SectionPos pos) {
         if (layer == LightLayer.BLOCK) {
             if (this.blockEngine != null) {
-                return this.blockEngine.getDebugData(pos.asLong());
+                return this.blockEngine.getDebugData(pos);
             }
         } else if (this.skyEngine != null) {
-            return this.skyEngine.getDebugData(pos.asLong());
+            return this.skyEngine.getDebugData(pos);
         }
 
         return "n/a";
@@ -114,10 +114,10 @@ public class LevelLightEngine implements LightEventListener {
     public LayerLightSectionStorage.SectionType getDebugSectionType(final LightLayer layer, final SectionPos pos) {
         if (layer == LightLayer.BLOCK) {
             if (this.blockEngine != null) {
-                return this.blockEngine.getDebugSectionType(pos.asLong());
+                return this.blockEngine.getDebugSectionType(pos);
             }
         } else if (this.skyEngine != null) {
-            return this.skyEngine.getDebugSectionType(pos.asLong());
+            return this.skyEngine.getDebugSectionType(pos);
         }
 
         return LayerLightSectionStorage.SectionType.EMPTY;
@@ -126,10 +126,10 @@ public class LevelLightEngine implements LightEventListener {
     public void queueSectionData(final LightLayer layer, final SectionPos pos, final @Nullable DataLayer data) {
         if (layer == LightLayer.BLOCK) {
             if (this.blockEngine != null) {
-                this.blockEngine.queueSectionData(pos.asLong(), data);
+                this.blockEngine.queueSectionData(pos, data);
             }
         } else if (this.skyEngine != null) {
-            this.skyEngine.queueSectionData(pos.asLong(), data);
+            this.skyEngine.queueSectionData(pos, data);
         }
     }
 
@@ -149,7 +149,7 @@ public class LevelLightEngine implements LightEventListener {
         return Math.max(blockLight, skyLight);
     }
 
-    public boolean lightOnInColumn(final long sectionZeroNode) {
+    public boolean lightOnInColumn(final SectionPos sectionZeroNode) {
         return this.blockEngine == null
             || this.blockEngine.storage.lightOnInColumn(sectionZeroNode) && (this.skyEngine == null || this.skyEngine.storage.lightOnInColumn(sectionZeroNode));
     }

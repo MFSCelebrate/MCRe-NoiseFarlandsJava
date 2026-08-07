@@ -118,7 +118,7 @@ public class TrialSpawnerStateData {
     }
 
     public void tryDetectPlayers(final ServerLevel level, final BlockPos pos, final TrialSpawner trialSpawner) {
-        boolean isThrottled = (pos.asLong() + level.getGameTime()) % 20L != 0L;
+        boolean isThrottled = ((long)pos.hashCode() + level.getGameTime()) % 20L != 0L;
         if (!isThrottled) {
             if (!trialSpawner.getState().equals(TrialSpawnerState.COOLDOWN) || !trialSpawner.isOminous()) {
                 List<UUID> inLineOfSightPlayers = trialSpawner.getPlayerDetector()
@@ -295,7 +295,7 @@ public class TrialSpawnerStateData {
 
     private static long lowResolutionPosition(final ServerLevel level, final BlockPos pos) {
         BlockPos lowResolutionPosition = new BlockPos(Mth.floor(pos.getX() / 30.0F), Mth.floor(pos.getY() / 20.0F), Mth.floor(pos.getZ() / 30.0F));
-        return level.getSeed() + lowResolutionPosition.asLong();
+        return level.getSeed() + lowResolutionPosition.hashCode();
     }
 
     public record Packed(

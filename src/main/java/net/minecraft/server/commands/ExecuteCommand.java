@@ -460,7 +460,7 @@ public class ExecuteCommand {
     private static boolean isChunkLoaded(final ServerLevel level, final BlockPos pos) {
         ChunkPos chunkPos = ChunkPos.containing(pos);
         LevelChunk chunk = level.getChunkSource().getChunkNow(chunkPos.x(), chunkPos.z());
-        return chunk == null ? false : chunk.getFullStatus() == FullChunkStatus.ENTITY_TICKING && level.areEntitiesLoaded(chunkPos.pack());
+        return chunk == null ? false : chunk.getFullStatus() == FullChunkStatus.ENTITY_TICKING && level.areEntitiesLoaded(chunkPos);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> addConditionals(

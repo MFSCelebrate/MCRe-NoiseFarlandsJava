@@ -366,7 +366,7 @@ public class EnderDragonFight extends SavedData {
             }
         }
 
-        return ChunkPos.rangeClosed(chunkOrigin, 1).allMatch(pos -> this.level.areEntitiesLoaded(pos.pack()));
+        return ChunkPos.rangeClosed(chunkOrigin, 1).allMatch(pos -> this.level.areEntitiesLoaded(pos));
     }
 
     private void updatePlayers() {

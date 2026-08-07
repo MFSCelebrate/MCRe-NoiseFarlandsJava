@@ -1,6 +1,6 @@
 package net.minecraft.world.level.chunk;
 
-import it.unimi.dsi.fastutil.longs.LongSet;
+
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
@@ -141,21 +141,21 @@ public class ImposterProtoChunk extends ProtoChunk {
     }
 
     @Override
-    public LongSet getReferencesForStructure(final Structure structure) {
+    public Set<ChunkPos> getReferencesForStructure(final Structure structure) {
         return this.wrapped.getReferencesForStructure(structure);
     }
 
     @Override
-    public void addReferenceForStructure(final Structure structure, final long reference) {
+    public void addReferenceForStructure(final Structure structure, final ChunkPos reference) {
     }
 
     @Override
-    public Map<Structure, LongSet> getAllReferences() {
+    public Map<Structure, Set<ChunkPos>> getAllReferences() {
         return this.wrapped.getAllReferences();
     }
 
     @Override
-    public void setAllReferences(final Map<Structure, LongSet> data) {
+    public void setAllReferences(final Map<Structure, Set<ChunkPos>> data) {
     }
 
     @Override

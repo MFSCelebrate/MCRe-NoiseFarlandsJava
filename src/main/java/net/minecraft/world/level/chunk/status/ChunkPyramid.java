@@ -55,7 +55,9 @@ public record ChunkPyramid(ImmutableList<ChunkStep> steps) {
         .step(ChunkStatus.FULL, s -> s.setTask(ChunkStatusTasks::full))
         .build();
     private static final int SAFETY_MARGIN_CHUNKS = (32 + GENERATION_PYRAMID.getStepTo(ChunkStatus.FULL).accumulatedDependencies().size() + 1) * 2;
-    public static final int MAX_CHUNK_COORDINATE_VALUE = SectionPos.blockToSectionCoord(BlockPos.MAX_HORIZONTAL_COORDINATE) - SAFETY_MARGIN_CHUNKS;
+    // MCRe NoiseFarlands: 原版 = SectionPos.blockToSectionCoord(BlockPos.MAX_HORIZONTAL_COORDINATE) - SAFETY_MARGIN_CHUNKS
+    // BlockPos.MAX_HORIZONTAL_COORDINATE 已随打包系统移除；此处保留原数值（2,097,151）作为生成验证上界，后续放开
+    public static final int MAX_CHUNK_COORDINATE_VALUE = 2097151 - SAFETY_MARGIN_CHUNKS;
 
     public ChunkStep getStepTo(final ChunkStatus status) {
         return this.steps.get(status.getIndex());

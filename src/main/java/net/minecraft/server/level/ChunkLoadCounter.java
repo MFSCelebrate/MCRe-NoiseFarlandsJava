@@ -1,9 +1,11 @@
 package net.minecraft.server.level;
 
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
+
+
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 
 public class ChunkLoadCounter {
@@ -12,13 +14,13 @@ public class ChunkLoadCounter {
 
     public void track(final ServerLevel level, final Runnable scheduler) {
         ServerChunkCache chunkSource = level.getChunkSource();
-        LongSet alreadyLoadedChunks = new LongOpenHashSet();
+        Set<ChunkPos> alreadyLoadedChunks = new HashSet<>();
         chunkSource.runDistanceManagerUpdates();
-        chunkSource.chunkMap.allChunksWithAtLeastStatus(ChunkStatus.FULL).forEach(chunkHolder -> alreadyLoadedChunks.add(chunkHolder.getPos().pack()));
+        chunkSource.chunkMap.allChunksWithAtLeastStatus(ChunkStatus.FULL).forEach(chunkHolder -> alreadyLoadedChunks.add(chunkHolder.getPos()));
         scheduler.run();
         chunkSource.runDistanceManagerUpdates();
         chunkSource.chunkMap.allChunksWithAtLeastStatus(ChunkStatus.FULL).forEach(chunkHolder -> {
-            if (!alreadyLoadedChunks.contains(chunkHolder.getPos().pack())) {
+            if (!alreadyLoadedChunks.contains(chunkHolder.getPos())) {
                 this.pendingChunks.add(chunkHolder);
                 this.totalChunks++;
             }

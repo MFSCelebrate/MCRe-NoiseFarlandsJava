@@ -1,16 +1,20 @@
 package net.minecraft.server.level;
 
 import com.google.common.collect.Lists;
-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.IntStream;
 import net.minecraft.world.level.ChunkPos;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * ChunkTaskPriorityQueue — 区块任务优先级队列（MCRe NoiseFarlands 对象化版）
+ * 原版以 long 打包键（ChunkPos.pack），本版直接用 ChunkPos 对象为键。
+ */
 public class ChunkTaskPriorityQueue {
     public static final int PRIORITY_LEVEL_COUNT = ChunkLevel.MAX_LEVEL + 2;
-    private final List<Long2ObjectLinkedOpenHashMap<List<Runnable>>> queuesPerPriority = IntStream.range(0, PRIORITY_LEVEL_COUNT)
-        .mapToObj(priority -> new Long2ObjectLinkedOpenHashMap<List<Runnable>>())
+    private final List<LinkedHashMap<ChunkPos, List<Runnable>>> queuesPerPriority = IntStream.range(0, PRIORITY_LEVEL_COUNT)
+        .mapToObj(priority -> new LinkedHashMap<ChunkPos, List<Runnable>>())
         .toList();
     private volatile int topPriorityQueueIndex = PRIORITY_LEVEL_COUNT;
     private final String name;
@@ -21,8 +25,8 @@ public class ChunkTaskPriorityQueue {
 
     protected void resortChunkTasks(final int oldPriority, final ChunkPos pos, final int newPriority) {
         if (oldPriority < PRIORITY_LEVEL_COUNT) {
-            Long2ObjectLinkedOpenHashMap<List<Runnable>> oldQueue = this.queuesPerPriority.get(oldPriority);
-            List<Runnable> oldTasks = oldQueue.remove(pos.pack());
+            LinkedHashMap<ChunkPos, List<Runnable>> oldQueue = this.queuesPerPriority.get(oldPriority);
+            List<Runnable> oldTasks = oldQueue.remove(pos);
             if (oldPriority == this.topPriorityQueueIndex) {
                 while (this.hasWork() && this.queuesPerPriority.get(this.topPriorityQueueIndex).isEmpty()) {
                     this.topPriorityQueueIndex++;
@@ -30,19 +34,19 @@ public class ChunkTaskPriorityQueue {
             }
 
             if (oldTasks != null && !oldTasks.isEmpty()) {
-                this.queuesPerPriority.get(newPriority).computeIfAbsent(pos.pack(), k -> Lists.newArrayList()).addAll(oldTasks);
+                this.queuesPerPriority.get(newPriority).computeIfAbsent(pos, k -> Lists.newArrayList()).addAll(oldTasks);
                 this.topPriorityQueueIndex = Math.min(this.topPriorityQueueIndex, newPriority);
             }
         }
     }
 
-    protected void submit(final Runnable task, final long chunkPos, final int level) {
+    protected void submit(final Runnable task, final ChunkPos chunkPos, final int level) {
         this.queuesPerPriority.get(level).computeIfAbsent(chunkPos, p -> Lists.newArrayList()).add(task);
         this.topPriorityQueueIndex = Math.min(this.topPriorityQueueIndex, level);
     }
 
-    protected void release(final long pos, final boolean unschedule) {
-        for (Long2ObjectLinkedOpenHashMap<List<Runnable>> queue : this.queuesPerPriority) {
+    protected void release(final ChunkPos pos, final boolean unschedule) {
+        for (LinkedHashMap<ChunkPos, List<Runnable>> queue : this.queuesPerPriority) {
             List<Runnable> tasks = queue.get(pos);
             if (tasks != null) {
                 if (unschedule) {
@@ -66,9 +70,11 @@ public class ChunkTaskPriorityQueue {
         }
 
         int index = this.topPriorityQueueIndex;
-        Long2ObjectLinkedOpenHashMap<List<Runnable>> queue = this.queuesPerPriority.get(index);
-        long chunkPos = queue.firstLongKey();
-        List<Runnable> tasks = queue.removeFirst();
+        LinkedHashMap<ChunkPos, List<Runnable>> queue = this.queuesPerPriority.get(index);
+        var first = queue.entrySet().iterator().next();
+        ChunkPos chunkPos = first.getKey();
+        List<Runnable> tasks = first.getValue();
+        queue.remove(chunkPos);
 
         while (this.hasWork() && this.queuesPerPriority.get(this.topPriorityQueueIndex).isEmpty()) {
             this.topPriorityQueueIndex++;
@@ -86,6 +92,6 @@ public class ChunkTaskPriorityQueue {
         return this.name + " " + this.topPriorityQueueIndex + "...";
     }
 
-    public record TasksForChunk(long chunkPos, List<Runnable> tasks) {
+    public record TasksForChunk(ChunkPos chunkPos, List<Runnable> tasks) {
     }
 }

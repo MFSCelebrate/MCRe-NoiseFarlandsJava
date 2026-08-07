@@ -7,7 +7,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongSet;
+
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
@@ -431,7 +431,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
                                 entity.checkDespawn();
                                 profiler.pop();
                                 if (entity instanceof ServerPlayer
-                                    || this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(entity.chunkPosition().pack())) {
+                                    || this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(entity.chunkPosition())) {
                                     Entity vehicle = entity.getVehicle();
                                     if (vehicle != null) {
                                         if (!vehicle.isRemoved() && vehicle.hasPassenger(entity)) {
@@ -1502,7 +1502,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
         return this.getServer().getRespawnData();
     }
 
-    public LongSet getForceLoadedChunks() {
+    public Set<ChunkPos> getForceLoadedChunks() {
         return this.chunkSource.getForceLoadedChunks();
     }
 
@@ -1768,7 +1768,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
             this.entityManager.processPendingLoads();
 
             for (ChunkPos chunk : chunks) {
-                if (!this.areEntitiesLoaded(chunk.pack())) {
+                if (!this.areEntitiesLoaded(chunk)) {
                     return false;
                 }
             }
@@ -1792,20 +1792,20 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
         return "Chunks[S] W: " + this.chunkSource.gatherStats() + " E: " + this.entityManager.gatherStats();
     }
 
-    public boolean areEntitiesLoaded(final long chunkKey) {
+    public boolean areEntitiesLoaded(final ChunkPos chunkKey) {
         return this.entityManager.areEntitiesLoaded(chunkKey);
     }
 
-    public boolean isPositionTickingWithEntitiesLoaded(final long key) {
+    public boolean isPositionTickingWithEntitiesLoaded(final ChunkPos key) {
         return this.areEntitiesLoaded(key) && this.chunkSource.isPositionTicking(key);
     }
 
     public boolean isPositionEntityTicking(final BlockPos pos) {
-        return this.entityManager.canPositionTick(pos) && this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(ChunkPos.pack(pos));
+        return this.entityManager.canPositionTick(pos) && this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(ChunkPos.containing(pos));
     }
 
     public boolean areEntitiesActuallyLoadedAndTicking(final ChunkPos pos) {
-        return this.entityManager.isTicking(pos) && this.entityManager.areEntitiesLoaded(pos.pack());
+        return this.entityManager.isTicking(pos) && this.entityManager.areEntitiesLoaded(pos);
     }
 
     public boolean anyPlayerCloseEnoughForSpawning(final BlockPos pos) {

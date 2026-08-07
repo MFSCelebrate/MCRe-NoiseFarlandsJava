@@ -414,7 +414,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
         } else {
             return !(this.level instanceof ServerLevel serverLevel)
                 ? true
-                : this.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING) && serverLevel.areEntitiesLoaded(ChunkPos.pack(pos));
+                : this.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING) && serverLevel.areEntitiesLoaded(ChunkPos.containing(pos));
         }
     }
 

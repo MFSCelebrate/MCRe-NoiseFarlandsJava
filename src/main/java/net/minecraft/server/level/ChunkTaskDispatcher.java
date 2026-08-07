@@ -46,7 +46,7 @@ public class ChunkTaskDispatcher implements ChunkHolder.LevelChangeListener, Aut
         }));
     }
 
-    public void release(final long pos, final Runnable whenReleased, final boolean clearQueue) {
+    public void release(final ChunkPos pos, final Runnable whenReleased, final boolean clearQueue) {
         this.dispatcher.schedule(new StrictQueue.RunnableWithPriority(1, () -> {
             this.queue.release(pos, clearQueue);
             this.onRelease(pos);
@@ -59,11 +59,11 @@ public class ChunkTaskDispatcher implements ChunkHolder.LevelChangeListener, Aut
         }));
     }
 
-    public void submit(final Runnable task, final long pos, final IntSupplier level) {
+    public void submit(final Runnable task, final ChunkPos pos, final IntSupplier level) {
         this.dispatcher.schedule(new StrictQueue.RunnableWithPriority(2, () -> {
             int ticketLevel = level.getAsInt();
             if (SharedConstants.DEBUG_VERBOSE_SERVER_EVENTS) {
-                LOGGER.debug("SUB {} {} {} {}", ChunkPos.unpack(pos), ticketLevel, this.executor, this.queue);
+                LOGGER.debug("SUB {} {} {} {}", pos, ticketLevel, this.executor, this.queue);
             }
 
             this.queue.submit(task, pos, ticketLevel);
@@ -92,7 +92,7 @@ public class ChunkTaskDispatcher implements ChunkHolder.LevelChangeListener, Aut
         })).toArray(CompletableFuture[]::new)).thenAccept(r -> this.pollTask());
     }
 
-    protected void onRelease(final long key) {
+    protected void onRelease(final ChunkPos key) {
     }
 
     protected ChunkTaskPriorityQueue.@Nullable TasksForChunk popTasks() {

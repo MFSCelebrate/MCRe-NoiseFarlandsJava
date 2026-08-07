@@ -2,10 +2,10 @@ package net.minecraft.world.level.levelgen.structure;
 
 import com.mojang.datafixers.DataFixer;
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.Long2BooleanMap;
-import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+
+
+
+
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMaps;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -50,8 +50,8 @@ public class StructureCheck {
     private final BiomeSource biomeSource;
     private final long seed;
     private final DataFixer fixerUpper;
-    private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
-    private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
+    private final Map<ChunkPos, Object2IntMap<Structure>> loadedChunks = new HashMap<>();
+    private final Map<Structure, Map<ChunkPos, Boolean>> featureChecks = new HashMap<>();
 
     public StructureCheck(
         final ChunkScanAccess storageAccess,
@@ -78,7 +78,7 @@ public class StructureCheck {
     }
 
     public StructureCheckResult checkStart(final ChunkPos pos, final Structure structure, final StructurePlacement placement, final boolean requireUnreferenced) {
-        long posKey = pos.pack();
+        ChunkPos posKey = pos;
         Object2IntMap<Structure> cachedResult = this.loadedChunks.get(posKey);
         if (cachedResult != null) {
             return this.checkStructureInfo(cachedResult, structure, requireUnreferenced);
@@ -94,7 +94,7 @@ public class StructureCheck {
         }
 
         boolean isFeatureChunk = this.featureChecks
-            .computeIfAbsent(structure, k -> new Long2BooleanOpenHashMap())
+            .computeIfAbsent(structure, k -> new HashMap<>())
             .computeIfAbsent(posKey, k -> this.canCreateStructure(pos, structure));
         return !isFeatureChunk ? StructureCheckResult.START_NOT_PRESENT : StructureCheckResult.CHUNK_LOAD_NEEDED;
     }
@@ -117,7 +117,7 @@ public class StructureCheck {
     }
 
     private @Nullable StructureCheckResult tryLoadFromStorage(
-        final ChunkPos pos, final Structure structure, final boolean requireUnreferenced, final long posKey
+        final ChunkPos pos, final Structure structure, final boolean requireUnreferenced, final ChunkPos posKey
     ) {
         CollectFields collectFields = new CollectFields(
             new FieldSelector(IntTag.TYPE, "DataVersion"),
@@ -199,7 +199,7 @@ public class StructureCheck {
     }
 
     public void onStructureLoad(final ChunkPos pos, final Map<Structure, StructureStart> starts) {
-        long posKey = pos.pack();
+        ChunkPos posKey = pos;
         Object2IntMap<Structure> startsToReferences = new Object2IntOpenHashMap<>();
         starts.forEach((structure, structureStart) -> {
             if (structureStart.isValid()) {
@@ -209,13 +209,13 @@ public class StructureCheck {
         this.storeFullResults(posKey, startsToReferences);
     }
 
-    private void storeFullResults(final long posKey, final Object2IntMap<Structure> starts) {
+    private void storeFullResults(final ChunkPos posKey, final Object2IntMap<Structure> starts) {
         this.loadedChunks.put(posKey, deduplicateEmptyMap(starts));
         this.featureChecks.values().forEach(m -> m.remove(posKey));
     }
 
     public void incrementReference(final ChunkPos chunkPos, final Structure structure) {
-        this.loadedChunks.compute(chunkPos.pack(), (key, counts) -> {
+        this.loadedChunks.compute(chunkPos, (key, counts) -> {
             if (counts == null || counts.isEmpty()) {
                 counts = new Object2IntOpenHashMap<>();
             }

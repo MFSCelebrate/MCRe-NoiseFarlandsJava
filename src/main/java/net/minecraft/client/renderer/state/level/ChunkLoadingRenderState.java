@@ -1,16 +1,20 @@
 package net.minecraft.client.renderer.state.level;
 
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import java.util.Set;
+import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.ChunkPos;
+
+
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ChunkLoadingRenderState {
-    public LongOpenHashSet addedEmptySections = new LongOpenHashSet();
-    public LongOpenHashSet removedEmptySections = new LongOpenHashSet();
-    public LongOpenHashSet addedLoadedChunks = new LongOpenHashSet();
-    public LongOpenHashSet removedLoadedChunks = new LongOpenHashSet();
-    public LongOpenHashSet loadedExpectedChunks = new LongOpenHashSet();
+    public Set<SectionPos> addedEmptySections = new java.util.HashSet<>();
+    public Set<SectionPos> removedEmptySections = new java.util.HashSet<>();
+    public Set<ChunkPos> addedLoadedChunks = new java.util.HashSet<>();
+    public Set<ChunkPos> removedLoadedChunks = new java.util.HashSet<>();
+    public Set<ChunkPos> loadedExpectedChunks = new java.util.HashSet<>();
 
     public void reset() {
         this.loadedExpectedChunks.clear();

@@ -1,8 +1,8 @@
 package net.minecraft.client.renderer.block;
 
 import com.mojang.blaze3d.vertex.QuadInstance;
-import it.unimi.dsi.fastutil.longs.Long2FloatLinkedOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
+
+
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -638,27 +638,27 @@ public class BlockModelLighter {
     @OnlyIn(Dist.CLIENT)
     public static class Cache {
         private boolean enabled;
-        private final Long2IntLinkedOpenHashMap colorCache = Util.make(() -> {
-            Long2IntLinkedOpenHashMap map = new Long2IntLinkedOpenHashMap(100, 0.25F) {
+        private final LinkedHashMap<BlockPos, Integer> colorCache = Util.make(() -> {
+            LinkedHashMap<BlockPos, Integer> map = new LinkedHashMap<>(100, 0.75F) {
                 @Override
                 protected void rehash(final int newN) {
                 }
             };
-            map.defaultReturnValue(Integer.MAX_VALUE);
+            // 对象键默认值语义由调用处 getOrDefault 处理
             return map;
         });
-        private final Long2FloatLinkedOpenHashMap brightnessCache = Util.make(() -> {
-            Long2FloatLinkedOpenHashMap map = new Long2FloatLinkedOpenHashMap(100, 0.25F) {
+        private final LinkedHashMap<BlockPos, Float> brightnessCache = Util.make(() -> {
+            LinkedHashMap<BlockPos, Float> map = new LinkedHashMap<>(100, 0.75F) {
                 @Override
                 protected void rehash(final int newN) {
                 }
             };
-            map.defaultReturnValue(Float.NaN);
+            // 对象键默认值语义由调用处 getOrDefault 处理
             return map;
         });
         private final LightCoordsUtil.BrightnessGetter cachedBrightnessGetter = (level, pos) -> {
-            long key = pos.asLong();
-            int cached = this.colorCache.get(key);
+            BlockPos key = pos;
+            int cached = this.colorCache.getOrDefault(key, Integer.MAX_VALUE);
             if (cached != Integer.MAX_VALUE) {
                 return cached;
             }
@@ -687,9 +687,9 @@ public class BlockModelLighter {
         }
 
         public float getShadeBrightness(final BlockState state, final BlockAndTintGetter level, final BlockPos pos) {
-            long key = pos.asLong();
+            BlockPos key = pos;
             if (this.enabled) {
-                float cached = this.brightnessCache.get(key);
+                float cached = this.brightnessCache.getOrDefault(key, Float.NaN);
                 if (!Float.isNaN(cached)) {
                     return cached;
                 }

@@ -1,18 +1,26 @@
 package net.minecraft.core;
 
 import io.netty.buffer.ByteBuf;
-import it.unimi.dsi.fastutil.longs.LongConsumer;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.entity.EntityAccess;
+import net.MinecraftTools.Math._256Bit.Int256;
+import net.MinecraftTools.Math._256Bit.util.Vec3d256;
 
+/**
+ * SectionPos — 区块节坐标（MCRe NoiseFarlands 对象化版）
+ *
+ * <p>原版用 asLong() 将 (int x, int y, int z) 打包进 long（22+20+22 位），
+ * 坐标上限被锁死在 ±2^23（约 8,388,607 区块节）。本版：移除打包系统，
+ * SectionPos 对象本身即键（不可变 + hashCode/equals），坐标以 int 存储
+ * （32 位，为后续 long/256-bit 升级保留），并适配 256-bit（Int256）。
+ */
 public class SectionPos extends Vec3i {
     public static final int SECTION_BITS = 4;
     public static final int SECTION_SIZE = 16;
@@ -20,19 +28,20 @@ public class SectionPos extends Vec3i {
     public static final int SECTION_MASK = 15;
     public static final int SECTION_HALF_SIZE = 8;
     public static final int SECTION_MAX_INDEX = 15;
-    private static final int PACKED_X_LENGTH = 22;
-    private static final int PACKED_Y_LENGTH = 20;
-    private static final int PACKED_Z_LENGTH = 22;
-    private static final long PACKED_X_MASK = 4194303L;
-    private static final long PACKED_Y_MASK = 1048575L;
-    private static final long PACKED_Z_MASK = 4194303L;
-    private static final int Y_OFFSET = 0;
-    private static final int Z_OFFSET = 20;
-    private static final int X_OFFSET = 42;
     private static final int RELATIVE_X_SHIFT = 8;
     private static final int RELATIVE_Y_SHIFT = 0;
     private static final int RELATIVE_Z_SHIFT = 4;
-    public static final StreamCodec<ByteBuf, SectionPos> STREAM_CODEC = ByteBufCodecs.LONG.map(SectionPos::of, SectionPos::asLong);
+    public static final StreamCodec<ByteBuf, SectionPos> STREAM_CODEC = new StreamCodec<ByteBuf, SectionPos>() {
+        public SectionPos decode(final ByteBuf input) {
+            return SectionPos.of(input.readInt(), input.readInt(), input.readInt());
+        }
+
+        public void encode(final ByteBuf output, final SectionPos value) {
+            output.writeInt(value.x());
+            output.writeInt(value.y());
+            output.writeInt(value.z());
+        }
+    };
 
     private SectionPos(final int x, final int y, final int z) {
         super(x, y, z);
@@ -47,7 +56,7 @@ public class SectionPos extends Vec3i {
     }
 
     public static SectionPos of(final ChunkPos pos, final int sectionY) {
-        return new SectionPos(pos.x(), sectionY, pos.z());
+        return new SectionPos((int)pos.x(), sectionY, (int)pos.z());
     }
 
     public static SectionPos of(final EntityAccess entity) {
@@ -58,20 +67,8 @@ public class SectionPos extends Vec3i {
         return new SectionPos(blockToSectionCoord(pos.x()), blockToSectionCoord(pos.y()), blockToSectionCoord(pos.z()));
     }
 
-    public static SectionPos of(final long sectionNode) {
-        return new SectionPos(x(sectionNode), y(sectionNode), z(sectionNode));
-    }
-
     public static SectionPos bottomOf(final ChunkAccess chunk) {
         return of(chunk.getPos(), chunk.getMinSectionY());
-    }
-
-    public static long offset(final long sectionNode, final Direction offset) {
-        return offset(sectionNode, offset.getStepX(), offset.getStepY(), offset.getStepZ());
-    }
-
-    public static long offset(final long sectionNode, final int stepX, final int stepY, final int stepZ) {
-        return asLong(x(sectionNode) + stepX, y(sectionNode) + stepY, z(sectionNode) + stepZ);
     }
 
     public static int posToSectionCoord(final double pos) {
@@ -84,6 +81,11 @@ public class SectionPos extends Vec3i {
 
     public static int blockToSectionCoord(final double coord) {
         return Mth.floor(coord) >> 4;
+    }
+
+    /** long 坐标 → 区块节坐标（ChunkPos long 化支持） */
+    public static long blockToSectionCoord(final long blockCoord) {
+        return blockCoord >> 4;
     }
 
     public static int sectionRelative(final int blockCoord) {
@@ -133,16 +135,13 @@ public class SectionPos extends Vec3i {
         return sectionToBlockCoord(sectionCoord) + offset;
     }
 
-    public static int x(final long sectionNode) {
-        return (int)(sectionNode << 0 >> 42);
+    /** long 区块节坐标 → 方块坐标 */
+    public static long sectionToBlockCoordLong(final long sectionCoord) {
+        return sectionCoord << 4;
     }
 
-    public static int y(final long sectionNode) {
-        return (int)(sectionNode << 44 >> 44);
-    }
-
-    public static int z(final long sectionNode) {
-        return (int)(sectionNode << 22 >> 42);
+    public static long sectionToBlockCoordLong(final long sectionCoord, final long offset) {
+        return (sectionCoord << 4) + offset;
     }
 
     public int x() {
@@ -181,50 +180,16 @@ public class SectionPos extends Vec3i {
         return sectionToBlockCoord(this.z(), 15);
     }
 
-    public static long blockToSection(final long blockNode) {
-        return asLong(
-            blockToSectionCoord(BlockPos.getX(blockNode)), blockToSectionCoord(BlockPos.getY(blockNode)), blockToSectionCoord(BlockPos.getZ(blockNode))
-        );
-    }
-
-    public static long getZeroNode(final int x, final int z) {
-        return getZeroNode(asLong(x, 0, z));
-    }
-
-    public static long getZeroNode(final long sectionNode) {
-        return sectionNode & -1048576L;
-    }
-
-    public static long sectionToChunk(final long sectionNode) {
-        return ChunkPos.pack(x(sectionNode), z(sectionNode));
-    }
-
     public BlockPos origin() {
         return new BlockPos(sectionToBlockCoord(this.x()), sectionToBlockCoord(this.y()), sectionToBlockCoord(this.z()));
     }
 
     public BlockPos center() {
-        int delta = 8;
         return this.origin().offset(8, 8, 8);
     }
 
     public ChunkPos chunk() {
         return new ChunkPos(this.x(), this.z());
-    }
-
-    public static long asLong(final BlockPos pos) {
-        return asLong(blockToSectionCoord(pos.getX()), blockToSectionCoord(pos.getY()), blockToSectionCoord(pos.getZ()));
-    }
-
-    public static long asLong(final int x, final int y, final int z) {
-        long node = 0L;
-        node |= (x & 4194303L) << 42;
-        node |= (y & 1048575L) << 0;
-        return node | (z & 4194303L) << 20;
-    }
-
-    public long asLong() {
-        return asLong(this.x(), this.y(), this.z());
     }
 
     public SectionPos offset(final int x, final int y, final int z) {
@@ -243,8 +208,8 @@ public class SectionPos extends Vec3i {
     }
 
     public static Stream<SectionPos> aroundChunk(final ChunkPos center, final int radius, final int minSection, final int maxSection) {
-        int x = center.x();
-        int z = center.z();
+        int x = (int)center.x();
+        int z = (int)center.z();
         return betweenClosedStream(x - radius, minSection, z - radius, x + radius, maxSection, z + radius);
     }
 
@@ -264,15 +229,12 @@ public class SectionPos extends Vec3i {
         }, false);
     }
 
-    public static void aroundAndAtBlockPos(final BlockPos blockPos, final LongConsumer sectionConsumer) {
+    /** 遍历方块位置周围及所在区块节（对象化，替代原 long 打包回调） */
+    public static void aroundAndAtBlockPos(final BlockPos blockPos, final Consumer<SectionPos> sectionConsumer) {
         aroundAndAtBlockPos(blockPos.getX(), blockPos.getY(), blockPos.getZ(), sectionConsumer);
     }
 
-    public static void aroundAndAtBlockPos(final long blockPos, final LongConsumer sectionConsumer) {
-        aroundAndAtBlockPos(BlockPos.getX(blockPos), BlockPos.getY(blockPos), BlockPos.getZ(blockPos), sectionConsumer);
-    }
-
-    public static void aroundAndAtBlockPos(final int blockX, final int blockY, final int blockZ, final LongConsumer sectionConsumer) {
+    public static void aroundAndAtBlockPos(final int blockX, final int blockY, final int blockZ, final Consumer<SectionPos> sectionConsumer) {
         int minSectionX = blockToSectionCoord(blockX - 1);
         int maxSectionX = blockToSectionCoord(blockX + 1);
         int minSectionY = blockToSectionCoord(blockY - 1);
@@ -280,15 +242,44 @@ public class SectionPos extends Vec3i {
         int minSectionZ = blockToSectionCoord(blockZ - 1);
         int maxSectionZ = blockToSectionCoord(blockZ + 1);
         if (minSectionX == maxSectionX && minSectionY == maxSectionY && minSectionZ == maxSectionZ) {
-            sectionConsumer.accept(asLong(minSectionX, minSectionY, minSectionZ));
+            sectionConsumer.accept(of(minSectionX, minSectionY, minSectionZ));
         } else {
             for (int sectionX = minSectionX; sectionX <= maxSectionX; sectionX++) {
                 for (int sectionY = minSectionY; sectionY <= maxSectionY; sectionY++) {
                     for (int sectionZ = minSectionZ; sectionZ <= maxSectionZ; sectionZ++) {
-                        sectionConsumer.accept(asLong(sectionX, sectionY, sectionZ));
+                        sectionConsumer.accept(of(sectionX, sectionY, sectionZ));
                     }
                 }
             }
         }
+    }
+
+    // ═══════════ 256-bit 适配（MCRe NoiseFarlands） ═══════════
+
+    /** 区块节坐标精确转 Int256 */
+    public Int256 x256() {
+        return Int256.of(this.x());
+    }
+
+    public Int256 y256() {
+        return Int256.of(this.y());
+    }
+
+    public Int256 z256() {
+        return Int256.of(this.z());
+    }
+
+    /** 转 256-bit 向量（方块坐标级） */
+    public Vec3d256 to256() {
+        return Vec3d256.ofInt(Int256.of(this.minBlockX()), Int256.of(this.minBlockY()), Int256.of(this.minBlockZ()));
+    }
+
+    /** 256-bit 向量 → 区块节（floor 到 16 对齐） */
+    public static SectionPos from256(final Vec3d256 pos) {
+        return of(
+            blockToSectionCoord(pos.x.floor().longValue()),
+            blockToSectionCoord(pos.y.floor().longValue()),
+            blockToSectionCoord(pos.z.floor().longValue())
+        );
     }
 }

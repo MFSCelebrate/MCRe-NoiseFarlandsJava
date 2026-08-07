@@ -383,7 +383,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             public @Nullable ChunkStatus get(final int x, final int z) {
                 return this.chunkMap == null
                     ? null
-                    : this.chunkMap.getLatestStatus(ChunkPos.pack(x + this.centerChunkX - radius, z + this.centerChunkZ - radius));
+                    : this.chunkMap.getLatestStatus(new ChunkPos(x + this.centerChunkX - radius, z + this.centerChunkZ - radius));
             }
 
             @Override

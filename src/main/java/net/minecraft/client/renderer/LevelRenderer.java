@@ -973,7 +973,7 @@ public class LevelRenderer implements AutoCloseable {
         return this.nearbyVisibleSections;
     }
 
-    public LongCollection expectedChunks() {
+    public java.util.Collection<ChunkPos> expectedChunks() {
         return this.sectionOcclusionGraph.expectedChunks();
     }
 

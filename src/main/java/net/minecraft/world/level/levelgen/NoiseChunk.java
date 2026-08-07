@@ -1,8 +1,8 @@
 package net.minecraft.world.level.levelgen;
 
 import com.google.common.collect.Lists;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +32,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     private final List<NoiseChunk.NoiseInterpolator> interpolators;
     private final List<NoiseChunk.CacheAllInCell> cellCaches;
     private final Map<DensityFunction, DensityFunction> wrapped = new HashMap<>();
-    private final Long2IntMap preliminarySurfaceLevelCache = new Long2IntOpenHashMap();
+    private final Map<ColumnPos, Integer> preliminarySurfaceLevelCache = new HashMap<>();
     private final Aquifer aquifer;
     private final DensityFunction preliminarySurfaceLevel;
     private final DensityFunction fullNoiseDensity;
@@ -41,7 +41,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     private final NoiseChunk.@Nullable FlatCache blendAlpha;
     private final NoiseChunk.@Nullable FlatCache blendOffset;
     private final DensityFunctions.BeardifierOrMarker beardifier;
-    private long lastBlendingDataPos = ChunkPos.INVALID_CHUNK_POS;
+    private BlockPos lastBlendingDataPos;
     private Blender.BlendingOutput lastBlendingOutput = new Blender.BlendingOutput(1.0, 0.0);
     private final int noiseSizeXZ;
     private final int cellWidth;
@@ -219,12 +219,12 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     public int preliminarySurfaceLevel(final int sampleX, final int sampleZ) {
         int quantizedX = QuartPos.toBlock(QuartPos.fromBlock(sampleX));
         int quantizedZ = QuartPos.toBlock(QuartPos.fromBlock(sampleZ));
-        return this.preliminarySurfaceLevelCache.computeIfAbsent(ColumnPos.asLong(quantizedX, quantizedZ), this::computePreliminarySurfaceLevel);
+        return this.preliminarySurfaceLevelCache.computeIfAbsent(new ColumnPos(quantizedX, quantizedZ), this::computePreliminarySurfaceLevel);
     }
 
-    private int computePreliminarySurfaceLevel(final long key) {
-        int blockX = ColumnPos.getX(key);
-        int blockZ = ColumnPos.getZ(key);
+    private int computePreliminarySurfaceLevel(final ColumnPos key) {
+        int blockX = key.x();
+        int blockZ = key.z();
         return Mth.floor(this.preliminarySurfaceLevel.compute(new DensityFunction.SinglePointContext(blockX, 0, blockZ)));
     }
 
@@ -360,8 +360,8 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     }
 
     private Blender.BlendingOutput getOrComputeBlendingOutput(final int blockX, final int blockZ) {
-        long pos2D = ChunkPos.pack(blockX, blockZ);
-        if (this.lastBlendingDataPos == pos2D) {
+        BlockPos pos2D = new BlockPos(blockX, 0, blockZ);
+        if (pos2D.equals(this.lastBlendingDataPos)) {
             return this.lastBlendingOutput;
         }
 
@@ -530,7 +530,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
 
     private static class Cache2D implements NoiseChunk.NoiseChunkDensityFunction, DensityFunctions.MarkerOrMarked {
         private final DensityFunction function;
-        private long lastPos2D = ChunkPos.INVALID_CHUNK_POS;
+        private BlockPos lastPos2D;
         private double lastValue;
 
         private Cache2D(final DensityFunction function) {
@@ -541,8 +541,8 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         public double compute(final DensityFunction.FunctionContext context) {
             int blockX = context.blockX();
             int blockZ = context.blockZ();
-            long pos2D = ChunkPos.pack(blockX, blockZ);
-            if (this.lastPos2D == pos2D) {
+            BlockPos pos2D = new BlockPos(blockX, 0, blockZ);
+            if (pos2D.equals(this.lastPos2D)) {
                 return this.lastValue;
             }
 

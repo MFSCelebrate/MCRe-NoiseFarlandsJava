@@ -2,9 +2,11 @@ package net.minecraft.server.network;
 
 import com.google.common.collect.Comparators;
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
+
+
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Objects;
 import net.minecraft.SharedConstants;
@@ -26,7 +28,7 @@ public class PlayerChunkSender {
     public static final float MAX_CHUNKS_PER_TICK = 64.0F;
     private static final float START_CHUNKS_PER_TICK = 9.0F;
     private static final int MAX_UNACKNOWLEDGED_BATCHES = 10;
-    private final LongSet pendingChunks = new LongOpenHashSet();
+    private final Set<ChunkPos> pendingChunks = new HashSet<>();
     private final boolean memoryConnection;
     private float desiredChunksPerTick = 9.0F;
     private float batchQuota;
@@ -38,11 +40,11 @@ public class PlayerChunkSender {
     }
 
     public void markChunkPendingToSend(final LevelChunk chunk) {
-        this.pendingChunks.add(chunk.getPos().pack());
+        this.pendingChunks.add(chunk.getPos());
     }
 
     public void dropChunk(final ServerPlayer player, final ChunkPos pos) {
-        if (!this.pendingChunks.remove(pos.pack()) && player.isAlive()) {
+        if (!this.pendingChunks.remove(pos) && player.isAlive()) {
             player.connection.send(new ClientboundForgetLevelChunkPacket(pos));
         }
     }
@@ -91,13 +93,12 @@ public class PlayerChunkSender {
                 .stream()
                 .collect(Comparators.least(maxBatchSize, Comparator.comparingInt(playerPos::distanceSquared)))
                 .stream()
-                .mapToLong(Long::longValue)
-                .mapToObj(chunkMap::getChunkToSend)
+                .map(chunkMap::getChunkToSend)
                 .filter(Objects::nonNull)
                 .toList();
         } else {
             chunks = this.pendingChunks
-                .longStream()
+                .stream()
                 .mapToObj(chunkMap::getChunkToSend)
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparingInt(chunkx -> playerPos.distanceSquared(chunkx.getPos())))
@@ -105,7 +106,7 @@ public class PlayerChunkSender {
         }
 
         for (LevelChunk chunk : chunks) {
-            this.pendingChunks.remove(chunk.getPos().pack());
+            this.pendingChunks.remove(chunk.getPos());
         }
 
         return chunks;

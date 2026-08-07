@@ -4,21 +4,27 @@ import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
-import net.minecraft.world.level.chunk.status.ChunkPyramid;
+import net.MinecraftTools.Math._256Bit.Int256;
 import org.jspecify.annotations.Nullable;
 
-public record ChunkPos(int x, int z) {
-    public static final Codec<ChunkPos> CODEC = Codec.INT_STREAM
-        .<ChunkPos>comapFlatMap(input -> Util.fixedSize(input, 2).map(ints -> new ChunkPos(ints[0], ints[1])), pos -> IntStream.of(pos.x, pos.z))
+/**
+ * ChunkPos — 区块坐标（MCRe NoiseFarlands 对象化版）
+ *
+ * <p>原版用 pack() 将 (int x, int z) 打包进 long（32+32 位），坐标上限被锁死在 int。
+ * 本版：坐标升级为 long（突破 2^31 区块限制）、移除打包系统、record 天然对象键
+ * （equals/hashCode 按坐标相等），并适配 256-bit（Int256）。
+ */
+public record ChunkPos(long x, long z) {
+    public static final Codec<ChunkPos> CODEC = Codec.LONG_STREAM
+        .<ChunkPos>comapFlatMap(input -> Util.fixedSize(input, 2).map(longs -> new ChunkPos(longs[0], longs[1])), pos -> LongStream.of(pos.x, pos.z))
         .stable();
     public static final StreamCodec<ByteBuf, ChunkPos> STREAM_CODEC = new StreamCodec<ByteBuf, ChunkPos>() {
         public ChunkPos decode(final ByteBuf input) {
@@ -30,64 +36,36 @@ public record ChunkPos(int x, int z) {
         }
     };
     private static final int SAFETY_MARGIN = 1056;
-    public static final long INVALID_CHUNK_POS = pack(1875066, 1875066);
-    public static final ChunkPos ZERO = new ChunkPos(0, 0);
-    private static final long COORD_BITS = 32L;
-    private static final long COORD_MASK = 4294967295L;
-    private static final int REGION_BITS = 5;
+    public static final ChunkPos ZERO = new ChunkPos(0L, 0L);
+    /** 无效区块坐标哨兵（原版 INVALID_CHUNK_POS = pack(1875066, 1875066)，对象化后为常量值） */
+    public static final ChunkPos INVALID_CHUNK_POS = new ChunkPos(1875066L, 1875066L);
+    public static final int REGION_BITS = 5;
     public static final int REGION_SIZE = 32;
     private static final int REGION_MASK = 31;
     public static final int REGION_MAX_INDEX = 31;
     private static final int HASH_A = 1664525;
     private static final int HASH_C = 1013904223;
-    private static final int HASH_Z_XOR = -559038737;
+    private static final long HASH_Z_XOR = -559038737L;
 
     public static ChunkPos containing(final BlockPos pos) {
         return new ChunkPos(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
     }
 
-    public static ChunkPos unpack(final long key) {
-        return new ChunkPos((int)key, (int)(key >> 32));
-    }
-
     public static ChunkPos minFromRegion(final int regionX, final int regionZ) {
-        return new ChunkPos(regionX << 5, regionZ << 5);
+        return new ChunkPos((long)regionX << 5, (long)regionZ << 5);
     }
 
     public static ChunkPos maxFromRegion(final int regionX, final int regionZ) {
-        return new ChunkPos((regionX << 5) + 31, (regionZ << 5) + 31);
+        return new ChunkPos(((long)regionX << 5) + 31L, ((long)regionZ << 5) + 31L);
     }
 
     public boolean isValid() {
         return isValid(this.x, this.z);
     }
 
-    public static boolean isValid(final int x, final int z) {
-        return Mth.absMax(x, z) <= ChunkPyramid.MAX_CHUNK_COORDINATE_VALUE;
-    }
-
-    public long pack() {
-        return pack(this.x, this.z);
-    }
-
-    public static long pack(final int x, final int z) {
-        return x & 4294967295L | (z & 4294967295L) << 32;
-    }
-
-    public static long fromSectionNode(final long sectionNode) {
-        return pack(SectionPos.x(sectionNode), SectionPos.z(sectionNode));
-    }
-
-    public static long pack(final BlockPos pos) {
-        return pack(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
-    }
-
-    public static int getX(final long pos) {
-        return (int)(pos & 4294967295L);
-    }
-
-    public static int getZ(final long pos) {
-        return (int)(pos >>> 32 & 4294967295L);
+    /** 区块坐标合法性：移除原版 2^31-1 打包限制，仅检查安全裕度 */
+    public static boolean isValid(final long x, final long z) {
+        return Math.max(Math.abs(x), Math.abs(z)) <= 2147483647L;
     }
 
     @Override
@@ -95,78 +73,74 @@ public record ChunkPos(int x, int z) {
         return hash(this.x, this.z);
     }
 
-    public static int hash(final int x, final int z) {
-        int xTransform = 1664525 * x + 1013904223;
-        int zTransform = 1664525 * (z ^ -559038737) + 1013904223;
-        return xTransform ^ zTransform;
+    /** 稳定混合哈希（对象键用） */
+    public static int hash(final long x, final long z) {
+        long xTransform = HASH_A * x + HASH_C;
+        long zTransform = HASH_A * (z ^ HASH_Z_XOR) + HASH_C;
+        return (int)(xTransform ^ zTransform ^ (xTransform >>> 32) ^ (zTransform >>> 32));
     }
 
-    public int getMiddleBlockX() {
-        return this.getBlockX(8);
+    public long getMiddleBlockX() {
+        return this.getBlockX(8L);
     }
 
-    public int getMiddleBlockZ() {
-        return this.getBlockZ(8);
+    public long getMiddleBlockZ() {
+        return this.getBlockZ(8L);
     }
 
-    public int getMinBlockX() {
-        return SectionPos.sectionToBlockCoord(this.x);
+    public long getMinBlockX() {
+        return SectionPos.sectionToBlockCoordLong(this.x);
     }
 
-    public int getMinBlockZ() {
-        return SectionPos.sectionToBlockCoord(this.z);
+    public long getMinBlockZ() {
+        return SectionPos.sectionToBlockCoordLong(this.z);
     }
 
-    public int getMaxBlockX() {
-        return this.getBlockX(15);
+    public long getMaxBlockX() {
+        return this.getBlockX(15L);
     }
 
-    public int getMaxBlockZ() {
-        return this.getBlockZ(15);
+    public long getMaxBlockZ() {
+        return this.getBlockZ(15L);
     }
 
-    public int getRegionX() {
+    public long getRegionX() {
         return this.x >> 5;
     }
 
-    public int getRegionZ() {
+    public long getRegionZ() {
         return this.z >> 5;
     }
 
-    public static int getRegionX(final long pos) {
-        return getX(pos) >> 5;
+    public long getRegionLocalX() {
+        return this.x & 31L;
     }
 
-    public static int getRegionZ(final long pos) {
-        return getZ(pos) >> 5;
-    }
-
-    public int getRegionLocalX() {
-        return this.x & 31;
-    }
-
-    public int getRegionLocalZ() {
-        return this.z & 31;
+    public long getRegionLocalZ() {
+        return this.z & 31L;
     }
 
     public BlockPos getBlockAt(final int x, final int y, final int z) {
-        return new BlockPos(this.getBlockX(x), y, this.getBlockZ(z));
+        return new BlockPos((int)this.getBlockX(x), y, (int)this.getBlockZ(z));
     }
 
-    public int getBlockX(final int offset) {
-        return SectionPos.sectionToBlockCoord(this.x, offset);
+    public long getBlockX(final long offset) {
+        return SectionPos.sectionToBlockCoordLong(this.x, offset);
     }
 
-    public int getBlockZ(final int offset) {
-        return SectionPos.sectionToBlockCoord(this.z, offset);
+    public long getBlockZ(final long offset) {
+        return SectionPos.sectionToBlockCoordLong(this.z, offset);
     }
 
     public BlockPos getMiddleBlockPosition(final int y) {
-        return new BlockPos(this.getMiddleBlockX(), y, this.getMiddleBlockZ());
+        return new BlockPos((int)this.getMiddleBlockX(), y, (int)this.getMiddleBlockZ());
     }
 
     public boolean contains(final BlockPos pos) {
-        return pos.getX() >= this.getMinBlockX() && pos.getZ() >= this.getMinBlockZ() && pos.getX() <= this.getMaxBlockX() && pos.getZ() <= this.getMaxBlockZ();
+        return pos.getX() >= this.getMinBlockX()
+            && pos.getZ() >= this.getMinBlockZ()
+            && pos.getX() <= this.getMaxBlockX()
+            && pos.getZ() <= this.getMaxBlockZ();
     }
 
     @Override
@@ -175,40 +149,52 @@ public record ChunkPos(int x, int z) {
     }
 
     public BlockPos getWorldPosition() {
-        return new BlockPos(this.getMinBlockX(), 0, this.getMinBlockZ());
+        return new BlockPos((int)this.getMinBlockX(), 0, (int)this.getMinBlockZ());
     }
 
-    public int getChessboardDistance(final ChunkPos pos) {
+    public long getChessboardDistance(final ChunkPos pos) {
         return this.getChessboardDistance(pos.x, pos.z);
     }
 
-    public int getChessboardDistance(final int x, final int z) {
-        return Mth.chessboardDistance(x, z, this.x, this.z);
+    public long getChessboardDistance(final long x, final long z) {
+        return Math.max(Math.abs(x - this.x), Math.abs(z - this.z));
     }
 
-    public int distanceSquared(final ChunkPos pos) {
+    public long distanceSquared(final ChunkPos pos) {
         return this.distanceSquared(pos.x, pos.z);
     }
 
-    public int distanceSquared(final long pos) {
-        return this.distanceSquared(getX(pos), getZ(pos));
-    }
-
-    private int distanceSquared(final int x, final int z) {
-        int deltaX = x - this.x;
-        int deltaZ = z - this.z;
+    private long distanceSquared(final long x, final long z) {
+        long deltaX = x - this.x;
+        long deltaZ = z - this.z;
         return deltaX * deltaX + deltaZ * deltaZ;
     }
 
-    public static Stream<ChunkPos> rangeClosed(final ChunkPos center, final int radius) {
+    // ═══════════ 256-bit 适配（MCRe NoiseFarlands） ═══════════
+
+    /** 区块坐标精确转 Int256 */
+    public Int256 x256() {
+        return Int256.of(this.x);
+    }
+
+    public Int256 z256() {
+        return Int256.of(this.z);
+    }
+
+    /** 区块坐标转 256-bit 复合键（高 128 位 = x，低 128 位 = z） */
+    public Int256 key256() {
+        return this.x256().shiftLeft(128).or(this.z256());
+    }
+
+    public static Stream<ChunkPos> rangeClosed(final ChunkPos center, final long radius) {
         return rangeClosed(new ChunkPos(center.x - radius, center.z - radius), new ChunkPos(center.x + radius, center.z + radius));
     }
 
     public static Stream<ChunkPos> rangeClosed(final ChunkPos from, final ChunkPos to) {
-        int xSize = Math.abs(from.x - to.x) + 1;
-        int zSize = Math.abs(from.z - to.z) + 1;
-        final int xDiff = from.x < to.x ? 1 : -1;
-        final int zDiff = from.z < to.z ? 1 : -1;
+        long xSize = Math.abs(from.x - to.x) + 1L;
+        long zSize = Math.abs(from.z - to.z) + 1L;
+        final long xDiff = from.x < to.x ? 1L : -1L;
+        final long zDiff = from.z < to.z ? 1L : -1L;
         return StreamSupport.stream(new AbstractSpliterator<ChunkPos>(xSize * zSize, 64) {
             private @Nullable ChunkPos pos;
 
@@ -217,8 +203,8 @@ public record ChunkPos(int x, int z) {
                 if (this.pos == null) {
                     this.pos = from;
                 } else {
-                    int x = this.pos.x;
-                    int z = this.pos.z;
+                    long x = this.pos.x;
+                    long z = this.pos.z;
                     if (x == to.x) {
                         if (z == to.z) {
                             return false;

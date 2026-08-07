@@ -3,27 +3,30 @@ package net.minecraft.server.level;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.lighting.DynamicGraphMinFixedPoint;
 
-public abstract class ChunkTracker extends DynamicGraphMinFixedPoint {
+/**
+ * ChunkTracker — 区块追踪器（MCRe NoiseFarlands 对象化版）
+ * 原版以 long 打包键（ChunkPos.pack），本版以 ChunkPos 对象为节点。
+ */
+public abstract class ChunkTracker extends DynamicGraphMinFixedPoint<ChunkPos> {
     protected ChunkTracker(final int levelCount, final int minQueueSize, final int minMapSize) {
         super(levelCount, minQueueSize, minMapSize);
     }
 
     @Override
-    protected boolean isSource(final long node) {
-        return node == ChunkPos.INVALID_CHUNK_POS;
+    protected boolean isSource(final ChunkPos node) {
+        return node.equals(ChunkPos.INVALID_CHUNK_POS);
     }
 
     @Override
-    protected void checkNeighborsAfterUpdate(final long node, final int level, final boolean onlyDecrease) {
+    protected void checkNeighborsAfterUpdate(final ChunkPos node, final int level, final boolean onlyDecrease) {
         if (!onlyDecrease || level < this.levelCount - 2) {
-            ChunkPos pos = ChunkPos.unpack(node);
-            int x = pos.x();
-            int z = pos.z();
+            int x = node.x();
+            int z = node.z();
 
             for (int offsetX = -1; offsetX <= 1; offsetX++) {
                 for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-                    long neighbor = ChunkPos.pack(x + offsetX, z + offsetZ);
-                    if (neighbor != node) {
+                    ChunkPos neighbor = new ChunkPos(x + offsetX, z + offsetZ);
+                    if (!neighbor.equals(node)) {
                         this.checkNeighbor(node, neighbor, level, onlyDecrease);
                     }
                 }
@@ -32,20 +35,19 @@ public abstract class ChunkTracker extends DynamicGraphMinFixedPoint {
     }
 
     @Override
-    protected int getComputedLevel(final long node, final long knownParent, final int knownLevelFromParent) {
+    protected int getComputedLevel(final ChunkPos node, final ChunkPos knownParent, final int knownLevelFromParent) {
         int computedLevel = knownLevelFromParent;
-        ChunkPos pos = ChunkPos.unpack(node);
-        int x = pos.x();
-        int z = pos.z();
+        int x = node.x();
+        int z = node.z();
 
         for (int offsetX = -1; offsetX <= 1; offsetX++) {
             for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-                long neighbor = ChunkPos.pack(x + offsetX, z + offsetZ);
-                if (neighbor == node) {
+                ChunkPos neighbor = new ChunkPos(x + offsetX, z + offsetZ);
+                if (neighbor.equals(node)) {
                     neighbor = ChunkPos.INVALID_CHUNK_POS;
                 }
 
-                if (neighbor != knownParent) {
+                if (!neighbor.equals(knownParent)) {
                     int costFromNeighbor = this.computeLevelFromNeighbor(neighbor, node, this.getLevel(neighbor));
                     if (computedLevel > costFromNeighbor) {
                         computedLevel = costFromNeighbor;
@@ -62,13 +64,13 @@ public abstract class ChunkTracker extends DynamicGraphMinFixedPoint {
     }
 
     @Override
-    protected int computeLevelFromNeighbor(final long from, final long to, final int fromLevel) {
-        return from == ChunkPos.INVALID_CHUNK_POS ? this.getLevelFromSource(to) : fromLevel + 1;
+    protected int computeLevelFromNeighbor(final ChunkPos from, final ChunkPos to, final int fromLevel) {
+        return from.equals(ChunkPos.INVALID_CHUNK_POS) ? this.getLevelFromSource(to) : fromLevel + 1;
     }
 
-    protected abstract int getLevelFromSource(long to);
+    protected abstract int getLevelFromSource(ChunkPos to);
 
-    public void update(final long node, final int newLevelFrom, final boolean onlyDecreased) {
+    public void update(final ChunkPos node, final int newLevelFrom, final boolean onlyDecreased) {
         this.checkEdge(ChunkPos.INVALID_CHUNK_POS, node, newLevelFrom, onlyDecreased);
     }
 }

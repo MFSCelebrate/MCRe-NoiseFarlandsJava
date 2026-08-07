@@ -38,33 +38,33 @@ public class SectionUpdateTracker {
         return this.storage.size();
     }
 
-    public SectionUpdateTracker.@Nullable SectionDirtyState getDirtyState(final long sectionNode) {
+    public SectionUpdateTracker.@Nullable SectionDirtyState getDirtyState(final SectionPos sectionNode) {
         return this.storage.getValue(sectionNode);
     }
 
-    public boolean hasAllNeighbors(final ClientLevel level, final long sectionNode) {
-        return this.doesChunkExistAt(level, SectionPos.offset(sectionNode, Direction.WEST))
-            && this.doesChunkExistAt(level, SectionPos.offset(sectionNode, Direction.NORTH))
-            && this.doesChunkExistAt(level, SectionPos.offset(sectionNode, Direction.EAST))
-            && this.doesChunkExistAt(level, SectionPos.offset(sectionNode, Direction.SOUTH))
-            && this.doesChunkExistAt(level, SectionPos.offset(sectionNode, -1, 0, -1))
-            && this.doesChunkExistAt(level, SectionPos.offset(sectionNode, -1, 0, 1))
-            && this.doesChunkExistAt(level, SectionPos.offset(sectionNode, 1, 0, -1))
-            && this.doesChunkExistAt(level, SectionPos.offset(sectionNode, 1, 0, 1));
+    public boolean hasAllNeighbors(final ClientLevel level, final SectionPos sectionNode) {
+        return this.doesChunkExistAt(level, sectionNode.offset(Direction.WEST.getStepX(), 0, Direction.WEST.getStepZ()))
+            && this.doesChunkExistAt(level, sectionNode.offset(Direction.NORTH.getStepX(), 0, Direction.NORTH.getStepZ()))
+            && this.doesChunkExistAt(level, sectionNode.offset(Direction.EAST.getStepX(), 0, Direction.EAST.getStepZ()))
+            && this.doesChunkExistAt(level, sectionNode.offset(Direction.SOUTH.getStepX(), 0, Direction.SOUTH.getStepZ()))
+            && this.doesChunkExistAt(level, sectionNode.offset(-1, 0, -1))
+            && this.doesChunkExistAt(level, sectionNode.offset(-1, 0, 1))
+            && this.doesChunkExistAt(level, sectionNode.offset(1, 0, -1))
+            && this.doesChunkExistAt(level, sectionNode.offset(1, 0, 1));
     }
 
-    private boolean doesChunkExistAt(final ClientLevel level, final long sectionNode) {
-        ChunkAccess chunk = level.getChunk(SectionPos.x(sectionNode), SectionPos.z(sectionNode), ChunkStatus.FULL, false);
-        return chunk != null && level.getLightEngine().lightOnInColumn(SectionPos.getZeroNode(sectionNode));
+    private boolean doesChunkExistAt(final ClientLevel level, final SectionPos sectionNode) {
+        ChunkAccess chunk = level.getChunk(sectionNode.x(), sectionNode.z(), ChunkStatus.FULL, false);
+        return chunk != null && level.getLightEngine().lightOnInColumn(SectionPos.of(sectionNode.x(), 0, sectionNode.z()));
     }
 
     @OnlyIn(Dist.CLIENT)
     public static class SectionDirtyState implements RotatingSectionStorage.Value {
         private boolean isDirty;
         private boolean isDirtyFromPlayer;
-        private long sectionNode;
+        private SectionPos sectionNode;
 
-        private SectionDirtyState(final boolean isDirty, final boolean isDirtyFromPlayer, final long sectionNode) {
+        private SectionDirtyState(final boolean isDirty, final boolean isDirtyFromPlayer, final SectionPos sectionNode) {
             this.isDirty = isDirty;
             this.isDirtyFromPlayer = isDirtyFromPlayer;
         }
@@ -81,8 +81,8 @@ public class SectionUpdateTracker {
         }
 
         @Override
-        public void setSectionNode(final long sectionNode) {
-            if (this.sectionNode != sectionNode) {
+        public void setSectionNode(final SectionPos sectionNode) {
+            if (!sectionNode.equals(this.sectionNode)) {
                 this.sectionNode = sectionNode;
                 this.isDirty = true;
                 this.isDirtyFromPlayer = false;
@@ -90,7 +90,7 @@ public class SectionUpdateTracker {
         }
 
         @Override
-        public long getSectionNode() {
+        public SectionPos getSectionNode() {
             return this.sectionNode;
         }
 

@@ -5,5 +5,5 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public record SectionUpdateRenderState(long sectionNode, boolean playerChanged, RenderSectionRegion region) {
+public record SectionUpdateRenderState(SectionPos sectionNode, boolean playerChanged, RenderSectionRegion region) {
 }

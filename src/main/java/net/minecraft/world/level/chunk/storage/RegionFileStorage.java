@@ -1,10 +1,11 @@
 package net.minecraft.world.level.chunk.storage;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import net.minecraft.SharedConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
@@ -18,7 +19,7 @@ import org.jspecify.annotations.Nullable;
 public final class RegionFileStorage implements AutoCloseable {
     public static final String ANVIL_EXTENSION = ".mca";
     private static final int MAX_CACHE_SIZE = 256;
-    private final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap<>();
+    private final LinkedHashMap<ChunkPos, RegionFile> regionCache = new LinkedHashMap<>();
     private final RegionStorageInfo info;
     private final Path folder;
     private final boolean sync;
@@ -30,7 +31,7 @@ public final class RegionFileStorage implements AutoCloseable {
     }
 
     private RegionFile getRegionFile(final ChunkPos pos) throws IOException {
-        long key = ChunkPos.pack(pos.getRegionX(), pos.getRegionZ());
+        ChunkPos key = new ChunkPos(pos.getRegionX(), pos.getRegionZ());
         RegionFile region = this.regionCache.getAndMoveToFirst(key);
         if (region != null) {
             return region;

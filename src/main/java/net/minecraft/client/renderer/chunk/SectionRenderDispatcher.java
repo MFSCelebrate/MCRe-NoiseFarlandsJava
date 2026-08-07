@@ -208,13 +208,13 @@ public class SectionRenderDispatcher {
         private SectionRenderDispatcher.RenderSection.@Nullable CompileTask lastCompileTask;
         private SectionRenderDispatcher.RenderSection.@Nullable ResortTransparencyTask lastResortTransparencyTask;
         private AABB bb;
-        private volatile long sectionNode = SectionPos.asLong(-1, -1, -1);
+        private volatile SectionPos sectionNode = SectionPos.of(-1, -1, -1);
         private final BlockPos.MutableBlockPos renderOrigin = new BlockPos.MutableBlockPos(-1, -1, -1);
         private long uploadedTime;
         private long fadeDuration;
         private boolean wasPreviouslyEmpty;
 
-        public RenderSection(final int index, final long sectionNode) {
+        public RenderSection(final int index, final SectionPos sectionNode) {
             this.index = index;
             this.setSectionNode(sectionNode);
         }
@@ -241,12 +241,12 @@ public class SectionRenderDispatcher {
         }
 
         @Override
-        public void setSectionNode(final long sectionNode) {
+        public void setSectionNode(final SectionPos sectionNode) {
             this.reset();
             this.sectionNode = sectionNode;
-            int x = SectionPos.sectionToBlockCoord(SectionPos.x(sectionNode));
-            int y = SectionPos.sectionToBlockCoord(SectionPos.y(sectionNode));
-            int z = SectionPos.sectionToBlockCoord(SectionPos.z(sectionNode));
+            int x = SectionPos.sectionToBlockCoord(sectionNode.x());
+            int y = SectionPos.sectionToBlockCoord(sectionNode.y());
+            int z = SectionPos.sectionToBlockCoord(sectionNode.z());
             this.renderOrigin.set(x, y, z);
             this.bb = new AABB(x, y, z, x + 16, y + 16, z + 16);
         }
@@ -275,12 +275,12 @@ public class SectionRenderDispatcher {
         }
 
         @Override
-        public long getSectionNode() {
+        public SectionPos getSectionNode() {
             return this.sectionNode;
         }
 
-        public long getNeighborSectionNode(final Direction direction) {
-            return SectionPos.offset(this.sectionNode, direction);
+        public SectionPos getNeighborSectionNode(final Direction direction) {
+            return this.sectionNode.offset(direction.getStepX(), direction.getStepY(), direction.getStepZ());
         }
 
         public void resortTransparency() {
@@ -431,8 +431,7 @@ public class SectionRenderDispatcher {
                     return SectionRenderDispatcher.RenderSection.SectionTask.SectionTaskResult.CANCELLED;
                 }
 
-                long sectionNode = RenderSection.this.sectionNode;
-                SectionPos sectionPos = SectionPos.of(sectionNode);
+                SectionPos sectionPos = RenderSection.this.sectionNode;
                 if (this.isCancelled.get()) {
                     return SectionRenderDispatcher.RenderSection.SectionTask.SectionTaskResult.CANCELLED;
                 }
@@ -516,8 +515,8 @@ public class SectionRenderDispatcher {
                 MeshData.SortState state = this.compiledSectionMesh.getTransparencyState();
                 if (state != null && !this.compiledSectionMesh.isEmpty(ChunkSectionLayer.TRANSLUCENT)) {
                     Vec3 cameraPos = SectionRenderDispatcher.this.cameraPosition.get();
-                    long sectionNode = RenderSection.this.sectionNode;
-                    VertexSorting vertexSorting = RenderSection.this.createVertexSorting(SectionPos.of(sectionNode), cameraPos);
+                    SectionPos sectionNode = RenderSection.this.sectionNode;
+                    VertexSorting vertexSorting = RenderSection.this.createVertexSorting(sectionNode, cameraPos);
                     TranslucencyPointOfView translucencyPointOfView = TranslucencyPointOfView.of(cameraPos, sectionNode);
                     if (!this.compiledSectionMesh.isDifferentPointOfView(translucencyPointOfView) && !translucencyPointOfView.isAxisAligned()) {
                         return SectionRenderDispatcher.RenderSection.SectionTask.SectionTaskResult.CANCELLED;

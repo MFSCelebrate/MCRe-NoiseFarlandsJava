@@ -34,7 +34,7 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
             for (int y = 0; y < this.sectionGridSizeY; y++) {
                 for (int z = 0; z < this.sectionGridSizeXZ; z++) {
                     int index = this.getSectionIndex(x, y, z);
-                    long sectionNode = SectionPos.asLong(x, y + minY, z);
+                    SectionPos sectionNode = SectionPos.of(x, y + minY, z);
                     this.nodes[index] = new RotatingSectionStorage.Node<>(valueCreator.createValue(index, sectionNode));
                 }
             }
@@ -58,9 +58,9 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
                 for (int gridY = 0; gridY < this.sectionGridSizeY; gridY++) {
                     int newSectionY = this.minY + gridY;
                     T value = this.nodes[this.getSectionIndex(gridX, gridY, gridZ)].value;
-                    long sectionNode = value.getSectionNode();
-                    if (sectionNode != SectionPos.asLong(newSectionX, newSectionY, newSectionZ)) {
-                        value.setSectionNode(SectionPos.asLong(newSectionX, newSectionY, newSectionZ));
+                    SectionPos sectionNode = value.getSectionNode();
+                    if (!sectionNode.equals(SectionPos.of(newSectionX, newSectionY, newSectionZ))) {
+                        value.setSectionNode(SectionPos.of(newSectionX, newSectionY, newSectionZ));
                     }
                 }
             }
@@ -91,13 +91,13 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
     }
 
     public @Nullable T getValueAt(final BlockPos pos) {
-        return this.getValue(SectionPos.asLong(pos));
+        return this.getValue(SectionPos.of(pos));
     }
 
-    public @Nullable T getValue(final long sectionNode) {
-        int sectionX = SectionPos.x(sectionNode);
-        int sectionY = SectionPos.y(sectionNode);
-        int sectionZ = SectionPos.z(sectionNode);
+    public @Nullable T getValue(final SectionPos sectionNode) {
+        int sectionX = sectionNode.x();
+        int sectionY = sectionNode.y();
+        int sectionZ = sectionNode.z();
         return this.getValue(sectionX, sectionY, sectionZ);
     }
 
@@ -168,13 +168,13 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
 
     @OnlyIn(Dist.CLIENT)
     public interface Value {
-        void setSectionNode(long sectionNode);
+        void setSectionNode(SectionPos sectionNode);
 
-        long getSectionNode();
+        SectionPos getSectionNode();
     }
 
     @OnlyIn(Dist.CLIENT)
     public interface ValueCreator<T extends RotatingSectionStorage.Value> {
-        T createValue(int index, long sectionNode);
+        T createValue(int index, SectionPos sectionNode);
     }
 }

@@ -294,7 +294,7 @@ public class SurfaceRules {
         private final Function<BlockPos, Holder<Biome>> biomeGetter;
         private final WorldGenerationContext context;
         private final @Nullable Set<Holder<Biome>> possibleBiomes;
-        private long lastPreliminarySurfaceCellOrigin = Long.MAX_VALUE;
+        private ChunkPos lastPreliminarySurfaceCellOrigin;
         private final int[] preliminarySurfaceCache = new int[4];
         private final Map<ResourceKey<NormalNoise.NoiseParameters>, DoubleSupplier> noiseSamplers2d = new IdentityHashMap<>();
         private final Map<ResourceKey<NormalNoise.NoiseParameters>, DoubleSupplier> noiseSamplers3d = new IdentityHashMap<>();
@@ -383,8 +383,8 @@ public class SurfaceRules {
                 this.lastMinSurfaceLevelUpdate = this.lastUpdateXZ;
                 int cornerCellX = blockCoordToSurfaceCell(this.blockX);
                 int cornerCellZ = blockCoordToSurfaceCell(this.blockZ);
-                long preliminarySurfaceCellOrigin = ChunkPos.pack(cornerCellX, cornerCellZ);
-                if (this.lastPreliminarySurfaceCellOrigin != preliminarySurfaceCellOrigin) {
+                ChunkPos preliminarySurfaceCellOrigin = new ChunkPos(cornerCellX, cornerCellZ);
+                if (!preliminarySurfaceCellOrigin.equals(this.lastPreliminarySurfaceCellOrigin)) {
                     this.lastPreliminarySurfaceCellOrigin = preliminarySurfaceCellOrigin;
                     this.preliminarySurfaceCache[0] = this.noiseChunk
                         .preliminarySurfaceLevel(surfaceCellToBlockCoord(cornerCellX), surfaceCellToBlockCoord(cornerCellZ));
