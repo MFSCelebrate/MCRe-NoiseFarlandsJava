@@ -1,6 +1,7 @@
 package net.minecraft.client.gui.screens;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.LocalCommandExecutor;
 import net.minecraft.client.gui.ActiveTextCollector;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.ChatComponent;
@@ -72,7 +73,9 @@ public class ChatScreen extends Screen {
         this.commandSuggestions = new CommandSuggestions(this.minecraft, this, this.input, this.font, false, false, 1, 10, true, -805306368);
         this.commandSuggestions.setAllowHiding(false);
         this.commandSuggestions.setAllowSuggestions(false);
-        ChatAbilities chatAbilities = this.minecraft.player.chatAbilities();
+        ChatAbilities chatAbilities = this.minecraft.player != null
+            ? this.minecraft.player.chatAbilities()
+            : ChatAbilities.NO_RESTRICTIONS;
         this.displayMode = chatAbilities.hasAnyRestrictions() ? ChatComponent.DisplayMode.FOREGROUND_RESTRICTED : ChatComponent.DisplayMode.FOREGROUND;
         this.commandSuggestions.setRestrictions(chatAbilities.canSendMessages(), chatAbilities.canSendCommands());
         this.commandSuggestions.updateCommandInfo();
@@ -225,7 +228,9 @@ public class ChatScreen extends Screen {
                     }
                     break;
                 case ClickEvent.Custom customEvent when customEvent.id().equals(ChatComponent.GO_TO_RESTRICTIONS_SCREEN):
-                    this.minecraft.gui.setScreen(new RestrictionsScreen(this, this.minecraft.player.chatAbilities()));
+                    if (this.minecraft.player != null) {
+                        this.minecraft.gui.setScreen(new RestrictionsScreen(this, this.minecraft.player.chatAbilities()));
+                    }
                     break;
                 default:
                     defaultHandleGameClickEvent(event, this.minecraft, this);
@@ -272,7 +277,7 @@ public class ChatScreen extends Screen {
 
     @Override
     public void extractRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
-        graphics.fill(2, this.height - 14, this.width - 2, this.height - 2, this.minecraft.options.getBackgroundColor(Integer.MIN_VALUE));
+        // MCRe：聊天框透明化——不绘制输入框黑色背景
         this.minecraft
             .gui
             .hud
@@ -284,6 +289,10 @@ public class ChatScreen extends Screen {
 
     @Override
     public void extractBackground(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
+        // MCRe：主界面打开聊天时绘制菜单背景（避免被黑色清屏覆盖）；世界内保持透明显示世界
+        if (this.minecraft.level == null) {
+            Screen.extractMenuBackgroundTexture(graphics, Screen.MENU_BACKGROUND, 0, 0, 0.0F, 0.0F, this.width, this.height);
+        }
     }
 
     @Override
@@ -318,10 +327,21 @@ public class ChatScreen extends Screen {
                 this.minecraft.gui.hud.getChat().addRecentChat(msg);
             }
 
-            if (msg.startsWith("/")) {
-                this.minecraft.player.connection.sendCommand(msg.substring(1));
+            if (this.minecraft.player != null && this.minecraft.player.connection != null) {
+                if (msg.startsWith("/")) {
+                    this.minecraft.player.connection.sendCommand(msg.substring(1));
+                } else {
+                    this.minecraft.player.connection.sendChat(msg);
+                }
             } else {
-                this.minecraft.player.connection.sendChat(msg);
+                // MCRe：主界面/未连接世界 → 本地命令执行 / 本地消息显示
+                if (msg.startsWith("/")) {
+                    LocalCommandExecutor.execute(this.minecraft, msg.substring(1));
+                } else {
+                    this.minecraft.gui.hud.getChat().addClientSystemMessage(
+                        Component.literal("§7[本地] " + msg)
+                    );
+                }
             }
         }
     }

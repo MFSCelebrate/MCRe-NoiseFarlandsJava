@@ -1789,6 +1789,9 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
             if (this.missTime > 0) {
                 this.missTime--;
             }
+        } else if (this.gui.overlay() == null && !(this.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen)) {
+            // MCRe：任何界面（主界面/暂停/设置等）都能打开聊天框（本地命令环境 + 世界内正常聊天）
+            this.gui.handleKeybinds();
         }
 
         if (this.level != null) {

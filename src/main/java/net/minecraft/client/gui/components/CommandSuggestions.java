@@ -20,6 +20,7 @@ import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -30,6 +31,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.LocalCommandExecutor;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -235,27 +237,46 @@ public class CommandSuggestions {
         boolean isCommand = this.commandsOnly || startsWithSlash;
         int cursorPosition = this.input.getCursorPosition();
         if (isCommand) {
-            CommandDispatcher<ClientSuggestionProvider> commands = this.minecraft.player.connection.getCommands();
-            if (this.currentParse == null) {
-                this.currentParse = commands.parse(reader, this.minecraft.player.connection.getSuggestionsProvider());
-                this.currentParseIsCommand = true;
-                this.currentParseIsMessage = hasMessageArguments(this.currentParse);
-            }
+            if (this.minecraft.player != null && this.minecraft.player.connection != null) {
+                CommandDispatcher<ClientSuggestionProvider> commands = this.minecraft.player.connection.getCommands();
+                if (this.currentParse == null) {
+                    this.currentParse = commands.parse(reader, this.minecraft.player.connection.getSuggestionsProvider());
+                    this.currentParseIsCommand = true;
+                    this.currentParseIsMessage = hasMessageArguments(this.currentParse);
+                }
 
-            int parseStart = this.onlyShowIfCursorPastError ? reader.getCursor() : 1;
-            if (cursorPosition >= parseStart && (this.suggestions == null || !this.keepSuggestions)) {
-                this.pendingSuggestions = commands.getCompletionSuggestions(this.currentParse, cursorPosition);
-                this.pendingSuggestions.thenAccept(suggestionResult -> {
-                    if (this.pendingSuggestions.isDone()) {
-                        this.updateUsageInfo(this.currentParse, suggestionResult);
-                    }
-                });
+                int parseStart = this.onlyShowIfCursorPastError ? reader.getCursor() : 1;
+                if (cursorPosition >= parseStart && (this.suggestions == null || !this.keepSuggestions)) {
+                    this.pendingSuggestions = commands.getCompletionSuggestions(this.currentParse, cursorPosition);
+                    this.pendingSuggestions.thenAccept(suggestionResult -> {
+                        if (this.pendingSuggestions.isDone()) {
+                            this.updateUsageInfo(this.currentParse, suggestionResult);
+                        }
+                    });
+                }
+            } else {
+                // MCRe：主界面/未连接世界 → 本地命令补全（/help、/say、/quit 等）
+                this.currentParseIsCommand = true;
+                this.currentParseIsMessage = false;
+                int localStart = command.isEmpty() ? 0 : 1;
+                String typed = command.length() > 1 ? command.substring(1) : "";
+                SuggestionsBuilder localBuilder = new SuggestionsBuilder(typed, localStart);
+
+                for (String name : LocalCommandExecutor.getCommandNames()) {
+                    localBuilder.suggest(name);
+                }
+
+                this.pendingSuggestions = CompletableFuture.completedFuture(localBuilder.build());
+                this.recomputeUsageBoxWidth();
+                this.commandUsagePosition = 0;
             }
         } else if (!command.isBlank()) {
             this.currentParseIsMessage = true;
             String partialCommand = command.substring(0, cursorPosition);
             int lastWord = getLastWordIndex(partialCommand);
-            Collection<String> nonCommandSuggestions = this.minecraft.player.connection.getSuggestionsProvider().getCustomTabSuggestions();
+            Collection<String> nonCommandSuggestions = this.minecraft.player != null && this.minecraft.player.connection != null
+                ? this.minecraft.player.connection.getSuggestionsProvider().getCustomTabSuggestions()
+                : Collections.emptyList();
             this.pendingSuggestions = SharedSuggestionProvider.suggest(nonCommandSuggestions, new SuggestionsBuilder(partialCommand, lastWord));
             if (this.currentParseIsMessage && !this.messagesAllowed) {
                 this.commandUsage.add(MESSAGES_NOT_ALLOWED_TEXT.getVisualOrderText());
@@ -373,6 +394,10 @@ public class CommandSuggestions {
     }
 
     private List<FormattedCharSequence> fillNodeUsage(final SuggestionContext<ClientSuggestionProvider> suggestionContext, final Style usageFormat) {
+        if (this.minecraft.player == null || this.minecraft.player.connection == null) {
+            return List.of();
+        }
+
         Map<CommandNode<ClientSuggestionProvider>, String> usage = this.minecraft
             .player
             .connection

@@ -167,15 +167,20 @@ public class ChatComponent {
             int count = this.forEachLine(alphaCalculator, (var5x, lineIndex, alphax) -> {
                 int entryBottom = chatBottom - lineIndex * entryHeight;
                 int entryTop = entryBottom - entryHeight;
-                graphics.fill(-4, entryTop, maxWidth + 4 + 4, entryBottom, ARGB.black(alphax * backgroundOpacity));
+                // MCRe：聊天框打开（前景）时消息背景透明
+                graphics.fill(
+                    -4, entryTop, maxWidth + 4 + 4, entryBottom, ARGB.black(isForeground ? 0.0F : alphax * backgroundOpacity)
+                );
             });
             int lineAboveMessagesY = chatBottom - (count + 1) * entryHeight;
             if (queueSize > 0L) {
-                graphics.fill(-2, chatBottom, maxWidth + 4, chatBottom + messageHeight, ARGB.black(backgroundOpacity));
+                graphics.fill(-2, chatBottom, maxWidth + 4, chatBottom + messageHeight, ARGB.black(isForeground ? 0.0F : backgroundOpacity));
             }
 
             if (isRestricted) {
-                graphics.fill(-2, lineAboveMessagesY, maxWidth + 4 + 4, lineAboveMessagesY + entryHeight, ARGB.black(backgroundOpacity));
+                graphics.fill(
+                    -2, lineAboveMessagesY, maxWidth + 4 + 4, lineAboveMessagesY + entryHeight, ARGB.black(isForeground ? 0.0F : backgroundOpacity)
+                );
             }
 
             this.forEachLine(alphaCalculator, new ChatComponent.LineConsumer() {

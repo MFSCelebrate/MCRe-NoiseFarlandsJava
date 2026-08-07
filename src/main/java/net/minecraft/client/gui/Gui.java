@@ -320,7 +320,9 @@ public class Gui {
         }
 
         while (options.keyAdvancements.consumeClick()) {
-            this.setScreen(new AdvancementsScreen(this.minecraft.player.connection.getAdvancements()));
+            if (this.minecraft.player != null && this.minecraft.player.connection != null) {
+                this.setScreen(new AdvancementsScreen(this.minecraft.player.connection.getAdvancements()));
+            }
         }
 
         while (options.keySocialInteractions.consumeClick()) {
@@ -341,15 +343,15 @@ public class Gui {
             this.openChatScreen(ChatComponent.ChatMethod.MESSAGE);
         }
 
-        if (this.screen == null && this.overlay == null && options.keyCommand.consumeClick()) {
+        // MCRe：任何界面都能用 / 键打开命令聊天（主界面走本地命令，世界内走服务器命令）
+        if (options.keyCommand.consumeClick()) {
             this.openChatScreen(ChatComponent.ChatMethod.COMMAND);
         }
     }
 
     public void openChatScreen(final ChatComponent.ChatMethod chatMethod) {
-        if (this.minecraft.player != null) {
-            this.hud.getChat().openScreen(chatMethod, ChatScreen::new);
-        }
+        // MCRe：主界面/未连接世界时也可打开聊天（player 为 null 时走本地命令环境）
+        this.hud.getChat().openScreen(chatMethod, ChatScreen::new);
     }
 
     public void openChatAndAddText(final ChatComponent.ChatMethod chatMethod, final String text) {
