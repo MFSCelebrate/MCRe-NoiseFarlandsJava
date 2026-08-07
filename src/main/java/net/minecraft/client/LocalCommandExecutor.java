@@ -23,6 +23,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
@@ -107,6 +108,11 @@ public final class LocalCommandExecutor {
 
     /** 最小 SharedSuggestionProvider 实现（主界面无连接/无世界数据） */
     private static final class LocalSource implements SharedSuggestionProvider {
+        @Override
+        public PermissionSet permissions() {
+            return PermissionSet.NO_PERMISSIONS;
+        }
+
         @Override
         public Collection<String> getOnlinePlayerNames() {
             return Collections.emptyList();
