@@ -142,7 +142,9 @@ public class ChatScreen extends Screen {
             }
 
             this.handleChatInput(this.input.getValue(), true);
-            if (this.closeOnSubmit) {
+            // MCRe：主界面（player null，本地命令模式）Enter 不关闭聊天框，用 ESC 退出；
+            // 世界内保持原版行为（Enter 提交并关闭）
+            if (this.closeOnSubmit && this.minecraft.player != null) {
                 this.exitReason = ChatScreen.ExitReason.DONE;
                 this.minecraft.gui.setScreen(null);
             } else {

@@ -258,9 +258,8 @@ public class CommandSuggestions {
                 // MCRe：主界面/未连接世界 → 本地命令补全（/help、/say、/quit 等）
                 this.currentParseIsCommand = true;
                 this.currentParseIsMessage = false;
-                int localStart = command.isEmpty() ? 0 : 1;
-                String typed = command.length() > 1 ? command.substring(1) : "";
-                SuggestionsBuilder localBuilder = new SuggestionsBuilder(typed, localStart);
+                // SuggestionsBuilder 语义：input 是完整输入（含 /），start 是建议起点（1 = 跳过 /）
+                SuggestionsBuilder localBuilder = new SuggestionsBuilder(command, 1);
 
                 for (String name : LocalCommandExecutor.getCommandNames()) {
                     localBuilder.suggest(name);
