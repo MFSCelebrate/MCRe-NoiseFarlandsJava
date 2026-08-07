@@ -253,7 +253,13 @@ public class SectionOcclusionGraph {
                 }
             }
 
-            toAdd.sort(Comparator.comparingDouble(c -> cameraPosition.distSqr(c.section.getSectionNode().center())));
+            toAdd.sort(Comparator.comparingDouble(c -> {
+                SectionPos node = c.section.getSectionNode();
+                double dx = node.centerXLong() - cameraPosition.getX();
+                double dy = node.centerYLong() - cameraPosition.getY();
+                double dz = node.centerZLong() - cameraPosition.getZ();
+                return dx * dx + dy * dy + dz * dz;
+            }));
             queue.addAll(toAdd);
         } else {
             queue.add(new SectionOcclusionGraph.Node(cameraSection, null, 0));
@@ -271,7 +277,10 @@ public class SectionOcclusionGraph {
     ) {
         SectionPos cameraSectionPos = SectionPos.of(cameraPos);
         SectionPos cameraSectionNode = cameraSectionPos;
-        BlockPos cameraSectionCenter = cameraSectionPos.center();
+        // far lands：相机节中心用 long（section << 4 溢出防御）
+        long cameraSectionCenterX = cameraSectionPos.centerXLong();
+        long cameraSectionCenterY = cameraSectionPos.centerYLong();
+        long cameraSectionCenterZ = cameraSectionPos.centerZLong();
 
         while (!queue.isEmpty()) {
             SectionOcclusionGraph.Node node = queue.poll();
@@ -313,18 +322,18 @@ public class SectionOcclusionGraph {
                         }
 
                         if (smartCull && distantFromCamera) {
-                            int renderSectionOriginX = SectionPos.sectionToBlockCoord(sectionNode.x());
-                            int renderSectionOriginY = SectionPos.sectionToBlockCoord(sectionNode.y());
-                            int renderSectionOriginZ = SectionPos.sectionToBlockCoord(sectionNode.z());
+                            long renderSectionOriginX = sectionNode.minBlockXLong();
+                            long renderSectionOriginY = sectionNode.minBlockYLong();
+                            long renderSectionOriginZ = sectionNode.minBlockZLong();
                             boolean maxX = direction.getAxis() == Direction.Axis.X
-                                ? cameraSectionCenter.getX() > renderSectionOriginX
-                                : cameraSectionCenter.getX() < renderSectionOriginX;
+                                ? cameraSectionCenterX > renderSectionOriginX
+                                : cameraSectionCenterX < renderSectionOriginX;
                             boolean maxY = direction.getAxis() == Direction.Axis.Y
-                                ? cameraSectionCenter.getY() > renderSectionOriginY
-                                : cameraSectionCenter.getY() < renderSectionOriginY;
+                                ? cameraSectionCenterY > renderSectionOriginY
+                                : cameraSectionCenterY < renderSectionOriginY;
                             boolean maxZ = direction.getAxis() == Direction.Axis.Z
-                                ? cameraSectionCenter.getZ() > renderSectionOriginZ
-                                : cameraSectionCenter.getZ() < renderSectionOriginZ;
+                                ? cameraSectionCenterZ > renderSectionOriginZ
+                                : cameraSectionCenterZ < renderSectionOriginZ;
                             Vector3d checkPos = new Vector3d(
                                 renderSectionOriginX + (maxX ? 16 : 0), renderSectionOriginY + (maxY ? 16 : 0), renderSectionOriginZ + (maxZ ? 16 : 0)
                             );
@@ -337,8 +346,12 @@ public class SectionOcclusionGraph {
                                     break;
                                 }
 
-                                SectionRenderDispatcher.RenderSection checkSection = this.viewArea
-                                    .getRenderSectionAt(BlockPos.containing(checkPos.x, checkPos.y, checkPos.z));
+                                SectionPos checkSectionNode = SectionPos.of(
+                                    (int)(Mth.lfloor(checkPos.x) >> 4),
+                                    (int)(Mth.lfloor(checkPos.y) >> 4),
+                                    (int)(Mth.lfloor(checkPos.z) >> 4)
+                                );
+                                SectionRenderDispatcher.RenderSection checkSection = this.viewArea.getRenderSection(checkSectionNode);
                                 if (checkSection == null || storage.sectionToNodeMap.get(checkSection) == null) {
                                     visible = false;
                                     break;

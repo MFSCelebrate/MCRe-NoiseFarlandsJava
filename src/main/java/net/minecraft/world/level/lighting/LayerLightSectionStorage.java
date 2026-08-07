@@ -75,6 +75,10 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
     protected int getStoredLevel(final BlockPos blockNode) {
         SectionPos sectionNode = SectionPos.of(blockNode);
         DataLayer layer = this.getDataLayer(sectionNode, true);
+        if (layer == null) {
+            // far lands：光照队列残留节点对应的 section 数据已被移除（区块卸载/状态变化），按无光照处理
+            return 0;
+        }
         return layer.get(
             SectionPos.sectionRelative(blockNode.getX()),
             SectionPos.sectionRelative(blockNode.getY()),
@@ -89,6 +93,11 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
             layer = this.updatingSectionData.copyDataLayer(sectionNode);
         } else {
             layer = this.getDataLayer(sectionNode, true);
+        }
+
+        if (layer == null) {
+            // far lands：section 无光照数据层（已移除/尚未创建），跳过写入
+            return;
         }
 
         layer.set(

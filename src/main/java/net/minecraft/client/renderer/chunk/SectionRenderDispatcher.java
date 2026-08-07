@@ -209,7 +209,9 @@ public class SectionRenderDispatcher {
         private SectionRenderDispatcher.RenderSection.@Nullable ResortTransparencyTask lastResortTransparencyTask;
         private AABB bb;
         private volatile SectionPos sectionNode = SectionPos.of(-1, -1, -1);
-        private final BlockPos.MutableBlockPos renderOrigin = new BlockPos.MutableBlockPos(-1, -1, -1);
+        // far lands：渲染原点用 long 存储（section << 4 在 2^27 section 处溢出 int），
+        // getRenderOrigin() 返回 double 精度 Vec3，GPU 侧经 (int) 转换后 mod 2^32 自洽。
+        private final long[] renderOrigin = new long[3];
         private long uploadedTime;
         private long fadeDuration;
         private boolean wasPreviouslyEmpty;
@@ -244,10 +246,12 @@ public class SectionRenderDispatcher {
         public void setSectionNode(final SectionPos sectionNode) {
             this.reset();
             this.sectionNode = sectionNode;
-            int x = SectionPos.sectionToBlockCoord(sectionNode.x());
-            int y = SectionPos.sectionToBlockCoord(sectionNode.y());
-            int z = SectionPos.sectionToBlockCoord(sectionNode.z());
-            this.renderOrigin.set(x, y, z);
+            long x = sectionNode.minBlockXLong();
+            long y = sectionNode.minBlockYLong();
+            long z = sectionNode.minBlockZLong();
+            this.renderOrigin[0] = x;
+            this.renderOrigin[1] = y;
+            this.renderOrigin[2] = z;
             this.bb = new AABB(x, y, z, x + 16, y + 16, z + 16);
         }
 
@@ -270,8 +274,8 @@ public class SectionRenderDispatcher {
             this.wasPreviouslyEmpty = false;
         }
 
-        public BlockPos getRenderOrigin() {
-            return this.renderOrigin;
+        public Vec3 getRenderOrigin() {
+            return new Vec3(this.renderOrigin[0], this.renderOrigin[1], this.renderOrigin[2]);
         }
 
         @Override
@@ -348,7 +352,7 @@ public class SectionRenderDispatcher {
 
         private VertexSorting createVertexSorting(final SectionPos sectionPos, final Vec3 cameraPos) {
             return VertexSorting.byDistance(
-                (float)(cameraPos.x - sectionPos.minBlockX()), (float)(cameraPos.y - sectionPos.minBlockY()), (float)(cameraPos.z - sectionPos.minBlockZ())
+                (float)(cameraPos.x - sectionPos.minBlockXLong()), (float)(cameraPos.y - sectionPos.minBlockYLong()), (float)(cameraPos.z - sectionPos.minBlockZLong())
             );
         }
 
@@ -575,8 +579,8 @@ public class SectionRenderDispatcher {
                 return this.isRecompile;
             }
 
-            public BlockPos getRenderOrigin() {
-                return RenderSection.this.renderOrigin;
+            public Vec3 getRenderOrigin() {
+                return RenderSection.this.getRenderOrigin();
             }
 
             @OnlyIn(Dist.CLIENT)

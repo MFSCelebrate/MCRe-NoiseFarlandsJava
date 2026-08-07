@@ -25,7 +25,7 @@ public final class TranslucencyPointOfView {
     }
 
     private static int getCoordinate(final double cameraCoordinate, final int section) {
-        int relativeSection = SectionPos.blockToSectionCoord(cameraCoordinate) - section;
+        int relativeSection = (int)(Mth.lfloor(cameraCoordinate) >> 4) - section;
         return Mth.clamp(relativeSection, -1, 1);
     }
 

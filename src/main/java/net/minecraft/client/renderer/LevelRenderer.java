@@ -527,7 +527,7 @@ public class LevelRenderer implements AutoCloseable {
                 while (iterator.hasNext()) {
                     SectionRenderDispatcher.RenderSection section = iterator.next();
                     SectionMesh sectionMesh = section.getSectionMesh();
-                    BlockPos renderOffset = section.getRenderOrigin();
+                    Vec3 renderOffset = section.getRenderOrigin();
                     long now = Util.getMillis();
                     int uboIndex = -1;
 
@@ -540,9 +540,9 @@ public class LevelRenderer implements AutoCloseable {
                                 sectionInfos.add(
                                     new DynamicUniforms.ChunkSectionInfo(
                                         new Matrix4f(modelViewMatrix),
-                                        renderOffset.getX(),
-                                        renderOffset.getY(),
-                                        renderOffset.getZ(),
+                                        (int)renderOffset.x,
+                                        (int)renderOffset.y,
+                                        (int)renderOffset.z,
                                         section.getVisibility(now),
                                         textureAtlasWidth,
                                         textureAtlasHeight
@@ -609,12 +609,15 @@ public class LevelRenderer implements AutoCloseable {
     private void compileSections(final CameraRenderState camera) {
         ProfilerFiller profiler = Profiler.get();
         profiler.push("populateSectionsToCompile");
-        BlockPos cameraPosition = camera.blockPos;
+        Vec3 cameraPosition = camera.pos;
         long fadeDuration = Mth.floor(this.optionsRenderState.chunkSectionFadeInTime * 1000.0);
 
         for (SectionUpdateRenderState state : this.levelRenderState.sectionUpdateRenderStates) {
-            BlockPos center = state.sectionNode().center();
-            double distSqr = center.distSqr(cameraPosition);
+            // far lands：节中心用 long 距离（section << 4 溢出防御）
+            double dx = state.sectionNode().centerXLong() - cameraPosition.x;
+            double dy = state.sectionNode().centerYLong() - cameraPosition.y;
+            double dz = state.sectionNode().centerZLong() - cameraPosition.z;
+            double distSqr = dx * dx + dy * dy + dz * dz;
             boolean isNearby = distSqr < 768.0;
             boolean rebuildSync = false;
             if (this.optionsRenderState.prioritizeChunkUpdates == PrioritizeChunkUpdates.NEARBY) {

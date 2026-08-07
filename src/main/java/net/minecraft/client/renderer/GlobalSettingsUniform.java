@@ -28,11 +28,13 @@ public class GlobalSettingsUniform implements AutoCloseable {
         final boolean useRgss
     ) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            int cameraX = Mth.floor(cameraPos.x);
-            int cameraY = Mth.floor(cameraPos.y);
-            int cameraZ = Mth.floor(cameraPos.z);
+            // far lands：相机坐标可能越过 2^31，用 long 计算方块坐标（mod 2^32 的 int 表示），
+            // 保证 CameraBlockPos 与 ChunkPosition 的 int 差值在 shader 中自洽。
+            long cameraX = Mth.lfloor(cameraPos.x);
+            long cameraY = Mth.lfloor(cameraPos.y);
+            long cameraZ = Mth.lfloor(cameraPos.z);
             ByteBuffer data = Std140Builder.onStack(stack, UBO_SIZE)
-                .putIVec3(cameraX, cameraY, cameraZ)
+                .putIVec3((int)cameraX, (int)cameraY, (int)cameraZ)
                 .putVec3((float)(cameraX - cameraPos.x), (float)(cameraY - cameraPos.y), (float)(cameraZ - cameraPos.z))
                 .putVec2(width, height)
                 .putFloat((float)glintAlpha)

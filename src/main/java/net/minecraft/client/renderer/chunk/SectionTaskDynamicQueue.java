@@ -31,7 +31,11 @@ public class SectionTaskDynamicQueue {
             if (task.isCancelled.get()) {
                 iterator.remove();
             } else {
-                double distance = task.getRenderOrigin().distToCenterSqr(cameraPos);
+                Vec3 renderOrigin = task.getRenderOrigin();
+                double dx = renderOrigin.x - cameraPos.x;
+                double dy = renderOrigin.y - cameraPos.y;
+                double dz = renderOrigin.z - cameraPos.z;
+                double distance = dx * dx + dy * dy + dz * dz;
                 if (!task.isRecompile() && distance < bestInitialCompileDistance) {
                     bestInitialCompileDistance = distance;
                     bestInitialCompileTaskIndex = taskIndex;

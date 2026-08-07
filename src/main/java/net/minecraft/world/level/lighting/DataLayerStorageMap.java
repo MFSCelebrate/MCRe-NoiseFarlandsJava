@@ -26,7 +26,11 @@ public abstract class DataLayerStorageMap<M extends DataLayerStorageMap<M>> {
     public abstract M copy();
 
     public DataLayer copyDataLayer(final SectionPos sectionNode) {
-        DataLayer newDataLayer = this.map.get(sectionNode).copy();
+        DataLayer existing = this.map.get(sectionNode);
+        if (existing == null) {
+            return null;
+        }
+        DataLayer newDataLayer = existing.copy();
         this.map.put(sectionNode, newDataLayer);
         this.clearCache();
         return newDataLayer;

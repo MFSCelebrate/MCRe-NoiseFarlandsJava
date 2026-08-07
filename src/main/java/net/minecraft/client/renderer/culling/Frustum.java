@@ -87,6 +87,10 @@ public class Frustum {
         return intersectionResult == -2 || intersectionResult == -1;
     }
 
+    public int cubeInFrustum(final AABB bb) {
+        return this.cubeInFrustum(bb.minX, bb.minY, bb.minZ, bb.maxX, bb.maxY, bb.maxZ);
+    }
+
     public int cubeInFrustum(final BoundingBox bb) {
         return this.cubeInFrustum(bb.minX(), bb.minY(), bb.minZ(), bb.maxX() + 1, bb.maxY() + 1, bb.maxZ() + 1);
     }

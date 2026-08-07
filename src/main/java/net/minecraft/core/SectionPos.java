@@ -64,7 +64,11 @@ public class SectionPos extends Vec3i {
     }
 
     public static SectionPos of(final Position pos) {
-        return new SectionPos(blockToSectionCoord(pos.x()), blockToSectionCoord(pos.y()), blockToSectionCoord(pos.z()));
+        return new SectionPos(
+            (int)(Mth.lfloor(pos.x()) >> 4),
+            (int)(Mth.lfloor(pos.y()) >> 4),
+            (int)(Mth.lfloor(pos.z()) >> 4)
+        );
     }
 
     public static SectionPos bottomOf(final ChunkAccess chunk) {
@@ -182,6 +186,37 @@ public class SectionPos extends Vec3i {
 
     public BlockPos origin() {
         return new BlockPos(sectionToBlockCoord(this.x()), sectionToBlockCoord(this.y()), sectionToBlockCoord(this.z()));
+    }
+
+    // ═══════════ far lands long 化（MCRe NoiseFarlands） ═══════════
+    // 区块节坐标（int，2^27 级）本身不会溢出 int，但「section → 方块坐标」的
+    // sectionCoord << 4 在 sectionCoord > 2^27 时溢出（即世界方块坐标 > 2^31）。
+    // 渲染管线（编译/遮挡剔除/排序）统一用 long 版方块坐标。
+
+    /** section 原点方块坐标（long，防 2^31 溢出） */
+    public long minBlockXLong() {
+        return (long)this.x() << 4;
+    }
+
+    public long minBlockYLong() {
+        return (long)this.y() << 4;
+    }
+
+    public long minBlockZLong() {
+        return (long)this.z() << 4;
+    }
+
+    /** section 中心方块坐标（long） */
+    public long centerXLong() {
+        return ((long)this.x() << 4) + 8;
+    }
+
+    public long centerYLong() {
+        return ((long)this.y() << 4) + 8;
+    }
+
+    public long centerZLong() {
+        return ((long)this.z() << 4) + 8;
     }
 
     public BlockPos center() {

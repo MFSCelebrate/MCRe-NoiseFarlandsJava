@@ -108,9 +108,14 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
         if (topSection != this.updatingSectionData.currentLowestY && sectionNode.y() < topSection) {
             SectionPos aboveSection = sectionNode.offset(0, 1, 0);
 
-            DataLayer aboveData;
-            while ((aboveData = this.getDataLayer(aboveSection, true)) == null) {
+            // far lands 防御：顶部数据节状态错乱时向上查找可能无界，限制查找深度（世界高度上限）
+            DataLayer aboveData = null;
+            for (int guard = 0; guard < 1024 && (aboveData = this.getDataLayer(aboveSection, true)) == null; guard++) {
                 aboveSection = aboveSection.offset(0, 1, 0);
+            }
+
+            if (aboveData == null) {
+                return new DataLayer(15);
             }
 
             return repeatFirstLayer(aboveData);

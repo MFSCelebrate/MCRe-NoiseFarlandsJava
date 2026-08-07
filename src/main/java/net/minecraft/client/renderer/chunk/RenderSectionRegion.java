@@ -39,7 +39,9 @@ public class RenderSectionRegion implements BlockAndTintGetter {
     @Override
     public BlockState getBlockState(final BlockPos pos) {
         return this.getSection(
-                SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getY()), SectionPos.blockToSectionCoord(pos.getZ())
+                this.relativeSection(pos.getX(), this.minSectionX),
+                this.relativeSection(pos.getY(), this.minSectionY),
+                this.relativeSection(pos.getZ(), this.minSectionZ)
             )
             .getBlockState(pos);
     }
@@ -47,7 +49,9 @@ public class RenderSectionRegion implements BlockAndTintGetter {
     @Override
     public FluidState getFluidState(final BlockPos pos) {
         return this.getSection(
-                SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getY()), SectionPos.blockToSectionCoord(pos.getZ())
+                this.relativeSection(pos.getX(), this.minSectionX),
+                this.relativeSection(pos.getY(), this.minSectionY),
+                this.relativeSection(pos.getZ(), this.minSectionZ)
             )
             .getBlockState(pos)
             .getFluidState();
@@ -65,14 +69,31 @@ public class RenderSectionRegion implements BlockAndTintGetter {
 
     @Override
     public @Nullable BlockEntity getBlockEntity(final BlockPos pos) {
-        return this.getSection(
-                SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getY()), SectionPos.blockToSectionCoord(pos.getZ())
+        return this.getSectionRelative(
+                this.relativeSection(pos.getX(), this.minSectionX),
+                this.relativeSection(pos.getY(), this.minSectionY),
+                this.relativeSection(pos.getZ(), this.minSectionZ)
             )
             .getBlockEntity(pos);
     }
 
     private SectionCopy getSection(final int sectionX, final int sectionY, final int sectionZ) {
         return this.sections[index(this.minSectionX, this.minSectionY, this.minSectionZ, sectionX, sectionY, sectionZ)];
+    }
+
+    private SectionCopy getSectionRelative(final int relSectionX, final int relSectionY, final int relSectionZ) {
+        return this.sections[relSectionX + relSectionY * 3 + relSectionZ * 9];
+    }
+
+    /**
+     * far lands：世界方块坐标（int，真实值 mod 2^32）→ 相对本 region 基准的 section 偏移。
+     * 原版用 blockCoord >> 4（算术右移），但坐标越过 2^31 时 int 溢出为负，
+     * 算术右移得到错误 section。这里用 mod 2^32 无符号恢复：真实差 ∈ [-16, 47]（region 3×3 范围）。
+     */
+    private int relativeSection(final int posCoord, final int minSectionCoord) {
+        long diff = (Integer.toUnsignedLong(posCoord) - ((long)minSectionCoord << 4 & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
+        long signedDiff = diff >= 0x80000000L ? diff - 0x100000000L : diff;
+        return (int)(signedDiff >> 4);
     }
 
     @Override

@@ -2,33 +2,40 @@ package net.minecraft.client.renderer;
 
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * Octree — 区块节遮挡树（MCRe NoiseFarlands far lands long 化版）
+ * 原版以 int 方块坐标构建 BoundingBox，section 坐标超过 2^27（世界方块坐标 2^31）
+ * 时 section << 4 溢出，树边界与比较全错 → 地形渲染失效。
+ * 本版：相机中心与全部方块坐标 long 化，边界改用 AABB（double），Frustum 剔除用
+ * double 相减（相机相对，float 精度安全）。
+ */
 @OnlyIn(Dist.CLIENT)
 public class Octree {
     private final Octree.Branch root;
-    private final BlockPos cameraSectionCenter;
+    private final long cameraCenterX;
+    private final long cameraCenterY;
+    private final long cameraCenterZ;
 
     public Octree(final SectionPos cameraSection, final int renderDistance, final int sectionsPerChunk, final int minBlockY) {
         int visibleAreaDiameterInSections = renderDistance * 2 + 1;
         int boundingBoxSizeInSections = Mth.smallestEncompassingPowerOfTwo(visibleAreaDiameterInSections);
         int distanceToBBEdgeInBlocks = renderDistance * 16;
-        BlockPos cameraSectionOrigin = cameraSection.origin();
-        this.cameraSectionCenter = cameraSection.center();
-        int minX = cameraSectionOrigin.getX() - distanceToBBEdgeInBlocks;
-        int maxX = minX + boundingBoxSizeInSections * 16 - 1;
-        int minY = boundingBoxSizeInSections >= sectionsPerChunk ? minBlockY : cameraSectionOrigin.getY() - distanceToBBEdgeInBlocks;
-        int maxY = minY + boundingBoxSizeInSections * 16 - 1;
-        int minZ = cameraSectionOrigin.getZ() - distanceToBBEdgeInBlocks;
-        int maxZ = minZ + boundingBoxSizeInSections * 16 - 1;
-        this.root = new Octree.Branch(new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ));
+        this.cameraCenterX = cameraSection.centerXLong();
+        this.cameraCenterY = cameraSection.centerYLong();
+        this.cameraCenterZ = cameraSection.centerZLong();
+        long sizeInBlocks = boundingBoxSizeInSections * 16L;
+        long minX = this.cameraCenterX - distanceToBBEdgeInBlocks;
+        long minY = boundingBoxSizeInSections >= sectionsPerChunk ? minBlockY : this.cameraCenterY - distanceToBBEdgeInBlocks;
+        long minZ = this.cameraCenterZ - distanceToBBEdgeInBlocks;
+        // AABB max 为排他边界（= 原 BoundingBox 包含 max + 1）
+        this.root = new Octree.Branch(new AABB(minX, minY, minZ, minX + sizeInBlocks, minY + sizeInBlocks, minZ + sizeInBlocks));
     }
 
     public boolean add(final SectionRenderDispatcher.RenderSection section) {
@@ -42,15 +49,12 @@ public class Octree {
     private boolean isClose(
         final double minX, final double minY, final double minZ, final double maxX, final double maxY, final double maxZ, final int closeDistance
     ) {
-        int cameraX = this.cameraSectionCenter.getX();
-        int cameraY = this.cameraSectionCenter.getY();
-        int cameraZ = this.cameraSectionCenter.getZ();
-        return cameraX > minX - closeDistance
-            && cameraX < maxX + closeDistance
-            && cameraY > minY - closeDistance
-            && cameraY < maxY + closeDistance
-            && cameraZ > minZ - closeDistance
-            && cameraZ < maxZ + closeDistance;
+        return this.cameraCenterX > minX - closeDistance
+            && this.cameraCenterX < maxX + closeDistance
+            && this.cameraCenterY > minY - closeDistance
+            && this.cameraCenterY < maxY + closeDistance
+            && this.cameraCenterZ > minZ - closeDistance
+            && this.cameraCenterZ < maxZ + closeDistance;
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -72,7 +76,7 @@ public class Octree {
             this.zShift = zShift;
         }
 
-        public static Octree.AxisSorting getAxisSorting(final int absXDiff, final int absYDiff, final int absZDiff) {
+        public static Octree.AxisSorting getAxisSorting(final long absXDiff, final long absYDiff, final long absZDiff) {
             if (absXDiff > absYDiff && absXDiff > absZDiff) {
                 return absYDiff > absZDiff ? XYZ : XZY;
             } else if (absYDiff > absXDiff && absYDiff > absZDiff) {
@@ -86,23 +90,23 @@ public class Octree {
     @OnlyIn(Dist.CLIENT)
     private class Branch implements Octree.Node {
         private final Octree.@Nullable Node[] nodes = new Octree.Node[8];
-        private final BoundingBox boundingBox;
-        private final int bbCenterX;
-        private final int bbCenterY;
-        private final int bbCenterZ;
+        private final AABB boundingBox;
+        private final long bbCenterX;
+        private final long bbCenterY;
+        private final long bbCenterZ;
         private final Octree.AxisSorting sorting;
         private final boolean cameraXDiffNegative;
         private final boolean cameraYDiffNegative;
         private final boolean cameraZDiffNegative;
 
-        public Branch(final BoundingBox boundingBox) {
+        public Branch(final AABB boundingBox) {
             this.boundingBox = boundingBox;
-            this.bbCenterX = this.boundingBox.minX() + this.boundingBox.getXSpan() / 2;
-            this.bbCenterY = this.boundingBox.minY() + this.boundingBox.getYSpan() / 2;
-            this.bbCenterZ = this.boundingBox.minZ() + this.boundingBox.getZSpan() / 2;
-            int cameraXDiff = Octree.this.cameraSectionCenter.getX() - this.bbCenterX;
-            int cameraYDiff = Octree.this.cameraSectionCenter.getY() - this.bbCenterY;
-            int cameraZDiff = Octree.this.cameraSectionCenter.getZ() - this.bbCenterZ;
+            this.bbCenterX = (long)(boundingBox.minX + boundingBox.getXsize() / 2.0);
+            this.bbCenterY = (long)(boundingBox.minY + boundingBox.getYsize() / 2.0);
+            this.bbCenterZ = (long)(boundingBox.minZ + boundingBox.getZsize() / 2.0);
+            long cameraXDiff = Octree.this.cameraCenterX - this.bbCenterX;
+            long cameraYDiff = Octree.this.cameraCenterY - this.bbCenterY;
+            long cameraZDiff = Octree.this.cameraCenterZ - this.bbCenterZ;
             this.sorting = Octree.AxisSorting.getAxisSorting(Math.abs(cameraXDiff), Math.abs(cameraYDiff), Math.abs(cameraZDiff));
             this.cameraXDiffNegative = cameraXDiff < 0;
             this.cameraYDiffNegative = cameraYDiff < 0;
@@ -111,9 +115,9 @@ public class Octree {
 
         public boolean add(final SectionRenderDispatcher.RenderSection section) {
             SectionPos sectionNode = section.getSectionNode();
-            boolean sectionXDiffNegative = SectionPos.sectionToBlockCoord(sectionNode.x()) - this.bbCenterX < 0;
-            boolean sectionYDiffNegative = SectionPos.sectionToBlockCoord(sectionNode.y()) - this.bbCenterY < 0;
-            boolean sectionZDiffNegative = SectionPos.sectionToBlockCoord(sectionNode.z()) - this.bbCenterZ < 0;
+            boolean sectionXDiffNegative = sectionNode.minBlockXLong() - this.bbCenterX < 0;
+            boolean sectionYDiffNegative = sectionNode.minBlockYLong() - this.bbCenterY < 0;
+            boolean sectionZDiffNegative = sectionNode.minBlockZLong() - this.bbCenterZ < 0;
             boolean xDiffsOppositeSides = sectionXDiffNegative != this.cameraXDiffNegative;
             boolean yDiffsOppositeSides = sectionYDiffNegative != this.cameraYDiffNegative;
             boolean zDiffsOppositeSides = sectionZDiffNegative != this.cameraZDiffNegative;
@@ -126,7 +130,7 @@ public class Octree {
                 Octree.Branch branch = (Octree.Branch)this.nodes[nodeIndex];
                 return branch.add(section);
             } else {
-                BoundingBox childBoundingBox = this.createChildBoundingBox(sectionXDiffNegative, sectionYDiffNegative, sectionZDiffNegative);
+                AABB childBoundingBox = this.createChildBoundingBox(sectionXDiffNegative, sectionYDiffNegative, sectionZDiffNegative);
                 Octree.Branch branch = Octree.this.new Branch(childBoundingBox);
                 this.nodes[nodeIndex] = branch;
                 return branch.add(section);
@@ -153,41 +157,41 @@ public class Octree {
         }
 
         private boolean areChildrenLeaves() {
-            return this.boundingBox.getXSpan() == 32;
+            return this.boundingBox.getXsize() == 32.0;
         }
 
-        private BoundingBox createChildBoundingBox(final boolean sectionXDiffNegative, final boolean sectionYDiffNegative, final boolean sectionZDiffNegative) {
-            int minX;
-            int maxX;
+        private AABB createChildBoundingBox(final boolean sectionXDiffNegative, final boolean sectionYDiffNegative, final boolean sectionZDiffNegative) {
+            double minX;
+            double maxX;
             if (sectionXDiffNegative) {
-                minX = this.boundingBox.minX();
-                maxX = this.bbCenterX - 1;
+                minX = this.boundingBox.minX;
+                maxX = this.bbCenterX;
             } else {
                 minX = this.bbCenterX;
-                maxX = this.boundingBox.maxX();
+                maxX = this.boundingBox.maxX;
             }
 
-            int minY;
-            int maxY;
+            double minY;
+            double maxY;
             if (sectionYDiffNegative) {
-                minY = this.boundingBox.minY();
-                maxY = this.bbCenterY - 1;
+                minY = this.boundingBox.minY;
+                maxY = this.bbCenterY;
             } else {
                 minY = this.bbCenterY;
-                maxY = this.boundingBox.maxY();
+                maxY = this.boundingBox.maxY;
             }
 
-            int minZ;
-            int maxZ;
+            double minZ;
+            double maxZ;
             if (sectionZDiffNegative) {
-                minZ = this.boundingBox.minZ();
-                maxZ = this.bbCenterZ - 1;
+                minZ = this.boundingBox.minZ;
+                maxZ = this.bbCenterZ;
             } else {
                 minZ = this.bbCenterZ;
-                maxZ = this.boundingBox.maxZ();
+                maxZ = this.boundingBox.maxZ;
             }
 
-            return new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
+            return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
         }
 
         @Override
@@ -204,12 +208,12 @@ public class Octree {
             if (isVisible) {
                 isClose = isClose
                     && Octree.this.isClose(
-                        this.boundingBox.minX(),
-                        this.boundingBox.minY(),
-                        this.boundingBox.minZ(),
-                        this.boundingBox.maxX(),
-                        this.boundingBox.maxY(),
-                        this.boundingBox.maxZ(),
+                        this.boundingBox.minX,
+                        this.boundingBox.minY,
+                        this.boundingBox.minZ,
+                        this.boundingBox.maxX,
+                        this.boundingBox.maxY,
+                        this.boundingBox.maxZ,
                         closeDistance
                     );
                 visitor.visit(this, skipFrustumCheck, depth, isClose);
@@ -229,14 +233,7 @@ public class Octree {
 
         @Override
         public AABB getAABB() {
-            return new AABB(
-                this.boundingBox.minX(),
-                this.boundingBox.minY(),
-                this.boundingBox.minZ(),
-                this.boundingBox.maxX() + 1,
-                this.boundingBox.maxY() + 1,
-                this.boundingBox.maxZ() + 1
-            );
+            return this.boundingBox;
         }
     }
 

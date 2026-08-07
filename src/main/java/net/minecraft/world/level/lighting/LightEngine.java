@@ -161,6 +161,10 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
         for (count = 0; !this.increaseQueueNodes.isEmpty(); count++) {
             BlockPos fromNode = this.increaseQueueNodes.poll();
             long increaseData = this.increaseQueueData.poll();
+            if (!this.storage.storingLightForSection(SectionPos.of(fromNode))) {
+                // far lands：任务入队后 section 光照数据已被移除（区块卸载/状态变化），丢弃孤儿任务
+                continue;
+            }
             int fromLevel = this.storage.getStoredLevel(fromNode);
             int fromTargetLevel = LightEngine.QueueEntry.getFromLevel(increaseData);
             if (LightEngine.QueueEntry.isIncreaseFromEmission(increaseData) && fromLevel < fromTargetLevel) {
@@ -181,6 +185,10 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
         for (count = 0; !this.decreaseQueueNodes.isEmpty(); count++) {
             BlockPos fromNode = this.decreaseQueueNodes.poll();
             long decreaseData = this.decreaseQueueData.poll();
+            if (!this.storage.storingLightForSection(SectionPos.of(fromNode))) {
+                // far lands：任务入队后 section 光照数据已被移除，丢弃孤儿任务
+                continue;
+            }
             this.propagateDecrease(fromNode, decreaseData);
         }
 

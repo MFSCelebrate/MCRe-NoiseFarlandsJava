@@ -40,7 +40,7 @@ public class ChunkCullingDebugRenderer implements DebugRenderer.SimpleDebugRende
             for (SectionRenderDispatcher.RenderSection section : levelRenderer.visibleSections()) {
                 SectionOcclusionGraph.Node node = sectionOcclusionGraph.getNode(section);
                 if (node != null) {
-                    BlockPos renderOffset = section.getRenderOrigin();
+                    Vec3 renderOffset = section.getRenderOrigin();
                     if (sectionPath) {
                         int color = node.step == 0 ? 0 : Mth.hsvToRgb(node.step / 50.0F, 0.9F, 0.9F);
 
@@ -48,9 +48,9 @@ public class ChunkCullingDebugRenderer implements DebugRenderer.SimpleDebugRende
                             if (node.hasSourceDirection(i)) {
                                 Direction direction = DIRECTIONS[i];
                                 Gizmos.line(
-                                    Vec3.atLowerCornerWithOffset(renderOffset, 8.0, 8.0, 8.0),
-                                    Vec3.atLowerCornerWithOffset(
-                                        renderOffset, 8 - 16 * direction.getStepX(), 8 - 16 * direction.getStepY(), 8 - 16 * direction.getStepZ()
+                                    renderOffset.add(8.0, 8.0, 8.0),
+                                    renderOffset.add(
+                                        8 - 16 * direction.getStepX(), 8 - 16 * direction.getStepY(), 8 - 16 * direction.getStepZ()
                                     ),
                                     ARGB.opaque(color)
                                 );
@@ -67,11 +67,11 @@ public class ChunkCullingDebugRenderer implements DebugRenderer.SimpleDebugRende
                                 if (!b) {
                                     c++;
                                     Gizmos.line(
-                                        Vec3.atLowerCornerWithOffset(
-                                            renderOffset, 8 + 8 * direction1.getStepX(), 8 + 8 * direction1.getStepY(), 8 + 8 * direction1.getStepZ()
+                                        renderOffset.add(
+                                            8 + 8 * direction1.getStepX(), 8 + 8 * direction1.getStepY(), 8 + 8 * direction1.getStepZ()
                                         ),
-                                        Vec3.atLowerCornerWithOffset(
-                                            renderOffset, 8 + 8 * direction2.getStepX(), 8 + 8 * direction2.getStepY(), 8 + 8 * direction2.getStepZ()
+                                        renderOffset.add(
+                                            8 + 8 * direction2.getStepX(), 8 + 8 * direction2.getStepY(), 8 + 8 * direction2.getStepZ()
                                         ),
                                         ARGB.color(255, 255, 0, 0)
                                     );
