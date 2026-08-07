@@ -146,7 +146,7 @@ public final class Float256 extends Number implements Comparable<Float256> {
     /** 指数加 delta（有符号 long，模 2^64 借位自动传播），下溢→0，上溢→Inf */
     private Float256 scaleExp(long delta) {
         long lo = expLo() + (delta & 0xFFFF);
-        long hi = expHi() + (delta >>> 16) + (lo >>> 16);
+        long hi = expHi() + (delta >> 16) + (lo >>> 16);
         lo &= 0xFFFF;
         if (hi < 0) return ZERO;
         if (hi > EXP_ALL_HI || (hi == EXP_ALL_HI && lo >= EXP_ALL_LO)) {
@@ -177,7 +177,7 @@ public final class Float256 extends Number implements Comparable<Float256> {
             return mantBits == 0 ? (neg ? NEG_INF : POS_INF) : NaN;
         }
         // 正规: (2^52 | mantBits) × 2^(expBits - 1023 - 52)
-        Int256 mant = Int256.of(0, 0, 0, mantBits).or(Int256.of(0, 0, 1L << 52, 0L));
+        Int256 mant = Int256.of(0, 0, 0, mantBits).or(Int256.of(0, 0, 0, 1L << 52));
         Float256 f = of(mant);
         if (neg) f = f.negate();
         return f.scaleExp(expBits - 1075);

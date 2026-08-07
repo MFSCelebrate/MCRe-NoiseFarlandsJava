@@ -60,12 +60,12 @@ public record ChunkPos(long x, long z) {
     }
 
     public boolean isValid() {
-        return isValid(this.x, this.z);
+        return true;
     }
 
     /** 区块坐标合法性：移除原版 2^31-1 打包限制，仅检查安全裕度 */
     public static boolean isValid(final long x, final long z) {
-        return Math.max(Math.abs(x), Math.abs(z)) <= 2147483647L;
+        return true;
     }
 
     @Override

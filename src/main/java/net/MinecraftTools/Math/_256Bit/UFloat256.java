@@ -127,7 +127,7 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
         }
         if (expBits == 0x7FF) return NaN;
         // 正规: (2^52 | mantBits) × 2^(expBits - 1023 - 52)
-        UInt256 mant = UInt256.of(0, 0, 0, mantBits).or(UInt256.of(0, 0, 1L << 52, 0L));
+        UInt256 mant = UInt256.of(0, 0, 0, mantBits).or(UInt256.of(0, 0, 0, 1L << 52));
         return of(mant).scaleExp(expBits - 1075);
     }
 
