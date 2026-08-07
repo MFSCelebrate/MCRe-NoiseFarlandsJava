@@ -658,7 +658,7 @@ public class BlockModelLighter {
 
             int value = LightCoordsUtil.BrightnessGetter.DEFAULT.packedBrightness(level, pos);
             if (this.colorCache.size() == 100) {
-                this.colorCache.removeFirstInt();
+                this.colorCache.remove(this.colorCache.keySet().iterator().next());
             }
 
             this.colorCache.put(key, value);
@@ -691,7 +691,7 @@ public class BlockModelLighter {
             float brightness = state.getShadeBrightness(level, pos);
             if (this.enabled) {
                 if (this.brightnessCache.size() == 100) {
-                    this.brightnessCache.removeFirstFloat();
+                    this.brightnessCache.remove(this.brightnessCache.keySet().iterator().next());
                 }
 
                 this.brightnessCache.put(key, brightness);

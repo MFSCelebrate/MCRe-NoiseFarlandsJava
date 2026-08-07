@@ -31,7 +31,7 @@ public class ShipwreckStructure extends Structure {
 
     private void generatePieces(final StructurePiecesBuilder builder, final Structure.GenerationContext context) {
         Rotation rotation = Rotation.getRandom(context.random());
-        BlockPos offset = new BlockPos(context.chunkPos().getMinBlockX(), 90, context.chunkPos().getMinBlockZ());
+        BlockPos offset = new BlockPos((int)context.chunkPos().getMinBlockX(), 90, (int)context.chunkPos().getMinBlockZ());
         ShipwreckPieces.ShipwreckPiece piece = ShipwreckPieces.addRandomPiece(
             context.structureTemplateManager(), offset, rotation, builder, context.random(), this.isBeached
         );

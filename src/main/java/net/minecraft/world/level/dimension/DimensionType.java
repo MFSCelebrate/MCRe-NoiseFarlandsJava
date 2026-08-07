@@ -44,7 +44,8 @@ public record DimensionType(
     HolderSet<Timeline> timelines,
     Optional<Holder<WorldClock>> defaultClock
 ) {
-    public static final int BITS_FOR_Y = BlockPos.PACKED_Y_LENGTH;
+    // MCRe NoiseFarlands: 原 BlockPos.PACKED_Y_LENGTH 随打包系统移除，固定 12（64-2×26）
+    public static final int BITS_FOR_Y = 12;
     public static final int MIN_HEIGHT = 16;
     public static final int Y_SIZE = (1 << BITS_FOR_Y) - 32;
     public static final int MAX_Y = (Y_SIZE >> 1) - 1;

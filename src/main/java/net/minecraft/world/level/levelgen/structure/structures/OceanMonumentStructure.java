@@ -28,8 +28,8 @@ public class OceanMonumentStructure extends Structure {
 
     @Override
     public Optional<Structure.GenerationStub> findGenerationPoint(final Structure.GenerationContext context) {
-        int offsetX = context.chunkPos().getBlockX(9);
-        int offsetZ = context.chunkPos().getBlockZ(9);
+        int offsetX = (int)context.chunkPos().getBlockX(9);
+        int offsetZ = (int)context.chunkPos().getBlockZ(9);
 
         for (Holder<Biome> biome : context.biomeSource()
             .getBiomesWithin(offsetX, context.chunkGenerator().getSeaLevel(), offsetZ, 29, context.randomState().sampler())) {

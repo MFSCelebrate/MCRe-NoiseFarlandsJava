@@ -613,7 +613,7 @@ public class LevelRenderer implements AutoCloseable {
         long fadeDuration = Mth.floor(this.optionsRenderState.chunkSectionFadeInTime * 1000.0);
 
         for (SectionUpdateRenderState state : this.levelRenderState.sectionUpdateRenderStates) {
-            BlockPos center = SectionPos.of(state.sectionNode()).center();
+            BlockPos center = state.sectionNode().center();
             double distSqr = center.distSqr(cameraPosition);
             boolean isNearby = distSqr < 768.0;
             boolean rebuildSync = false;

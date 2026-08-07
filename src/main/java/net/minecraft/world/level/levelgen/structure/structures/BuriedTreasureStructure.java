@@ -21,7 +21,7 @@ public class BuriedTreasureStructure extends Structure {
     }
 
     private static void generatePieces(final StructurePiecesBuilder builder, final Structure.GenerationContext context) {
-        BlockPos offset = new BlockPos(context.chunkPos().getBlockX(9), 90, context.chunkPos().getBlockZ(9));
+        BlockPos offset = new BlockPos((int)context.chunkPos().getBlockX(9), 90, (int)context.chunkPos().getBlockZ(9));
         builder.addPiece(new BuriedTreasurePieces.BuriedTreasurePiece(offset));
     }
 

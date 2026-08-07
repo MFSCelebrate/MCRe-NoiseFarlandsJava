@@ -29,8 +29,8 @@ public class NetherFossilStructure extends Structure {
     @Override
     public Optional<Structure.GenerationStub> findGenerationPoint(final Structure.GenerationContext context) {
         WorldgenRandom random = context.random();
-        int blockX = context.chunkPos().getMinBlockX() + random.nextInt(16);
-        int blockZ = context.chunkPos().getMinBlockZ() + random.nextInt(16);
+        int blockX = (int)context.chunkPos().getMinBlockX() + random.nextInt(16);
+        int blockZ = (int)context.chunkPos().getMinBlockZ() + random.nextInt(16);
         int seaLevel = context.chunkGenerator().getSeaLevel();
         WorldGenerationContext generationContext = new WorldGenerationContext(context.chunkGenerator(), context.heightAccessor());
         int y = this.height.sample(random, generationContext);

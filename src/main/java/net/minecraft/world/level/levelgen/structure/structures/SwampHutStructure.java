@@ -20,7 +20,7 @@ public class SwampHutStructure extends Structure {
     }
 
     private static void generatePieces(final StructurePiecesBuilder builder, final Structure.GenerationContext context) {
-        builder.addPiece(new SwampHutPiece(context.random(), context.chunkPos().getMinBlockX(), context.chunkPos().getMinBlockZ()));
+        builder.addPiece(new SwampHutPiece(context.random(), (int)context.chunkPos().getMinBlockX(), (int)context.chunkPos().getMinBlockZ()));
     }
 
     @Override

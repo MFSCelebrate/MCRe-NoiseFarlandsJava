@@ -42,7 +42,7 @@ public class OceanRuinStructure extends Structure {
     }
 
     private void generatePieces(final StructurePiecesBuilder builder, final Structure.GenerationContext context) {
-        BlockPos offset = new BlockPos(context.chunkPos().getMinBlockX(), 90, context.chunkPos().getMinBlockZ());
+        BlockPos offset = new BlockPos((int)context.chunkPos().getMinBlockX(), 90, (int)context.chunkPos().getMinBlockZ());
         Rotation rotation = Rotation.getRandom(context.random());
         OceanRuinPieces.addPieces(context.structureTemplateManager(), offset, rotation, builder, context.random(), this);
     }

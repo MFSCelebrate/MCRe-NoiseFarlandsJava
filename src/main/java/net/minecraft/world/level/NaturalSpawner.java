@@ -465,7 +465,7 @@ public final class NaturalSpawner {
 
     @FunctionalInterface
     public interface ChunkGetter {
-        void query(final long chunkKey, Consumer<LevelChunk> output);
+        void query(final ChunkPos chunkKey, Consumer<LevelChunk> output);
     }
 
     @FunctionalInterface

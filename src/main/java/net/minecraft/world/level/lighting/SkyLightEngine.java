@@ -146,7 +146,7 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
 
         for (Direction propagationDirection : PROPAGATION_DIRECTIONS) {
             if (LightEngine.QueueEntry.shouldPropagateInDirection(increaseData, propagationDirection)) {
-                BlockPos toNode = fromNode.offset(propagationDirection);
+                BlockPos toNode = fromNode.relative(propagationDirection);
                 if (this.storage.storingLightForSection(SectionPos.of(toNode))) {
                     int toLevel = this.storage.getStoredLevel(toNode);
                     int maxPossibleNewToLevel = fromLevel - 1;
@@ -186,7 +186,7 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
 
         for (Direction propagationDirection : PROPAGATION_DIRECTIONS) {
             if (LightEngine.QueueEntry.shouldPropagateInDirection(decreaseData, propagationDirection)) {
-                BlockPos toNode = fromNode.offset(propagationDirection);
+                BlockPos toNode = fromNode.relative(propagationDirection);
                 if (this.storage.storingLightForSection(SectionPos.of(toNode))) {
                     int toLevel = this.storage.getStoredLevel(toNode);
                     if (toLevel != 0) {

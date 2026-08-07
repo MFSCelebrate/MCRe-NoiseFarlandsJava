@@ -36,7 +36,7 @@ public class NetherFortressStructure extends Structure {
 
     private static void generatePieces(final StructurePiecesBuilder builder, final Structure.GenerationContext context) {
         NetherFortressPieces.StartPiece start = new NetherFortressPieces.StartPiece(
-            context.random(), context.chunkPos().getBlockX(2), context.chunkPos().getBlockZ(2)
+            context.random(), (int)context.chunkPos().getBlockX(2), (int)context.chunkPos().getBlockZ(2)
         );
         builder.addPiece(start);
         start.addChildren(start, builder, context.random());
