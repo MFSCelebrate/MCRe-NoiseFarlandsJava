@@ -36,7 +36,7 @@ public class MineshaftStructure extends Structure {
     public Optional<Structure.GenerationStub> findGenerationPoint(final Structure.GenerationContext context) {
         context.random().nextDouble();
         ChunkPos chunkPos = context.chunkPos();
-        BlockPos startPos = new BlockPos(chunkPos.getMiddleBlockX(), 50, chunkPos.getMinBlockZ());
+        BlockPos startPos = new BlockPos((int)chunkPos.getMiddleBlockX(), 50, (int)chunkPos.getMinBlockZ());
         StructurePiecesBuilder mineshaftPiecesBuilder = new StructurePiecesBuilder();
         int yOffset = this.generatePiecesAndAdjust(mineshaftPiecesBuilder, context);
         return Optional.of(new Structure.GenerationStub(startPos.offset(0, yOffset, 0), Either.right(mineshaftPiecesBuilder)));
@@ -46,7 +46,7 @@ public class MineshaftStructure extends Structure {
         ChunkPos chunkPos = context.chunkPos();
         WorldgenRandom random = context.random();
         ChunkGenerator chunkGenerator = context.chunkGenerator();
-        MineshaftPieces.MineShaftRoom mineShaftRoom = new MineshaftPieces.MineShaftRoom(0, random, chunkPos.getBlockX(2), chunkPos.getBlockZ(2), this.type);
+        MineshaftPieces.MineShaftRoom mineShaftRoom = new MineshaftPieces.MineShaftRoom(0, random, (int)chunkPos.getBlockX(2), (int)chunkPos.getBlockZ(2), this.type);
         builder.addPiece(mineShaftRoom);
         mineShaftRoom.addChildren(mineShaftRoom, builder, random);
         int seaLevel = chunkGenerator.getSeaLevel();

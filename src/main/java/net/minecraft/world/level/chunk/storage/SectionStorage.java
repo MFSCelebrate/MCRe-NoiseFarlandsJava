@@ -270,7 +270,7 @@ public class SectionStorage<R, P> implements AutoCloseable {
     }
 
     private static SectionPos getKey(final ChunkPos chunkPos, final int sectionY) {
-        return SectionPos.of((int)chunkPos.x(), sectionY, (int)chunkPos.z());
+        return SectionPos.of((int)(int)chunkPos.x(), sectionY, (int)(int)chunkPos.z());
     }
 
     protected void onSectionLoad(final SectionPos sectionPos) {

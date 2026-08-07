@@ -74,12 +74,12 @@ public abstract class WorldCarver<C extends CarverConfiguration> {
         final WorldCarver.CarveSkipChecker skipChecker
     ) {
         ChunkPos chunkPos = chunk.getPos();
-        double centerX = chunkPos.getMiddleBlockX();
-        double centerZ = chunkPos.getMiddleBlockZ();
+        double centerX = (int)chunkPos.getMiddleBlockX();
+        double centerZ = (int)chunkPos.getMiddleBlockZ();
         double maxDelta = 16.0 + horizontalRadius * 2.0;
         if (!(Math.abs(x - centerX) > maxDelta) && !(Math.abs(z - centerZ) > maxDelta)) {
-            int chunkMinX = chunkPos.getMinBlockX();
-            int chunkMinZ = chunkPos.getMinBlockZ();
+            int chunkMinX = (int)chunkPos.getMinBlockX();
+            int chunkMinZ = (int)chunkPos.getMinBlockZ();
             int minXIndex = Math.max(Mth.floor(x - horizontalRadius) - chunkMinX - 1, 0);
             int maxXIndex = Math.min(Mth.floor(x + horizontalRadius) - chunkMinX, 15);
             int minY = Math.max(Mth.floor(y - verticalRadius) - 1, context.getMinGenY() + 1);
@@ -92,11 +92,11 @@ public abstract class WorldCarver<C extends CarverConfiguration> {
             BlockPos.MutableBlockPos helperPos = new BlockPos.MutableBlockPos();
 
             for (int xIndex = minXIndex; xIndex <= maxXIndex; xIndex++) {
-                int worldX = chunkPos.getBlockX(xIndex);
+                int worldX = (int)chunkPos.getBlockX(xIndex);
                 double xd = (worldX + 0.5 - x) / horizontalRadius;
 
                 for (int zIndex = minZIndex; zIndex <= maxZIndex; zIndex++) {
-                    int worldZ = chunkPos.getBlockZ(zIndex);
+                    int worldZ = (int)chunkPos.getBlockZ(zIndex);
                     double zd = (worldZ + 0.5 - z) / horizontalRadius;
                     if (!(xd * xd + zd * zd >= 1.0)) {
                         MutableBoolean hasGrass = new MutableBoolean(false);
@@ -208,8 +208,8 @@ public abstract class WorldCarver<C extends CarverConfiguration> {
     protected static boolean canReach(
         final ChunkPos chunkPos, final double x, final double z, final int currentStep, final int totalSteps, final float thickness
     ) {
-        double xMid = chunkPos.getMiddleBlockX();
-        double zMid = chunkPos.getMiddleBlockZ();
+        double xMid = (int)chunkPos.getMiddleBlockX();
+        double zMid = (int)chunkPos.getMiddleBlockZ();
         double xd = x - xMid;
         double zd = z - zMid;
         double remaining = totalSteps - currentStep;

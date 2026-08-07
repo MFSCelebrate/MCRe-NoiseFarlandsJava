@@ -130,7 +130,7 @@ public class ServerChunkCache extends ChunkSource {
         return this.chunkMap.getVisibleChunkIfPresent(key);
     }
 
-    private void storeInCache(final long pos, final @Nullable ChunkAccess chunk, final ChunkStatus status) {
+    private void storeInCache(final ChunkPos pos, final @Nullable ChunkAccess chunk, final ChunkStatus status) {
         for (int i = 3; i > 0; i--) {
             this.lastChunkPos[i] = this.lastChunkPos[i - 1];
             this.lastChunkStatus[i] = this.lastChunkStatus[i - 1];
@@ -184,7 +184,7 @@ public class ServerChunkCache extends ChunkSource {
         ChunkPos pos = new ChunkPos(x, z);
 
         for (int i = 0; i < 4; i++) {
-            if (pos == this.lastChunkPos[i] && this.lastChunkStatus[i] == ChunkStatus.FULL) {
+            if (pos.equals(this.lastChunkPos[i]) && this.lastChunkStatus[i] == ChunkStatus.FULL) {
                 return this.lastChunk[i] instanceof LevelChunk levelChunk ? levelChunk : null;
             }
         }
@@ -291,7 +291,7 @@ public class ServerChunkCache extends ChunkSource {
         return true;
     }
 
-    public boolean isPositionTicking(final long chunkKey) {
+    public boolean isPositionTicking(final ChunkPos chunkKey) {
         if (!this.level.shouldTickBlocksAt(chunkKey)) {
             return false;
         }
@@ -425,7 +425,7 @@ public class ServerChunkCache extends ChunkSource {
         }
     }
 
-    private void getFullChunk(final long chunkKey, final Consumer<LevelChunk> output) {
+    private void getFullChunk(final ChunkPos chunkKey, final Consumer<LevelChunk> output) {
         ChunkHolder chunkHolder = this.getVisibleChunkIfPresent(chunkKey);
         if (chunkHolder != null) {
             chunkHolder.getFullChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK).ifSuccess(output);

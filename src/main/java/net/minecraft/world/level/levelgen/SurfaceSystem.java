@@ -75,8 +75,8 @@ public class SurfaceSystem {
     ) {
         final BlockPos.MutableBlockPos columnPos = new BlockPos.MutableBlockPos();
         final ChunkPos chunkPos = protoChunk.getPos();
-        int minBlockX = chunkPos.getMinBlockX();
-        int minBlockZ = chunkPos.getMinBlockZ();
+        int minBlockX = (int)chunkPos.getMinBlockX();
+        int minBlockZ = (int)chunkPos.getMinBlockZ();
         BlockColumn column = new BlockColumn() {
             @Override
             public BlockState getBlock(final int blockY) {

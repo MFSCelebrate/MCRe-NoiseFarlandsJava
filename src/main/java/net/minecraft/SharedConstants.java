@@ -210,8 +210,8 @@ public class SharedConstants {
     }
 
     public static boolean debugVoidTerrain(final ChunkPos pos) {
-        int posX = pos.getMinBlockX();
-        int posZ = pos.getMinBlockZ();
+        int posX = (int)pos.getMinBlockX();
+        int posZ = (int)pos.getMinBlockZ();
         if (DEBUG_ONLY_GENERATE_HALF_THE_WORLD) {
             return posZ < 0;
         } else {

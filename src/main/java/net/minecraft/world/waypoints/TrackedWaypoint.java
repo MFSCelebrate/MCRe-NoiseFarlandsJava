@@ -162,8 +162,8 @@ public abstract class TrackedWaypoint implements Waypoint {
 
         @Override
         public void writeContents(final ByteBuf buf) {
-            VarInt.write(buf, this.chunkPos.x());
-            VarInt.write(buf, this.chunkPos.z());
+            VarInt.write(buf, (int)this.chunkPos.x());
+            VarInt.write(buf, (int)this.chunkPos.z());
         }
 
         private Vec3 position(final double positionY) {

@@ -2,6 +2,8 @@ package net.minecraft.world.level.chunk;
 
 
 
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.LevelAccessor;
@@ -13,7 +15,7 @@ public class BulkSectionAccess implements AutoCloseable {
     private final LevelAccessor level;
     private final Map<SectionPos, LevelChunkSection> acquiredSections = new HashMap<>();
     private @Nullable LevelChunkSection lastSection;
-    private long lastSectionKey;
+    private SectionPos lastSectionKey;
 
     public BulkSectionAccess(final LevelAccessor level) {
         this.level = level;
@@ -23,7 +25,7 @@ public class BulkSectionAccess implements AutoCloseable {
         int sectionIndex = this.level.getSectionIndex(pos.getY());
         if (sectionIndex >= 0 && sectionIndex < this.level.getSectionsCount()) {
             SectionPos sectionKey = SectionPos.of(pos);
-            if (this.lastSection == null || this.lastSectionKey != sectionKey) {
+            if (this.lastSection == null || !sectionKey.equals(this.lastSectionKey)) {
                 this.lastSection = this.acquiredSections.computeIfAbsent(sectionKey, key -> {
                     ChunkAccess chunk = this.level.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
                     LevelChunkSection result = chunk.getSection(sectionIndex);

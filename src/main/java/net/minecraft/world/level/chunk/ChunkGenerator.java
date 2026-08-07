@@ -231,7 +231,7 @@ public abstract class ChunkGenerator {
         BlockPos.MutableBlockPos structurePos = new BlockPos.MutableBlockPos();
 
         for (ChunkPos chunkPos : positions) {
-            structurePos.set(SectionPos.sectionToBlockCoord(chunkPos.x(), 8), 32, SectionPos.sectionToBlockCoord(chunkPos.z(), 8));
+            structurePos.set(SectionPos.sectionToBlockCoord((int)chunkPos.x(), 8), 32, SectionPos.sectionToBlockCoord((int)chunkPos.z(), 8));
             double distSqr = structurePos.distSqr(pos);
             boolean isClosest = closestPos == null || distSqr < closest;
             if (isClosest) {
@@ -296,7 +296,7 @@ public abstract class ChunkGenerator {
                     return Pair.of(config.getLocatePos(chunkTarget), structure);
                 }
 
-                ChunkAccess chunk = level.getChunk(chunkTarget.x(), chunkTarget.z(), ChunkStatus.STRUCTURE_STARTS);
+                ChunkAccess chunk = level.getChunk((int)chunkTarget.x(), (int)chunkTarget.z(), ChunkStatus.STRUCTURE_STARTS);
                 StructureStart start = structureManager.getStartForStructure(SectionPos.bottomOf(chunk), structure.value(), chunk);
                 if (start != null && start.isValid() && (!createReference || tryAddReference(structureManager, start))) {
                     return Pair.of(config.getLocatePos(start.getChunkPos()), structure);
@@ -329,7 +329,7 @@ public abstract class ChunkGenerator {
             long decorationSeed = random.setDecorationSeed(level.getSeed(), origin.getX(), origin.getZ());
             Set<Holder<Biome>> possibleBiomes = new ObjectArraySet<>();
             ChunkPos.rangeClosed(sectionPos.chunk(), 1).forEach(chunkPos -> {
-                ChunkAccess chunkInRange = level.getChunk(chunkPos.x(), chunkPos.z());
+                ChunkAccess chunkInRange = level.getChunk((int)chunkPos.x(), (int)chunkPos.z());
 
                 for (LevelChunkSection section : chunkInRange.getSections()) {
                     section.getBiomes().getAll(possibleBiomes::add);
@@ -421,8 +421,8 @@ public abstract class ChunkGenerator {
 
     private static BoundingBox getWritableArea(final ChunkAccess chunk) {
         ChunkPos chunkPos = chunk.getPos();
-        int targetBlockX = chunkPos.getMinBlockX();
-        int targetBlockZ = chunkPos.getMinBlockZ();
+        int targetBlockX = (int)chunkPos.getMinBlockX();
+        int targetBlockZ = (int)chunkPos.getMinBlockZ();
         LevelHeightAccessor heightAccessor = chunk.getHeightAccessorForGeneration();
         int minY = heightAccessor.getMinY() + 1;
         int maxY = heightAccessor.getMaxY();
@@ -497,7 +497,7 @@ public abstract class ChunkGenerator {
                             }
                         }
 
-                        if (featurePlacement.isStructureChunk(state, sourceChunkPos.x(), sourceChunkPos.z())) {
+                        if (featurePlacement.isStructureChunk(state, (int)sourceChunkPos.x(), (int)sourceChunkPos.z())) {
                             if (structures.size() == 1) {
                                 this.tryGenerateStructure(
                                     structures.get(0),
@@ -515,7 +515,7 @@ public abstract class ChunkGenerator {
                                 ArrayList<StructureSet.StructureSelectionEntry> options = new ArrayList<>(structures.size());
                                 options.addAll(structures);
                                 WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
-                                random.setLargeFeatureSeed(state.getLevelSeed(), sourceChunkPos.x(), sourceChunkPos.z());
+                                random.setLargeFeatureSeed(state.getLevelSeed(), (int)sourceChunkPos.x(), (int)sourceChunkPos.z());
                                 int total = 0;
 
                                 for (StructureSet.StructureSelectionEntry option : options) {
@@ -609,10 +609,10 @@ public abstract class ChunkGenerator {
     public void createReferences(final WorldGenLevel level, final StructureManager structureManager, final ChunkAccess centerChunk) {
         int range = 8;
         ChunkPos chunkPos = centerChunk.getPos();
-        int targetX = chunkPos.x();
-        int targetZ = chunkPos.z();
-        int targetBlockX = chunkPos.getMinBlockX();
-        int targetBlockZ = chunkPos.getMinBlockZ();
+        int targetX = (int)chunkPos.x();
+        int targetZ = (int)chunkPos.z();
+        int targetBlockX = (int)chunkPos.getMinBlockX();
+        int targetBlockZ = (int)chunkPos.getMinBlockZ();
         SectionPos pos = SectionPos.bottomOf(centerChunk);
 
         for (int sourceX = targetX - 8; sourceX <= targetX + 8; sourceX++) {

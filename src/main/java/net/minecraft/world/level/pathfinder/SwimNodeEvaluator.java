@@ -3,6 +3,7 @@ package net.minecraft.world.level.pathfinder;
 import com.google.common.collect.Maps;
 
 
+import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

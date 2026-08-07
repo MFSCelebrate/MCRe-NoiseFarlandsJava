@@ -275,8 +275,8 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         Set<Holder<Biome>> chunkBiomes = new ReferenceOpenHashSet<>();
         ChunkPos center = region.getCenter();
 
-        for (int z = center.z() - chunkRadius; z <= center.z() + chunkRadius; z++) {
-            for (int x = center.x() - chunkRadius; x <= center.x() + chunkRadius; x++) {
+        for (int z = (int)center.z() - chunkRadius; z <= (int)center.z() + chunkRadius; z++) {
+            for (int x = (int)center.x() - chunkRadius; x <= (int)center.x() + chunkRadius; x++) {
                 region.getChunk(x, z).collectBiomesInPalette(chunkBiomes);
             }
         }
@@ -326,12 +326,12 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
             for (int dx = -8; dx <= 8; dx++) {
                 for (int dz = -8; dz <= 8; dz++) {
                     ChunkPos sourcePos = new ChunkPos(pos.x() + dx, pos.z() + dz);
-                    ChunkAccess carverCenterChunk = region.getChunk(sourcePos.x(), sourcePos.z());
+                    ChunkAccess carverCenterChunk = region.getChunk((int)sourcePos.x(), (int)sourcePos.z());
                     BiomeGenerationSettings sourceBiomeGenerationSettings = carverCenterChunk.carverBiome(
                         () -> this.getBiomeGenerationSettings(
                             this.biomeSource
                                 .getNoiseBiome(
-                                    QuartPos.fromBlock(sourcePos.getMinBlockX()), 0, QuartPos.fromBlock(sourcePos.getMinBlockZ()), randomState.sampler()
+                                    QuartPos.fromBlock((int)sourcePos.getMinBlockX()), 0, QuartPos.fromBlock((int)sourcePos.getMinBlockZ()), randomState.sampler()
                                 )
                         )
                     );
@@ -340,7 +340,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
 
                     for (Holder<ConfiguredWorldCarver<?>> carverHolder : carvers) {
                         ConfiguredWorldCarver<?> carver = carverHolder.value();
-                        random.setLargeFeatureSeed(seed + index, sourcePos.x(), sourcePos.z());
+                        random.setLargeFeatureSeed(seed + index, (int)sourcePos.x(), (int)sourcePos.z());
                         if (carver.isStartChunk(random)) {
                             carver.carve(context, chunk, correctBiomeManager::getBiome, random, aquifer, sourcePos, mask);
                         }
@@ -393,8 +393,8 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         Heightmap oceanFloor = centerChunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG);
         Heightmap worldSurface = centerChunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG);
         ChunkPos chunkPos = centerChunk.getPos();
-        int chunkStartBlockX = chunkPos.getMinBlockX();
-        int chunkStartBlockZ = chunkPos.getMinBlockZ();
+        int chunkStartBlockX = (int)chunkPos.getMinBlockX();
+        int chunkStartBlockZ = (int)chunkPos.getMinBlockZ();
         Aquifer aquifer = noiseChunk.aquifer();
         noiseChunk.initializeForFirstCellX();
         BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
@@ -497,7 +497,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
             ChunkPos center = worldGenRegion.getCenter();
             Holder<Biome> biome = worldGenRegion.getBiome(center.getWorldPosition().atY(worldGenRegion.getMaxY()));
             WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(RandomSupport.generateUniqueSeed()));
-            random.setDecorationSeed(worldGenRegion.getSeed(), center.getMinBlockX(), center.getMinBlockZ());
+            random.setDecorationSeed(worldGenRegion.getSeed(), (int)center.getMinBlockX(), (int)center.getMinBlockZ());
             NaturalSpawner.spawnMobsForChunkGeneration(worldGenRegion, biome, center, random);
         }
     }

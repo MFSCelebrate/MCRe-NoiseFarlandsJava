@@ -62,10 +62,10 @@ public class ClientChunkCache extends ChunkSource {
     }
 
     public void drop(final ChunkPos pos) {
-        if (this.storage.inRange(pos.x(), pos.z())) {
-            int index = this.storage.getIndex(pos.x(), pos.z());
+        if (this.storage.inRange((int)pos.x(), (int)pos.z())) {
+            int index = this.storage.getIndex((int)pos.x(), (int)pos.z());
             LevelChunk currentChunk = this.storage.getChunk(index);
-            if (isValidChunk(currentChunk, pos.x(), pos.z())) {
+            if (isValidChunk(currentChunk, (int)pos.x(), (int)pos.z())) {
                 this.storage.drop(index, currentChunk);
             }
         }
@@ -150,8 +150,8 @@ public class ClientChunkCache extends ChunkSource {
                 LevelChunk chunk = this.storage.chunks.get(i);
                 if (chunk != null) {
                     ChunkPos pos = chunk.getPos();
-                    if (newStorage.inRange(pos.x(), pos.z())) {
-                        newStorage.replace(newStorage.getIndex(pos.x(), pos.z()), chunk);
+                    if (newStorage.inRange((int)pos.x(), (int)pos.z())) {
+                        newStorage.replace(newStorage.getIndex((int)pos.x(), (int)pos.z()), chunk);
                     }
                 }
             }

@@ -67,7 +67,7 @@ public class DesertPyramidStructure extends SinglePieceStructure {
         if (chunkBB.isInside(blockPos)) {
             level.setBlock(blockPos, Blocks.SUSPICIOUS_SAND.defaultBlockState(), 2);
             level.getBlockEntity(blockPos, BlockEntityTypes.BRUSHABLE_BLOCK)
-                .ifPresent(entity -> entity.setLootTable(BuiltInLootTables.DESERT_PYRAMID_ARCHAEOLOGY, blockPos.asLong()));
+                .ifPresent(entity -> entity.setLootTable(BuiltInLootTables.DESERT_PYRAMID_ARCHAEOLOGY, (long)blockPos.hashCode()));
         }
     }
 

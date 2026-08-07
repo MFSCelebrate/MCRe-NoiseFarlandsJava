@@ -7,9 +7,7 @@ import java.util.List;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Position;
 import net.minecraft.core.Vec3i;
-import net.minecraft.network.LpVec3;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Util;
 import net.minecraft.world.phys.Vec2;
@@ -35,7 +33,6 @@ public class Vec3 implements Position {
             output.writeDouble(value.z());
         }
     };
-    public static final StreamCodec<ByteBuf, Vec3> LP_STREAM_CODEC = StreamCodec.of(LpVec3::write, LpVec3::read);
     public static final Vec3 ZERO = new Vec3(0.0, 0.0, 0.0);
     public static final Vec3 X_AXIS = new Vec3(1.0, 0.0, 0.0);
     public static final Vec3 Y_AXIS = new Vec3(0.0, 1.0, 0.0);

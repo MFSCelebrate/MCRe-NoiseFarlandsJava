@@ -26,8 +26,8 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
         final @Nullable BitSet blockChangedLightSectionFilter
     ) {
         ChunkPos chunkPos = levelChunk.getPos();
-        this.x = chunkPos.x();
-        this.z = chunkPos.z();
+        this.x = (int)chunkPos.x();
+        this.z = (int)chunkPos.z();
         this.chunkData = new ClientboundLevelChunkPacketData(levelChunk);
         this.lightData = new ClientboundLightUpdatePacketData(chunkPos, lightEngine, skyChangedLightSectionFilter, blockChangedLightSectionFilter);
     }

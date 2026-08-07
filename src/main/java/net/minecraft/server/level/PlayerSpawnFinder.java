@@ -180,8 +180,8 @@ public class PlayerSpawnFinder {
             return null;
         }
 
-        for (int x = chunkPos.getMinBlockX(); x <= chunkPos.getMaxBlockX(); x++) {
-            for (int z = chunkPos.getMinBlockZ(); z <= chunkPos.getMaxBlockZ(); z++) {
+        for (int x = (int)chunkPos.getMinBlockX(); x <= (int)chunkPos.getMaxBlockX(); x++) {
+            for (int z = (int)chunkPos.getMinBlockZ(); z <= (int)chunkPos.getMaxBlockZ(); z++) {
                 BlockPos validSpawnPosition = getLevelRespawnPos(level, x, z);
                 if (validSpawnPosition != null) {
                     return validSpawnPosition;

@@ -416,8 +416,8 @@ public class FriendlyByteBuf extends ByteBuf {
     }
 
     public static void writeChunkPos(final ByteBuf output, final ChunkPos chunkPos) {
-        output.writeLong(chunkPos.x());
-        output.writeLong(chunkPos.z());
+        output.writeLong((int)chunkPos.x());
+        output.writeLong((int)chunkPos.z());
     }
 
     public GlobalPos readGlobalPos() {

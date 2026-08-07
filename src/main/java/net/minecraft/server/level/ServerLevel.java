@@ -470,7 +470,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
     }
 
     @Override
-    public boolean shouldTickBlocksAt(final long chunkPos) {
+    public boolean shouldTickBlocksAt(final ChunkPos chunkPos) {
         return this.chunkSource.chunkMap.getDistanceManager().inBlockTickingRange(chunkPos);
     }
 
@@ -497,8 +497,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
 
     public void tickChunk(final LevelChunk chunk, final int tickSpeed) {
         ChunkPos chunkPos = chunk.getPos();
-        int minX = chunkPos.getMinBlockX();
-        int minZ = chunkPos.getMinBlockZ();
+        int minX = (int)chunkPos.getMinBlockX();
+        int minZ = (int)chunkPos.getMinBlockZ();
         ProfilerFiller profiler = Profiler.get();
         profiler.push("iceandsnow");
 
@@ -543,8 +543,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
     public void tickThunder(final LevelChunk chunk) {
         ChunkPos chunkPos = chunk.getPos();
         boolean raining = this.isRaining();
-        int minX = chunkPos.getMinBlockX();
-        int minZ = chunkPos.getMinBlockZ();
+        int minX = (int)chunkPos.getMinBlockX();
+        int minZ = (int)chunkPos.getMinBlockZ();
         ProfilerFiller profiler = Profiler.get();
         profiler.push("thunder");
         if (raining && this.isThundering() && this.random.nextInt(100000) == 0) {

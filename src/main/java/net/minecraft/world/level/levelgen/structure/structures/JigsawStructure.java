@@ -146,7 +146,7 @@ public final class JigsawStructure extends Structure {
     public Optional<Structure.GenerationStub> findGenerationPoint(final Structure.GenerationContext context) {
         ChunkPos chunkPos = context.chunkPos();
         int height = this.startHeight.sample(context.random(), new WorldGenerationContext(context.chunkGenerator(), context.heightAccessor()));
-        BlockPos startPos = new BlockPos(chunkPos.getMinBlockX(), height, chunkPos.getMinBlockZ());
+        BlockPos startPos = new BlockPos((int)chunkPos.getMinBlockX(), height, (int)chunkPos.getMinBlockZ());
         return JigsawPlacement.addPieces(
             context,
             this.startPool,

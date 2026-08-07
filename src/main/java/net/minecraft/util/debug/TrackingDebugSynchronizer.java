@@ -55,7 +55,7 @@ public abstract class TrackingDebugSynchronizer<T> {
     private void addSubscriber(final ServerPlayer player) {
         this.subscribedPlayers.add(player.getUUID());
         player.getChunkTrackingView().forEach(chunkPos -> {
-            if (!player.connection.chunkSender.isPending(chunkPos.pack())) {
+            if (!player.connection.chunkSender.isPending(chunkPos)) {
                 this.startTrackingChunk(player, chunkPos);
             }
         });
@@ -66,7 +66,7 @@ public abstract class TrackingDebugSynchronizer<T> {
         ChunkMap chunkMap = level.getChunkSource().chunkMap;
 
         for (UUID playerId : this.subscribedPlayers) {
-            if (level.getPlayerByUUID(playerId) instanceof ServerPlayer player && chunkMap.isChunkTracked(player, trackedChunk.x(), trackedChunk.z())) {
+            if (level.getPlayerByUUID(playerId) instanceof ServerPlayer player && chunkMap.isChunkTracked(player, (int)trackedChunk.x(), (int)trackedChunk.z())) {
                 player.connection.send(packet);
             }
         }

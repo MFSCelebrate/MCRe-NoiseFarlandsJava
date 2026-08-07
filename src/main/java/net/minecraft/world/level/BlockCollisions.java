@@ -5,6 +5,7 @@ import java.util.function.BiFunction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Cursor3D;
 import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Blocks;
@@ -25,7 +26,7 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
     private final CollisionGetter collisionGetter;
     private final boolean onlySuffocatingBlocks;
     private @Nullable BlockGetter cachedBlockGetter;
-    private long cachedBlockGetterPos;
+    private ChunkPos cachedBlockGetterPos;
     private final BiFunction<BlockPos.MutableBlockPos, VoxelShape, T> resultProvider;
 
     public BlockCollisions(
@@ -64,8 +65,8 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
     private @Nullable BlockGetter getChunk(final int x, final int z) {
         int chunkX = SectionPos.blockToSectionCoord(x);
         int chunkZ = SectionPos.blockToSectionCoord(z);
-        long chunkPos = ChunkPos.pack(chunkX, chunkZ);
-        if (this.cachedBlockGetter != null && this.cachedBlockGetterPos == chunkPos) {
+        ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
+        if (this.cachedBlockGetter != null && chunkPos.equals(this.cachedBlockGetterPos)) {
             return this.cachedBlockGetter;
         }
 

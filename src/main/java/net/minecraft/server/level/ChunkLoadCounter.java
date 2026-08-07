@@ -3,6 +3,7 @@ package net.minecraft.server.level;
 
 
 import java.util.ArrayList;
+import net.minecraft.world.level.ChunkPos;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

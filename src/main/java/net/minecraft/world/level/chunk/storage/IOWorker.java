@@ -45,15 +45,15 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
         ChunkPos from = new ChunkPos(pos.x() - range, pos.z() - range);
         ChunkPos to = new ChunkPos(pos.x() + range, pos.z() + range);
 
-        for (int regionX = from.getRegionX(); regionX <= to.getRegionX(); regionX++) {
-            for (int regionZ = from.getRegionZ(); regionZ <= to.getRegionZ(); regionZ++) {
+        for (int regionX = (int)from.getRegionX(); regionX <= (int)to.getRegionX(); regionX++) {
+            for (int regionZ = (int)from.getRegionZ(); regionZ <= (int)to.getRegionZ(); regionZ++) {
                 BitSet data = this.getOrCreateOldDataForRegion(regionX, regionZ).join();
                 if (!data.isEmpty()) {
                     ChunkPos minChunkPos = ChunkPos.minFromRegion(regionX, regionZ);
-                    int startChunkX = Math.max(from.x() - minChunkPos.x(), 0);
-                    int startChunkZ = Math.max(from.z() - minChunkPos.z(), 0);
-                    int endChunkX = Math.min(to.x() - minChunkPos.x(), 31);
-                    int endChunkZ = Math.min(to.z() - minChunkPos.z(), 31);
+                    int startChunkX = (int)Math.max(from.x() - minChunkPos.x(), 0L);
+                    int startChunkZ = (int)Math.max(from.z() - minChunkPos.z(), 0L);
+                    int endChunkX = (int)Math.min(to.x() - minChunkPos.x(), 31L);
+                    int endChunkZ = (int)Math.min(to.z() - minChunkPos.z(), 31L);
 
                     for (int x = startChunkX; x <= endChunkX; x++) {
                         for (int z = startChunkZ; z <= endChunkZ; z++) {
@@ -73,12 +73,12 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
     private CompletableFuture<BitSet> getOrCreateOldDataForRegion(final int regionX, final int regionZ) {
         ChunkPos regionPos = new ChunkPos(regionX, regionZ);
         synchronized (this.regionCacheForBlender) {
-            CompletableFuture<BitSet> result = this.regionCacheForBlender.getAndMoveToFirst(regionPos);
+            CompletableFuture<BitSet> result = this.regionCacheForBlender.get(regionPos);
             if (result == null) {
                 result = this.createOldDataForRegion(regionX, regionZ);
-                this.regionCacheForBlender.putAndMoveToFirst(regionPos, result);
+                this.regionCacheForBlender.put(regionPos, result);
                 if (this.regionCacheForBlender.size() > 1024) {
-                    this.regionCacheForBlender.removeLast();
+                    this.regionCacheForBlender.remove(this.regionCacheForBlender.keySet().iterator().next());
                 }
             }
 
@@ -107,7 +107,7 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
                             }
 
                             if (collectFields.getResult() instanceof CompoundTag chunkTag && this.isOldChunk(chunkTag)) {
-                                int chunkIndex = pos.getRegionLocalZ() * 32 + pos.getRegionLocalX();
+                                int chunkIndex = (int)pos.getRegionLocalZ() * 32 + (int)pos.getRegionLocalX();
                                 resultSet.set(chunkIndex);
                             }
                         }

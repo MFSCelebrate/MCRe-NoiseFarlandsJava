@@ -277,9 +277,9 @@ public class SectionPos extends Vec3i {
     /** 256-bit 向量 → 区块节（floor 到 16 对齐） */
     public static SectionPos from256(final Vec3d256 pos) {
         return of(
-            blockToSectionCoord(pos.x.floor().longValue()),
-            blockToSectionCoord(pos.y.floor().longValue()),
-            blockToSectionCoord(pos.z.floor().longValue())
+            (int)blockToSectionCoord(pos.x.floor().longValue()),
+            (int)blockToSectionCoord(pos.y.floor().longValue()),
+            (int)blockToSectionCoord(pos.z.floor().longValue())
         );
     }
 }

@@ -78,7 +78,7 @@ public final class NaturalSpawner {
                 MobCategory category = entity.getType().getCategory();
                 if (category != MobCategory.MISC) {
                     BlockPos pos = entity.blockPosition();
-                    chunkGetter.query(ChunkPos.pack(pos), chunk -> {
+                    chunkGetter.query(ChunkPos.containing(pos), chunk -> {
                         MobSpawnSettings.MobSpawnCost mobSpawnCost = getRoughBiome(pos, chunk).getMobSettings().getMobSpawnCost(entity.getType());
                         if (mobSpawnCost != null) {
                             spawnPotential.addCharge(entity.blockPosition(), mobSpawnCost.charge());
@@ -342,8 +342,8 @@ public final class NaturalSpawner {
 
     private static BlockPos getRandomPosWithin(final Level level, final LevelChunk chunk) {
         ChunkPos pos = chunk.getPos();
-        int x = pos.getMinBlockX() + level.random.nextInt(16);
-        int z = pos.getMinBlockZ() + level.random.nextInt(16);
+        int x = (int)pos.getMinBlockX() + level.random.nextInt(16);
+        int z = (int)pos.getMinBlockZ() + level.random.nextInt(16);
         int topEmptyY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1;
         int y = Mth.randomBetweenInclusive(level.random, level.getMinY(), topEmptyY);
         return new BlockPos(x, y, z);
@@ -369,8 +369,8 @@ public final class NaturalSpawner {
         MobSpawnSettings mobSettings = biome.value().getMobSettings();
         WeightedList<MobSpawnSettings.SpawnerData> mobs = mobSettings.getMobs(MobCategory.CREATURE);
         if (!mobs.isEmpty() && level.getLevel().getGameRules().get(GameRules.SPAWN_MOBS)) {
-            int xo = chunkPos.getMinBlockX();
-            int zo = chunkPos.getMinBlockZ();
+            int xo = (int)chunkPos.getMinBlockX();
+            int zo = (int)chunkPos.getMinBlockZ();
 
             while (random.nextFloat() < mobSettings.getCreatureProbability()) {
                 Optional<MobSpawnSettings.SpawnerData> nextSpawnerData = mobs.getRandom(random);

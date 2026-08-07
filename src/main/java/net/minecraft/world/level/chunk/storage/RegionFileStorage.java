@@ -32,19 +32,19 @@ public final class RegionFileStorage implements AutoCloseable {
 
     private RegionFile getRegionFile(final ChunkPos pos) throws IOException {
         ChunkPos key = new ChunkPos(pos.getRegionX(), pos.getRegionZ());
-        RegionFile region = this.regionCache.getAndMoveToFirst(key);
+        RegionFile region = this.regionCache.get(key);
         if (region != null) {
             return region;
         }
 
         if (this.regionCache.size() >= 256) {
-            this.regionCache.removeLast().close();
+            this.regionCache.remove(this.regionCache.keySet().iterator().next()).close();
         }
 
         FileUtil.createDirectoriesSafe(this.folder);
         Path file = this.folder.resolve("r." + pos.getRegionX() + "." + pos.getRegionZ() + ".mca");
         RegionFile newRegion = new RegionFile(this.info, file, this.folder, this.sync);
-        this.regionCache.putAndMoveToFirst(key, newRegion);
+        this.regionCache.put(key, newRegion);
         return newRegion;
     }
 

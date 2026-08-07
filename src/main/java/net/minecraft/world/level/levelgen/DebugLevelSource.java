@@ -60,8 +60,8 @@ public class DebugLevelSource extends ChunkGenerator {
     public void applyBiomeDecoration(final WorldGenLevel level, final ChunkAccess chunk, final StructureManager structureManager) {
         BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
         ChunkPos centerPos = chunk.getPos();
-        int chunkX = centerPos.x();
-        int chunkZ = centerPos.z();
+        int chunkX = (int)centerPos.x();
+        int chunkZ = (int)centerPos.z();
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {

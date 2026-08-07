@@ -15,6 +15,7 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -509,7 +510,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     public void onChunkLoaded(final ChunkPos pos) {
-        this.tintCaches.forEach((resolver, cache) -> cache.invalidateForChunk(pos.x(), pos.z()));
+        this.tintCaches.forEach((resolver, cache) -> cache.invalidateForChunk((int)pos.x(), (int)pos.z()));
         this.entityStorage.startTicking(pos);
     }
 

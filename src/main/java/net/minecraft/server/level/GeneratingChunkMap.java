@@ -8,7 +8,7 @@ import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.status.ChunkStep;
 
 public interface GeneratingChunkMap {
-    GenerationChunkHolder acquireGeneration(long chunkNode);
+    GenerationChunkHolder acquireGeneration(ChunkPos chunkNode);
 
     void releaseGeneration(GenerationChunkHolder chunkHolder);
 

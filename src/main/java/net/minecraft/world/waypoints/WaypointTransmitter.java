@@ -33,7 +33,7 @@ public interface WaypointTransmitter extends Waypoint {
     }
 
     static boolean isChunkVisible(final ChunkPos chunkPos, final ServerPlayer receiver) {
-        return receiver.getChunkTrackingView().isInViewDistance(chunkPos.x(), chunkPos.z());
+        return receiver.getChunkTrackingView().isInViewDistance((int)chunkPos.x(), (int)chunkPos.z());
     }
 
     static boolean isReallyFar(final LivingEntity source, final ServerPlayer receiver) {
@@ -168,7 +168,7 @@ public interface WaypointTransmitter extends Waypoint {
 
         @Override
         public int distanceChessboard() {
-            return this.lastPosition.getChessboardDistance(this.source.chunkPosition());
+            return (int)this.lastPosition.getChessboardDistance(this.source.chunkPosition());
         }
 
         @Override

@@ -41,8 +41,8 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
             return EMPTY;
         }
 
-        int chunkStartBlockX = chunkPos.getMinBlockX();
-        int chunkStartBlockZ = chunkPos.getMinBlockZ();
+        int chunkStartBlockX = (int)chunkPos.getMinBlockX();
+        int chunkStartBlockZ = (int)chunkPos.getMinBlockZ();
         List<Beardifier.Rigid> rigids = new ArrayList<>();
         List<JigsawJunction> junctions = new ArrayList<>();
         BoundingBox anyPieceBoundingBox = null;

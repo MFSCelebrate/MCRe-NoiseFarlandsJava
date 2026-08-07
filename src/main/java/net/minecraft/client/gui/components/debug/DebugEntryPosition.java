@@ -87,13 +87,13 @@ public class DebugEntryPosition implements DebugScreenEntry {
                     String.format(
                         Locale.ROOT,
                         "Chunk: %d %d %d [%d %d in r.%d.%d.mca]",
-                        chunkPos.x(),
+                        (int)chunkPos.x(),
                         SectionPos.blockToSectionCoord(feetPos.getY()),
-                        chunkPos.z(),
-                        chunkPos.getRegionLocalX(),
-                        chunkPos.getRegionLocalZ(),
-                        chunkPos.getRegionX(),
-                        chunkPos.getRegionZ()
+                        (int)chunkPos.z(),
+                        (int)chunkPos.getRegionLocalX(),
+                        (int)chunkPos.getRegionLocalZ(),
+                        (int)chunkPos.getRegionX(),
+                        (int)chunkPos.getRegionZ()
                     ),
                     precisionString,
                     String.format(

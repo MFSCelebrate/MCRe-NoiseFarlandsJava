@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.core.SectionPos;
@@ -90,7 +91,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         NoiseSettings noiseSettings = settings.noiseSettings().clampToHeightAccessor(chunk);
         ChunkPos pos = chunk.getPos();
         int cellCountXZ = 16 / noiseSettings.getCellWidth();
-        return new NoiseChunk(cellCountXZ, randomState, pos.getMinBlockX(), pos.getMinBlockZ(), noiseSettings, beardifier, settings, globalFluidPicker, blender);
+        return new NoiseChunk(cellCountXZ, randomState, (int)pos.getMinBlockX(), (int)pos.getMinBlockZ(), noiseSettings, beardifier, settings, globalFluidPicker, blender);
     }
 
     public NoiseChunk(

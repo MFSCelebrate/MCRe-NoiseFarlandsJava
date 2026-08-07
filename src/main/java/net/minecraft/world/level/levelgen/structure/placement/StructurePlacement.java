@@ -96,7 +96,7 @@ public abstract class StructurePlacement {
     protected abstract boolean isPlacementChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ);
 
     public BlockPos getLocatePos(final ChunkPos chunkPos) {
-        return new BlockPos(chunkPos.getMinBlockX(), 0, chunkPos.getMinBlockZ()).offset(this.locateOffset());
+        return new BlockPos((int)chunkPos.getMinBlockX(), 0, (int)chunkPos.getMinBlockZ()).offset(this.locateOffset());
     }
 
     public abstract StructurePlacementType<?> type();

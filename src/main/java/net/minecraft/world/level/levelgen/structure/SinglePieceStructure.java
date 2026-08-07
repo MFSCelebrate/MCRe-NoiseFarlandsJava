@@ -29,7 +29,7 @@ public abstract class SinglePieceStructure extends Structure {
 
     private void generatePieces(final StructurePiecesBuilder builder, final Structure.GenerationContext context) {
         ChunkPos chunkPos = context.chunkPos();
-        builder.addPiece(this.constructor.construct(context.random(), chunkPos.getMinBlockX(), chunkPos.getMinBlockZ()));
+        builder.addPiece(this.constructor.construct(context.random(), (int)chunkPos.getMinBlockX(), (int)chunkPos.getMinBlockZ()));
     }
 
     @FunctionalInterface

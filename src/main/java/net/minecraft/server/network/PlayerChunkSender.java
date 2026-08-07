@@ -91,7 +91,7 @@ public class PlayerChunkSender {
         if (!this.memoryConnection && this.pendingChunks.size() > maxBatchSize) {
             chunks = this.pendingChunks
                 .stream()
-                .collect(Comparators.least(maxBatchSize, Comparator.comparingInt(playerPos::distanceSquared)))
+                .collect(Comparators.least(maxBatchSize, Comparator.comparingLong(playerPos::distanceSquared)))
                 .stream()
                 .map(chunkMap::getChunkToSend)
                 .filter(Objects::nonNull)
@@ -99,9 +99,9 @@ public class PlayerChunkSender {
         } else {
             chunks = this.pendingChunks
                 .stream()
-                .mapToObj(chunkMap::getChunkToSend)
+                .map(chunkMap::getChunkToSend)
                 .filter(Objects::nonNull)
-                .sorted(Comparator.comparingInt(chunkx -> playerPos.distanceSquared(chunkx.getPos())))
+                .sorted(Comparator.comparingLong(chunkx -> playerPos.distanceSquared(chunkx.getPos())))
                 .toList();
         }
 
@@ -126,7 +126,7 @@ public class PlayerChunkSender {
         this.maxUnacknowledgedBatches = 10;
     }
 
-    public boolean isPending(final long pos) {
+    public boolean isPending(final ChunkPos pos) {
         return this.pendingChunks.contains(pos);
     }
 }

@@ -102,7 +102,7 @@ public class BlockTintCache {
 
             BlockTintCache.CacheData newCache = new BlockTintCache.CacheData();
             if (this.cache.size() >= 256) {
-                BlockTintCache.CacheData cacheData = this.cache.removeFirst();
+                BlockTintCache.CacheData cacheData = this.cache.remove(this.cache.keySet().iterator().next());
                 if (cacheData != null) {
                     cacheData.invalidate();
                 }

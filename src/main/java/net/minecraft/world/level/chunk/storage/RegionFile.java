@@ -347,7 +347,7 @@ public class RegionFile implements AutoCloseable {
     }
 
     private static int getOffsetIndex(final ChunkPos pos) {
-        return pos.getRegionLocalX() + pos.getRegionLocalZ() * 32;
+        return (int)pos.getRegionLocalX() + (int)pos.getRegionLocalZ() * 32;
     }
 
     @Override

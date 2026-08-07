@@ -162,7 +162,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
                 .flatMap(registry -> registry.get(EndFeatures.END_ISLAND))
                 .ifPresent(
                     endIsland -> endIsland.value()
-                        .place(level, level.getChunkSource().getGenerator(), RandomSource.create(newExitPortalPos.asLong()), newExitPortalPos)
+                        .place(level, level.getChunkSource().getGenerator(), RandomSource.create((long)newExitPortalPos.hashCode()), newExitPortalPos)
                 );
             exitPortalPos = newExitPortalPos;
         } else {
@@ -226,9 +226,9 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
 
     private static @Nullable BlockPos findValidSpawnInChunk(final LevelChunk chunk) {
         ChunkPos chunkPos = chunk.getPos();
-        BlockPos start = new BlockPos(chunkPos.getMinBlockX(), 30, chunkPos.getMinBlockZ());
+        BlockPos start = new BlockPos((int)chunkPos.getMinBlockX(), 30, (int)chunkPos.getMinBlockZ());
         int maxY = chunk.getHighestSectionPosition() + 16 - 1;
-        BlockPos end = new BlockPos(chunkPos.getMaxBlockX(), maxY, chunkPos.getMaxBlockZ());
+        BlockPos end = new BlockPos((int)chunkPos.getMaxBlockX(), maxY, (int)chunkPos.getMaxBlockZ());
         BlockPos closest = null;
         double closestDist = 0.0;
 

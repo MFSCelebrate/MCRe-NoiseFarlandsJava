@@ -42,8 +42,8 @@ public class OceanMonumentStructure extends Structure {
     }
 
     private static StructurePiece createTopPiece(final ChunkPos chunkPos, final WorldgenRandom random) {
-        int west = chunkPos.getMinBlockX() - 29;
-        int north = chunkPos.getMinBlockZ() - 29;
+        int west = (int)chunkPos.getMinBlockX() - 29;
+        int north = (int)chunkPos.getMinBlockZ() - 29;
         Direction orientation = Direction.Plane.HORIZONTAL.getRandomDirection(random);
         return new OceanMonumentPieces.MonumentBuilding(random, west, north, orientation);
     }
@@ -58,7 +58,7 @@ public class OceanMonumentStructure extends Structure {
         }
 
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(RandomSupport.generateUniqueSeed()));
-        random.setLargeFeatureSeed(seed, chunkPos.x(), chunkPos.z());
+        random.setLargeFeatureSeed(seed, (int)chunkPos.x(), (int)chunkPos.z());
         StructurePiece oldTopPiece = savedPieces.pieces().get(0);
         BoundingBox oldBoundingBox = oldTopPiece.getBoundingBox();
         int west = oldBoundingBox.minX();

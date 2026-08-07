@@ -119,8 +119,8 @@ public abstract class StructurePiece {
     }
 
     public boolean isCloseToChunk(final ChunkPos pos, final int distance) {
-        int cx = pos.getMinBlockX();
-        int cz = pos.getMinBlockZ();
+        int cx = (int)pos.getMinBlockX();
+        int cz = (int)pos.getMinBlockZ();
         return this.boundingBox.intersects(cx - distance, cz - distance, cx + 15 + distance, cz + 15 + distance);
     }
 

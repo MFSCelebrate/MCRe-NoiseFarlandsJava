@@ -108,6 +108,6 @@ public class DesertWellFeature extends Feature<NoneFeatureConfiguration> {
 
     private static void placeSusSand(final WorldGenLevel level, final BlockPos pos) {
         level.setBlock(pos, Blocks.SUSPICIOUS_SAND.defaultBlockState(), 3);
-        level.getBlockEntity(pos, BlockEntityTypes.BRUSHABLE_BLOCK).ifPresent(e -> e.setLootTable(BuiltInLootTables.DESERT_WELL_ARCHAEOLOGY, pos.asLong()));
+        level.getBlockEntity(pos, BlockEntityTypes.BRUSHABLE_BLOCK).ifPresent(e -> e.setLootTable(BuiltInLootTables.DESERT_WELL_ARCHAEOLOGY, (long)pos.hashCode()));
     }
 }

@@ -23,8 +23,8 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
         final @Nullable BitSet skyChangedLightSectionFilter,
         final @Nullable BitSet blockChangedLightSectionFilter
     ) {
-        this.x = pos.x();
-        this.z = pos.z();
+        this.x = (int)pos.x();
+        this.z = (int)pos.z();
         this.lightData = new ClientboundLightUpdatePacketData(pos, lightEngine, skyChangedLightSectionFilter, blockChangedLightSectionFilter);
     }
 

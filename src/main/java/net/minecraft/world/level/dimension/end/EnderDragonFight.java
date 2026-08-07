@@ -307,8 +307,8 @@ public class EnderDragonFight extends SavedData {
     private BlockPattern.@Nullable BlockPatternMatch findExitPortal() {
         ChunkPos chunkOrigin = ChunkPos.containing(this.origin);
 
-        for (int x = -8 + chunkOrigin.x(); x <= 8 + chunkOrigin.x(); x++) {
-            for (int z = -8 + chunkOrigin.z(); z <= 8 + chunkOrigin.z(); z++) {
+        for (int x = -8 + (int)chunkOrigin.x(); x <= 8 + (int)chunkOrigin.x(); x++) {
+            for (int z = -8 + (int)chunkOrigin.z(); z <= 8 + (int)chunkOrigin.z(); z++) {
                 LevelChunk chunk = this.level.getChunk(x, z);
 
                 for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
@@ -353,8 +353,8 @@ public class EnderDragonFight extends SavedData {
 
         ChunkPos chunkOrigin = ChunkPos.containing(this.origin);
 
-        for (int x = -8 + chunkOrigin.x(); x <= 8 + chunkOrigin.x(); x++) {
-            for (int z = 8 + chunkOrigin.z(); z <= 8 + chunkOrigin.z(); z++) {
+        for (int x = -8 + (int)chunkOrigin.x(); x <= 8 + (int)chunkOrigin.x(); x++) {
+            for (int z = 8 + (int)chunkOrigin.z(); z <= 8 + (int)chunkOrigin.z(); z++) {
                 if (!(this.level.getChunk(x, z, ChunkStatus.FULL, false) instanceof LevelChunk levelChunk)) {
                     return false;
                 }

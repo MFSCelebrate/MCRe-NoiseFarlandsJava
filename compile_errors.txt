@@ -1,0 +1,1123 @@
+
+> Task :compileJava
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/biome/Biome.java:73: error: cannot find symbol
+    private final ThreadLocal<LinkedHashMap<BlockPos, Float>> temperatureCache = ThreadLocal.withInitial(() -> {
+                              ^
+  symbol:   class LinkedHashMap
+  location: class Biome
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java:144: error: cannot find symbol
+    public Set<ChunkPos> getReferencesForStructure(final Structure structure) {
+           ^
+  symbol:   class Set
+  location: class ImposterProtoChunk
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java:153: error: cannot find symbol
+    public Map<Structure, Set<ChunkPos>> getAllReferences() {
+                          ^
+  symbol:   class Set
+  location: class ImposterProtoChunk
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java:158: error: cannot find symbol
+    public void setAllReferences(final Map<Structure, Set<ChunkPos>> data) {
+                                                      ^
+  symbol:   class Set
+  location: class ImposterProtoChunk
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseChunk.java:44: error: cannot find symbol
+    private BlockPos lastBlendingDataPos;
+            ^
+  symbol:   class BlockPos
+  location: class NoiseChunk
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/BlockGetter.java:212: error: cannot find symbol
+        final Set<BlockPos> visitedBlocks, final Vec3 deltaMove, final AABB aabbAtTarget, final BlockGetter.BlockStepVisitor visitor
+              ^
+  symbol:   class Set
+  location: interface BlockGetter
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/state/level/SectionUpdateRenderState.java:8: error: cannot find symbol
+public record SectionUpdateRenderState(SectionPos sectionNode, boolean playerChanged, RenderSectionRegion region) {
+                                       ^
+  symbol:   class SectionPos
+  location: class SectionUpdateRenderState
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/LevelRenderer.java:976: error: cannot find symbol
+    public java.util.Collection<ChunkPos> expectedChunks() {
+                                ^
+  symbol:   class ChunkPos
+  location: class LevelRenderer
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/BulkSectionAccess.java:14: error: cannot find symbol
+    private final Map<SectionPos, LevelChunkSection> acquiredSections = new HashMap<>();
+                  ^
+  symbol:   class Map
+  location: class BulkSectionAccess
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java:521: error: cannot find symbol
+        final Map<Structure, Set<ChunkPos>> references
+                             ^
+  symbol:   class Set
+  location: class SerializableChunkData
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java:567: error: cannot find symbol
+    private static Map<Structure, Set<ChunkPos>> unpackStructureReferences(final RegistryAccess registryAccess, final ChunkPos pos, final CompoundTag tag) {
+                                  ^
+  symbol:   class Set
+  location: class SerializableChunkData
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java:599: error: cannot find symbol
+    private static long[] packChunkPosArray(final Set<ChunkPos> positions) {
+                                                  ^
+  symbol:   class Set
+  location: class SerializableChunkData
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseChunk.java:533: error: cannot find symbol
+        private BlockPos lastPos2D;
+                ^
+  symbol:   class BlockPos
+  location: class Cache2D
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/block/BlockModelLighter.java:641: error: cannot find symbol
+        private final LinkedHashMap<BlockPos, Integer> colorCache = Util.make(() -> {
+                      ^
+  symbol:   class LinkedHashMap
+  location: class Cache
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/block/BlockModelLighter.java:650: error: cannot find symbol
+        private final LinkedHashMap<BlockPos, Float> brightnessCache = Util.make(() -> {
+                      ^
+  symbol:   class LinkedHashMap
+  location: class Cache
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/util/Mth.java:7: error: cannot find symbol
+import net.minecraft.Util;
+                    ^
+  symbol:   class Util
+  location: package net.minecraft
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/BlockGetter.java:186: error: cannot find symbol
+            Set<BlockPos> visitedBlocks = new HashSet<>();
+            ^
+  symbol:   class Set
+  location: interface BlockGetter
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/BlockGetter.java:186: error: cannot find symbol
+            Set<BlockPos> visitedBlocks = new HashSet<>();
+                                              ^
+  symbol:   class HashSet
+  location: interface BlockGetter
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/Level.java:555: error: cannot find symbol
+        return this.shouldTickBlocksAt(ChunkPos.pack(pos));
+                                               ^
+  symbol:   method pack(BlockPos)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerLevel.java:474: error: incompatible types: long cannot be converted to ChunkPos
+        return this.chunkSource.chunkMap.getDistanceManager().inBlockTickingRange(chunkPos);
+                                                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerLevel.java:500: error: incompatible types: possible lossy conversion from long to int
+        int minX = chunkPos.getMinBlockX();
+                                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerLevel.java:501: error: incompatible types: possible lossy conversion from long to int
+        int minZ = chunkPos.getMinBlockZ();
+                                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerLevel.java:546: error: incompatible types: possible lossy conversion from long to int
+        int minX = chunkPos.getMinBlockX();
+                                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerLevel.java:547: error: incompatible types: possible lossy conversion from long to int
+        int minZ = chunkPos.getMinBlockZ();
+                                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerLevel.java:1800: error: incompatible types: ChunkPos cannot be converted to long
+        return this.areEntitiesLoaded(key) && this.chunkSource.isPositionTicking(key);
+                                                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/waypoints/WaypointTransmitter.java:36: error: incompatible types: possible lossy conversion from long to int
+        return receiver.getChunkTrackingView().isInViewDistance(chunkPos.x(), chunkPos.z());
+                                                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/waypoints/WaypointTransmitter.java:171: error: incompatible types: possible lossy conversion from long to int
+            return this.lastPosition.getChessboardDistance(this.source.chunkPosition());
+                                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/MinecraftServer.java:378: error: incompatible types: possible lossy conversion from long to int
+                this.centerChunkX = centerChunk.x();
+                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/MinecraftServer.java:379: error: incompatible types: possible lossy conversion from long to int
+                this.centerChunkZ = centerChunk.z();
+                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/core/SectionPos.java:280: error: incompatible types: possible lossy conversion from long to int
+            blockToSectionCoord(pos.x.floor().longValue()),
+                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkTrackingView.java:52: error: incompatible types: possible lossy conversion from long to int
+        return this.contains(pos.x(), pos.z());
+                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkTrackingView.java:84: error: incompatible types: possible lossy conversion from long to int
+            return this.center.x() - this.viewDistance - 1;
+                                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkTrackingView.java:88: error: incompatible types: possible lossy conversion from long to int
+            return this.center.z() - this.viewDistance - 1;
+                                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkTrackingView.java:92: error: incompatible types: possible lossy conversion from long to int
+            return this.center.x() + this.viewDistance + 1;
+                                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkTrackingView.java:96: error: incompatible types: possible lossy conversion from long to int
+            return this.center.z() + this.viewDistance + 1;
+                                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkTrackingView.java:106: error: incompatible types: possible lossy conversion from long to int
+            return ChunkTrackingView.isWithinDistance(this.center.x(), this.center.z(), this.viewDistance, chunkX, chunkZ, includeNeighbors);
+                                                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java:76: error: incompatible types: possible lossy conversion from long to int
+            x = base.getBlockX(SectionPos.sectionRelative(x));
+                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java:77: error: incompatible types: possible lossy conversion from long to int
+            z = base.getBlockZ(SectionPos.sectionRelative(z));
+                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/dimension/DimensionType.java:47: error: cannot find symbol
+    public static final int BITS_FOR_Y = BlockPos.PACKED_Y_LENGTH;
+                                                 ^
+  symbol:   variable PACKED_Y_LENGTH
+  location: class BlockPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java:448: error: incompatible types: possible lossy conversion from long to int
+        int quartMinX = QuartPos.fromBlock(pos.getMinBlockX());
+                                                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java:449: error: incompatible types: possible lossy conversion from long to int
+        int quartMinZ = QuartPos.fromBlock(pos.getMinBlockZ());
+                                                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/biome/Biome.java:74: error: cannot find symbol
+        LinkedHashMap<BlockPos, Float> map = new LinkedHashMap<>(1024);
+        ^
+  symbol:   class LinkedHashMap
+  location: class Biome
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/biome/Biome.java:74: error: cannot find symbol
+        LinkedHashMap<BlockPos, Float> map = new LinkedHashMap<>(1024);
+                                                 ^
+  symbol:   class LinkedHashMap
+  location: class Biome
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/biome/Biome.java:123: error: cannot find symbol
+        LinkedHashMap<BlockPos, Float> cache = this.temperatureCache.get();
+        ^
+  symbol:   class LinkedHashMap
+  location: class Biome
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/biome/BiomeSpecialEffects.java:90: warning: [removal] BIOME_INFO_NOISE in Biome has been deprecated and marked for removal
+                double groundValue = Biome.BIOME_INFO_NOISE.getValue(x * 0.0225, z * 0.0225, false);
+                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/carver/WorldCarver.java:81: error: incompatible types: possible lossy conversion from long to int
+            int chunkMinX = chunkPos.getMinBlockX();
+                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/carver/WorldCarver.java:82: error: incompatible types: possible lossy conversion from long to int
+            int chunkMinZ = chunkPos.getMinBlockZ();
+                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/carver/WorldCarver.java:95: error: incompatible types: possible lossy conversion from long to int
+                int worldX = chunkPos.getBlockX(xIndex);
+                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/carver/WorldCarver.java:99: error: incompatible types: possible lossy conversion from long to int
+                    int worldZ = chunkPos.getBlockZ(zIndex);
+                                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:234: error: incompatible types: possible lossy conversion from long to int
+            structurePos.set(SectionPos.sectionToBlockCoord(chunkPos.x(), 8), 32, SectionPos.sectionToBlockCoord(chunkPos.z(), 8));
+                                                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:234: error: incompatible types: possible lossy conversion from long to int
+            structurePos.set(SectionPos.sectionToBlockCoord(chunkPos.x(), 8), 32, SectionPos.sectionToBlockCoord(chunkPos.z(), 8));
+                                                                                                                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:299: error: incompatible types: possible lossy conversion from long to int
+                ChunkAccess chunk = level.getChunk(chunkTarget.x(), chunkTarget.z(), ChunkStatus.STRUCTURE_STARTS);
+                                                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:332: error: incompatible types: possible lossy conversion from long to int
+                ChunkAccess chunkInRange = level.getChunk(chunkPos.x(), chunkPos.z());
+                                                                    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:424: error: incompatible types: possible lossy conversion from long to int
+        int targetBlockX = chunkPos.getMinBlockX();
+                                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:425: error: incompatible types: possible lossy conversion from long to int
+        int targetBlockZ = chunkPos.getMinBlockZ();
+                                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:500: error: incompatible types: possible lossy conversion from long to int
+                        if (featurePlacement.isStructureChunk(state, sourceChunkPos.x(), sourceChunkPos.z())) {
+                                                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:518: error: incompatible types: possible lossy conversion from long to int
+                                random.setLargeFeatureSeed(state.getLevelSeed(), sourceChunkPos.x(), sourceChunkPos.z());
+                                                                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:612: error: incompatible types: possible lossy conversion from long to int
+        int targetX = chunkPos.x();
+                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:613: error: incompatible types: possible lossy conversion from long to int
+        int targetZ = chunkPos.z();
+                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:614: error: incompatible types: possible lossy conversion from long to int
+        int targetBlockX = chunkPos.getMinBlockX();
+                                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java:615: error: incompatible types: possible lossy conversion from long to int
+        int targetBlockZ = chunkPos.getMinBlockZ();
+                                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/placement/PlacementContext.java:31: error: incompatible types: possible lossy conversion from long to int
+        return ((ProtoChunk)this.level.getChunk(pos.x(), pos.z())).getOrCreateCarvingMask();
+                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/Heightmap.java:48: warning: [removal] getHighestSectionPosition() in ChunkAccess has been deprecated and marked for removal
+            int highestSectionPosition = chunk.getHighestSectionPosition() + 16;
+                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java:99: error: incompatible types: possible lossy conversion from long to int
+        return new BlockPos(chunkPos.getMinBlockX(), 0, chunkPos.getMinBlockZ()).offset(this.locateOffset());
+                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java:125: error: incompatible types: possible lossy conversion from long to int
+        int blockX = chunkPos.getMiddleBlockX();
+                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java:126: error: incompatible types: possible lossy conversion from long to int
+        int blockZ = chunkPos.getMiddleBlockZ();
+                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java:176: error: incompatible types: possible lossy conversion from long to int
+        int minX = chunkPos.getMinBlockX();
+                                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java:177: error: incompatible types: possible lossy conversion from long to int
+        int minZ = chunkPos.getMinBlockZ();
+                                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java:200: error: incompatible types: possible lossy conversion from long to int
+        int blockX = chunkPos.getBlockX(7);
+                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java:201: error: incompatible types: possible lossy conversion from long to int
+        int blockZ = chunkPos.getBlockZ(7);
+                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java:252: error: incompatible types: possible lossy conversion from long to int
+            random.setLargeFeatureSeed(seed, chunkPos.x(), chunkPos.z());
+                                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/blending/Blender.java:126: error: cannot find symbol
+                    QuartPos.fromSection(ChunkPos.getX(chunkPos)), QuartPos.fromSection(ChunkPos.getZ(chunkPos)), (testCellX, testCellZ, height) -> {
+                                                 ^
+  symbol:   method getX(ChunkPos)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/blending/Blender.java:126: error: cannot find symbol
+                    QuartPos.fromSection(ChunkPos.getX(chunkPos)), QuartPos.fromSection(ChunkPos.getZ(chunkPos)), (testCellX, testCellZ, height) -> {
+                                                                                                ^
+  symbol:   method getZ(ChunkPos)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/blending/Blender.java:172: error: cannot find symbol
+                    QuartPos.fromSection(ChunkPos.getX(chunkPos)),
+                                                 ^
+  symbol:   method getX(ChunkPos)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/blending/Blender.java:173: error: cannot find symbol
+                    QuartPos.fromSection(ChunkPos.getZ(chunkPos)),
+                                                 ^
+  symbol:   method getZ(ChunkPos)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/blending/Blender.java:246: error: cannot find symbol
+                    QuartPos.fromSection(ChunkPos.getX(chunkPos)), quartY, QuartPos.fromSection(ChunkPos.getZ(chunkPos)), (testCellX, testCellZ, biome) -> {
+                                                 ^
+  symbol:   method getX(ChunkPos)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/blending/Blender.java:246: error: cannot find symbol
+                    QuartPos.fromSection(ChunkPos.getX(chunkPos)), quartY, QuartPos.fromSection(ChunkPos.getZ(chunkPos)), (testCellX, testCellZ, biome) -> {
+                                                                                                        ^
+  symbol:   method getZ(ChunkPos)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/blending/Blender.java:271: error: incompatible types: possible lossy conversion from long to int
+            BlockPos chunkOrigin = new BlockPos(chunkPos.getMinBlockX(), 0, chunkPos.getMinBlockZ());
+                                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/blending/Blender.java:288: error: incompatible types: possible lossy conversion from long to int
+                    if (region.getChunk(chunkPos.x() + direction.getStepX(), chunkPos.z() + direction.getStepZ()).isOldNoiseGeneration() != oldNoiseGeneration) {
+                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/blending/Blender.java:327: error: incompatible types: possible lossy conversion from long to int
+                int testChunkX = chunkPos.x() + direction8.getStepX();
+                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/blending/Blender.java:328: error: incompatible types: possible lossy conversion from long to int
+                int testChunkZ = chunkPos.z() + direction8.getStepZ();
+                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/WorldGenRegion.java:93: error: incompatible types: possible lossy conversion from long to int
+        this.centerChunkX = centerPos.x();
+                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/WorldGenRegion.java:94: error: incompatible types: possible lossy conversion from long to int
+        this.centerChunkZ = centerPos.z();
+                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/WorldGenRegion.java:118: error: incompatible types: possible lossy conversion from long to int
+        int distance = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
+                                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/WorldGenRegion.java:152: error: incompatible types: possible lossy conversion from long to int
+        int distance = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
+                                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/StructureStart.java:107: error: incompatible types: possible lossy conversion from long to int
+            tag.putInt("ChunkX", chunkPos.x());
+                                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/StructureStart.java:108: error: incompatible types: possible lossy conversion from long to int
+            tag.putInt("ChunkZ", chunkPos.z());
+                                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/StructurePiece.java:122: error: incompatible types: possible lossy conversion from long to int
+        int cx = pos.getMinBlockX();
+                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/StructurePiece.java:123: error: incompatible types: possible lossy conversion from long to int
+        int cz = pos.getMinBlockZ();
+                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java:292: error: incompatible types: possible lossy conversion from long to int
+            this.level.getChunkSource().onSectionEmptinessChanged(this.chunkPos.x(), SectionPos.blockToSectionCoord(y), this.chunkPos.z(), isEmpty);
+                                                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java:121: error: incompatible types: possible lossy conversion from long to int
+            int minX = chunkPos.getMinBlockX() + (!singular || !north && !south ? (west ? 0 : 15) : 1);
+                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java:122: error: incompatible types: possible lossy conversion from long to int
+            int maxX = chunkPos.getMinBlockX() + (!singular || !north && !south ? (west ? 0 : 15) : 14);
+                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java:123: error: incompatible types: possible lossy conversion from long to int
+            int minZ = chunkPos.getMinBlockZ() + (!singular || !east && !west ? (north ? 0 : 15) : 1);
+                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java:124: error: incompatible types: possible lossy conversion from long to int
+            int maxZ = chunkPos.getMinBlockZ() + (!singular || !east && !west ? (north ? 0 : 15) : 14);
+                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java:254: error: incompatible types: possible lossy conversion from long to int
+        int posX = SectionPos.sectionToBlockCoord(chunkPos.x(), packedData & 15);
+                                                            ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java:256: error: incompatible types: possible lossy conversion from long to int
+        int posZ = SectionPos.sectionToBlockCoord(chunkPos.z(), packedData >>> 8 & 15);
+                                                            ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:105: error: ChunkMap is not abstract and does not override abstract method acquireGeneration(long) in GeneratingChunkMap
+public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerProvider, GeneratingChunkMap {
+       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:222: error: incompatible types: ChunkPos cannot be converted to long
+        return player.getChunkTrackingView().contains(chunkX, chunkZ) && !player.connection.chunkSender.isPending(new ChunkPos(chunkX, chunkZ));
+                                                                                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:607: error: method does not override or implement a method from a supertype
+    @Override
+    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:629: error: incompatible types: possible lossy conversion from long to int
+            GenerationChunkHolder holder = cache.get(pos.x(), pos.z());
+                                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:884: error: cannot find symbol
+                this.ticketStorage.getTicketDebugString(posKey, false),
+                                                        ^
+  symbol:   variable posKey
+  location: class ChunkMap
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:887: error: cannot find symbol
+                this.ticketStorage.getTicketDebugString(posKey, true),
+                                                        ^
+  symbol:   variable posKey
+  location: class ChunkMap
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:888: error: cannot find symbol
+                this.distanceManager.getChunkLevel(posKey, true),
+                                                   ^
+  symbol:   variable posKey
+  location: class ChunkMap
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:1019: error: incompatible types: possible lossy conversion from long to int
+        double xPos = SectionPos.sectionToBlockCoord(chunkPos.x(), 8);
+                                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:1020: error: incompatible types: possible lossy conversion from long to int
+        double zPos = SectionPos.sectionToBlockCoord(chunkPos.z(), 8);
+                                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:1111: error: incompatible types: possible lossy conversion from long to int
+                player.connection.send(new ClientboundSetChunkCacheCenterPacket(to.center().x(), to.center().z()));
+                                                                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:1125: error: incompatible types: possible lossy conversion from long to int
+            if (borderOnly && this.isChunkOnTrackedBorder(player, pos.x(), pos.z()) || !borderOnly && this.isChunkTracked(player, pos.x(), pos.z())) {
+                                                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:1125: error: incompatible types: possible lossy conversion from long to int
+            if (borderOnly && this.isChunkOnTrackedBorder(player, pos.x(), pos.z()) || !borderOnly && this.isChunkTracked(player, pos.x(), pos.z())) {
+                                                                                                                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:1256: error: incompatible types: possible lossy conversion from long to int
+                chunk = this.level.getChunk(pos.x(), pos.z());
+                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:1284: error: incompatible types: possible lossy conversion from long to int
+                chunkHolder.addSendDependency(this.lightEngine.waitForPendingTasks(chunkPos.x(), chunkPos.z()));
+                                                                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkTracker.java:23: error: incompatible types: possible lossy conversion from long to int
+            int x = node.x();
+                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkTracker.java:24: error: incompatible types: possible lossy conversion from long to int
+            int z = node.z();
+                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkTracker.java:40: error: incompatible types: possible lossy conversion from long to int
+        int x = node.x();
+                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkTracker.java:41: error: incompatible types: possible lossy conversion from long to int
+        int z = node.z();
+                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkMap.java:1391: error: incompatible types: possible lossy conversion from long to int
+                    && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x(), this.entity.chunkPosition().z());
+                                                                                         ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkGenerationTask.java:38: error: incompatible types: ChunkPos cannot be converted to long
+            (int)pos.x(), (int)pos.z(), worstCaseRadius, (x, z) -> chunkMap.acquireGeneration(new ChunkPos(x, z))
+                                                                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkGenerationTask.java:96: error: incompatible types: possible lossy conversion from long to int
+                    int distance = this.pos.getChessboardDistance(x, z);
+                                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java:48: error: incompatible types: possible lossy conversion from long to int
+        for (int regionX = from.getRegionX(); regionX <= to.getRegionX(); regionX++) {
+                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java:49: error: incompatible types: possible lossy conversion from long to int
+            for (int regionZ = from.getRegionZ(); regionZ <= to.getRegionZ(); regionZ++) {
+                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java:53: error: incompatible types: possible lossy conversion from long to int
+                    int startChunkX = Math.max(from.x() - minChunkPos.x(), 0);
+                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java:54: error: incompatible types: possible lossy conversion from long to int
+                    int startChunkZ = Math.max(from.z() - minChunkPos.z(), 0);
+                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java:55: error: incompatible types: possible lossy conversion from long to int
+                    int endChunkX = Math.min(to.x() - minChunkPos.x(), 31);
+                                            ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java:56: error: incompatible types: possible lossy conversion from long to int
+                    int endChunkZ = Math.min(to.z() - minChunkPos.z(), 31);
+                                            ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java:76: error: cannot find symbol
+            CompletableFuture<BitSet> result = this.regionCacheForBlender.getAndMoveToFirst(regionPos);
+                                                                         ^
+  symbol:   method getAndMoveToFirst(ChunkPos)
+  location: variable regionCacheForBlender of type LinkedHashMap<ChunkPos,CompletableFuture<BitSet>>
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java:79: error: cannot find symbol
+                this.regionCacheForBlender.putAndMoveToFirst(regionPos, result);
+                                          ^
+  symbol:   method putAndMoveToFirst(ChunkPos,CompletableFuture<BitSet>)
+  location: variable regionCacheForBlender of type LinkedHashMap<ChunkPos,CompletableFuture<BitSet>>
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java:81: error: cannot find symbol
+                    this.regionCacheForBlender.removeLast();
+                                              ^
+  symbol:   method removeLast()
+  location: variable regionCacheForBlender of type LinkedHashMap<ChunkPos,CompletableFuture<BitSet>>
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java:110: error: incompatible types: possible lossy conversion from long to int
+                                int chunkIndex = pos.getRegionLocalZ() * 32 + pos.getRegionLocalX();
+                                                                            ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java:35: error: cannot find symbol
+        RegionFile region = this.regionCache.getAndMoveToFirst(key);
+                                            ^
+  symbol:   method getAndMoveToFirst(ChunkPos)
+  location: variable regionCache of type LinkedHashMap<ChunkPos,RegionFile>
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java:41: error: cannot find symbol
+            this.regionCache.removeLast().close();
+                            ^
+  symbol:   method removeLast()
+  location: variable regionCache of type LinkedHashMap<ChunkPos,RegionFile>
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java:47: error: cannot find symbol
+        this.regionCache.putAndMoveToFirst(key, newRegion);
+                        ^
+  symbol:   method putAndMoveToFirst(ChunkPos,RegionFile)
+  location: variable regionCache of type LinkedHashMap<ChunkPos,RegionFile>
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java:350: error: incompatible types: possible lossy conversion from long to int
+        return pos.getRegionLocalX() + pos.getRegionLocalZ() * 32;
+                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java:92: error: incompatible types: possible lossy conversion from long to int
+        if (!placement.applyAdditionalChunkRestrictions(pos.x(), pos.z(), this.seed)) {
+                                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/SurfaceSystem.java:78: error: incompatible types: possible lossy conversion from long to int
+        int minBlockX = chunkPos.getMinBlockX();
+                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/SurfaceSystem.java:79: error: incompatible types: possible lossy conversion from long to int
+        int minBlockZ = chunkPos.getMinBlockZ();
+                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseChunk.java:93: error: incompatible types: possible lossy conversion from long to int
+        return new NoiseChunk(cellCountXZ, randomState, pos.getMinBlockX(), pos.getMinBlockZ(), noiseSettings, beardifier, settings, globalFluidPicker, blender);
+                                                                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseChunk.java:363: error: cannot find symbol
+        BlockPos pos2D = new BlockPos(blockX, 0, blockZ);
+        ^
+  symbol:   class BlockPos
+  location: class NoiseChunk
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseChunk.java:363: error: cannot find symbol
+        BlockPos pos2D = new BlockPos(blockX, 0, blockZ);
+                             ^
+  symbol:   class BlockPos
+  location: class NoiseChunk
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseChunk.java:544: error: cannot find symbol
+            BlockPos pos2D = new BlockPos(blockX, 0, blockZ);
+            ^
+  symbol:   class BlockPos
+  location: class Cache2D
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseChunk.java:544: error: cannot find symbol
+            BlockPos pos2D = new BlockPos(blockX, 0, blockZ);
+                                 ^
+  symbol:   class BlockPos
+  location: class Cache2D
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/Aquifer.java:120: error: incompatible types: possible lossy conversion from long to int
+            this.minGridX = gridX(pos.getMinBlockX() + -5) + 0;
+                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/Aquifer.java:122: error: incompatible types: possible lossy conversion from long to int
+            int maxGridX = gridX(pos.getMaxBlockX() + -5) + 1;
+                                                    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/Aquifer.java:127: error: incompatible types: possible lossy conversion from long to int
+            this.minGridZ = gridZ(pos.getMinBlockZ() + -5) + 0;
+                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/Aquifer.java:128: error: incompatible types: possible lossy conversion from long to int
+            int maxGridZ = gridZ(pos.getMaxBlockZ() + -5) + 1;
+                                                    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java:278: error: incompatible types: possible lossy conversion from long to int
+        for (int z = center.z() - chunkRadius; z <= center.z() + chunkRadius; z++) {
+                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java:279: error: incompatible types: possible lossy conversion from long to int
+            for (int x = center.x() - chunkRadius; x <= center.x() + chunkRadius; x++) {
+                                    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java:329: error: incompatible types: possible lossy conversion from long to int
+                    ChunkAccess carverCenterChunk = region.getChunk(sourcePos.x(), sourcePos.z());
+                                                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java:334: error: incompatible types: possible lossy conversion from long to int
+                                    QuartPos.fromBlock(sourcePos.getMinBlockX()), 0, QuartPos.fromBlock(sourcePos.getMinBlockZ()), randomState.sampler()
+                                                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java:334: error: incompatible types: possible lossy conversion from long to int
+                                    QuartPos.fromBlock(sourcePos.getMinBlockX()), 0, QuartPos.fromBlock(sourcePos.getMinBlockZ()), randomState.sampler()
+                                                                                                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java:343: error: incompatible types: possible lossy conversion from long to int
+                        random.setLargeFeatureSeed(seed + index, sourcePos.x(), sourcePos.z());
+                                                                            ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java:396: error: incompatible types: possible lossy conversion from long to int
+        int chunkStartBlockX = chunkPos.getMinBlockX();
+                                                    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java:397: error: incompatible types: possible lossy conversion from long to int
+        int chunkStartBlockZ = chunkPos.getMinBlockZ();
+                                                    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java:500: error: incompatible types: possible lossy conversion from long to int
+            random.setDecorationSeed(worldGenRegion.getSeed(), center.getMinBlockX(), center.getMinBlockZ());
+                                                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/BuriedTreasureStructure.java:24: error: incompatible types: possible lossy conversion from long to int
+        BlockPos offset = new BlockPos(context.chunkPos().getBlockX(9), 90, context.chunkPos().getBlockZ(9));
+                                                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/SinglePieceStructure.java:32: error: incompatible types: possible lossy conversion from long to int
+        builder.addPiece(this.constructor.construct(context.random(), chunkPos.getMinBlockX(), chunkPos.getMinBlockZ()));
+                                                                                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/DesertPyramidStructure.java:70: error: cannot find symbol
+                .ifPresent(entity -> entity.setLootTable(BuiltInLootTables.DESERT_PYRAMID_ARCHAEOLOGY, blockPos.asLong()));
+                                                                                                               ^
+  symbol:   method asLong()
+  location: variable blockPos of type BlockPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/NetherFortressStructure.java:33: error: incompatible types: possible lossy conversion from long to int
+        BlockPos startPos = new BlockPos(chunkPos.getMinBlockX(), 64, chunkPos.getMinBlockZ());
+                                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/NetherFortressStructure.java:39: error: incompatible types: possible lossy conversion from long to int
+            context.random(), context.chunkPos().getBlockX(2), context.chunkPos().getBlockZ(2)
+                                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/IglooStructure.java:29: error: incompatible types: possible lossy conversion from long to int
+        BlockPos startPos = new BlockPos(chunkPos.getMinBlockX(), 90, chunkPos.getMinBlockZ());
+                                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/JigsawStructure.java:149: error: incompatible types: possible lossy conversion from long to int
+        BlockPos startPos = new BlockPos(chunkPos.getMinBlockX(), height, chunkPos.getMinBlockZ());
+                                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/MineshaftStructure.java:39: error: incompatible types: possible lossy conversion from long to int
+        BlockPos startPos = new BlockPos(chunkPos.getMiddleBlockX(), 50, chunkPos.getMinBlockZ());
+                                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/MineshaftStructure.java:49: error: incompatible types: possible lossy conversion from long to int
+        MineshaftPieces.MineShaftRoom mineShaftRoom = new MineshaftPieces.MineShaftRoom(0, random, chunkPos.getBlockX(2), chunkPos.getBlockZ(2), this.type);
+                                                                                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/NetherFossilStructure.java:32: error: incompatible types: possible lossy conversion from long to int
+        int blockX = context.chunkPos().getMinBlockX() + random.nextInt(16);
+                                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/NetherFossilStructure.java:33: error: incompatible types: possible lossy conversion from long to int
+        int blockZ = context.chunkPos().getMinBlockZ() + random.nextInt(16);
+                                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/OceanMonumentStructure.java:31: error: incompatible types: possible lossy conversion from long to int
+        int offsetX = context.chunkPos().getBlockX(9);
+                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/OceanMonumentStructure.java:32: error: incompatible types: possible lossy conversion from long to int
+        int offsetZ = context.chunkPos().getBlockZ(9);
+                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/OceanMonumentStructure.java:45: error: incompatible types: possible lossy conversion from long to int
+        int west = chunkPos.getMinBlockX() - 29;
+                                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/OceanMonumentStructure.java:46: error: incompatible types: possible lossy conversion from long to int
+        int north = chunkPos.getMinBlockZ() - 29;
+                                            ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/OceanMonumentStructure.java:61: error: incompatible types: possible lossy conversion from long to int
+        random.setLargeFeatureSeed(seed, chunkPos.x(), chunkPos.z());
+                                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/OceanRuinStructure.java:45: error: incompatible types: possible lossy conversion from long to int
+        BlockPos offset = new BlockPos(context.chunkPos().getMinBlockX(), 90, context.chunkPos().getMinBlockZ());
+                                                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/ShipwreckStructure.java:34: error: incompatible types: possible lossy conversion from long to int
+        BlockPos offset = new BlockPos(context.chunkPos().getMinBlockX(), 90, context.chunkPos().getMinBlockZ());
+                                                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/StrongholdStructure.java:29: error: incompatible types: possible lossy conversion from long to int
+            context.random().setLargeFeatureSeed(context.seed() + tries++, context.chunkPos().x(), context.chunkPos().z());
+                                                                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/StrongholdStructure.java:31: error: incompatible types: possible lossy conversion from long to int
+            startRoom = new StrongholdPieces.StartPiece(context.random(), context.chunkPos().getBlockX(2), context.chunkPos().getBlockZ(2));
+                                                                                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/structures/SwampHutStructure.java:23: error: incompatible types: possible lossy conversion from long to int
+        builder.addPiece(new SwampHutPiece(context.random(), context.chunkPos().getMinBlockX(), context.chunkPos().getMinBlockZ()));
+                                                                                            ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/placement/NoiseBasedCountPlacement.java:35: warning: [removal] BIOME_INFO_NOISE in Biome has been deprecated and marked for removal
+        double flowerNoise = Biome.BIOME_INFO_NOISE.getValue(origin.getX() / this.noiseFactor, origin.getZ() / this.noiseFactor, false);
+                                  ^
+--
+        double flowerNoise = Biome.BIOME_INFO_NOISE.getValue(origin.getX() / 200.0, origin.getZ() / 200.0, false);
+                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/feature/BonusChestFeature.java:29: error: incompatible types: possible lossy conversion from long to int
+        IntArrayList xPoses = Util.toShuffledList(IntStream.rangeClosed(chunkPos.getMinBlockX(), chunkPos.getMaxBlockX()), random);
+                                                                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/feature/BonusChestFeature.java:29: error: incompatible types: no instance(s) of type variable(s) T exist so that List<T> conforms to IntArrayList
+        IntArrayList xPoses = Util.toShuffledList(IntStream.rangeClosed(chunkPos.getMinBlockX(), chunkPos.getMaxBlockX()), random);
+                                                 ^
+  where T is a type-variable:
+    T extends Object declared in method <T>toShuffledList(Stream<T>,RandomSource)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/feature/BonusChestFeature.java:30: error: incompatible types: possible lossy conversion from long to int
+        IntArrayList zPoses = Util.toShuffledList(IntStream.rangeClosed(chunkPos.getMinBlockZ(), chunkPos.getMaxBlockZ()), random);
+                                                                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/feature/BonusChestFeature.java:30: error: incompatible types: no instance(s) of type variable(s) T exist so that List<T> conforms to IntArrayList
+        IntArrayList zPoses = Util.toShuffledList(IntStream.rangeClosed(chunkPos.getMinBlockZ(), chunkPos.getMaxBlockZ()), random);
+                                                 ^
+  where T is a type-variable:
+    T extends Object declared in method <T>toShuffledList(Stream<T>,RandomSource)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/pathfinder/PathTypeCache.java:15: error: cannot find symbol
+        long key = pos.asLong();
+                      ^
+  symbol:   method asLong()
+  location: variable pos of type BlockPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/pathfinder/PathTypeCache.java:33: error: cannot find symbol
+        long key = pos.asLong();
+                      ^
+  symbol:   method asLong()
+  location: variable pos of type BlockPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/util/Vec3.java:38: error: incompatible types: inference variable V has incompatible bounds
+    public static final StreamCodec<ByteBuf, Vec3> LP_STREAM_CODEC = StreamCodec.of(LpVec3::write, LpVec3::read);
+                                                                                   ^
+    equality constraints: net.MinecraftTools.Math._256Bit.util.Vec3
+    lower bounds: net.minecraft.world.phys.Vec3
+  where V,B are type-variables:
+    V extends Object declared in method <B,V>of(StreamEncoder<B,V>,StreamDecoder<B,V>)
+    B extends Object declared in method <B,V>of(StreamEncoder<B,V>,StreamDecoder<B,V>)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/util/Vec3.java:375: error: incompatible types: Float256 cannot be converted to double
+        return Mth.length(this.x256(), this.y256(), this.z256());
+                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/util/Vec3.java:380: error: no suitable method found for lengthSquared(Float256,Float256,Float256)
+        return Mth.lengthSquared(this.x256(), this.y256(), this.z256());
+                  ^
+    method Mth.lengthSquared(double,double,double) is not applicable
+      (argument mismatch; Float256 cannot be converted to double)
+    method Mth.lengthSquared(float,float,float) is not applicable
+      (argument mismatch; Float256 cannot be converted to float)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/util/Vec3.java:385: error: no suitable method found for length(Float256,Float256)
+        return Mth.length(this.x256(), this.z256());
+                  ^
+    method Mth.length(double,double) is not applicable
+      (argument mismatch; Float256 cannot be converted to double)
+    method Mth.length(float,float) is not applicable
+      (argument mismatch; Float256 cannot be converted to float)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/util/Vec3.java:390: error: incompatible types: Float256 cannot be converted to double
+        return Mth.lengthSquared(this.x256(), this.z256());
+                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/util/Vec3.java:395: error: no suitable method found for lengthSquared(Float256,Float256,Float256)
+        return Mth.lengthSquared(vec.x256().subtract(this.x256()), vec.y256().subtract(this.y256()), vec.z256().subtract(this.z256()));
+                  ^
+    method Mth.lengthSquared(double,double,double) is not applicable
+      (argument mismatch; Float256 cannot be converted to double)
+    method Mth.lengthSquared(float,float,float) is not applicable
+      (argument mismatch; Float256 cannot be converted to float)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/util/Vec3.java:399: error: incompatible types: Float256 cannot be converted to float
+        return Mth.sqrt(this.distanceToSqr256(vec));
+                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/network/PlayerChunkSender.java:94: error: incompatible types: bad return type in method reference
+                .collect(Comparators.least(maxBatchSize, Comparator.comparingInt(playerPos::distanceSquared)))
+                                                                                 ^
+    long cannot be converted to int
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/network/PlayerChunkSender.java:102: error: cannot find symbol
+                .mapToObj(chunkMap::getChunkToSend)
+                ^
+  symbol:   method mapToObj(chunkMap::[...]oSend)
+  location: interface Stream<ChunkPos>
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/network/PlayerChunkSender.java:104: error: cannot find symbol
+                .sorted(Comparator.comparingInt(chunkx -> playerPos.distanceSquared(chunkx.getPos())))
+                                                                                          ^
+  symbol:   method getPos()
+  location: variable chunkx of type Object
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/block/entity/TestInstanceBlockEntity.java:349: error: incompatible types: possible lossy conversion from long to int
+            this.getStructureBoundingBox().intersectingChunks().forEach(pos -> serverLevel.setChunkForced(pos.x(), pos.z(), true));
+                                                                                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java:29: error: incompatible types: possible lossy conversion from long to int
+        this.x = chunkPos.x();
+                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java:30: error: incompatible types: possible lossy conversion from long to int
+        this.z = chunkPos.z();
+                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java:26: error: incompatible types: possible lossy conversion from long to int
+        this.x = pos.x();
+                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java:27: error: incompatible types: possible lossy conversion from long to int
+        this.z = pos.z();
+                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/waypoints/TrackedWaypoint.java:165: error: incompatible types: possible lossy conversion from long to int
+            VarInt.write(buf, this.chunkPos.x());
+                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/waypoints/TrackedWaypoint.java:166: error: incompatible types: possible lossy conversion from long to int
+            VarInt.write(buf, this.chunkPos.z());
+                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java:375: error: incompatible types: possible lossy conversion from long to int
+            for (int x = listenerChunkPos.x() - 1; x <= listenerChunkPos.x() + 1; x++) {
+                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java:376: error: incompatible types: possible lossy conversion from long to int
+                for (int z = listenerChunkPos.z() - 1; z <= listenerChunkPos.z() + 1; z++) {
+                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java:377: error: cannot find symbol
+                    if (!level.shouldTickBlocksAt(ChunkPos.pack(x, z)) || level.getChunkSource().getChunkNow(x, z) == null) {
+                                                          ^
+  symbol:   method pack(int,int)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerChunkCache.java:140: error: incompatible types: long cannot be converted to ChunkPos
+        this.lastChunkPos[0] = pos;
+                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerChunkCache.java:173: error: incompatible types: ChunkPos cannot be converted to long
+        this.storeInCache(pos, chunk, targetStatus);
+                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerChunkCache.java:199: error: incompatible types: ChunkPos cannot be converted to long
+            this.storeInCache(pos, chunk, ChunkStatus.FULL);
+                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerChunkCache.java:299: error: incompatible types: long cannot be converted to ChunkPos
+        ChunkHolder holder = this.getVisibleChunkIfPresent(chunkKey);
+                                                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ServerChunkCache.java:429: error: incompatible types: long cannot be converted to ChunkPos
+        ChunkHolder chunkHolder = this.getVisibleChunkIfPresent(chunkKey);
+                                                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/dimension/end/EnderDragonFight.java:310: error: incompatible types: possible lossy conversion from long to int
+        for (int x = -8 + chunkOrigin.x(); x <= 8 + chunkOrigin.x(); x++) {
+                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/dimension/end/EnderDragonFight.java:311: error: incompatible types: possible lossy conversion from long to int
+            for (int z = -8 + chunkOrigin.z(); z <= 8 + chunkOrigin.z(); z++) {
+                            ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/dimension/end/EnderDragonFight.java:356: error: incompatible types: possible lossy conversion from long to int
+        for (int x = -8 + chunkOrigin.x(); x <= 8 + chunkOrigin.x(); x++) {
+                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/dimension/end/EnderDragonFight.java:357: error: incompatible types: possible lossy conversion from long to int
+            for (int z = 8 + chunkOrigin.z(); z <= 8 + chunkOrigin.z(); z++) {
+                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/debug/TrackingDebugSynchronizer.java:58: error: cannot find symbol
+            if (!player.connection.chunkSender.isPending(chunkPos.pack())) {
+                                                                 ^
+  symbol:   method pack()
+  location: variable chunkPos of type ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/debug/TrackingDebugSynchronizer.java:69: error: incompatible types: possible lossy conversion from long to int
+            if (level.getPlayerByUUID(playerId) instanceof ServerPlayer player && chunkMap.isChunkTracked(player, trackedChunk.x(), trackedChunk.z())) {
+                                                                                                                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/NaturalSpawner.java:81: error: cannot find symbol
+                    chunkGetter.query(ChunkPos.pack(pos), chunk -> {
+                                              ^
+  symbol:   method pack(BlockPos)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/NaturalSpawner.java:345: error: incompatible types: possible lossy conversion from long to int
+        int x = pos.getMinBlockX() + level.random.nextInt(16);
+                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/NaturalSpawner.java:346: error: incompatible types: possible lossy conversion from long to int
+        int z = pos.getMinBlockZ() + level.random.nextInt(16);
+                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/NaturalSpawner.java:372: error: incompatible types: possible lossy conversion from long to int
+            int xo = chunkPos.getMinBlockX();
+                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/NaturalSpawner.java:373: error: incompatible types: possible lossy conversion from long to int
+            int zo = chunkPos.getMinBlockZ();
+                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/LocalMobCapCalculator.java:24: error: cannot find symbol
+        return this.playersNearChunk.computeIfAbsent(pos.pack(), key -> this.chunkMap.getPlayersCloseForSpawning(pos));
+                                                        ^
+  symbol:   method pack()
+  location: variable pos of type ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/SharedConstants.java:213: error: incompatible types: possible lossy conversion from long to int
+        int posX = pos.getMinBlockX();
+                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/SharedConstants.java:214: error: incompatible types: possible lossy conversion from long to int
+        int posZ = pos.getMinBlockZ();
+                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/ChunkRegionIoEvent.java:52: error: incompatible types: possible lossy conversion from long to int
+        this.regionPosX = chunkPos.getRegionX();
+                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/ChunkRegionIoEvent.java:53: error: incompatible types: possible lossy conversion from long to int
+        this.regionPosZ = chunkPos.getRegionZ();
+                                             ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/ChunkRegionIoEvent.java:54: error: incompatible types: possible lossy conversion from long to int
+        this.localChunkPosX = chunkPos.getRegionLocalX();
+                                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/ChunkRegionIoEvent.java:55: error: incompatible types: possible lossy conversion from long to int
+        this.localChunkPosZ = chunkPos.getRegionLocalZ();
+                                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/ChunkRegionIoEvent.java:56: error: incompatible types: possible lossy conversion from long to int
+        this.chunkPosX = chunkPos.x();
+                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/ChunkRegionIoEvent.java:57: error: incompatible types: possible lossy conversion from long to int
+        this.chunkPosZ = chunkPos.z();
+                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/StructureGenerationEvent.java:41: error: incompatible types: possible lossy conversion from long to int
+        this.chunkPosX = sourceChunkPos.x();
+                                         ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/StructureGenerationEvent.java:42: error: incompatible types: possible lossy conversion from long to int
+        this.chunkPosZ = sourceChunkPos.z();
+                                         ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/ChunkGenerationEvent.java:44: error: incompatible types: possible lossy conversion from long to int
+        this.chunkPosX = pos.x();
+                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/ChunkGenerationEvent.java:45: error: incompatible types: possible lossy conversion from long to int
+        this.chunkPosZ = pos.z();
+                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/ChunkGenerationEvent.java:46: error: incompatible types: possible lossy conversion from long to int
+        this.worldPosX = pos.getMinBlockX();
+                                         ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/util/profiling/jfr/event/ChunkGenerationEvent.java:47: error: incompatible types: possible lossy conversion from long to int
+        this.worldPosZ = pos.getMinBlockZ();
+                                         ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/com/sun/jna/Native.java:264: warning: [removal] finalize() in Object has been deprecated and marked for removal
+        protected void finalize() throws Throwable {
+                       ^
+--
+        Class<?>[] context = new SecurityManager() {
+                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/multiplayer/ClientLevel.java:178: error: cannot find symbol
+    private final Map<BlockPos, SortedSet<BlockDestructionProgress>> destructionProgress = new HashMap<>();
+                                                                                               ^
+  symbol:   class HashMap
+  location: class ClientLevel
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/multiplayer/ClientLevel.java:512: error: incompatible types: possible lossy conversion from long to int
+        this.tintCaches.forEach((resolver, cache) -> cache.invalidateForChunk(pos.x(), pos.z()));
+                                                                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/multiplayer/ClientPacketListener.java:873: error: incompatible types: possible lossy conversion from long to int
+            this.level.getChunkSource().replaceBiomes(data.pos().x(), data.pos().z(), data.getReadBuffer());
+                                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/multiplayer/ClientPacketListener.java:884: error: incompatible types: possible lossy conversion from long to int
+                        this.minecraft.levelExtractor.setSectionDirty(data.pos().x() + xOffset, y, data.pos().z() + zOffset);
+                                                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/extract/LevelExtractor.java:145: error: cannot find symbol
+                if (chunkCache.hasChunk(ChunkPos.getX(expectedChunk), ChunkPos.getZ(expectedChunk))) {
+                                                ^
+  symbol:   method getX(ChunkPos)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/extract/LevelExtractor.java:145: error: cannot find symbol
+                if (chunkCache.hasChunk(ChunkPos.getX(expectedChunk), ChunkPos.getZ(expectedChunk))) {
+                                                                              ^
+  symbol:   method getZ(ChunkPos)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/color/block/BlockTintCache.java:105: error: cannot find symbol
+                BlockTintCache.CacheData cacheData = this.cache.removeFirst();
+                                                               ^
+  symbol:   method removeFirst()
+  location: variable cache of type Map<ChunkPos,CacheData>
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/multiplayer/ClientChunkCache.java:65: error: incompatible types: possible lossy conversion from long to int
+        if (this.storage.inRange(pos.x(), pos.z())) {
+                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/multiplayer/ClientChunkCache.java:66: error: incompatible types: possible lossy conversion from long to int
+            int index = this.storage.getIndex(pos.x(), pos.z());
+                                                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/multiplayer/ClientChunkCache.java:68: error: incompatible types: possible lossy conversion from long to int
+            if (isValidChunk(currentChunk, pos.x(), pos.z())) {
+                                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/multiplayer/ClientChunkCache.java:153: error: incompatible types: possible lossy conversion from long to int
+                    if (newStorage.inRange(pos.x(), pos.z())) {
+                                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/multiplayer/ClientChunkCache.java:154: error: incompatible types: possible lossy conversion from long to int
+                        newStorage.replace(newStorage.getIndex(pos.x(), pos.z()), chunk);
+                                                                    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/SectionOcclusionGraph.java:256: error: no suitable method found for of(SectionPos)
+            toAdd.sort(Comparator.comparingDouble(c -> cameraPosition.distSqr(SectionPos.of(c.section.getSectionNode()).center())));
+                                                                                        ^
+    method SectionPos.of(BlockPos) is not applicable
+      (argument mismatch; SectionPos cannot be converted to BlockPos)
+    method SectionPos.of(EntityAccess) is not applicable
+--
+    method SectionPos.of(Position) is not applicable
+      (argument mismatch; SectionPos cannot be converted to Position)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/SectionOcclusionGraph.java:385: error: incompatible types: SectionPos cannot be converted to long
+        long relative = renderSection.getNeighborSectionNode(direction);
+                                                            ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/SectionOcclusionGraph.java:386: error: incompatible types: long cannot be converted to SectionPos
+        if (!this.isInViewDistance(cameraSectionNode, relative)) {
+                                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/SectionOcclusionGraph.java:389: error: long cannot be dereferenced
+            return Mth.abs(cameraSectionNode.y() - relative.y()) > this.viewArea.getViewDistance()
+                                                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/SectionOcclusionGraph.java:391: error: incompatible types: long cannot be converted to SectionPos
+                : this.viewArea.getRenderSection(relative);
+                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/Octree.java:113: error: incompatible types: SectionPos cannot be converted to long
+            long sectionNode = section.getSectionNode();
+                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/Octree.java:114: error: long cannot be dereferenced
+            boolean sectionXDiffNegative = SectionPos.sectionToBlockCoord(sectionNode.x()) - this.bbCenterX < 0;
+                                                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/Octree.java:115: error: long cannot be dereferenced
+            boolean sectionYDiffNegative = SectionPos.sectionToBlockCoord(sectionNode.y()) - this.bbCenterY < 0;
+                                                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/Octree.java:116: error: long cannot be dereferenced
+            boolean sectionZDiffNegative = SectionPos.sectionToBlockCoord(sectionNode.z()) - this.bbCenterZ < 0;
+                                                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/gui/components/DebugScreenOverlay.java:331: error: incompatible types: possible lossy conversion from long to int
+                    .getChunkFuture(this.lastPos.x(), this.lastPos.z(), ChunkStatus.FULL, false)
+                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/gui/components/DebugScreenOverlay.java:344: error: incompatible types: possible lossy conversion from long to int
+                this.clientChunk = this.minecraft.level.getChunk(this.lastPos.x(), this.lastPos.z());
+                                                                               ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/packs/resources/FallbackResourceManager.java:343: warning: [removal] finalize() in Object has been deprecated and marked for removal
+        protected void finalize() throws Throwable {
+                       ^
+--
+            super.finalize();
+                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/commands/ExecuteCommand.java:462: error: incompatible types: possible lossy conversion from long to int
+        LevelChunk chunk = level.getChunkSource().getChunkNow(chunkPos.x(), chunkPos.z());
+                                                                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkLoadCounter.java:17: error: cannot find symbol
+        Set<ChunkPos> alreadyLoadedChunks = new HashSet<>();
+            ^
+  symbol:   class ChunkPos
+  location: class ChunkLoadCounter
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/commands/PlaceCommand.java:312: error: incompatible types: possible lossy conversion from long to int
+                    new BoundingBox(c.getMinBlockX(), level.getMinY(), c.getMinBlockZ(), c.getMaxBlockX(), level.getMaxY() + 1, c.getMaxBlockZ()),
+                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/com/microsoft/aad/msal4j/AuthorizationRequestUrlParameters.java:373: warning: [dep-ann] deprecated item is not annotated with @Deprecated
+        public Builder responseMode(ResponseMode val) {
+                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/PlayerSpawnFinder.java:183: error: incompatible types: possible lossy conversion from long to int
+        for (int x = chunkPos.getMinBlockX(); x <= chunkPos.getMaxBlockX(); x++) {
+                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/PlayerSpawnFinder.java:184: error: incompatible types: possible lossy conversion from long to int
+            for (int z = chunkPos.getMinBlockZ(); z <= chunkPos.getMaxBlockZ(); z++) {
+                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/entity/monster/cubemob/Slime.java:93: error: incompatible types: possible lossy conversion from long to int
+            boolean slimeChunk = WorldgenRandom.seedSlimeChunk(chunkPos.x(), chunkPos.z(), worldGenLevel.getSeed(), 987234911L).nextInt(10) == 0;
+                                                                         ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java:282: error: incompatible types: possible lossy conversion from long to int
+            LevelChunk levelChunk = level.getChunkSource().getChunkNow(chunkPos.x(), chunkPos.z());
+                                                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java:165: error: cannot find symbol
+                        .place(level, level.getChunkSource().getGenerator(), RandomSource.create(newExitPortalPos.asLong()), newExitPortalPos)
+                                                                                                                 ^
+  symbol:   method asLong()
+  location: variable newExitPortalPos of type BlockPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java:229: error: incompatible types: possible lossy conversion from long to int
+        BlockPos start = new BlockPos(chunkPos.getMinBlockX(), 30, chunkPos.getMinBlockZ());
+                                                           ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java:230: warning: [removal] getHighestSectionPosition() in ChunkAccess has been deprecated and marked for removal
+        int maxY = chunk.getHighestSectionPosition() + 16 - 1;
+                        ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java:231: error: incompatible types: possible lossy conversion from long to int
+        BlockPos end = new BlockPos(chunkPos.getMaxBlockX(), maxY, chunkPos.getMaxBlockZ());
+                                                         ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/com/google/common/util/concurrent/AbstractFutureState.java:697: warning: [removal] objectFieldOffset(Field) in Unsafe has been deprecated and marked for removal
+            unsafe.objectFieldOffset(abstractFutureState.getDeclaredField("waitersField"));
+                  ^
+--
+      return UNSAFE.compareAndSwapObject(future, VALUE_OFFSET, expect, update);
+                   ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/pathfinder/SwimNodeEvaluator.java:19: error: cannot find symbol
+    private final Map<BlockPos, PathType> pathTypesByPosCache = new HashMap<>();
+                                                                    ^
+  symbol:   class HashMap
+  location: class SwimNodeEvaluator
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/lighting/BlockLightEngine.java:54: error: incompatible types: Direction cannot be converted to Vec3i
+                BlockPos toNode = fromNode.offset(propagationDirection);
+                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/lighting/BlockLightEngine.java:91: error: incompatible types: Direction cannot be converted to Vec3i
+                BlockPos toNode = fromNode.offset(propagationDirection);
+                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/lighting/SkyLightEngine.java:149: error: incompatible types: Direction cannot be converted to Vec3i
+                BlockPos toNode = fromNode.offset(propagationDirection);
+                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/lighting/SkyLightEngine.java:189: error: incompatible types: Direction cannot be converted to Vec3i
+                BlockPos toNode = fromNode.offset(propagationDirection);
+                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/BulkSectionAccess.java:14: error: cannot find symbol
+    private final Map<SectionPos, LevelChunkSection> acquiredSections = new HashMap<>();
+                                                                            ^
+  symbol:   class HashMap
+  location: class BulkSectionAccess
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/BulkSectionAccess.java:26: error: bad operand types for binary operator '!='
+            if (this.lastSection == null || this.lastSectionKey != sectionKey) {
+                                                                ^
+  first type:  long
+  second type: SectionPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/BulkSectionAccess.java:33: error: incompatible types: SectionPos cannot be converted to long
+                this.lastSectionKey = sectionKey;
+                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java:415: error: incompatible types: possible lossy conversion from long to int
+        tag.putInt("xPos", this.chunkPos.x());
+                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java:417: error: incompatible types: possible lossy conversion from long to int
+        tag.putInt("zPos", this.chunkPos.z());
+                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java:535: error: cannot find symbol
+        for (Entry<Structure, Set<ChunkPos>> entry : references.entrySet()) {
+                              ^
+  symbol:   class Set
+  location: class SerializableChunkData
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java:568: error: cannot find symbol
+        Map<Structure, Set<ChunkPos>> outmap = Maps.newHashMap();
+                       ^
+  symbol:   class Set
+  location: class SerializableChunkData
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java:579: error: cannot find symbol
+                    Set<ChunkPos> refs = new java.util.HashSet<>();
+                    ^
+  symbol:   class Set
+  location: class SerializableChunkData
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java:185: error: incompatible types: possible lossy conversion from long to int
+        GenerationChunkHolder holder = chunks.get(pos.x(), pos.z());
+                                                       ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/BlockCollisions.java:67: error: cannot find symbol
+        long chunkPos = ChunkPos.pack(chunkX, chunkZ);
+                                ^
+  symbol:   method pack(int,int)
+  location: class ChunkPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/Beardifier.java:44: error: incompatible types: possible lossy conversion from long to int
+        int chunkStartBlockX = chunkPos.getMinBlockX();
+                                                    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/Beardifier.java:45: error: incompatible types: possible lossy conversion from long to int
+        int chunkStartBlockZ = chunkPos.getMinBlockZ();
+                                                    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/pieces/PieceGeneratorSupplier.java:46: error: incompatible types: possible lossy conversion from long to int
+            int blockX = this.chunkPos.getMiddleBlockX();
+                                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/structure/pieces/PieceGeneratorSupplier.java:47: error: incompatible types: possible lossy conversion from long to int
+            int blockZ = this.chunkPos.getMiddleBlockZ();
+                                                      ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/DebugLevelSource.java:63: error: incompatible types: possible lossy conversion from long to int
+        int chunkX = centerPos.x();
+                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/DebugLevelSource.java:64: error: incompatible types: possible lossy conversion from long to int
+        int chunkZ = centerPos.z();
+                                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/feature/VoidStartPlatformFeature.java:28: error: incompatible types: possible lossy conversion from long to int
+        if (checkerboardDistance(currentChunkPos.x(), currentChunkPos.z(), PLATFORM_ORIGIN_CHUNK.x(), PLATFORM_ORIGIN_CHUNK.z()) > 1) {
+                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/feature/VoidStartPlatformFeature.java:35: error: incompatible types: possible lossy conversion from long to int
+        for (int z = currentChunkPos.getMinBlockZ(); z <= currentChunkPos.getMaxBlockZ(); z++) {
+                                                 ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/feature/VoidStartPlatformFeature.java:36: error: incompatible types: possible lossy conversion from long to int
+            for (int x = currentChunkPos.getMinBlockX(); x <= currentChunkPos.getMaxBlockX(); x++) {
+                                                     ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/feature/FossilFeature.java:38: error: incompatible types: possible lossy conversion from long to int
+            chunkPos.getMinBlockX() - 16,
+                                    ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/levelgen/feature/DesertWellFeature.java:111: error: cannot find symbol
+        level.getBlockEntity(pos, BlockEntityTypes.BRUSHABLE_BLOCK).ifPresent(e -> e.setLootTable(BuiltInLootTables.DESERT_WELL_ARCHAEOLOGY, pos.asLong()));
+                                                                                                                                                ^
+  symbol:   method asLong()
+  location: variable pos of type BlockPos
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/data/recipes/RecipeProvider.java:924: warning: [removal] parent(Identifier) in Builder has been deprecated and marked for removal
+                                return Advancement.Builder.recipeAdvancement().parent(RecipeBuilder.ROOT_RECIPE_ADVANCEMENT);
+                                                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/debug/HeightMapRenderer.java:49: error: incompatible types: possible lossy conversion from long to int
+                            int xx = SectionPos.sectionToBlockCoord(chunkPos.x(), relativeX);
+                                                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/debug/HeightMapRenderer.java:50: error: incompatible types: possible lossy conversion from long to int
+                            int zz = SectionPos.sectionToBlockCoord(chunkPos.z(), relativeZ);
+                                                                              ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/debug/LightDebugRenderer.java:38: error: cannot find symbol
+        Set<SectionPos> set = new java.util.HashSet<>();
+        ^
+  symbol:   class Set
+  location: class LightDebugRenderer
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/debug/ChunkDebugRenderer.java:72: error: incompatible types: possible lossy conversion from long to int
+                            new Vec3(SectionPos.sectionToBlockCoord(pos.x(), 8), y + yOffset, SectionPos.sectionToBlockCoord(pos.z(), 8)),
+                                                                         ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/debug/ChunkDebugRenderer.java:72: error: incompatible types: possible lossy conversion from long to int
+                            new Vec3(SectionPos.sectionToBlockCoord(pos.x(), 8), y + yOffset, SectionPos.sectionToBlockCoord(pos.z(), 8)),
+                                                                                                                                  ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/block/BlockModelLighter.java:642: error: cannot find symbol
+            LinkedHashMap<BlockPos, Integer> map = new LinkedHashMap<>(100, 0.75F) {
+            ^
+  symbol:   class LinkedHashMap
+  location: class Cache
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/block/BlockModelLighter.java:642: error: cannot find symbol
+            LinkedHashMap<BlockPos, Integer> map = new LinkedHashMap<>(100, 0.75F) {
+                                                       ^
+  symbol:   class LinkedHashMap
+  location: class Cache
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/block/BlockModelLighter.java:643: error: method does not override or implement a method from a supertype
+                @Override
+                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/block/BlockModelLighter.java:651: error: cannot find symbol
+            LinkedHashMap<BlockPos, Float> map = new LinkedHashMap<>(100, 0.75F) {
+            ^
+  symbol:   class LinkedHashMap
+  location: class Cache
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/block/BlockModelLighter.java:651: error: cannot find symbol
+            LinkedHashMap<BlockPos, Float> map = new LinkedHashMap<>(100, 0.75F) {
+                                                     ^
+  symbol:   class LinkedHashMap
+  location: class Cache
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/client/renderer/block/BlockModelLighter.java:652: error: method does not override or implement a method from a supertype
+                @Override
+                ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/util/Mth.java:43: error: cannot find symbol
+    private static final float[] SIN = Util.make(new float[65536], sin -> {
+                                       ^
+  symbol:   variable Util
+  location: class Mth
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/MinecraftTools/Math/_256Bit/util/Mth.java:893: error: cannot find symbol
+        UInt256 q = x.add(UF256_HALF_PERIOD.toUInt256()).divide(UF256_PERIOD.toUInt256());
+                          ^
+  symbol:   variable UF256_HALF_PERIOD
+  location: class Mth
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/jpountz/util/UnsafeUtils.java:42: warning: [removal] arrayBaseOffset(Class<?>) in Unsafe has been deprecated and marked for removal
+--
+Execution failed for task ':compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/world/level/biome/Biome.java:73: error: cannot find symbol
+      private final ThreadLocal<LinkedHashMap<BlockPos, Float>> temperatureCache = ThreadLocal.withInitial(() -> {
+                                ^
+    symbol:   class LinkedHashMap
+    location: class Biome
+  300 errors

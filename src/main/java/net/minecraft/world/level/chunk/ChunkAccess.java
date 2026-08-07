@@ -445,8 +445,8 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
 
     public void fillBiomesFromNoise(final BiomeResolver biomeResolver, final Climate.Sampler sampler) {
         ChunkPos pos = this.getPos();
-        int quartMinX = QuartPos.fromBlock(pos.getMinBlockX());
-        int quartMinZ = QuartPos.fromBlock(pos.getMinBlockZ());
+        int quartMinX = QuartPos.fromBlock((int)pos.getMinBlockX());
+        int quartMinZ = QuartPos.fromBlock((int)pos.getMinBlockZ());
         LevelHeightAccessor heightAccessor = this.getHeightAccessorForGeneration();
 
         for (int sectionY = heightAccessor.getMinSectionY(); sectionY <= heightAccessor.getMaxSectionY(); sectionY++) {

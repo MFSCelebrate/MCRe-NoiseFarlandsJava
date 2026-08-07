@@ -60,6 +60,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.FuelValues;
@@ -547,12 +548,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         return true;
     }
 
-    public boolean shouldTickBlocksAt(final long chunkPos) {
+    public boolean shouldTickBlocksAt(final ChunkPos chunkPos) {
         return true;
     }
 
     public boolean shouldTickBlocksAt(final BlockPos pos) {
-        return this.shouldTickBlocksAt(ChunkPos.pack(pos));
+        return this.shouldTickBlocksAt(ChunkPos.containing(pos));
     }
 
     public void explode(

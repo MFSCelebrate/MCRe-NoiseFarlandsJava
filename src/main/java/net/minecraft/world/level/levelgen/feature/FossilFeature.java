@@ -35,12 +35,12 @@ public class FossilFeature extends Feature<FossilFeatureConfiguration> {
         StructureTemplate fossilOverlay = structureTemplateManager.getOrCreate(config.overlayStructures.get(fossilIndex));
         ChunkPos chunkPos = ChunkPos.containing(origin);
         BoundingBox boundingBox = new BoundingBox(
-            chunkPos.getMinBlockX() - 16,
+            (int)chunkPos.getMinBlockX() - 16,
             level.getMinY(),
-            chunkPos.getMinBlockZ() - 16,
-            chunkPos.getMaxBlockX() + 16,
+            (int)chunkPos.getMinBlockZ() - 16,
+            (int)chunkPos.getMaxBlockX() + 16,
             level.getMaxY(),
-            chunkPos.getMaxBlockZ() + 16
+            (int)chunkPos.getMaxBlockZ() + 16
         );
         StructurePlaceSettings settings = new StructurePlaceSettings().setRotation(rotation).setBoundingBox(boundingBox).setRandom(random);
         Vec3i size = fossilBase.getSize(rotation);

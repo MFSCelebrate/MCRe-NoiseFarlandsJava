@@ -25,15 +25,15 @@ public class VoidStartPlatformFeature extends Feature<NoneFeatureConfiguration> 
     public boolean place(final FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
         ChunkPos currentChunkPos = ChunkPos.containing(context.origin());
-        if (checkerboardDistance(currentChunkPos.x(), currentChunkPos.z(), PLATFORM_ORIGIN_CHUNK.x(), PLATFORM_ORIGIN_CHUNK.z()) > 1) {
+        if (checkerboardDistance((int)currentChunkPos.x(), (int)currentChunkPos.z(), (int)PLATFORM_ORIGIN_CHUNK.x(), (int)PLATFORM_ORIGIN_CHUNK.z()) > 1) {
             return true;
         }
 
         BlockPos platformOrigin = PLATFORM_OFFSET.atY(context.origin().getY() + PLATFORM_OFFSET.getY());
         BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
 
-        for (int z = currentChunkPos.getMinBlockZ(); z <= currentChunkPos.getMaxBlockZ(); z++) {
-            for (int x = currentChunkPos.getMinBlockX(); x <= currentChunkPos.getMaxBlockX(); x++) {
+        for (int z = (int)currentChunkPos.getMinBlockZ(); z <= (int)currentChunkPos.getMaxBlockZ(); z++) {
+            for (int x = (int)currentChunkPos.getMinBlockX(); x <= (int)currentChunkPos.getMaxBlockX(); x++) {
                 if (checkerboardDistance(platformOrigin.getX(), platformOrigin.getZ(), x, z) <= 16) {
                     blockPos.set(x, platformOrigin.getY(), z);
                     if (blockPos.equals(platformOrigin)) {

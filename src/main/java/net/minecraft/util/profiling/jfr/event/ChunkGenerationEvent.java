@@ -41,10 +41,10 @@ public class ChunkGenerationEvent extends Event {
     public ChunkGenerationEvent(final ChunkPos pos, final ResourceKey<Level> dimension, final String name) {
         this.targetStatus = name;
         this.level = dimension.identifier().toString();
-        this.chunkPosX = pos.x();
-        this.chunkPosZ = pos.z();
-        this.worldPosX = pos.getMinBlockX();
-        this.worldPosZ = pos.getMinBlockZ();
+        this.chunkPosX = (int)pos.x();
+        this.chunkPosZ = (int)pos.z();
+        this.worldPosX = (int)pos.getMinBlockX();
+        this.worldPosZ = (int)pos.getMinBlockZ();
     }
 
     public static class Fields {

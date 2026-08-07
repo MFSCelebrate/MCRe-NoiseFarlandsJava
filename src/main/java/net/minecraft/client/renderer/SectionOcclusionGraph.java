@@ -253,7 +253,7 @@ public class SectionOcclusionGraph {
                 }
             }
 
-            toAdd.sort(Comparator.comparingDouble(c -> cameraPosition.distSqr(SectionPos.of(c.section.getSectionNode()).center())));
+            toAdd.sort(Comparator.comparingDouble(c -> cameraPosition.distSqr(c.section.getSectionNode().center())));
             queue.addAll(toAdd);
         } else {
             queue.add(new SectionOcclusionGraph.Node(cameraSection, null, 0));
@@ -382,7 +382,7 @@ public class SectionOcclusionGraph {
     private SectionRenderDispatcher.@Nullable RenderSection getRelativeFrom(
         final SectionPos cameraSectionNode, final SectionRenderDispatcher.RenderSection renderSection, final Direction direction
     ) {
-        long relative = renderSection.getNeighborSectionNode(direction);
+        SectionPos relative = renderSection.getNeighborSectionNode(direction);
         if (!this.isInViewDistance(cameraSectionNode, relative)) {
             return null;
         } else {

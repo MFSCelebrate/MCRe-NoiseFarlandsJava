@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.Vec3i;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.RandomSource;
@@ -784,6 +784,7 @@ public class Mth {
     private static final Float256 F256_HALF = Float256.of(0.5);
     private static final UFloat256 UF256_PERIOD = UFloat256.of(33_554_432.0);
     private static final UFloat256 UF256_HALF = UFloat256.of(0.5);
+    private static final UFloat256 UF256_HALF_PERIOD = UFloat256.of(16_777_216.0); // 2^24
 
     // ───────────────── Int256 ─────────────────
 

@@ -93,7 +93,7 @@ public class ChunkGenerationTask {
 
             for (int x = (int)this.pos.x() - range; x <= (int)this.pos.x() + range; x++) {
                 for (int z = (int)this.pos.z() - range; z <= (int)this.pos.z() + range; z++) {
-                    int distance = this.pos.getChessboardDistance(x, z);
+                    int distance = (int)this.pos.getChessboardDistance(x, z);
                     ChunkStatus requiredStatus = dependencies.get(distance);
                     ChunkStatus persistedStatus = this.cache.get(x, z).getPersistedStatus();
                     if (persistedStatus == null || persistedStatus.isBefore(requiredStatus)) {

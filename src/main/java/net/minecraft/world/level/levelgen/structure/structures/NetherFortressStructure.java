@@ -30,7 +30,7 @@ public class NetherFortressStructure extends Structure {
     @Override
     public Optional<Structure.GenerationStub> findGenerationPoint(final Structure.GenerationContext context) {
         ChunkPos chunkPos = context.chunkPos();
-        BlockPos startPos = new BlockPos(chunkPos.getMinBlockX(), 64, chunkPos.getMinBlockZ());
+        BlockPos startPos = new BlockPos((int)chunkPos.getMinBlockX(), 64, (int)chunkPos.getMinBlockZ());
         return Optional.of(new Structure.GenerationStub(startPos, builder -> generatePieces(builder, context)));
     }
 

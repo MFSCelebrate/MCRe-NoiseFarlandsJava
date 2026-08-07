@@ -870,7 +870,7 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
         PacketUtils.ensureRunningOnSameThread(packet, this, this.minecraft.packetProcessor());
 
         for (ClientboundChunksBiomesPacket.ChunkBiomeData data : packet.chunkBiomeData()) {
-            this.level.getChunkSource().replaceBiomes(data.pos().x(), data.pos().z(), data.getReadBuffer());
+            this.level.getChunkSource().replaceBiomes((int)data.pos().x(), (int)data.pos().z(), data.getReadBuffer());
         }
 
         for (ClientboundChunksBiomesPacket.ChunkBiomeData data : packet.chunkBiomeData()) {
@@ -881,7 +881,7 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
             for (int xOffset = -1; xOffset <= 1; xOffset++) {
                 for (int zOffset = -1; zOffset <= 1; zOffset++) {
                     for (int y = this.level.getMinSectionY(); y <= this.level.getMaxSectionY(); y++) {
-                        this.minecraft.levelExtractor.setSectionDirty(data.pos().x() + xOffset, y, data.pos().z() + zOffset);
+                        this.minecraft.levelExtractor.setSectionDirty((int)data.pos().x() + xOffset, y, (int)data.pos().z() + zOffset);
                     }
                 }
             }

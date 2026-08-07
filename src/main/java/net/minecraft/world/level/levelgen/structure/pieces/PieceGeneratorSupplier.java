@@ -43,8 +43,8 @@ public interface PieceGeneratorSupplier<C extends FeatureConfiguration> {
         RegistryAccess registryAccess
     ) {
         public boolean validBiomeOnTop(final Heightmap.Types type) {
-            int blockX = this.chunkPos.getMiddleBlockX();
-            int blockZ = this.chunkPos.getMiddleBlockZ();
+            int blockX = (int)this.chunkPos.getMiddleBlockX();
+            int blockZ = (int)this.chunkPos.getMiddleBlockZ();
             int blockY = this.chunkGenerator.getFirstOccupiedHeight(blockX, blockZ, type, this.heightAccessor, this.randomState);
             Holder<Biome> biome = this.chunkGenerator
                 .getBiomeSource()

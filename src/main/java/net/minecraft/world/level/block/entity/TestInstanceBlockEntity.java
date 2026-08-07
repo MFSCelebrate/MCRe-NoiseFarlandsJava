@@ -346,7 +346,7 @@ public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxR
 
     private void forceLoadChunks() {
         if (this.level instanceof ServerLevel serverLevel) {
-            this.getStructureBoundingBox().intersectingChunks().forEach(pos -> serverLevel.setChunkForced(pos.x(), pos.z(), true));
+            this.getStructureBoundingBox().intersectingChunks().forEach(pos -> serverLevel.setChunkForced((int)pos.x(), (int)pos.z(), true));
         }
     }
 

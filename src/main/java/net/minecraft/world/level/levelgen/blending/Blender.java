@@ -123,7 +123,7 @@ public class Blender {
         this.heightAndBiomeBlendingData
             .forEach(
                 (chunkPos, blendingData) -> blendingData.iterateHeights(
-                    QuartPos.fromSection(ChunkPos.getX(chunkPos)), QuartPos.fromSection(ChunkPos.getZ(chunkPos)), (testCellX, testCellZ, height) -> {
+                    QuartPos.fromSection((int)chunkPos.x()), QuartPos.fromSection((int)chunkPos.z()), (testCellX, testCellZ, height) -> {
                         double distance = Mth.length(cellX - testCellX, cellZ - testCellZ);
                         if (!(distance > HEIGHT_BLENDING_RANGE_CELLS)) {
                             if (distance < closestDistance.doubleValue()) {
@@ -169,8 +169,8 @@ public class Blender {
         this.densityBlendingData
             .forEach(
                 (chunkPos, blendingData) -> blendingData.iterateDensities(
-                    QuartPos.fromSection(ChunkPos.getX(chunkPos)),
-                    QuartPos.fromSection(ChunkPos.getZ(chunkPos)),
+                    QuartPos.fromSection((int)chunkPos.x()),
+                    QuartPos.fromSection((int)chunkPos.z()),
                     cellY - 1,
                     cellY + 1,
                     (testCellX, testCellY, testCellZ, density) -> {
@@ -243,7 +243,7 @@ public class Blender {
         this.heightAndBiomeBlendingData
             .forEach(
                 (chunkPos, blendingData) -> blendingData.iterateBiomes(
-                    QuartPos.fromSection(ChunkPos.getX(chunkPos)), quartY, QuartPos.fromSection(ChunkPos.getZ(chunkPos)), (testCellX, testCellZ, biome) -> {
+                    QuartPos.fromSection((int)chunkPos.x()), quartY, QuartPos.fromSection((int)chunkPos.z()), (testCellX, testCellZ, biome) -> {
                         double distance = Mth.length(quartX - testCellX, quartZ - testCellZ);
                         if (!(distance > HEIGHT_BLENDING_RANGE_CELLS)) {
                             if (distance < closestDistance.doubleValue()) {
@@ -268,7 +268,7 @@ public class Blender {
             ChunkPos chunkPos = chunk.getPos();
             boolean oldNoiseGeneration = chunk.isOldNoiseGeneration();
             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-            BlockPos chunkOrigin = new BlockPos(chunkPos.getMinBlockX(), 0, chunkPos.getMinBlockZ());
+            BlockPos chunkOrigin = new BlockPos((int)chunkPos.getMinBlockX(), 0, (int)chunkPos.getMinBlockZ());
             BlendingData blendingData = chunk.getBlendingData();
             if (blendingData != null) {
                 int oldMinY = blendingData.getAreaWithOldGeneration().getMinY();
@@ -285,7 +285,7 @@ public class Blender {
                 }
 
                 for (Direction direction : Direction.Plane.HORIZONTAL) {
-                    if (region.getChunk(chunkPos.x() + direction.getStepX(), chunkPos.z() + direction.getStepZ()).isOldNoiseGeneration() != oldNoiseGeneration) {
+                    if (region.getChunk((int)chunkPos.x() + direction.getStepX(), (int)chunkPos.z() + direction.getStepZ()).isOldNoiseGeneration() != oldNoiseGeneration) {
                         int minX = direction == Direction.EAST ? 15 : 0;
                         int maxX = direction == Direction.WEST ? 0 : 15;
                         int minZ = direction == Direction.SOUTH ? 15 : 0;
@@ -324,8 +324,8 @@ public class Blender {
             Builder<Direction8, BlendingData> builder = ImmutableMap.builder();
 
             for (Direction8 direction8 : Direction8.values()) {
-                int testChunkX = chunkPos.x() + direction8.getStepX();
-                int testChunkZ = chunkPos.z() + direction8.getStepZ();
+                int testChunkX = (int)chunkPos.x() + direction8.getStepX();
+                int testChunkZ = (int)chunkPos.z() + direction8.getStepZ();
                 BlendingData blendingData = region.getChunk(testChunkX, testChunkZ).getBlendingData();
                 if (blendingData != null) {
                     builder.put(direction8, blendingData);

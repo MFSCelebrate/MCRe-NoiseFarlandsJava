@@ -49,7 +49,7 @@ public interface ChunkTrackingView {
     }
 
     default boolean contains(final ChunkPos pos) {
-        return this.contains(pos.x(), pos.z());
+        return this.contains((int)pos.x(), (int)pos.z());
     }
 
     default boolean contains(final int x, final int z) {
@@ -81,19 +81,19 @@ public interface ChunkTrackingView {
 
     record Positioned(ChunkPos center, int viewDistance) implements ChunkTrackingView {
         private int minX() {
-            return this.center.x() - this.viewDistance - 1;
+            return (int)this.center.x() - this.viewDistance - 1;
         }
 
         private int minZ() {
-            return this.center.z() - this.viewDistance - 1;
+            return (int)this.center.z() - this.viewDistance - 1;
         }
 
         private int maxX() {
-            return this.center.x() + this.viewDistance + 1;
+            return (int)this.center.x() + this.viewDistance + 1;
         }
 
         private int maxZ() {
-            return this.center.z() + this.viewDistance + 1;
+            return (int)this.center.z() + this.viewDistance + 1;
         }
 
         @VisibleForTesting
@@ -103,7 +103,7 @@ public interface ChunkTrackingView {
 
         @Override
         public boolean contains(final int chunkX, final int chunkZ, final boolean includeNeighbors) {
-            return ChunkTrackingView.isWithinDistance(this.center.x(), this.center.z(), this.viewDistance, chunkX, chunkZ, includeNeighbors);
+            return ChunkTrackingView.isWithinDistance((int)this.center.x(), (int)this.center.z(), this.viewDistance, chunkX, chunkZ, includeNeighbors);
         }
 
         @Override

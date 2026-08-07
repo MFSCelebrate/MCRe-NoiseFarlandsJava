@@ -49,12 +49,12 @@ public abstract class ChunkRegionIoEvent extends Event {
     public final int bytes;
 
     protected ChunkRegionIoEvent(final RegionStorageInfo info, final ChunkPos chunkPos, final RegionFileVersion version, final int bytes) {
-        this.regionPosX = chunkPos.getRegionX();
-        this.regionPosZ = chunkPos.getRegionZ();
-        this.localChunkPosX = chunkPos.getRegionLocalX();
-        this.localChunkPosZ = chunkPos.getRegionLocalZ();
-        this.chunkPosX = chunkPos.x();
-        this.chunkPosZ = chunkPos.z();
+        this.regionPosX = (int)chunkPos.getRegionX();
+        this.regionPosZ = (int)chunkPos.getRegionZ();
+        this.localChunkPosX = (int)chunkPos.getRegionLocalX();
+        this.localChunkPosZ = (int)chunkPos.getRegionLocalZ();
+        this.chunkPosX = (int)chunkPos.x();
+        this.chunkPosZ = (int)chunkPos.z();
         this.levelId = info.level();
         this.dimension = info.dimension().identifier().toString();
         this.type = info.type();

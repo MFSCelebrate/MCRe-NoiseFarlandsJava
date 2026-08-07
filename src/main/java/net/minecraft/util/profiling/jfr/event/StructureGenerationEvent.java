@@ -38,8 +38,8 @@ public class StructureGenerationEvent extends Event {
     public boolean success;
 
     public StructureGenerationEvent(final ChunkPos sourceChunkPos, final Holder<Structure> structure, final ResourceKey<Level> level) {
-        this.chunkPosX = sourceChunkPos.x();
-        this.chunkPosZ = sourceChunkPos.z();
+        this.chunkPosX = (int)sourceChunkPos.x();
+        this.chunkPosZ = (int)sourceChunkPos.z();
         this.structure = structure.getRegisteredName();
         this.level = level.identifier().toString();
     }

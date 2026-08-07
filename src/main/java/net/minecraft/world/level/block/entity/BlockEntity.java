@@ -73,8 +73,8 @@ public abstract class BlockEntity implements DebugValueSource, TypedInstance<Blo
         int sectionZ = SectionPos.blockToSectionCoord(z);
         if (sectionX != base.x() || sectionZ != base.z()) {
             LOGGER.warn("Block entity {} found in a wrong chunk, expected position from chunk {}", entityTag, base);
-            x = base.getBlockX(SectionPos.sectionRelative(x));
-            z = base.getBlockZ(SectionPos.sectionRelative(z));
+            x = (int)base.getBlockX(SectionPos.sectionRelative(x));
+            z = (int)base.getBlockZ(SectionPos.sectionRelative(z));
         }
 
         return new BlockPos(x, y, z);

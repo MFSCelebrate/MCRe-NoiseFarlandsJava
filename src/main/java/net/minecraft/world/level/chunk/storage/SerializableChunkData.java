@@ -13,6 +13,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Map.Entry;
@@ -412,9 +413,9 @@ public record SerializableChunkData(
 
     public CompoundTag write() {
         CompoundTag tag = NbtUtils.addCurrentDataVersion(new CompoundTag());
-        tag.putInt("xPos", this.chunkPos.x());
+        tag.putInt("xPos", (int)this.chunkPos.x());
         tag.putInt("yPos", this.minSectionY);
-        tag.putInt("zPos", this.chunkPos.z());
+        tag.putInt("zPos", (int)this.chunkPos.z());
         tag.putLong("LastUpdate", this.lastUpdateTime);
         tag.putLong("InhabitedTime", this.inhabitedTime);
         tag.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(this.chunkStatus).toString());

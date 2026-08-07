@@ -142,7 +142,7 @@ public class LevelExtractor implements ResourceManagerReloadListener {
             chunkCache.flipUpdateTrackingSets();
             java.util.Collection<ChunkPos> expectedChunks = this.levelRenderer.expectedChunks();
             expectedChunks.forEach(expectedChunk -> {
-                if (chunkCache.hasChunk(ChunkPos.getX(expectedChunk), ChunkPos.getZ(expectedChunk))) {
+                if (chunkCache.hasChunk((int)expectedChunk.x(), (int)expectedChunk.z())) {
                     this.levelRenderState.chunkLoadingRenderState.loadedExpectedChunks.add(expectedChunk);
                 }
             });

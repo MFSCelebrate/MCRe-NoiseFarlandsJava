@@ -90,8 +90,8 @@ public class WorldGenRegion implements WorldGenLevel {
         this.dimensionType = level.dimensionType();
         this.biomeManager = new BiomeManager(this, BiomeManager.obfuscateSeed(this.seed));
         ChunkPos centerPos = center.getPos();
-        this.centerChunkX = centerPos.x();
-        this.centerChunkZ = centerPos.z();
+        this.centerChunkX = (int)centerPos.x();
+        this.centerChunkZ = (int)centerPos.z();
         this.writeRadius = generatingStep.blockStateWriteRadius();
     }
 
@@ -115,7 +115,7 @@ public class WorldGenRegion implements WorldGenLevel {
 
     @Override
     public @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ, final ChunkStatus targetStatus, final boolean loadOrGenerate) {
-        int distance = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
+        int distance = (int)this.center.getPos().getChessboardDistance(chunkX, chunkZ);
         ChunkStatus maxAllowedStatus = distance >= this.generatingStep.directDependencies().size()
             ? null
             : this.generatingStep.directDependencies().get(distance);
@@ -149,7 +149,7 @@ public class WorldGenRegion implements WorldGenLevel {
 
     @Override
     public boolean hasChunk(final int chunkX, final int chunkZ) {
-        int distance = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
+        int distance = (int)this.center.getPos().getChessboardDistance(chunkX, chunkZ);
         return distance < this.generatingStep.directDependencies().size();
     }
 

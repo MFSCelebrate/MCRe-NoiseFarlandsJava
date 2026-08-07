@@ -104,8 +104,8 @@ public final class StructureStart {
         CompoundTag tag = new CompoundTag();
         if (this.isValid()) {
             tag.putString("id", context.registryAccess().lookupOrThrow(Registries.STRUCTURE).getKey(this.structure).toString());
-            tag.putInt("ChunkX", chunkPos.x());
-            tag.putInt("ChunkZ", chunkPos.z());
+            tag.putInt("ChunkX", (int)chunkPos.x());
+            tag.putInt("ChunkZ", (int)chunkPos.z());
             tag.putInt("references", this.references);
             tag.put("Children", this.pieceContainer.save(context));
             return tag;

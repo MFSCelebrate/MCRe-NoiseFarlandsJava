@@ -122,8 +122,8 @@ public abstract class Structure {
         final Structure.GenerationContext context, final Heightmap.Types heightmap, final Consumer<StructurePiecesBuilder> generator
     ) {
         ChunkPos chunkPos = context.chunkPos();
-        int blockX = chunkPos.getMiddleBlockX();
-        int blockZ = chunkPos.getMiddleBlockZ();
+        int blockX = (int)chunkPos.getMiddleBlockX();
+        int blockZ = (int)chunkPos.getMiddleBlockZ();
         int blockY = context.chunkGenerator().getFirstOccupiedHeight(blockX, blockZ, heightmap, context.heightAccessor(), context.randomState());
         return Optional.of(new Structure.GenerationStub(new BlockPos(blockX, blockY, blockZ), generator));
     }
@@ -173,8 +173,8 @@ public abstract class Structure {
 
     protected static int getLowestY(final Structure.GenerationContext context, final int sizeX, final int sizeZ) {
         ChunkPos chunkPos = context.chunkPos();
-        int minX = chunkPos.getMinBlockX();
-        int minZ = chunkPos.getMinBlockZ();
+        int minX = (int)chunkPos.getMinBlockX();
+        int minZ = (int)chunkPos.getMinBlockZ();
         return getLowestY(context, minX, minZ, sizeX, sizeZ);
     }
 
@@ -197,8 +197,8 @@ public abstract class Structure {
         }
 
         ChunkPos chunkPos = context.chunkPos();
-        int blockX = chunkPos.getBlockX(7);
-        int blockZ = chunkPos.getBlockZ(7);
+        int blockX = (int)chunkPos.getBlockX(7);
+        int blockZ = (int)chunkPos.getBlockZ(7);
         return new BlockPos(blockX, getLowestY(context, blockX, blockZ, offsetX, offsetZ), blockZ);
     }
 
@@ -249,7 +249,7 @@ public abstract class Structure {
 
         private static WorldgenRandom makeRandom(final long seed, final ChunkPos chunkPos) {
             WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
-            random.setLargeFeatureSeed(seed, chunkPos.x(), chunkPos.z());
+            random.setLargeFeatureSeed(seed, (int)chunkPos.x(), (int)chunkPos.z());
             return random;
         }
     }

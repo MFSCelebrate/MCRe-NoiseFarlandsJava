@@ -1,6 +1,7 @@
 package net.minecraft.client.renderer.block;
 
 import com.mojang.blaze3d.vertex.QuadInstance;
+import java.util.LinkedHashMap;
 
 
 import net.minecraft.client.resources.model.geometry.BakedQuad;
@@ -639,20 +640,12 @@ public class BlockModelLighter {
     public static class Cache {
         private boolean enabled;
         private final LinkedHashMap<BlockPos, Integer> colorCache = Util.make(() -> {
-            LinkedHashMap<BlockPos, Integer> map = new LinkedHashMap<>(100, 0.75F) {
-                @Override
-                protected void rehash(final int newN) {
-                }
-            };
+            LinkedHashMap<BlockPos, Integer> map = new LinkedHashMap<>(100, 0.75F);
             // 对象键默认值语义由调用处 getOrDefault 处理
             return map;
         });
         private final LinkedHashMap<BlockPos, Float> brightnessCache = Util.make(() -> {
-            LinkedHashMap<BlockPos, Float> map = new LinkedHashMap<>(100, 0.75F) {
-                @Override
-                protected void rehash(final int newN) {
-                }
-            };
+            LinkedHashMap<BlockPos, Float> map = new LinkedHashMap<>(100, 0.75F);
             // 对象键默认值语义由调用处 getOrDefault 处理
             return map;
         });

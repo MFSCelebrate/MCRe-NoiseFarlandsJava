@@ -26,7 +26,7 @@ public class IglooStructure extends Structure {
     private void generatePieces(final StructurePiecesBuilder builder, final Structure.GenerationContext context) {
         ChunkPos chunkPos = context.chunkPos();
         WorldgenRandom random = context.random();
-        BlockPos startPos = new BlockPos(chunkPos.getMinBlockX(), 90, chunkPos.getMinBlockZ());
+        BlockPos startPos = new BlockPos((int)chunkPos.getMinBlockX(), 90, (int)chunkPos.getMinBlockZ());
         Rotation rotation = Rotation.getRandom(random);
         IglooPieces.addPieces(context.structureTemplateManager(), startPos, rotation, builder, random);
     }
