@@ -666,7 +666,12 @@ public class LevelRenderer implements AutoCloseable {
 
         for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
             for (LevelRenderer.ChunkDrawGroup chunkDrawGroup : drawGroups.get(layer)) {
-                batchedDraws.add(chunkDrawGroup.draws());
+                List<DynamicUniforms.IndexedDraw> draws = chunkDrawGroup.draws();
+                // MCRe 修复：透明层 from-far-to-near（原版 DrawSeparate 的 draws.reversed() 语义）
+                if (layer == ChunkSectionLayer.TRANSLUCENT) {
+                    draws = draws.reversed();
+                }
+                batchedDraws.add(draws);
             }
         }
 

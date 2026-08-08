@@ -166,10 +166,13 @@ public class DynamicGpuDataStorage<T extends DynamicGpuDataStorage.DynamicGpuDat
 
         try (GpuBufferSlice.MappedView view = this.ringBuffer.currentBuffer().slice(offset, totalCount * this.blockSize).map(false, true)) {
             ByteBuffer byteBuffer = view.data();
+            long currentOffset = offset;
 
             for (int i = 0; i < dataLists.size(); i++) {
                 List<T> dataList = dataLists.get(i);
-                result[i] = this.ringBuffer.currentBuffer().slice(offset, dataList.size() * this.blockSize);
+                // MCRe 修复：每组 slice 偏移必须累加（原版只用了起始 offset，第 2 组起指向错误命令区）
+                result[i] = this.ringBuffer.currentBuffer().slice(currentOffset, dataList.size() * this.blockSize);
+                currentOffset += dataList.size() * this.blockSize;
 
                 for (T data : dataList) {
                     byteBuffer.position(bufferPositionIndex++ * this.blockSize);
