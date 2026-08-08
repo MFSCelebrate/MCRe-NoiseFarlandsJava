@@ -637,10 +637,10 @@ public class LevelRenderer implements AutoCloseable {
             }
         }
 
-        RenderSystem.getDynamicUniforms().writeTerrainTransform(modelViewMatrix, textureAtlasWidth, textureAtlasHeight);
+        GpuBufferSlice terrainTransformUBO = RenderSystem.getDynamicUniforms().writeTerrainTransform(modelViewMatrix, textureAtlasWidth, textureAtlasHeight);
         GpuBufferSlice[] chunkSectionInfos = RenderSystem.getDynamicUniforms()
             .writeChunkSections(sectionInfos.toArray(new DynamicUniforms.ChunkSectionInfo[0]));
-        return new ChunkSectionsToRender.DrawSeparate(blockAtlas, flattenDraws, largestIndexCount, chunkSectionInfos);
+        return new ChunkSectionsToRender.DrawSeparate(blockAtlas, terrainTransformUBO, flattenDraws, largestIndexCount, chunkSectionInfos);
     }
 
     /** MCRe：26.3 MultiDrawIndirect——批量 indirect 命令构建（DrawIndirect 路径） */
@@ -685,9 +685,9 @@ public class LevelRenderer implements AutoCloseable {
             }
         }
 
-        RenderSystem.getDynamicUniforms().writeTerrainTransform(modelViewMatrix, textureAtlasWidth, textureAtlasHeight);
+        GpuBufferSlice terrainTransformUBO = RenderSystem.getDynamicUniforms().writeTerrainTransform(modelViewMatrix, textureAtlasWidth, textureAtlasHeight);
         GpuBufferSlice chunkSectionInfos = RenderSystem.getDynamicUniforms().writeChunkSectionsInstanced(sectionInfos);
-        return new ChunkSectionsToRender.DrawIndirect(blockAtlas, indirectDraws, largestIndexCount, chunkSectionInfos);
+        return new ChunkSectionsToRender.DrawIndirect(blockAtlas, terrainTransformUBO, indirectDraws, largestIndexCount, chunkSectionInfos);
     }
 
     /** MCRe：MultiDraw 路径记录（按 vertex/index buffer 分组） */

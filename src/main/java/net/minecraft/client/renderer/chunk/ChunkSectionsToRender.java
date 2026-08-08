@@ -36,9 +36,11 @@ public abstract class ChunkSectionsToRender {
     private static final int MAX_DRAW_INDIRECT_COUNT = 65536;
     private final int maxIndicesRequired;
     private final GpuTextureView textureView;
+    private final GpuBufferSlice terrainTransformUBO;
 
-    private ChunkSectionsToRender(final GpuTextureView textureView, final int maxIndicesRequired) {
+    private ChunkSectionsToRender(final GpuTextureView textureView, final GpuBufferSlice terrainTransformUBO, final int maxIndicesRequired) {
         this.textureView = textureView;
+        this.terrainTransformUBO = terrainTransformUBO;
         this.maxIndicesRequired = maxIndicesRequired;
     }
 
@@ -70,6 +72,8 @@ public abstract class ChunkSectionsToRender {
                     OptionalDouble.empty()
                 )) {
             RenderSystem.bindDefaultUniforms(renderPass);
+            // MCRe：26.3 MultiDrawIndirect——共享 TerrainUniform（ModelView 矩阵 + 纹理尺寸）
+            renderPass.setUniform("TerrainUniform", this.terrainTransformUBO);
             renderPass.bindTexture("Sampler0", this.textureView, sampler);
             renderPass.bindTexture("Sampler2", minecraft.gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 
@@ -93,11 +97,12 @@ public abstract class ChunkSectionsToRender {
 
         public DrawIndirect(
             final GpuTextureView textureView,
+            final GpuBufferSlice terrainTransformUBO,
             final EnumMap<ChunkSectionLayer, List<ChunkSectionsToRender.GpuMultiDrawIndexedIndirect>> drawGroupsPerLayer,
             final int maxIndicesRequired,
             final GpuBufferSlice chunkSectionInfos
         ) {
-            super(textureView, maxIndicesRequired);
+            super(textureView, terrainTransformUBO, maxIndicesRequired);
             this.drawGroupsPerLayer = drawGroupsPerLayer;
             this.chunkSectionInfos = chunkSectionInfos;
         }
@@ -150,11 +155,12 @@ public abstract class ChunkSectionsToRender {
 
         public DrawSeparate(
             final GpuTextureView textureView,
+            final GpuBufferSlice terrainTransformUBO,
             final Map<ChunkSectionLayer, List<RenderPass.Draw<GpuBufferSlice[]>>> drawsPerLayer,
             final int maxIndicesRequired,
             final GpuBufferSlice[] chunkSectionInfos
         ) {
-            super(textureView, maxIndicesRequired);
+            super(textureView, terrainTransformUBO, maxIndicesRequired);
             this.drawsPerLayer = drawsPerLayer;
             this.chunkSectionInfos = chunkSectionInfos;
         }

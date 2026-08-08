@@ -41,6 +41,7 @@ public class RenderPipelines {
     private static final RenderPipeline.Snippet TERRAIN_SNIPPET = RenderPipeline.builder(GENERIC_BLOCKS_SNIPPET)
         .withBindGroupLayout(BindGroupLayouts.PROJECTION)
         .withBindGroupLayout(BindGroupLayouts.CHUNK_SECTION)
+        .withBindGroupLayout(BindGroupLayouts.TERRAIN_INFO)
         .withVertexShader("core/terrain")
         .withFragmentShader("core/terrain")
         .buildSnippet();
