@@ -2,7 +2,7 @@
 
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:globals.glsl>
-#moj_import <minecraft:chunksection.glsl>
+#moj_import <minecraft:terrainuniform.glsl>
 
 uniform sampler2D Sampler0;
 
@@ -10,6 +10,7 @@ in float sphericalVertexDistance;
 in float cylindricalVertexDistance;
 in vec4 vertexColor;
 in vec2 texCoord0;
+in float chunkVisibility;
 
 out vec4 fragColor;
 
@@ -87,7 +88,7 @@ vec4 sampleRGSS(sampler2D source, vec2 uv, vec2 pixelSize) {
 
 void main() {
     vec4 color = (UseRgss == 1 ? sampleRGSS(Sampler0, texCoord0, 1.0f / TextureSize) : sampleNearest(Sampler0, texCoord0, 1.0f / TextureSize)) * vertexColor;
-    color = mix(FogColor * vec4(1, 1, 1, color.a), color, ChunkVisibility);
+    color = mix(FogColor * vec4(1, 1, 1, color.a), color, chunkVisibility);
 #ifdef ALPHA_CUTOUT
     if (color.a < ALPHA_CUTOUT) {
         discard;
