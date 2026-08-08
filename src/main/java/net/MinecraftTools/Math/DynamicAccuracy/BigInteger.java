@@ -1572,12 +1572,19 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     private BigInteger divideKnuth(BigInteger val) {
-        MutableBigInteger q = new MutableBigInteger(),
-                a = new MutableBigInteger(this.mag),
-                b = new MutableBigInteger(val.mag);
-
-        a.divideKnuth(b, q, false);
-        return q.toBigInteger(this.signum * val.signum);
+        MutableBigInteger q = MutableBigInteger.acquire();
+        MutableBigInteger a = MutableBigInteger.acquire();
+        MutableBigInteger b = MutableBigInteger.acquire();
+        try {
+            a.copyValue(this.mag);
+            b.copyValue(val.mag);
+            a.divideKnuth(b, q, false);
+            return q.toBigIntegerCopy(this.signum * val.signum);
+        } finally {
+            MutableBigInteger.release(q);
+            MutableBigInteger.release(a);
+            MutableBigInteger.release(b);
+        }
     }
 
     public BigInteger[] divideAndRemainder(BigInteger val) {
@@ -1591,13 +1598,21 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     private BigInteger[] divideAndRemainderKnuth(BigInteger val) {
         BigInteger[] result = new BigInteger[2];
-        MutableBigInteger q = new MutableBigInteger(),
-                a = new MutableBigInteger(this.mag),
-                b = new MutableBigInteger(val.mag);
-        MutableBigInteger r = a.divideKnuth(b, q);
-        result[0] = q.toBigInteger(this.signum == val.signum ? 1 : -1);
-        result[1] = r.toBigInteger(this.signum);
-        return result;
+        MutableBigInteger q = MutableBigInteger.acquire();
+        MutableBigInteger a = MutableBigInteger.acquire();
+        MutableBigInteger b = MutableBigInteger.acquire();
+        try {
+            a.copyValue(this.mag);
+            b.copyValue(val.mag);
+            MutableBigInteger r = a.divideKnuth(b, q);
+            result[0] = q.toBigIntegerCopy(this.signum == val.signum ? 1 : -1);
+            result[1] = r.toBigIntegerCopy(this.signum);
+            return result;
+        } finally {
+            MutableBigInteger.release(q);
+            MutableBigInteger.release(a);
+            MutableBigInteger.release(b);
+        }
     }
 
     public BigInteger remainder(BigInteger val) {
@@ -1610,11 +1625,19 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     private BigInteger remainderKnuth(BigInteger val) {
-        MutableBigInteger q = new MutableBigInteger(),
-                a = new MutableBigInteger(this.mag),
-                b = new MutableBigInteger(val.mag);
-
-        return a.divideKnuth(b, q).toBigInteger(this.signum);
+        MutableBigInteger q = MutableBigInteger.acquire();
+        MutableBigInteger a = MutableBigInteger.acquire();
+        MutableBigInteger b = MutableBigInteger.acquire();
+        try {
+            a.copyValue(this.mag);
+            b.copyValue(val.mag);
+            MutableBigInteger r = a.divideKnuth(b, q);
+            return r.toBigIntegerCopy(this.signum);
+        } finally {
+            MutableBigInteger.release(q);
+            MutableBigInteger.release(a);
+            MutableBigInteger.release(b);
+        }
     }
 
     private BigInteger divideBurnikelZiegler(BigInteger val) {
@@ -1680,7 +1703,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         int workingExp = exponent << expZeros;
 
         for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
-            answer = answer.multiply(answer);
+            // 🔧 MCRe：平方用 square() 专用路径（Karatsuba/ToomCook），比 multiply(answer) 快
+            answer = answer.square();
             if (workingExp < 0)
                 answer = answer.multiply(base);
 
@@ -1731,12 +1755,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         else if (this.signum == 0)
             return val.abs();
 
-        MutableBigInteger a = new MutableBigInteger(this);
-        MutableBigInteger b = new MutableBigInteger(val);
-
-        MutableBigInteger result = a.hybridGCD(b);
-
-        return result.toBigInteger(1);
+        MutableBigInteger a = MutableBigInteger.acquire();
+        MutableBigInteger b = MutableBigInteger.acquire();
+        try {
+            a.copyValue(this.mag);
+            b.copyValue(val.mag);
+            MutableBigInteger result = a.hybridGCD(b);
+            // hybridGCD 可能返回 a 或 b 的引用 → 强制拷贝防止与池共享
+            return result.toBigIntegerCopy(1);
+        } finally {
+            MutableBigInteger.release(a);
+            MutableBigInteger.release(b);
+        }
     }
 
     static int bitLengthForInt(int n) {
@@ -1941,6 +1971,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         return montReduce(product, n, len, (int) inv);
     }
 
+    // 🔧 MCRe：oddModPow 表格复用（ThreadLocal，行数组按需扩容，用前清零）
+    private static final ThreadLocal<int[][]> TL_MODPOW_TABLE =
+            ThreadLocal.withInitial(() -> new int[64][]);
+
     static int[] bnExpModThreshTable = {7, 25, 81, 241, 673, 1793,
             Integer.MAX_VALUE
     };
@@ -1976,9 +2010,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         int tblmask = 1 << wbits;
 
-        int[][] table = new int[tblmask][];
-        for (int i = 0; i < tblmask; i++)
-            table[i] = new int[modLen];
+        // 🔧 MCRe：ThreadLocal 表格池化——避免每次 modPow 全新建 int[tblmask][modLen]
+        int[][] table = TL_MODPOW_TABLE.get();
+        for (int i = 0; i < tblmask; i++) {
+            int[] row = table[i];
+            if (row == null || row.length < modLen) {
+                row = new int[modLen];
+                table[i] = row;
+            } else {
+                Arrays.fill(row, 0, modLen, 0);
+            }
+        }
 
         long n0 = (mod[modLen - 1] & LONG_MASK) + ((mod[modLen - 2] & LONG_MASK) << 32);
         long inv = -MutableBigInteger.inverseMod64(n0);

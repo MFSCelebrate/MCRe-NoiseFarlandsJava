@@ -155,8 +155,9 @@ public final class DynamicNumber extends Number implements Comparable<DynamicNum
             case LONG       -> BigInteger.valueOf((long) value);
             case INT256     -> ((Int256) value).toBigInteger();
             case UINT256    -> ((UInt256) value).toBigInteger();
-            case FLOAT256   -> ((Float256) value).toBigDecimal().toBigInteger();
-            case UFLOAT256  -> ((UFloat256) value).toBigDecimal().toBigInteger();
+            // 🔧 MCRe：走精确截断/无符号取整路径，避免 toBigDecimal() 的十进制展开开销
+            case FLOAT256   -> ((Float256) value).truncate().toBigInteger();
+            case UFLOAT256  -> ((UFloat256) value).toUInt256().toBigInteger();
             case BIGINTEGER -> (BigInteger) value;
         };
     }

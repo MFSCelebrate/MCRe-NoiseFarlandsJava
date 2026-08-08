@@ -175,6 +175,14 @@ public class CommandSuggestions {
         }
     }
 
+    /** MCRe：统一"自动弹出补全列表"逻辑——本地命令路径与原版 updateUsageInfo 共用 */
+    private void maybeShowSuggestions() {
+        this.suggestions = null;
+        if (this.allowSuggestions && this.minecraft.options.autoSuggestions().get()) {
+            this.showSuggestions(false);
+        }
+    }
+
     public boolean isVisible() {
         return this.suggestions != null;
     }
@@ -268,6 +276,8 @@ public class CommandSuggestions {
                 this.pendingSuggestions = CompletableFuture.completedFuture(localBuilder.build());
                 this.recomputeUsageBoxWidth();
                 this.commandUsagePosition = 0;
+                // MCRe 修复：本地路径没有原版 thenAccept→updateUsageInfo 链路，必须手动触发自动弹出
+                this.maybeShowSuggestions();
             }
         } else if (!command.isBlank()) {
             this.currentParseIsMessage = true;
@@ -387,9 +397,7 @@ public class CommandSuggestions {
         }
 
         this.suggestions = null;
-        if (this.allowSuggestions && this.minecraft.options.autoSuggestions().get()) {
-            this.showSuggestions(false);
-        }
+        this.maybeShowSuggestions();
     }
 
     private List<FormattedCharSequence> fillNodeUsage(final SuggestionContext<ClientSuggestionProvider> suggestionContext, final Style usageFormat) {

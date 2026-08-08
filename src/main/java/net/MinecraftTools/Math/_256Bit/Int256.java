@@ -110,6 +110,10 @@ public final class Int256 extends Number implements Comparable<Int256> {
 
     /** 从 BigInteger（取低 256 位，符号扩展） */
     public static Int256 of(BigInteger value) {
+        // 🔧 MCRe：long 范围快路径——bitLength()≤63 必在 long 内（含负数补码），走小值缓存/直接填充
+        if (value.bitLength() <= 63) {
+            return of(value.longValue());
+        }
         byte[] mag = value.toByteArray();
         byte[] buf = new byte[32];
         if (mag.length >= 32) {

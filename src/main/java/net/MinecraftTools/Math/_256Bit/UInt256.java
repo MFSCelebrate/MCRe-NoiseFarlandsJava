@@ -98,6 +98,11 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
 
     /** 从 BigInteger（取低 256 位，无符号截断） */
     public static UInt256 of(BigInteger value) {
+        // 🔧 MCRe：无符号 long 范围快路径——非负且 bitLength≤64 必在 [0, 2^64) 内，
+        // longValue() 按无符号位模式解释（≥2^63 时为负 long 也正确）
+        if (value.signum() >= 0 && value.bitLength() <= 64) {
+            return of(value.longValue());
+        }
         byte[] mag = value.toByteArray();
         byte[] buf = new byte[32];
         if (mag.length >= 32) {

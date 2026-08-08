@@ -53,6 +53,52 @@ class MutableBigInteger {
     private static final ThreadLocal<
             MutableBigInteger> TL_TEMP_C = ThreadLocal.withInitial(MutableBigInteger::new);
 
+    // ══════════════════════════════════════════════════════════════════
+    // 🔧 MCRe NoiseFarlands：通用 ThreadLocal 借用池
+    // 用法：BigInteger.divideKnuth / remainderKnuth / divideAndRemainderKnuth / gcd
+    //       等“单线程、非重入”热路径借取临时 MutableBigInteger，用完 release 归还。
+    // ⚠️ 安全约束：
+    //  1. acquire/release 必须成对，且不跨递归（嵌套借用会自动分配新实例，不会互相踩踏）。
+    //  2. 归还前不得再持有该实例内部数组的任何引用（用 toBigIntegerCopy 强制拷贝产出）。
+    //  3. release 只复位 offset/intLen，不清数组内容（下轮 copyValue 覆盖）。
+    // ══════════════════════════════════════════════════════════════════
+    private static final int TL_POOL_CAPACITY = 4;
+
+    private static final ThreadLocal<MutableBigInteger[]> TL_POOL =
+            ThreadLocal.withInitial(() -> new MutableBigInteger[TL_POOL_CAPACITY]);
+    private static final ThreadLocal<int[]> TL_POOL_SIZE = ThreadLocal.withInitial(() -> new int[1]);
+
+    /** 🔧 借取一个干净的 MutableBigInteger（线程局部；嵌套/递归时自动 new 新实例） */
+    static MutableBigInteger acquire() {
+        int[] size = TL_POOL_SIZE.get();
+        if (size[0] > 0) {
+            int top = size[0] - 1;
+            MutableBigInteger m = TL_POOL.get()[top];
+            size[0] = top;
+            m.reset();
+            return m;
+        }
+        return new MutableBigInteger();
+    }
+
+    /** 🔧 归还实例（调用方保证不再引用其内部数组） */
+    static void release(MutableBigInteger m) {
+        if (m == null) return;
+        m.reset(); // 只复位 offset/intLen，数组留待下轮 copyValue 复用
+        int[] size = TL_POOL_SIZE.get();
+        if (size[0] < TL_POOL_CAPACITY) {
+            TL_POOL.get()[size[0]] = m;
+            size[0]++;
+        }
+    }
+
+    /** 🔧 从池化/普通 MutableBigInteger 产出 BigInteger —— 强制拷贝，避免与池共享内部数组 */
+    BigInteger toBigIntegerCopy(int sign) {
+        if (intLen == 0 || sign == 0)
+            return BigInteger.ZERO;
+        return new BigInteger(toIntArray(), sign); // toIntArray 总是新建数组
+    }
+
     static final int KNUTH_POW2_THRESH_LEN = 6;
 
     static final int KNUTH_POW2_THRESH_ZEROS = 3;

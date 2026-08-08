@@ -291,10 +291,14 @@ public class ChatScreen extends Screen {
 
     @Override
     public void extractBackground(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
-        // MCRe：主界面打开聊天时绘制菜单背景（避免被黑色清屏覆盖）；世界内保持透明显示世界
+        // MCRe：主界面打开聊天——走原版主菜单标准背景路径（3D 滚动全景 + 模糊 + 暗色叠加层）
+        // 修复：原实现只画暗色 MENU_BACKGROUND → 全景没人画 → 纯黑背景
         if (this.minecraft.level == null) {
-            Screen.extractMenuBackgroundTexture(graphics, Screen.MENU_BACKGROUND, 0, 0, 0.0F, 0.0F, this.width, this.height);
+            this.extractPanorama(graphics, a);
+            this.extractBlurredBackground(graphics);
+            this.extractMenuBackground(graphics);
         }
+        // 世界内：不绘制背景，保持透明看到世界
     }
 
     @Override
