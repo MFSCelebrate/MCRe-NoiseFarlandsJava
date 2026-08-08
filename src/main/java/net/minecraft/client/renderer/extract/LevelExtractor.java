@@ -379,6 +379,8 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         this.levelRenderer
             .sectionOcclusionGraph()
             .addSectionsInFrustum(frustum, this.levelRenderer.visibleSections(), this.levelRenderer.nearbyVisibleSections());
+        // MCRe：同步可见集合（实体遮挡剔除）
+        this.levelRenderer.fillVisibleSectionSet();
     }
 
     private boolean shouldShowEntityOutlines(final Camera camera) {

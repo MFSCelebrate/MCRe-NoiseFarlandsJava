@@ -119,6 +119,8 @@ public class LevelRenderer implements AutoCloseable {
     private final SectionOcclusionGraph sectionOcclusionGraph = new SectionOcclusionGraph();
     private final ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
     private final ObjectArrayList<SectionRenderDispatcher.RenderSection> nearbyVisibleSections = new ObjectArrayList<>(50);
+    // MCRe：遮挡剔除——实体/方块实体可见性 O(1) 查询集合（与 visibleSections 同步）
+    private final java.util.Set<SectionRenderDispatcher.RenderSection> visibleSectionSet = new java.util.HashSet<>();
     private @Nullable ViewArea viewArea;
     private final RenderTarget entityOutlineTarget;
     private final LevelTargetBundle targets = new LevelTargetBundle();
@@ -881,6 +883,13 @@ public class LevelRenderer implements AutoCloseable {
     public void clearVisibleSections() {
         this.visibleSections.clear();
         this.nearbyVisibleSections.clear();
+        this.visibleSectionSet.clear();
+    }
+
+    /** MCRe：visibleSections → HashSet（实体遮挡剔除 O(1) 查询），applyFrustum 填充后调用 */
+    public void fillVisibleSectionSet() {
+        this.visibleSectionSet.clear();
+        this.visibleSectionSet.addAll(this.visibleSections);
     }
 
     public void resetLevelRenderData() {
@@ -908,7 +917,10 @@ public class LevelRenderer implements AutoCloseable {
         }
 
         SectionRenderDispatcher.RenderSection renderSection = this.viewArea.getRenderSectionAt(blockPos);
-        return renderSection != null && renderSection.sectionMesh.get() != CompiledSectionMesh.UNCOMPILED
+        // MCRe：遮挡剔除——区块必须处于当前可见集合（被遮挡区块内的实体不渲染计算）
+        return renderSection != null
+            && renderSection.sectionMesh.get() != CompiledSectionMesh.UNCOMPILED
+            && this.visibleSectionSet.contains(renderSection)
             ? renderSection.getVisibility(Util.getMillis()) >= 0.3F
             : false;
     }

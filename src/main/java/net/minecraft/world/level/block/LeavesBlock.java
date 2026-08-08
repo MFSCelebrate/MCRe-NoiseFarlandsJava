@@ -46,7 +46,9 @@ public abstract class LeavesBlock extends Block implements SimpleWaterloggedBloc
 
     @Override
     protected boolean skipRendering(final BlockState state, final BlockState neighborState, final Direction direction) {
-        return !cutoutLeaves && neighborState.getBlock() instanceof LeavesBlock ? true : super.skipRendering(state, neighborState, direction);
+        // MCRe：树叶之间的内部面始终剔除（无论是否开启透明树叶显示），
+        // 原版快速树叶（cutoutLeaves）模式下树叶互相不剔除 → 内部看不见的面全部渲染，浪费 GPU
+        return neighborState.getBlock() instanceof LeavesBlock ? true : super.skipRendering(state, neighborState, direction);
     }
 
     public static void setCutoutLeaves(final boolean cutoutLeaves) {
