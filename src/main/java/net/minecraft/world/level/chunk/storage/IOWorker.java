@@ -214,11 +214,15 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
     }
 
     private void storePendingChunk() {
-        Entry<ChunkPos, IOWorker.PendingStore> entry = this.pendingWrites.pollFirstEntry();
-        if (entry != null) {
+        // MCRe：批量写盘（一次最多 8 个 pending），减少调度/队列操作开销
+        // 原版每次调度只写 1 个区块，保存风暴（far lands 大量卸载）时调度开销大
+        int batch = 0;
+        Entry<ChunkPos, IOWorker.PendingStore> entry;
+        while (batch < 8 && (entry = this.pendingWrites.pollFirstEntry()) != null) {
             this.runStore(entry.getKey(), entry.getValue());
-            this.tellStorePending();
+            batch++;
         }
+        this.tellStorePending();
     }
 
     private void tellStorePending() {

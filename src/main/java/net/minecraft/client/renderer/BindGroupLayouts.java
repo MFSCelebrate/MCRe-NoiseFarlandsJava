@@ -15,6 +15,8 @@ public class BindGroupLayouts {
         .withUniform("Projection", UniformType.UNIFORM_BUFFER)
         .build();
     public static final BindGroupLayout CHUNK_SECTION = BindGroupLayout.builder().withUniform("ChunkSection", UniformType.UNIFORM_BUFFER).build();
+    // MCRe：26.3 MultiDrawIndirect 移植——共享地形 uniform（ModelView 矩阵 + 纹理尺寸），每帧一次
+    public static final BindGroupLayout TERRAIN_INFO = BindGroupLayout.builder().withUniform("TerrainUniform", UniformType.UNIFORM_BUFFER).build();
     public static final BindGroupLayout FOG = BindGroupLayout.builder().withUniform("Fog", UniformType.UNIFORM_BUFFER).build();
     public static final BindGroupLayout GLOBALS = BindGroupLayout.builder().withUniform("Globals", UniformType.UNIFORM_BUFFER).build();
     public static final BindGroupLayout LIGHTING = BindGroupLayout.builder().withUniform("Lighting", UniformType.UNIFORM_BUFFER).build();

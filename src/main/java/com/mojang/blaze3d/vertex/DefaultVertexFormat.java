@@ -26,6 +26,12 @@ public class DefaultVertexFormat {
         .addAttribute("UV0", UV0_FORMAT)
         .addAttribute("UV2", UV2_FORMAT)
         .build();
+    // MCRe：26.3 MultiDrawIndirect 移植——instanced 地形 section 数据（vertex binding 1，stepRate=1）
+    // 布局：ChunkPosition(ivec3, 12B) + InChunkVisibility(float, 4B) = 16 字节/条
+    public static final VertexFormat CHUNK_DATA_INSTANCED = VertexFormat.builder(1)
+        .addAttribute("ChunkPosition", GpuFormat.RGB32_SINT)
+        .addAttribute("InChunkVisibility", GpuFormat.R32_FLOAT)
+        .build();
     public static final VertexFormat ENTITY = VertexFormat.builder(0)
         .addAttribute("Position", POSITION_FORMAT)
         .addAttribute("Color", COLOR_FORMAT)

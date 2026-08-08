@@ -211,7 +211,9 @@ public class LevelRenderer implements AutoCloseable {
             this.addSkyPass(frame, cameraState, terrainFog);
         }
 
-        ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(this.levelRenderState.cameraRenderState.viewRotationMatrix);
+        ChunkSectionsToRender chunkSectionsToRender = this.isChunkRenderingUsesMultiDraw
+            ? this.prepareChunkRendersIndirect(this.levelRenderState.cameraRenderState.viewRotationMatrix)
+            : this.prepareChunkRenders(this.levelRenderState.cameraRenderState.viewRotationMatrix);
         this.addMainPass(frame, featureFrame, terrainFog, this.levelRenderState, profiler, chunkSectionsToRender);
         PostChain entityOutlineChain = this.shaderManager.getPostChain(ENTITY_OUTLINE_POST_CHAIN_ID, LevelTargetBundle.OUTLINE_TARGETS);
         if (featureFrame.hasAnyOutline() && entityOutlineChain != null) {
@@ -509,45 +511,43 @@ public class LevelRenderer implements AutoCloseable {
         }
     }
 
-    public ChunkSectionsToRender prepareChunkRenders(final Matrix4fc modelViewMatrix) {
-        ObjectListIterator<SectionRenderDispatcher.RenderSection> iterator = this.visibleSections.listIterator(0);
-        EnumMap<ChunkSectionLayer, Int2ObjectOpenHashMap<List<RenderPass.Draw<GpuBufferSlice[]>>>> drawGroups = new EnumMap<>(ChunkSectionLayer.class);
+    // MCRe：26.3 MultiDrawIndirect 移植——MultiDraw 可用性（Vulkan 支持 drawIndexedIndirect + nonZeroFirstInstance）
+    private boolean isChunkRenderingUsesMultiDraw;
+
+    /** MCRe：26.3 MultiDrawIndirect 移植——按 vertex/index buffer 分组构建 ChunkDrawGroup */
+    private int extractSectionDrawGroups(
+        final List<DynamicUniforms.ChunkSectionInfo> sectionInfos,
+        final EnumMap<ChunkSectionLayer, List<LevelRenderer.ChunkDrawGroup>> drawGroups
+    ) {
         int largestIndexCount = 0;
-
-        for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
-            drawGroups.put(layer, new Int2ObjectOpenHashMap<>());
-        }
-
-        List<DynamicUniforms.ChunkSectionInfo> sectionInfos = new ArrayList<>();
-        GpuTextureView blockAtlas = this.textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS).getTextureView();
-        int textureAtlasWidth = blockAtlas.getWidth(0);
-        int textureAtlasHeight = blockAtlas.getHeight(0);
+        Int2ObjectOpenHashMap<LevelRenderer.ChunkDrawGroup> drawGroupCache = new Int2ObjectOpenHashMap<>();
         if (this.sectionRenderDispatcher != null) {
             this.sectionRenderDispatcher.lock();
+            long now = Util.getMillis();
+            Vec3 cameraPos = this.levelRenderState.cameraRenderState.pos;
+            long camFloorX = Mth.lfloor(cameraPos.x);
+            long camFloorY = Mth.lfloor(cameraPos.y);
+            long camFloorZ = Mth.lfloor(cameraPos.z);
 
             try {
-                while (iterator.hasNext()) {
-                    SectionRenderDispatcher.RenderSection section = iterator.next();
+                for (SectionRenderDispatcher.RenderSection section : this.visibleSections) {
                     SectionMesh sectionMesh = section.getSectionMesh();
                     Vec3 renderOffset = section.getRenderOrigin();
-                    long now = Util.getMillis();
-                    int uboIndex = -1;
+                    int sectionInfoDataIndex = -1;
 
                     for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
                         SectionMesh.SectionDraw draw = sectionMesh.getSectionDraw(layer);
                         SectionRenderDispatcher.RenderSectionBufferSlice slice = this.sectionRenderDispatcher.getRenderSectionSlice(sectionMesh, layer);
                         if (slice != null && draw != null && (!draw.hasCustomIndexBuffer() || slice.indexBuffer() != null)) {
-                            if (uboIndex == -1) {
-                                uboIndex = sectionInfos.size();
+                            if (sectionInfoDataIndex == -1) {
+                                sectionInfoDataIndex = sectionInfos.size();
+                                // MCRe：相机相对偏移（far lands 防 int 溢出），shader 里 + CameraOffset 还原
                                 sectionInfos.add(
                                     new DynamicUniforms.ChunkSectionInfo(
-                                        new Matrix4f(modelViewMatrix),
-                                        (int)renderOffset.x,
-                                        (int)renderOffset.y,
-                                        (int)renderOffset.z,
-                                        section.getVisibility(now),
-                                        textureAtlasWidth,
-                                        textureAtlasHeight
+                                        (int)(renderOffset.x - camFloorX),
+                                        (int)(renderOffset.y - camFloorY),
+                                        (int)(renderOffset.z - camFloorZ),
+                                        section.getVisibility(now)
                                     )
                                 );
                             }
@@ -555,10 +555,7 @@ public class LevelRenderer implements AutoCloseable {
                             int combinedHash = 173;
                             VertexFormat vertexFormat = layer.pipeline().getVertexFormatBinding(0);
                             GpuBuffer vertexBuffer = slice.vertexBuffer();
-                            if (layer != ChunkSectionLayer.TRANSLUCENT) {
-                                combinedHash = 31 * combinedHash + vertexBuffer.hashCode();
-                            }
-
+                            combinedHash = 31 * combinedHash + vertexBuffer.hashCode();
                             int firstIndex = 0;
                             GpuBuffer indexBuffer;
                             IndexType indexType;
@@ -572,28 +569,23 @@ public class LevelRenderer implements AutoCloseable {
                             } else {
                                 indexBuffer = slice.indexBuffer();
                                 indexType = draw.indexType();
-                                if (layer != ChunkSectionLayer.TRANSLUCENT) {
-                                    combinedHash = 31 * combinedHash + indexBuffer.hashCode();
-                                    combinedHash = 31 * combinedHash + indexType.hashCode();
-                                }
-
+                                combinedHash = 31 * combinedHash + indexBuffer.hashCode();
+                                combinedHash = 31 * combinedHash + indexType.hashCode();
                                 firstIndex = (int)(slice.indexBufferOffset() / indexType.bytes);
                             }
 
-                            int finalUboIndex = uboIndex;
                             int baseVertex = (int)(slice.vertexBufferOffset() / vertexFormat.getVertexSize());
-                            List<RenderPass.Draw<GpuBufferSlice[]>> draws = drawGroups.get(layer).computeIfAbsent(combinedHash, var0 -> new ArrayList<>());
-                            draws.add(
-                                new RenderPass.Draw<>(
-                                    0,
-                                    vertexBuffer,
-                                    indexBuffer,
-                                    indexType,
-                                    firstIndex,
-                                    draw.indexCount(),
-                                    baseVertex,
-                                    (sectionUbos, uploader) -> uploader.upload("ChunkSection", sectionUbos[finalUboIndex])
-                                )
+                            LevelRenderer.ChunkDrawGroup drawGroup = drawGroupCache.get(combinedHash);
+                            if (drawGroup == null) {
+                                drawGroup = new LevelRenderer.ChunkDrawGroup(
+                                    vertexBuffer.slice(), indexBuffer != null ? indexBuffer.slice() : null, indexType, new ArrayList<>()
+                                );
+                                drawGroupCache.put(combinedHash, drawGroup);
+                                drawGroups.get(layer).add(drawGroup);
+                            }
+
+                            drawGroup.draws().add(
+                                new DynamicUniforms.IndexedDraw(draw.indexCount(), 1, firstIndex, baseVertex, sectionInfoDataIndex)
                             );
                         }
                     }
@@ -603,9 +595,107 @@ public class LevelRenderer implements AutoCloseable {
             }
         }
 
+        return largestIndexCount;
+    }
+
+    public ChunkSectionsToRender prepareChunkRenders(final Matrix4fc modelViewMatrix) {
+        EnumMap<ChunkSectionLayer, List<LevelRenderer.ChunkDrawGroup>> drawGroups = new EnumMap<>(ChunkSectionLayer.class);
+
+        for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
+            drawGroups.put(layer, new ArrayList<>());
+        }
+
+        List<DynamicUniforms.ChunkSectionInfo> sectionInfos = new ArrayList<>();
+        GpuTextureView blockAtlas = this.textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS).getTextureView();
+        int textureAtlasWidth = blockAtlas.getWidth(0);
+        int textureAtlasHeight = blockAtlas.getHeight(0);
+        int largestIndexCount = this.extractSectionDrawGroups(sectionInfos, drawGroups);
+        Map<ChunkSectionLayer, List<RenderPass.Draw<GpuBufferSlice[]>>> flattenDraws = Util.makeEnumMap(
+            ChunkSectionLayer.class, layer -> new ArrayList<>()
+        );
+
+        for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
+            for (LevelRenderer.ChunkDrawGroup drawGroup : drawGroups.get(layer)) {
+                List<RenderPass.Draw<GpuBufferSlice[]>> dest = flattenDraws.get(layer);
+
+                for (DynamicUniforms.IndexedDraw draw : drawGroup.draws()) {
+                    int sectionInfoDataIndex = draw.baseInstance();
+                    dest.add(
+                        new RenderPass.Draw<>(
+                            0,
+                            drawGroup.vertexBuffer().buffer(),
+                            drawGroup.indexBuffer() == null ? null : drawGroup.indexBuffer().buffer(),
+                            drawGroup.indexType(),
+                            draw.firstIndex(),
+                            draw.indexCount(),
+                            draw.baseVertex(),
+                            (sectionUbos, uploader) -> uploader.upload("ChunkSection", sectionUbos[sectionInfoDataIndex])
+                        )
+                    );
+                }
+            }
+        }
+
+        RenderSystem.getDynamicUniforms().writeTerrainTransform(modelViewMatrix, textureAtlasWidth, textureAtlasHeight);
         GpuBufferSlice[] chunkSectionInfos = RenderSystem.getDynamicUniforms()
             .writeChunkSections(sectionInfos.toArray(new DynamicUniforms.ChunkSectionInfo[0]));
-        return new ChunkSectionsToRender(blockAtlas, drawGroups, largestIndexCount, chunkSectionInfos);
+        return new ChunkSectionsToRender.DrawSeparate(blockAtlas, flattenDraws, largestIndexCount, chunkSectionInfos);
+    }
+
+    /** MCRe：26.3 MultiDrawIndirect——批量 indirect 命令构建（DrawIndirect 路径） */
+    public ChunkSectionsToRender prepareChunkRendersIndirect(final Matrix4fc modelViewMatrix) {
+        EnumMap<ChunkSectionLayer, List<LevelRenderer.ChunkDrawGroup>> drawGroups = new EnumMap<>(ChunkSectionLayer.class);
+
+        for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
+            drawGroups.put(layer, new ArrayList<>());
+        }
+
+        List<DynamicUniforms.ChunkSectionInfo> sectionInfos = new ArrayList<>();
+        GpuTextureView blockAtlas = this.textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS).getTextureView();
+        int textureAtlasWidth = blockAtlas.getWidth(0);
+        int textureAtlasHeight = blockAtlas.getHeight(0);
+        int largestIndexCount = this.extractSectionDrawGroups(sectionInfos, drawGroups);
+        EnumMap<ChunkSectionLayer, List<ChunkSectionsToRender.GpuMultiDrawIndexedIndirect>> indirectDraws = new EnumMap<>(ChunkSectionLayer.class);
+
+        for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
+            indirectDraws.put(layer, new ArrayList<>());
+        }
+
+        List<List<DynamicUniforms.IndexedDraw>> batchedDraws = new ArrayList<>();
+
+        for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
+            for (LevelRenderer.ChunkDrawGroup chunkDrawGroup : drawGroups.get(layer)) {
+                batchedDraws.add(chunkDrawGroup.draws());
+            }
+        }
+
+        GpuBufferSlice[] indirectBufferSlices = RenderSystem.getDynamicUniforms().writeChunkSectionCommands(batchedDraws);
+        int index = 0;
+
+        for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
+            for (LevelRenderer.ChunkDrawGroup chunkDrawGroup : drawGroups.get(layer)) {
+                List<DynamicUniforms.IndexedDraw> draws = chunkDrawGroup.draws();
+                GpuBufferSlice indirectBuffer = indirectBufferSlices[index++];
+                indirectDraws.get(layer).add(
+                    new ChunkSectionsToRender.GpuMultiDrawIndexedIndirect(
+                        chunkDrawGroup.vertexBuffer(), chunkDrawGroup.indexBuffer(), chunkDrawGroup.indexType(), indirectBuffer, draws.size()
+                    )
+                );
+            }
+        }
+
+        RenderSystem.getDynamicUniforms().writeTerrainTransform(modelViewMatrix, textureAtlasWidth, textureAtlasHeight);
+        GpuBufferSlice chunkSectionInfos = RenderSystem.getDynamicUniforms().writeChunkSectionsInstanced(sectionInfos);
+        return new ChunkSectionsToRender.DrawIndirect(blockAtlas, indirectDraws, largestIndexCount, chunkSectionInfos);
+    }
+
+    /** MCRe：MultiDraw 路径记录（按 vertex/index buffer 分组） */
+    private record ChunkDrawGroup(
+        GpuBufferSlice vertexBuffer,
+        @Nullable GpuBufferSlice indexBuffer,
+        @Nullable IndexType indexType,
+        List<DynamicUniforms.IndexedDraw> draws
+    ) {
     }
 
     private void compileSections(final CameraRenderState camera) {
@@ -814,6 +904,10 @@ public class LevelRenderer implements AutoCloseable {
         } else {
             this.sectionRenderDispatcher.setCompiler(sectionCompiler);
         }
+
+        // MCRe：26.3 MultiDrawIndirect——设备支持 drawIndexedIndirect + nonZeroFirstInstance 时启用
+        com.mojang.blaze3d.systems.DeviceFeatures deviceFeatures = RenderSystem.getDevice().getDeviceInfo().features();
+        this.isChunkRenderingUsesMultiDraw = deviceFeatures.multiDrawIndirect() && deviceFeatures.nonZeroFirstInstance();
 
         this.cloudRenderer().markForRebuild();
         LeavesBlock.setCutoutLeaves(options.cutoutLeaves().get());

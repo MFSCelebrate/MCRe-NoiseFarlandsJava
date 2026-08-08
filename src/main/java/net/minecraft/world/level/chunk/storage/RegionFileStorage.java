@@ -18,8 +18,10 @@ import org.jspecify.annotations.Nullable;
 
 public final class RegionFileStorage implements AutoCloseable {
     public static final String ANVIL_EXTENSION = ".mca";
-    private static final int MAX_CACHE_SIZE = 256;
-    private final LinkedHashMap<ChunkPos, RegionFile> regionCache = new LinkedHashMap<>();
+    // MCRe：far lands 跨大量 region，256 太小导致频繁开关 region 文件；加大缓存减少文件 IO
+    private static final int MAX_CACHE_SIZE = 512;
+    // MCRe：access-order（true）= 真 LRU——get 移动条目，remove 最久未用（原版 insertion-order 是 FIFO，命中率差）
+    private final LinkedHashMap<ChunkPos, RegionFile> regionCache = new LinkedHashMap<>(16, 0.75F, true);
     private final RegionStorageInfo info;
     private final Path folder;
     private final boolean sync;

@@ -44,6 +44,15 @@ public class RenderPipelines {
         .withVertexShader("core/terrain")
         .withFragmentShader("core/terrain")
         .buildSnippet();
+    // MCRe：26.3 MultiDrawIndirect 移植——MultiDraw 地形 snippet（instanced section 数据走 vertex binding 1，共享 TerrainUniform）
+    private static final RenderPipeline.Snippet MULTIDRAW_TERRAIN_SNIPPET = RenderPipeline.builder(GENERIC_BLOCKS_SNIPPET)
+        .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+        .withBindGroupLayout(BindGroupLayouts.TERRAIN_INFO)
+        .withVertexShader("core/terrain")
+        .withFragmentShader("core/terrain")
+        .withShaderDefine("MULTIDRAW_TERRAIN")
+        .withVertexBinding(1, DefaultVertexFormat.CHUNK_DATA_INSTANCED)
+        .buildSnippet();
     private static final RenderPipeline.Snippet BLOCK_SNIPPET = RenderPipeline.builder(GENERIC_BLOCKS_SNIPPET)
         .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
         .withVertexShader("core/block")
@@ -179,8 +188,15 @@ public class RenderPipelines {
         .buildSnippet();
     public static final RenderPipeline SOLID_BLOCK = register(RenderPipeline.builder(BLOCK_SNIPPET).withLocation("pipeline/solid_block").build());
     public static final RenderPipeline SOLID_TERRAIN = register(RenderPipeline.builder(TERRAIN_SNIPPET).withLocation("pipeline/solid_terrain").build());
+    // MCRe：26.3 MultiDrawIndirect 移植——MultiDraw 变体
+    public static final RenderPipeline SOLID_TERRAIN_MULTIDRAW = register(
+        RenderPipeline.builder(MULTIDRAW_TERRAIN_SNIPPET).withLocation("pipeline/solid_terrain_multidraw").build()
+    );
     public static final RenderPipeline WIREFRAME = register(
         RenderPipeline.builder(TERRAIN_SNIPPET).withLocation("pipeline/wireframe").withPolygonMode(PolygonMode.WIREFRAME).build()
+    );
+    public static final RenderPipeline WIREFRAME_MULTIDRAW = register(
+        RenderPipeline.builder(MULTIDRAW_TERRAIN_SNIPPET).withLocation("pipeline/wireframe_multidraw").withPolygonMode(PolygonMode.WIREFRAME).build()
     );
     public static final RenderPipeline CUTOUT_BLOCK = register(
         RenderPipeline.builder(BLOCK_SNIPPET).withLocation("pipeline/cutout_block").withShaderDefine("ALPHA_CUTOUT", 0.5F).build()
@@ -188,9 +204,22 @@ public class RenderPipelines {
     public static final RenderPipeline CUTOUT_TERRAIN = register(
         RenderPipeline.builder(TERRAIN_SNIPPET).withLocation("pipeline/cutout_terrain").withShaderDefine("ALPHA_CUTOUT", 0.5F).build()
     );
+    public static final RenderPipeline CUTOUT_TERRAIN_MULTIDRAW = register(
+        RenderPipeline.builder(MULTIDRAW_TERRAIN_SNIPPET)
+            .withLocation("pipeline/cutout_terrain_multidraw")
+            .withShaderDefine("ALPHA_CUTOUT", 0.5F)
+            .build()
+    );
     public static final RenderPipeline TRANSLUCENT_TERRAIN = register(
         RenderPipeline.builder(TERRAIN_SNIPPET)
             .withLocation("pipeline/translucent_terrain")
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withShaderDefine("ALPHA_CUTOUT", 0.1F)
+            .build()
+    );
+    public static final RenderPipeline TRANSLUCENT_TERRAIN_MULTIDRAW = register(
+        RenderPipeline.builder(MULTIDRAW_TERRAIN_SNIPPET)
+            .withLocation("pipeline/translucent_terrain_multidraw")
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
             .withShaderDefine("ALPHA_CUTOUT", 0.1F)
             .build()
