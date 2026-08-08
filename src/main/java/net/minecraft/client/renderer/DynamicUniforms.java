@@ -78,7 +78,7 @@ public class DynamicUniforms implements AutoCloseable {
         return this.transforms.writeUniforms(transforms);
     }
 
-    public GpuBufferSlice writeTerrainTransform(final Matrix4f modelView, final int textureAtlasWidth, final int textureAtlasHeight) {
+    public GpuBufferSlice writeTerrainTransform(final Matrix4fc modelView, final int textureAtlasWidth, final int textureAtlasHeight) {
         return this.terrainInfo.writeUniform(new DynamicUniforms.TerrainTransform(modelView, textureAtlasWidth, textureAtlasHeight));
     }
 
@@ -119,19 +119,6 @@ public class DynamicUniforms implements AutoCloseable {
         @Override
         public void write(final ByteBuffer buffer) {
             buffer.putInt(this.indexCount).putInt(this.instanceCount).putInt(this.firstIndex).putInt(this.baseVertex).putInt(this.baseInstance);
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public record ChunkSectionInfo(Matrix4fc modelView, int x, int y, int z, float visibility, int textureAtlasWidth, int textureAtlasHeight)
-        implements DynamicUniformStorage.DynamicUniform {
-        @Override
-        public void write(final ByteBuffer buffer) {
-            Std140Builder.intoBuffer(buffer)
-                .putMat4f(this.modelView)
-                .putFloat(this.visibility)
-                .putIVec2(this.textureAtlasWidth, this.textureAtlasHeight)
-                .putIVec3(this.x, this.y, this.z);
         }
     }
 

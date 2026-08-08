@@ -27,6 +27,7 @@ import it.unimi.dsi.fastutil.objects.ObjectListIterator;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalDouble;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.Camera;
