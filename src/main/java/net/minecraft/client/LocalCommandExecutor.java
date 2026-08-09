@@ -38,7 +38,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public final class LocalCommandExecutor {
     private static final CommandDispatcher<SharedSuggestionProvider> DISPATCHER = new CommandDispatcher<>();
     private static final SharedSuggestionProvider SOURCE = new LocalSource();
-    private static final List<String> COMMAND_NAMES = List.of("help", "say", "quit");
+    private static final List<String> COMMAND_NAMES = List.of("help", "say", "quit", "server_debug");
+    // MCRe: keep a reference to the local DedicatedServer instance (started via /server_debug start)
+    private static volatile net.minecraft.server.dedicated.DedicatedServer runningServer = null;
 
     private LocalCommandExecutor() {
     }
@@ -58,6 +60,9 @@ public final class LocalCommandExecutor {
                 );
                 minecraft.gui.hud.getChat().addClientSystemMessage(
                     Component.literal("/quit — 退出游戏").withStyle(ChatFormatting.GRAY)
+                );
+                minecraft.gui.hud.getChat().addClientSystemMessage(
+                    Component.literal("/server_debug <stop│start> <Options> — 用于调试改版在服务端层的改动").withStyle(ChatFormatting.GRAY)
                 );
                 return 1;
             })
@@ -79,6 +84,63 @@ public final class LocalCommandExecutor {
                 Minecraft.getInstance().stop();
                 return 1;
             })
+        );
+        DISPATCHER.register(
+            LiteralArgumentBuilder.<SharedSuggestionProvider>literal("server_debug")
+                .executes(ctx -> {
+                    Minecraft mc = Minecraft.getInstance();
+                    mc.gui.hud.getChat().addClientSystemMessage(Component.literal("Usage: /server_debug <start|stop> [options]").withStyle(ChatFormatting.YELLOW));
+                    return 1;
+                })
+                .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("stop")
+                    .executes(ctx -> {
+                        Minecraft mc = Minecraft.getInstance();
+                        net.minecraft.server.dedicated.DedicatedServer server = runningServer;
+                        if (server != null) {
+                            server.halt(true);
+                            runningServer = null;
+                            mc.gui.hud.getChat().addClientSystemMessage(Component.literal("Server stopped.").withStyle(ChatFormatting.GREEN));
+                        } else {
+                            mc.gui.hud.getChat().addClientSystemMessage(Component.literal("Server not running.").withStyle(ChatFormatting.RED));
+                        }
+                        return 1;
+                    })
+                )
+                .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("start")
+                    .then(RequiredArgumentBuilder.<SharedSuggestionProvider, String>argument("options", StringArgumentType.greedyString())
+                        .executes(ctx -> {
+                            String optStr = StringArgumentType.getString(ctx, "options");
+                            java.util.List<String> args = new java.util.ArrayList<>();
+                            if (!optStr.isBlank()) {
+                                for (String token : optStr.split("\\s+")) {
+                                    if (token.isEmpty()) continue;
+                                    int eqIdx = token.indexOf('=');
+                                    if (eqIdx > 0) {
+                                        String key = token.substring(0, eqIdx);
+                                        String value = token.substring(eqIdx + 1);
+                                        args.add("--" + key);
+                                        args.add(value);
+                                    } else {
+                                        args.add("--" + token);
+                                    }
+                                }
+                            }
+                            String[] argsArray = args.toArray(new String[0]);
+                            try {
+                                net.minecraft.server.Main.main(argsArray);
+                                // Store reference set by Main after start
+                                runningServer = net.minecraft.server.Main.getRunningServer();
+                                Minecraft mc2 = Minecraft.getInstance();
+                                mc2.gui.hud.getChat().addClientSystemMessage(Component.literal("Server started.").withStyle(ChatFormatting.GREEN));
+                            } catch (Throwable t) {
+                                Minecraft mc3 = Minecraft.getInstance();
+                                mc3.gui.hud.getChat().addClientSystemMessage(Component.literal("Server start failed: " + t.getMessage()).withStyle(ChatFormatting.RED));
+                                t.printStackTrace();
+                            }
+                            return 1;
+                        })
+                    )
+                )
         );
     }
 

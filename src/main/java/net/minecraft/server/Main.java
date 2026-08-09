@@ -64,6 +64,8 @@ import org.slf4j.Logger;
 
 public class Main {
     private static final Logger LOGGER = LogUtils.getLogger();
+    // MCRe: keep a reference to the currently running DedicatedServer (started via /server_debug start)
+    private static volatile DedicatedServer runningServer = null;
 
     @SuppressForbidden(reason = "System.out needed before bootstrap")
     public static void main(final String[] args) {
@@ -229,6 +231,8 @@ public class Main {
                     return server;
                 }
             );
+            // MCRe: store reference to the started DedicatedServer instance
+            runningServer = dedicatedServer;
             Thread shutdownThread = new Thread("Server Shutdown Thread") {
                 @Override
                 public void run() {
@@ -240,6 +244,15 @@ public class Main {
         } catch (Throwable t) {
             LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", t);
         }
+    }
+
+    /** MCRe: expose the running DedicatedServer instance for local commands. */
+    public static DedicatedServer getRunningServer() {
+        return runningServer;
+    }
+
+    public static void setRunningServer(DedicatedServer server) {
+        runningServer = server;
     }
 
     private static WorldLoader.DataLoadOutput<LevelDataAndDimensions.WorldDataAndGenSettings> createNewWorldData(
