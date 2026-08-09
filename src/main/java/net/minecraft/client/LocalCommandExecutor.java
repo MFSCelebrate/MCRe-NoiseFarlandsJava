@@ -67,82 +67,152 @@ public final class LocalCommandExecutor {
                 return 1;
             })
         );
-        DISPATCHER.register(
-            LiteralArgumentBuilder.<SharedSuggestionProvider>literal("say")
-                .then(
-                    RequiredArgumentBuilder.<SharedSuggestionProvider, String>argument("message", StringArgumentType.greedyString())
-                        .executes(ctx -> {
-                            String message = StringArgumentType.getString(ctx, "message");
-                            Minecraft minecraft = Minecraft.getInstance();
-                            minecraft.gui.hud.getChat().addClientSystemMessage(Component.literal("§f" + message));
-                            return 1;
-                        })
-                )
-        );
-        DISPATCHER.register(
-            LiteralArgumentBuilder.<SharedSuggestionProvider>literal("quit").executes(ctx -> {
-                Minecraft.getInstance().stop();
-                return 1;
-            })
-        );
-        DISPATCHER.register(
-            LiteralArgumentBuilder.<SharedSuggestionProvider>literal("server_debug")
-                .executes(ctx -> {
-                    Minecraft mc = Minecraft.getInstance();
-                    mc.gui.hud.getChat().addClientSystemMessage(Component.literal("Usage: /server_debug <start|stop> [options]").withStyle(ChatFormatting.YELLOW));
-                    return 1;
-                })
-                .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("stop")
+        // Register the root "/server_debug" command with three sub‑commands:
++        //   • /server_debug                →  prints usage help.
++        //   • /server_debug stop           →  stops a running DedicatedServer (if any).
++        //   • /server_debug start [options] →  launches a server. Options are parsed as
++        //         key=value  →  CLI argument if the key is a known Main option, otherwise
++        //                         written to "server.properties" before start.
++        //         flag       →  same rule, a flag is passed as "--flag" if known, else set to true.
++        //   The command also keeps a volatile reference to the running server via
++        //   LocalCommandExecutor.runningServer and Main.runningServer.
++        DISPATCHER.register(
++            LiteralArgumentBuilder.<SharedSuggestionProvider>literal("server_debug")
++                .executes(ctx -> {
++                    // Show simple usage when the user only typed "/server_debug"
++                    Minecraft mc = Minecraft.getInstance();
++                    mc.gui.hud.getChat().addClientSystemMessage(
++                        Component.literal("Usage: /server_debug <start|stop> [options]").withStyle(ChatFormatting.YELLOW)
++                    );
++                    return 1;
++                })
++                // ------------------- STOP -------------------
++                .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("stop")
++                    .executes(ctx -> {
++                        Minecraft mc = Minecraft.getInstance();
++                        net.minecraft.server.dedicated.DedicatedServer server = runningServer;
++                        if (server != null) {
++                            server.halt(true);
++                            runningServer = null;
++                            mc.gui.hud.getChat().addClientSystemMessage(
++                                Component.literal("Server stopped.").withStyle(ChatFormatting.GREEN)
++                            );
++                        } else {
++                            mc.gui.hud.getChat().addClientSystemMessage(
++                                Component.literal("Server not running.").withStyle(ChatFormatting.RED)
++                            );
++                        }
++                        return 1;
++                    })
++                )
++                // ------------------- START -------------------
++                .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("start")
                     .executes(ctx -> {
-                        Minecraft mc = Minecraft.getInstance();
-                        net.minecraft.server.dedicated.DedicatedServer server = runningServer;
-                        if (server != null) {
-                            server.halt(true);
-                            runningServer = null;
-                            mc.gui.hud.getChat().addClientSystemMessage(Component.literal("Server stopped.").withStyle(ChatFormatting.GREEN));
-                        } else {
-                            mc.gui.hud.getChat().addClientSystemMessage(Component.literal("Server not running.").withStyle(ChatFormatting.RED));
+                        // No options: start server with default config (no CLI args, no property overrides)
+                        String[] argsArray = new String[0];
+                        try {
+                            net.minecraft.server.Main.main(argsArray);
+                            runningServer = net.minecraft.server.Main.getRunningServer();
+                            Minecraft mc2 = Minecraft.getInstance();
+                            mc2.gui.hud.getChat().addClientSystemMessage(
+                                Component.literal("Server started.").withStyle(ChatFormatting.GREEN)
+                            );
+                        } catch (Throwable t) {
+                            Minecraft mc3 = Minecraft.getInstance();
+                            mc3.gui.hud.getChat().addClientSystemMessage(
+                                Component.literal("Server start failed: " + t.getMessage())
+                                    .withStyle(ChatFormatting.RED)
+                            );
+                            t.printStackTrace();
                         }
                         return 1;
                     })
-                )
-                .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("start")
-                    .then(RequiredArgumentBuilder.<SharedSuggestionProvider, String>argument("options", StringArgumentType.greedyString())
-                        .executes(ctx -> {
-                            String optStr = StringArgumentType.getString(ctx, "options");
-                            java.util.List<String> args = new java.util.ArrayList<>();
-                            if (!optStr.isBlank()) {
-                                for (String token : optStr.split("\\s+")) {
-                                    if (token.isEmpty()) continue;
-                                    int eqIdx = token.indexOf('=');
-                                    if (eqIdx > 0) {
-                                        String key = token.substring(0, eqIdx);
-                                        String value = token.substring(eqIdx + 1);
-                                        args.add("--" + key);
-                                        args.add(value);
-                                    } else {
-                                        args.add("--" + token);
-                                    }
-                                }
-                            }
-                            String[] argsArray = args.toArray(new String[0]);
-                            try {
-                                net.minecraft.server.Main.main(argsArray);
-                                // Store reference set by Main after start
-                                runningServer = net.minecraft.server.Main.getRunningServer();
-                                Minecraft mc2 = Minecraft.getInstance();
-                                mc2.gui.hud.getChat().addClientSystemMessage(Component.literal("Server started.").withStyle(ChatFormatting.GREEN));
-                            } catch (Throwable t) {
-                                Minecraft mc3 = Minecraft.getInstance();
-                                mc3.gui.hud.getChat().addClientSystemMessage(Component.literal("Server start failed: " + t.getMessage()).withStyle(ChatFormatting.RED));
-                                t.printStackTrace();
-                            }
-                            return 1;
-                        })
-                    )
-                )
-        );
-    }
++                    .then(RequiredArgumentBuilder.<SharedSuggestionProvider, String>argument("options", StringArgumentType.greedyString())
++                        .executes(ctx -> {
++                            String optStr = StringArgumentType.getString(ctx, "options");
++                            java.util.List<String> args = new java.util.ArrayList<>();
++                            java.util.Properties propUpdates = new java.util.Properties();
++                            // Known CLI options accepted by net.minecraft.server.Main
++                            java.util.Set<String> knownCli = java.util.Set.of(
++                                "nogui", "initSettings", "demo", "bonusChest",
++                                "forceUpgrade", "eraseCache", "recreateRegionFiles",
++                                "safeMode", "help", "universe", "world", "port",
++                                "serverId", "jfrProfile", "pidFile"
++                            );
++                            if (!optStr.isBlank()) {
++                                for (String token : optStr.split("\\s+")) {
++                                    if (token.isEmpty()) continue;
++                                    int eqIdx = token.indexOf('=');
++                                    if (eqIdx > 0) {
++                                        String key = token.substring(0, eqIdx);
++                                        String value = token.substring(eqIdx + 1);
++                                        if (knownCli.contains(key)) {
++                                            args.add("--" + key);
++                                            args.add(value);
++                                        } else {
++                                            // Store into server.properties (will be written later)
++                                            propUpdates.setProperty(key, value);
++                                        }
++                                    } else {
++                                        // Flag without value
++                                        if (knownCli.contains(token)) {
++                                            args.add("--" + token);
++                                        } else {
++                                            // For properties without explicit value we set "true"
++                                            propUpdates.setProperty(token, "true");
++                                        }
++                                    }
++                                }
++                            }
++                            // Write any property updates to server.properties before launching
++                            if (!propUpdates.isEmpty()) {
++                                try {
++                                    java.nio.file.Path propPath = java.nio.file.Paths.get("server.properties");
++                                    // Load existing properties if present
++                                    java.util.Properties existing = new java.util.Properties();
++                                    if (java.nio.file.Files.exists(propPath)) {
++                                        try (java.io.InputStream in = java.nio.file.Files.newInputStream(propPath)) {
++                                            existing.load(in);
++                                        }
++                                    }
++                                    // Merge updates
++                                    existing.putAll(propUpdates);
++                                    try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(propPath)) {
++                                        existing.store(out, null);
++                                    }
++                                } catch (Exception e) {
++                                    Minecraft mcErr = Minecraft.getInstance();
++                                    mcErr.gui.hud.getChat().addClientSystemMessage(
++                                        Component.literal("Failed to write server.properties: " + e.getMessage())
++                                            .withStyle(ChatFormatting.RED)
++                                    );
++                                    e.printStackTrace();
++                                }
++                            }
++                            String[] argsArray = args.toArray(new String[0]);
++                            try {
++                                net.minecraft.server.Main.main(argsArray);
++                                // Store reference to the running server (Main already set its static field)
++                                runningServer = net.minecraft.server.Main.getRunningServer();
++                                Minecraft mc2 = Minecraft.getInstance();
++                                mc2.gui.hud.getChat().addClientSystemMessage(
++                                    Component.literal("Server started.").withStyle(ChatFormatting.GREEN)
++                                );
++                            } catch (Throwable t) {
++                                Minecraft mc3 = Minecraft.getInstance();
++                                mc3.gui.hud.getChat().addClientSystemMessage(
++                                    Component.literal("Server start failed: " + t.getMessage())
++                                        .withStyle(ChatFormatting.RED)
++                                );
++                                t.printStackTrace();
++                            }
++                            return 1;
++                        })
++                    )
++                )
++        );
++    }
+
 
     public static CommandDispatcher<SharedSuggestionProvider> getDispatcher() {
         return DISPATCHER;
