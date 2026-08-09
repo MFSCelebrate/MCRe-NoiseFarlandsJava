@@ -111,6 +111,20 @@ public final class LocalCommandExecutor {
                         // No options: start server with default config (no CLI args, no property overrides)
                         String[] argsArray = new String[0];
                         try {
+                            // Ensure required files exist with sane defaults
+                            java.nio.file.Path propPath = java.nio.file.Paths.get("server.properties");
+                            if (!java.nio.file.Files.exists(propPath)) {
+                                java.util.Properties empty = new java.util.Properties();
+                                try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(propPath)) {
+                                    empty.store(out, null);
+                                }
+                            }
+                            java.nio.file.Path eulaPath = java.nio.file.Paths.get("eula.txt");
+                            if (!java.nio.file.Files.exists(eulaPath)) {
+                                try (java.io.Writer writer = java.nio.file.Files.newBufferedWriter(eulaPath, java.nio.charset.StandardCharsets.UTF_8)) {
+                                    writer.write("eula=true\n");
+                                }
+                            }
                             net.minecraft.server.Main.main(argsArray);
                             runningServer = net.minecraft.server.Main.getRunningServer();
                             Minecraft mc2 = Minecraft.getInstance();
@@ -191,6 +205,20 @@ public final class LocalCommandExecutor {
                             }
                             String[] argsArray = args.toArray(new String[0]);
                             try {
+                                // Ensure required files exist with sane defaults
+                                java.nio.file.Path propPath = java.nio.file.Paths.get("server.properties");
+                                if (!java.nio.file.Files.exists(propPath)) {
+                                    java.util.Properties empty = new java.util.Properties();
+                                    try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(propPath)) {
+                                        empty.store(out, null);
+                                    }
+                                }
+                                java.nio.file.Path eulaPath = java.nio.file.Paths.get("eula.txt");
+                                if (!java.nio.file.Files.exists(eulaPath)) {
+                                    try (java.io.Writer writer = java.nio.file.Files.newBufferedWriter(eulaPath, java.nio.charset.StandardCharsets.UTF_8)) {
+                                        writer.write("eula=true\n");
+                                    }
+                                }
                                 net.minecraft.server.Main.main(argsArray);
                                 // Store reference to the running server (Main already set its static field)
                                 runningServer = net.minecraft.server.Main.getRunningServer();
