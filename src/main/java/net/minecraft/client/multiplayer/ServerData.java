@@ -178,6 +178,7 @@ public class ServerData {
     public enum Type {
         LAN,
         REALM,
+        ONLINE,
         OTHER;
     }
 }

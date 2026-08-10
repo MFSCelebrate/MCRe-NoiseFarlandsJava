@@ -68,6 +68,15 @@ public class PlayerSocialManager {
         return remap(this.remoteFriendListUpdateHandler.getLatestFriendData().friends());
     }
 
+    public boolean isFriendsPmid(final @Nullable UUID pmid) {
+        if (pmid == null) {
+            return false;
+        }
+
+        UUID profileId = this.getPresenceHandler().getProfileIdFromPmid(pmid);
+        return this.getFriends().stream().anyMatch(friend -> friend.id().equals(profileId));
+    }
+
     public List<PlayerSocialManager.PlayerData> getIncomingRequests() {
         return remap(this.remoteFriendListUpdateHandler.getLatestFriendData().incomingRequests());
     }

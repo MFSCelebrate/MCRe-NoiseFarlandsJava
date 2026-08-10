@@ -97,14 +97,19 @@ public class FriendToast implements Toast {
         add(minecraft.gui.toastManager(), minecraft.font, skin, message);
     }
 
-    private static void showToastFor(final Minecraft minecraft, final UUID playerId, final Component message, final TriConsumer<Minecraft, String, PlayerSkin> toastData) {
+    @FunctionalInterface
+    @OnlyIn(Dist.CLIENT)
+    public interface SkinToastEmitter {
+        void emit(Minecraft minecraft, String playerName, UUID playerId);
+    }
+
+    private static void showToastFor(final Minecraft minecraft, final UUID playerId, final Component message, final SkinToastEmitter emitter) {
         net.minecraft.client.gui.screens.social.PlayerSocialManager.PlayerData friendData = minecraft.getPlayerSocialManager().getFriends().stream()
             .filter(playerData -> playerData.id().equals(playerId))
             .findAny()
             .orElse(null);
         if (friendData != null) {
-            PlayerSkin friendSkin = minecraft.playerSkinRenderCache().getOrDefault(ResolvableProfile.createUnresolved(friendData.id())).playerSkin();
-            toastData.accept(minecraft, friendData.name(), friendSkin);
+            emitter.emit(minecraft, friendData.name(), friendData.id());
         }
     }
 
@@ -113,15 +118,20 @@ public class FriendToast implements Toast {
     }
 
     public static void showFriendRequestReceived(final Minecraft minecraft, final String nickname, final UUID playerId) {
-        showToastFor(minecraft, playerId, Component.translatable("gui.friends.toast.request_received.message", nickname), FriendToast::add);
+        showToastFor(minecraft, playerId, Component.translatable("gui.friends.toast.request_received.message", nickname), FriendToast::addWithSkin);
     }
 
     public static void showFriendRequestAccepted(final Minecraft minecraft, final String nickname, final UUID playerId) {
-        showToastFor(minecraft, playerId, Component.translatable("gui.friends.toast.request_accepted.message", nickname), FriendToast::add);
+        showToastFor(minecraft, playerId, Component.translatable("gui.friends.toast.request_accepted.message", nickname), FriendToast::addWithSkin);
     }
 
     public static void showFriendAdded(final Minecraft minecraft, final String nickname, final UUID playerId) {
-        showToastFor(minecraft, playerId, Component.translatable("gui.friends.toast.friend_added.message", nickname), FriendToast::add);
+        showToastFor(minecraft, playerId, Component.translatable("gui.friends.toast.friend_added.message", nickname), FriendToast::addWithSkin);
+    }
+
+    private static void addWithSkin(final Minecraft minecraft, final String playerName, final UUID playerId) {
+        ResolvableProfile skinProfile = ResolvableProfile.createUnresolved(playerId);
+        add(minecraft, skinProfile, Component.translatable("gui.friends.toast.friend_added.message", playerName));
     }
 
     public static void showFriendJoinRequest(final Minecraft minecraft, final String profileName, final PlayerSkin skin) {

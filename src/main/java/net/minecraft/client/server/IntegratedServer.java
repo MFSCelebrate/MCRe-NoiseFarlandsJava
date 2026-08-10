@@ -251,9 +251,9 @@ public class IntegratedServer extends MinecraftServer {
         if (scope != MinecraftServer.MultiplayerScope.OFF && !this.isPublished()) {
             try {
                 this.minecraft.prepareForMultiplayer();
-                this.minecraft.getConnection().prepareKeyPair();
                 switch (scope) {
                     case LAN:
+                        this.minecraft.getConnection().prepareKeyPair();
                         this.getConnection().startTcpServerListener(null, port);
                         LOGGER.info("Published LAN server on port {}", port);
                         this.publishedPort = port;

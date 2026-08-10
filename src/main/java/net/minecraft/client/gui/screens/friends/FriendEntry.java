@@ -85,6 +85,26 @@ class FriendEntry extends AbstractFriendsEntryContainerWidget {
         }
     }
 
+    void applyPresence(final @Nullable PresenceStatusDto newPresence) {
+        this.presence = newPresence;
+        this.statusWidget.setMessage(Component.translatable("gui.friends.presence.status." + (newPresence == null ? "offline" : newPresence.status().toString().toLowerCase(Locale.ROOT)))
+            .withColor(newPresence == null ? -6250336 : -16711936));
+        // Remove existing action buttons
+        if (this.leftAction != null) {
+            this.removeChild(this.leftAction);
+            this.leftAction = null;
+        }
+        if (this.rightAction != null) {
+            this.removeChild(this.rightAction);
+            this.rightAction = null;
+        }
+        // Rebuild actions based on new presence
+        if (newPresence != null) {
+            PlayerSocialManager.PlayerData playerData = new PlayerSocialManager.PlayerData(this.playerId, this.playerName);
+            this.handlePresence(this.minecraft, playerData, newPresence);
+        }
+    }
+
     private void handlePresence(final Minecraft minecraft, final PlayerSocialManager.PlayerData playerData, final PresenceStatusDto presence) {
         UUID peerPmid = presence.pmid();
         if (minecraft.p2pManager.hasIncomingJoinRequest(peerPmid)) {

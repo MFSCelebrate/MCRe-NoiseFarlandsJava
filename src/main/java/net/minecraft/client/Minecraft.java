@@ -2359,6 +2359,10 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
         return this.player == null ? null : this.player.connection;
     }
 
+    public void setPendingConnection(final net.minecraft.network.Connection connection) {
+        this.pendingConnection = connection;
+    }
+
     private void pickBlockOrEntity() {
         if (this.hitResult != null && this.hitResult.getType() != HitResult.Type.MISS) {
             boolean includeData = this.hasControlDown();

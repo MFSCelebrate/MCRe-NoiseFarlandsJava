@@ -46,6 +46,7 @@ public class SharedConstants {
     public static final boolean DEBUG_OPEN_INCOMPATIBLE_WORLDS = debugFlag("OPEN_INCOMPATIBLE_WORLDS");
     public static final boolean DEBUG_ALLOW_LOW_SIM_DISTANCE = debugFlag("ALLOW_LOW_SIM_DISTANCE");
     public static final boolean DEBUG_HOTKEYS = debugFlag("HOTKEYS");
+    public static final boolean DEBUG_NATIVE_WEBRTC_LOGS = debugFlag("NATIVE_WEBRTC_LOGS");
     public static final boolean DEBUG_UI_NARRATION = debugFlag("UI_NARRATION");
     public static final boolean DEBUG_SHUFFLE_UI_RENDERING_ORDER = debugFlag("SHUFFLE_UI_RENDERING_ORDER");
     public static final boolean DEBUG_SHUFFLE_MODELS = debugFlag("SHUFFLE_MODELS");

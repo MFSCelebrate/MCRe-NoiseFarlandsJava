@@ -133,14 +133,14 @@ public final class SignalingServiceClient {
             this.executor
          )
          .thenApply(var0 -> null)
-         .exceptionallyCompose(err -> {
+         .exceptionally(err -> {
             if (err.getCause() instanceof JsonRpcException rpcErr) {
                SignalingException mapped = SignalingErrorMapper.fromJsonRpc(toPlayerId, rpcErr);
                LOGGER.warn("Signaling rejected send: {}", mapped.getMessage());
                this.fireListeners(l -> l.onSignalingError(toPlayerId, mapped));
-               return CompletableFuture.failedFuture(mapped);
+               throw mapped;
             } else {
-               return CompletableFuture.failedFuture(err);
+               throw err;
             }
          });
    }

@@ -27,7 +27,7 @@ public class IntegratedPlayerList extends PlayerList {
     }
 
     @Override
-    public void placeNewPlayer(final net.minecraft.network.Connection connection, final net.minecraft.server.level.ServerPlayer player, final net.minecraft.server.players.CommonListenerCookie cookie) {
+    public void placeNewPlayer(final net.minecraft.network.Connection connection, final net.minecraft.server.level.ServerPlayer player, final net.minecraft.server.network.CommonListenerCookie cookie) {
         super.placeNewPlayer(connection, player, cookie);
         this.getServer().onPlayerListChanged();
     }

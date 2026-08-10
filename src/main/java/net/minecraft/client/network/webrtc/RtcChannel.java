@@ -16,7 +16,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelConfig;
 import io.netty.channel.EventLoop;
 import io.netty.channel.SingleThreadEventLoop;
-import io.netty.channel.AbstractChannel.AbstractUnsafe;
+import io.netty.channel.unix.Errors;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -40,7 +40,6 @@ public final class RtcChannel extends AbstractChannel {
    public RtcChannel(final RtcHandshake.HandshakeResult handshakeResult) {
       super(null);
       this.handshakeResult = handshakeResult;
-      this.attr(Connection.SECURE_TRANSPORT).set(Boolean.TRUE);
    }
 
    public ChannelMetadata metadata() {
@@ -51,8 +50,8 @@ public final class RtcChannel extends AbstractChannel {
       return this.config;
    }
 
-   protected AbstractUnsafe newUnsafe() {
-      return new RtcChannel.RtcUnsafe();
+   protected AbstractChannel.AbstractUnsafe newUnsafe() {
+      return new RtcUnsafe();
    }
 
    protected boolean isCompatible(final EventLoop loop) {
@@ -235,9 +234,9 @@ public final class RtcChannel extends AbstractChannel {
       }
    }
 
-   private final class RtcUnsafe extends AbstractUnsafe {
+   private final class RtcUnsafe extends AbstractChannel.AbstractUnsafe {
       private RtcUnsafe() {
-         super(RtcChannel.this);
+         super();
       }
 
       public void connect(final SocketAddress remote, final SocketAddress local, final ChannelPromise promise) {
