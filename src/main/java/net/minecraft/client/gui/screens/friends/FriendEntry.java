@@ -21,6 +21,7 @@ import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraftforge.api.distmarker.Dist;
@@ -48,7 +49,7 @@ class FriendEntry extends AbstractFriendsEntryContainerWidget {
     private static final Tooltip PENDING_INVITE_REQUEST_TOOLTIP = Tooltip.create(Component.translatable("gui.friends.button.loading.invite_request_pending"));
     private final SpriteIconButton removeButton;
     private final StringWidget statusWidget;
-    private final @Nullable PresenceStatusDto presence;
+    private @Nullable PresenceStatusDto presence;
     private @Nullable SpriteIconButton leftAction;
     private @Nullable SpriteIconButton rightAction;
 

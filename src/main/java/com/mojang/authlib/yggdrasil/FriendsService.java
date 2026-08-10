@@ -1,5 +1,6 @@
 package com.mojang.authlib.yggdrasil;
 
+import com.mojang.authlib.yggdrasil.request.JoinInfoUpdate;
 import com.mojang.authlib.yggdrasil.response.FriendData;
 import com.mojang.authlib.yggdrasil.response.PresenceResponse;
 
@@ -7,6 +8,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
+import org.jspecify.annotations.Nullable;
 
 public interface FriendsService {
 
@@ -23,6 +25,7 @@ public interface FriendsService {
     ResultCode updateFriendSettings(boolean enableFriendlist, boolean enableFriendInvites);
 
     PresenceResponse presence(String status);
+    PresenceResponse presence(String status, @Nullable JoinInfoUpdate joinInfoUpdate);
 
     default Optional<Duration> getFriendsPollInterval() {
         return Optional.empty();

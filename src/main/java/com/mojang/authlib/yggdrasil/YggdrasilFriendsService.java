@@ -8,6 +8,7 @@ import com.mojang.authlib.exceptions.MinecraftClientHttpException;
 import com.mojang.authlib.minecraft.client.MinecraftClient;
 import com.mojang.authlib.minecraft.client.MinecraftClient.ServiceResponse;
 import com.mojang.authlib.yggdrasil.request.FriendActionRequest;
+import com.mojang.authlib.yggdrasil.request.JoinInfoUpdate;
 import com.mojang.authlib.yggdrasil.request.PresenceRequest;
 import com.mojang.authlib.yggdrasil.request.UpdateType;
 import com.mojang.authlib.yggdrasil.request.UserAttributesRequest;
@@ -19,7 +20,7 @@ import com.mojang.authlib.yggdrasil.response.UserAttributesResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.net.Proxy;
 import java.net.URL;
 import java.time.Duration;
@@ -75,7 +76,7 @@ public class YggdrasilFriendsService implements FriendsService {
         this.routePresence = HttpAuthenticationService.constantURL(env.servicesHost() + "/presence");
     }
 
-    /**
+    /** 
      * Fetches friends, incoming requests, and outgoing requests in one call (GET /friends).
      * Implementations should send an If-None-Match header with the cached ETag when available.
      * Returns the cached {@link FriendData} unchanged when the server responds with 304 Not Modified.
@@ -203,7 +204,7 @@ public class YggdrasilFriendsService implements FriendsService {
         return ResultCode.SUCCESS;
     }
 
-    /**
+    /** 
      * Sends a PUT /friends request and invalidates the local cache on success.
      */
     private ResultCode putFriendAction(final FriendActionRequest request) {
@@ -234,10 +235,15 @@ public class YggdrasilFriendsService implements FriendsService {
 
     @Override
     public PresenceResponse presence(final String status) {
+        return presence(status, null);
+    }
+
+    @Override
+    public PresenceResponse presence(final String status, final @Nullable JoinInfoUpdate joinInfoUpdate) {
         try {
             final ServiceResponse<PresenceResponse> response = minecraftClient.postWithEtag(
                 routePresence,
-                new PresenceRequest(PresenceStatus.valueOf(status)),
+                new PresenceRequest(PresenceStatus.valueOf(status), joinInfoUpdate),
                 PresenceResponse.class,
                 presenceEtag
             );
@@ -265,7 +271,7 @@ public class YggdrasilFriendsService implements FriendsService {
         }
     }
 
-    /**
+    /** 
      * Centralised HTTP error handler.
      * <ul>
      *   <li>400 – bad request with a body describing the error (logged)</li>
@@ -274,7 +280,7 @@ public class YggdrasilFriendsService implements FriendsService {
      *   <li>5xx – service unavailable (silently ignored; retry later)</li>
      * </ul>
      */
-    /*
+    /* 
      * FIXME: This is where we should implement:
      *  Switch service off if server tells us it's not available for this version
      */
@@ -301,4 +307,3 @@ public class YggdrasilFriendsService implements FriendsService {
         }
     }
 }
-

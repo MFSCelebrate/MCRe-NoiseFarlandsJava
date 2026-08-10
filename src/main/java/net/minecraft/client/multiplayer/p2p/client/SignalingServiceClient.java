@@ -138,9 +138,9 @@ public final class SignalingServiceClient {
                SignalingException mapped = SignalingErrorMapper.fromJsonRpc(toPlayerId, rpcErr);
                LOGGER.warn("Signaling rejected send: {}", mapped.getMessage());
                this.fireListeners(l -> l.onSignalingError(toPlayerId, mapped));
-               throw mapped;
+               return CompletableFuture.failedFuture(mapped);
             } else {
-               throw err;
+               return CompletableFuture.failedFuture(err);
             }
          });
    }

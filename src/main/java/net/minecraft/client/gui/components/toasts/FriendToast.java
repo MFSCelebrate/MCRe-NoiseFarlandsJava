@@ -131,7 +131,8 @@ public class FriendToast implements Toast {
 
     private static void addWithSkin(final Minecraft minecraft, final String playerName, final UUID playerId) {
         ResolvableProfile skinProfile = ResolvableProfile.createUnresolved(playerId);
-        add(minecraft, skinProfile, Component.translatable("gui.friends.toast.friend_added.message", playerName));
+        PlayerSkin skin = minecraft.playerSkinRenderCache().getOrDefault(skinProfile).playerSkin();
+        add(minecraft, skin, Component.translatable("gui.friends.toast.friend_added.message", playerName));
     }
 
     public static void showFriendJoinRequest(final Minecraft minecraft, final String profileName, final PlayerSkin skin) {
