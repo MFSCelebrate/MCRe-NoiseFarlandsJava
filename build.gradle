@@ -61,19 +61,16 @@ dependencies {
     implementation "com.mojang:text2speech:1.19.12"
     implementation "com.mojang:patchy:2.2.10"
 
-    // ===== P2P / WebRTC 依赖 =====
-    implementation "dev.onvoid:webrtc:${webrtcVersion}"
-    // Native libraries for WebRTC (platform-specific)
-    runtimeOnly "dev.onvoid:webrtc:${webrtcVersion}:natives-windows"
-    runtimeOnly "dev.onvoid:webrtc:${webrtcVersion}:natives-linux"
-    runtimeOnly "dev.onvoid:webrtc:${webrtcVersion}:natives-macos"
+    // ===== P2P / WebRTC 依赖 (from 26.2 Snapshot 8 version.json) =====
+    // Group ID is dev.onvoid.webrtc, artifact is webrtc-java
+    implementation "dev.onvoid.webrtc:webrtc-java:${webrtcVersion}"
+    // Platform-specific natives (these are the actual artifacts in libraries.minecraft.net per version.json)
     runtimeOnly "dev.onvoid.webrtc:webrtc-java:${webrtcVersion}:windows-x86_64"
     runtimeOnly "dev.onvoid.webrtc:webrtc-java:${webrtcVersion}:macos-x86_64"
     runtimeOnly "dev.onvoid.webrtc:webrtc-java:${webrtcVersion}:macos-aarch64"
     runtimeOnly "dev.onvoid.webrtc:webrtc-java:${webrtcVersion}:linux-x86_64"
     runtimeOnly "dev.onvoid.webrtc:webrtc-java:${webrtcVersion}:linux-aarch64"
     runtimeOnly "dev.onvoid.webrtc:webrtc-java:${webrtcVersion}:linux-aarch32"
-    runtimeOnly "dev.onvoid.webrtc:webrtc-java:${webrtcVersion}"
 
     implementation "com.google.guava:guava:33.6.0-jre"
     implementation "com.google.guava:failureaccess:1.0.3"
