@@ -108,8 +108,8 @@ public final class LocalCommandExecutor {
                 // ------------------- START -------------------
                 .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("start")
                     .executes(ctx -> {
-                        // No options: start server with default config (no CLI args, no property overrides)
-                        String[] argsArray = new String[0];
+                        // No options: start server with default config (headless, no GUI)
+                        String[] argsArray = new String[]{"--nogui"};
                         try {
                             // Ensure required files exist with sane defaults
                             java.nio.file.Path propPath = java.nio.file.Paths.get("server.properties");
@@ -204,6 +204,12 @@ public final class LocalCommandExecutor {
                                 }
                             }
                             String[] argsArray = args.toArray(new String[0]);
+                            // Ensure headless mode via --nogui if not already present
+                            if (!java.util.Arrays.asList(argsArray).contains("--nogui")) {
+                                java.util.List<String> tmp = new java.util.ArrayList<>(java.util.Arrays.asList(argsArray));
+                                tmp.add(0, "--nogui");
+                                argsArray = tmp.toArray(new String[0]);
+                            }
                             try {
                                 // Ensure required files exist with sane defaults
                                 java.nio.file.Path propPath = java.nio.file.Paths.get("server.properties");

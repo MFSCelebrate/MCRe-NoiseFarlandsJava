@@ -18,10 +18,12 @@ import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.layouts.FrameLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.P2PConnectScreen;
 import net.minecraft.client.gui.screens.social.PlayerSocialManager;
 import net.minecraft.client.gui.screens.social.RemoteFriendListUpdateHandler;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.multiplayer.p2p.FriendJoinHandler;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -58,6 +60,8 @@ public class FriendsOverlayScreen extends Screen {
     private final TabManager tabManager;
     private final Runnable friendListUpdateListener = this::onFriendListUpdate;
     private final Set<UUID> pendingFriendRemovals = new HashSet<>();
+    private final Runnable p2pJoinStateListener = this::onP2PJoinStateChanged;
+    private boolean openingP2PConnectScreen;
 
     public FriendsOverlayScreen(final @Nullable Screen backgroundScreen) {
         super(TITLE);
@@ -73,11 +77,13 @@ public class FriendsOverlayScreen extends Screen {
         }
 
         this.minecraft.getPlayerSocialManager().addFriendListUpdateListener(this.friendListUpdateListener);
+        this.minecraft.p2pManager.addJoinStateListener(this.p2pJoinStateListener);
     }
 
     @Override
     public void removed() {
         this.minecraft.getPlayerSocialManager().removeFriendListUpdateListener(this.friendListUpdateListener);
+        this.minecraft.p2pManager.removeJoinStateListener(this.p2pJoinStateListener);
         super.removed();
     }
 
@@ -85,6 +91,28 @@ public class FriendsOverlayScreen extends Screen {
         if (this.minecraft.gui.screen() == this && this.minecraft.getPlayerSocialManager().isFriendListEnabled()) {
             this.refreshLists();
         }
+    }
+
+    private void onP2PJoinStateChanged() {
+        if (this.minecraft.gui.screen() == this && !this.tryOpenP2PConnectScreenForAcceptedJoin()) {
+            this.refreshLists();
+        }
+    }
+
+    private boolean tryOpenP2PConnectScreenForAcceptedJoin() {
+        if (this.openingP2PConnectScreen) {
+            return false;
+        }
+        UUID connectingPmid = this.minecraft.p2pManager.connectingOutgoingJoinPmid();
+        if (connectingPmid != null) {
+            FriendJoinHandler.OutgoingJoinState state = this.minecraft.p2pManager.outgoingJoinState(connectingPmid);
+            if (state == FriendJoinHandler.OutgoingJoinState.CONNECTING) {
+                this.openingP2PConnectScreen = true;
+                P2PConnectScreen.startConnecting(this, this.minecraft, connectingPmid);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

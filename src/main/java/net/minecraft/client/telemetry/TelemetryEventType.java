@@ -93,6 +93,18 @@ public class TelemetryEventType {
         .define(TelemetryProperty.LOAD_TIME_LOADING_OVERLAY_MS)
         .optIn()
         .register();
+    public static final TelemetryEventType P2P_CONNECTION = builder("p2p_connection", "P2PConnection")
+        .defineAll(GLOBAL_PROPERTIES)
+        .define(TelemetryProperty.P2P_CONNECTION_SUCCESSFUL)
+        .define(TelemetryProperty.P2P_CONNECTION_FAILURE_STAGE)
+        .define(TelemetryProperty.P2P_CONNECTION_LOCAL_CANDIDATE_TYPE)
+        .define(TelemetryProperty.P2P_CONNECTION_REMOTE_CANDIDATE_TYPE)
+        .define(TelemetryProperty.P2P_CONNECTION_ICE_PATH)
+        .define(TelemetryProperty.P2P_CONNECTION_SIGNALING_TIME_MS)
+        .define(TelemetryProperty.P2P_CONNECTION_ICE_CONNECT_TIME_MS)
+        .define(TelemetryProperty.P2P_CONNECTION_TOTAL_TIME_MS)
+        .optIn()
+        .register();
     private final String id;
     private final String exportKey;
     private final List<TelemetryProperty<?>> properties;

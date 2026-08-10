@@ -26,6 +26,18 @@ public class IntegratedPlayerList extends PlayerList {
             : super.canPlayerLogin(address, nameAndId);
     }
 
+    @Override
+    public void placeNewPlayer(final net.minecraft.network.Connection connection, final net.minecraft.server.level.ServerPlayer player, final net.minecraft.server.players.CommonListenerCookie cookie) {
+        super.placeNewPlayer(connection, player, cookie);
+        this.getServer().onPlayerListChanged();
+    }
+
+    @Override
+    public void remove(final net.minecraft.server.level.ServerPlayer player) {
+        super.remove(player);
+        this.getServer().onPlayerListChanged();
+    }
+
     public IntegratedServer getServer() {
         return (IntegratedServer)super.getServer();
     }

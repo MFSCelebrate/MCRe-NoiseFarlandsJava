@@ -2242,7 +2242,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
     public enum MultiplayerScope {
         OFF("off"),
-        LAN("lan");
+        LAN("lan"),
+        ONLINE("online");
 
         private final Component translatable;
         private final Component tooltip;

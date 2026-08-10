@@ -114,6 +114,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.LevelLoadTracker;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.client.multiplayer.p2p.P2PManager;
 import net.minecraft.client.multiplayer.ProfileKeyPairManager;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.chat.ChatAbilities;
@@ -325,6 +326,7 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
     private final RemoteFriendListUpdateHandler remoteFriendListUpdateHandler;
     private final BlockEntityRenderDispatcher blockEntityRenderDispatcher;
     private final ClientTelemetryManager telemetryManager;
+    public final P2PManager p2pManager;
     private final ProfileKeyPairManager profileKeyPairManager;
     private final RealmsDataFetcher realmsDataFetcher;
     private final QuickPlayLog quickPlayLog;
@@ -693,6 +695,7 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
         this.resizeGui();
         this.loadCriticalShaders();
         this.telemetryManager = new ClientTelemetryManager(this, this.userApiService, this.user);
+        this.p2pManager = new P2PManager(this, this.user);
         this.profileKeyPairManager = this.offlineDeveloperMode
             ? ProfileKeyPairManager.EMPTY_KEY_MANAGER
             : ProfileKeyPairManager.create(this.userApiService, this.user, gameDirPath);
@@ -1119,6 +1122,7 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
         Util.shutdownTimeSource();
 
         try {
+            this.p2pManager.shutdown();
             this.remoteFriendListUpdateHandler.close();
             this.timerQuery.close();
             this.telemetryManager.close();
