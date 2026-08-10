@@ -133,16 +133,18 @@ public final class SignalingServiceClient {
             this.executor
          )
          .thenApply(var0 -> null)
-         .exceptionally(err -> {
-            if (err.getCause() instanceof JsonRpcException rpcErr) {
-               SignalingException mapped = SignalingErrorMapper.fromJsonRpc(toPlayerId, rpcErr);
-               LOGGER.warn("Signaling rejected send: {}", mapped.getMessage());
-               this.fireListeners(l -> l.onSignalingError(toPlayerId, mapped));
-               throw new CompletionException(mapped);
-            } else {
+         .handle((result, err) -> {
+            if (err != null) {
+               if (err.getCause() instanceof JsonRpcException rpcErr) {
+                  SignalingException mapped = SignalingErrorMapper.fromJsonRpc(toPlayerId, rpcErr);
+                  LOGGER.warn("Signaling rejected send: {}", mapped.getMessage());
+                  this.fireListeners(l -> l.onSignalingError(toPlayerId, mapped));
+               }
                throw new CompletionException(err);
             }
-         });
+            return null;
+         })
+         .thenCompose(v -> CompletableFuture.completedFuture(null));
    }
 
    private void fireListeners(final Consumer<SignalingServiceClient.ConnectionListener> action) {
@@ -276,11 +278,16 @@ public final class SignalingServiceClient {
 
    private CompletableFuture<RTCIceServer> refreshTurnAuth() {
       return this.sendRequest("Signaling_TurnAuth_v1_0", List.of())
-         .exceptionallyCompose(
-            error -> CompletableFuture.failedFuture(
-               error.getCause() instanceof JsonRpcException jre ? new SignalingException.TurnAuthFailedException(jre.serverMessage()) : error
-            )
-         )
+         .handle((result, error) -> {
+            if (error != null) {
+               if (error.getCause() instanceof JsonRpcException jre) {
+                  throw new CompletionException(new SignalingException.TurnAuthFailedException(jre.serverMessage()));
+               }
+               throw new CompletionException(error);
+            }
+            return result;
+         })
+         .thenCompose(result -> CompletableFuture.completedFuture(result))
          .thenApplyAsync(
             result -> {
                SignalingServiceClient.TurnAuthResult turnAuth = (SignalingServiceClient.TurnAuthResult)SignalingServiceClient.TurnAuthResult.CODEC
