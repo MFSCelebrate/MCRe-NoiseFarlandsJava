@@ -3,6 +3,7 @@ package net.minecraft.world.level.levelgen.synth;
 import com.google.common.annotations.VisibleForTesting;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 
 public final class ImprovedNoise {
     private static final float SHIFT_UP_EPSILON = 1.0E-7F;
@@ -11,6 +12,10 @@ public final class ImprovedNoise {
     public final double yo;
     public final double zo;
 
+    private static boolean isBedrockMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && "Bedrock".equals(config.precisionMode);
+    }
     public ImprovedNoise(final RandomSource random) {
         this.xo = random.nextDouble() * 256.0;
         this.yo = random.nextDouble() * 256.0;
@@ -64,7 +69,11 @@ public final class ImprovedNoise {
             yrFudge = 0.0;
         }
 
-        return this.sampleAndLerp(xf, yf, zf, xr, yr - yrFudge, zr, yr);
+        double result = this.sampleAndLerp(xf, yf, zf, xr, yr - yrFudge, zr, yr);
+        if (isBedrockMode()) {
+            return (float) result;
+        }
+        return result;
     }
 
     public double noiseWithDerivative(final double _x, final double _y, final double _z, final double[] derivativeOut) {

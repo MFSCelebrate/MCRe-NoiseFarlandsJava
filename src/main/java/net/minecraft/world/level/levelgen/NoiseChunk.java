@@ -14,6 +14,8 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ColumnPos;
 import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.util.Mth;
+import net.minecraft.util.MathUtil;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.block.state.BlockState;
@@ -79,6 +81,10 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
             }
         }
     };
+    private static boolean isEnableSkyGrid() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.enableSkyGrid;
+    }
 
     public static NoiseChunk forChunk(
         final ChunkAccess chunk,
@@ -784,19 +790,19 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         }
 
         private void updateForY(final double factorY) {
-            this.valueXZ00 = Mth.lerp(factorY, this.noise000, this.noise010);
-            this.valueXZ10 = Mth.lerp(factorY, this.noise100, this.noise110);
-            this.valueXZ01 = Mth.lerp(factorY, this.noise001, this.noise011);
-            this.valueXZ11 = Mth.lerp(factorY, this.noise101, this.noise111);
+            this.valueXZ00 = isEnableSkyGrid() ? MathUtil.lerp(factorY, this.noise000, this.noise010) : Mth.lerp(factorY, this.noise000, this.noise010);
+            this.valueXZ10 = isEnableSkyGrid() ? MathUtil.lerp(factorY, this.noise100, this.noise110) : Mth.lerp(factorY, this.noise100, this.noise110);
+            this.valueXZ01 = isEnableSkyGrid() ? MathUtil.lerp(factorY, this.noise001, this.noise011) : Mth.lerp(factorY, this.noise001, this.noise011);
+            this.valueXZ11 = isEnableSkyGrid() ? MathUtil.lerp(factorY, this.noise101, this.noise111) : Mth.lerp(factorY, this.noise101, this.noise111);
         }
 
         private void updateForX(final double factorX) {
-            this.valueZ0 = Mth.lerp(factorX, this.valueXZ00, this.valueXZ10);
-            this.valueZ1 = Mth.lerp(factorX, this.valueXZ01, this.valueXZ11);
+            this.valueZ0 = isEnableSkyGrid() ? MathUtil.lerp(factorX, this.valueXZ00, this.valueXZ10) : Mth.lerp(factorX, this.valueXZ00, this.valueXZ10);
+            this.valueZ1 = isEnableSkyGrid() ? MathUtil.lerp(factorX, this.valueXZ01, this.valueXZ11) : Mth.lerp(factorX, this.valueXZ01, this.valueXZ11);
         }
 
         private void updateForZ(final double factorZ) {
-            this.value = Mth.lerp(factorZ, this.valueZ0, this.valueZ1);
+            this.value = isEnableSkyGrid() ? MathUtil.lerp(factorZ, this.valueZ0, this.valueZ1) : Mth.lerp(factorZ, this.valueZ0, this.valueZ1);
         }
 
         @Override
@@ -807,7 +813,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
                 throw new IllegalStateException("Trying to sample interpolator outside the interpolation loop");
             } else {
                 return NoiseChunk.this.fillingCell
-                    ? Mth.lerp3(
+                    ? (isEnableSkyGrid() ? MathUtil.lerp3(
                         (double)NoiseChunk.this.inCellX / NoiseChunk.this.cellWidth,
                         (double)NoiseChunk.this.inCellY / NoiseChunk.this.cellHeight,
                         (double)NoiseChunk.this.inCellZ / NoiseChunk.this.cellWidth,
@@ -819,7 +825,19 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
                         this.noise101,
                         this.noise011,
                         this.noise111
-                    )
+                    ) : Mth.lerp3(
+                        (double)NoiseChunk.this.inCellX / NoiseChunk.this.cellWidth,
+                        (double)NoiseChunk.this.inCellY / NoiseChunk.this.cellHeight,
+                        (double)NoiseChunk.this.inCellZ / NoiseChunk.this.cellWidth,
+                        this.noise000,
+                        this.noise100,
+                        this.noise010,
+                        this.noise110,
+                        this.noise001,
+                        this.noise101,
+                        this.noise011,
+                        this.noise111
+                    ))
                     : this.value;
             }
         }

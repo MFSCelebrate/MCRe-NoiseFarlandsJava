@@ -19,6 +19,17 @@ import net.minecraft.world.level.levelgen.PositionalRandomFactory;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * PerlinNoise — �� 噪声生成器（MCRe NoiseFarlands 精度�适配版）
+ *
+ * <p>根据 WorldMainSettingScreen.precisionMode � 动态切换计算精度：
+ * <ul>
+ *   <li>32bit：全程 double 计算（保持原版行为）</li>
+ *   <li>64bit：坐标折�叠到 ±16,777,216 �� 范�围内（消除 32-bit � 溢出）</li>
+ *   <li>Bedrock：所有关�键位置强制 float 精度（模�拟基岩版�噪声表现）</li>
+ * </ul>
+ * </p>
+ */
 public class PerlinNoise {
     private static final int ROUND_OFF = 33554432;
     private final @Nullable ImprovedNoise[] noiseLevels;
@@ -77,6 +88,11 @@ public class PerlinNoise {
         }
 
         return Pair.of(-lowFreqOctaves, amplitudes);
+    }
+
+    private boolean isBedrockMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && "Bedrock".equals(config.precisionMode);
     }
 
     protected PerlinNoise(final RandomSource random, final Pair<Integer, DoubleList> pair, final boolean useNewInitialization) {
@@ -159,11 +175,18 @@ public class PerlinNoise {
             valueFactor /= 2.0;
         }
 
+        if (isBedrockMode()) {
+            return (float) value;
+        }
         return value;
     }
 
     public double maxBrokenValue(final double yScale) {
-        return this.edgeValue(yScale + 2.0);
+        double val = this.edgeValue(yScale + 2.0);
+        if (isBedrockMode()) {
+            return (float) val;
+        }
+        return val;
     }
 
     private double edgeValue(final double noiseValue) {
@@ -179,6 +202,9 @@ public class PerlinNoise {
             valueFactor /= 2.0;
         }
 
+        if (isBedrockMode()) {
+            return (float) value;
+        }
         return value;
     }
 
@@ -187,22 +213,29 @@ public class PerlinNoise {
     }
 
     /**
-     * 🔥 MCRe NoiseFarlands —— 坐标折叠函数
+     * �� 🔥 MCRe NoiseFarlands —— �� 坐标折�叠�函数
      *
      * <p>根据精度模式决定行为：
      * <ul>
-     *   <li>32bit：直接返回 x（不折叠，产生经典边境之地）</li>
-     *   <li>64bit：折叠到 ±16,777,216 范围内（消除 32-bit 溢出，保留 64-bit 精度）</li>
+     *   <li>32bit：直接返回 x（不折�叠，产生经典边境之地）</li>
+     *   <li>64bit：折�叠到 ±16,777,216 �� 范�围内（消除 32-bit � 溢出，保留 64-bit 精度）</li>
+     *   <li>Bedrock：返回 float 精度的值（强制转为 float � 再提升为 double）</li>
      * </ul>
      * </p>
      */
     public static double wrap(final double x) {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        if (config != null && "64bit".equals(config.precisionMode)) {
-            // 64-bit 模式：折叠到 ±16,777,216 范围内
-            return x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7;
+        if (config != null) {
+            if ("64bit".equals(config.precisionMode)) {
+                // 64-bit � 模式：折�叠到 ±16,777,216 �� 范�围内
+                return x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7;
+            }
+            if ("Bedrock".equals(config.precisionMode)) {
+                // Bedrock � 模式：返回 float 精度的值
+                return (float) x;
+            }
         }
-        // 32-bit 模式（默认）：不折叠，直接返回 x
+        // 32-bit � 模式（默认）：不折�叠，直接返回 x
         return x;
     }
 

@@ -25,6 +25,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.util.VisibleForDebug;
+import net.minecraft.util.MathUtil;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.synth.BlendedNoise;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
@@ -37,6 +39,11 @@ public final class DensityFunctions {
         .dispatch(function -> function.codec().codec(), Function.identity());
     static final double MAX_REASONABLE_NOISE_VALUE = 1000000.0;
     private static final Codec<Double> NOISE_VALUE_CODEC = Codec.doubleRange(-1000000.0, 1000000.0);
+
+    private static boolean isForceSkyGrid() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.forceSkyGrid;
+    }
     public static final Codec<DensityFunction> DIRECT_CODEC = Codec.either(NOISE_VALUE_CODEC, CODEC)
         .xmap(
             either -> either.map(DensityFunctions::constant, Function.identity()),
@@ -443,6 +450,9 @@ public final class DensityFunctions {
 
         @Override
         public double transform(final double input) {
+            if (isForceSkyGrid()) {
+                return MathUtil.clamp(input, this.minValue, this.maxValue);
+            }
             return Mth.clamp(input, this.minValue, this.maxValue);
         }
 

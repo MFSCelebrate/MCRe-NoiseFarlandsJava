@@ -8,10 +8,17 @@ import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import org.jspecify.annotations.Nullable;
 
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
+
 public class PerlinSimplexNoise {
     private final @Nullable SimplexNoise[] noiseLevels;
     private final double highestFreqValueFactor;
     private final double highestFreqInputFactor;
+
+    private static boolean isBedrockMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && "Bedrock".equals(config.precisionMode);
+    }
 
     public PerlinSimplexNoise(final RandomSource random, final List<Integer> octaveSet) {
         this(random, new IntRBTreeSet(octaveSet));
@@ -76,6 +83,10 @@ public class PerlinSimplexNoise {
             valueFactor *= 2.0;
         }
 
-        return value;
+        double result = value;
+        if (isBedrockMode()) {
+            return (float) result;
+        }
+        return result;
     }
 }

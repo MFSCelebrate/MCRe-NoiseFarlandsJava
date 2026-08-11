@@ -12,6 +12,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.DensityFunction;
 import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
 
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
+
 public class BlendedNoise implements DensityFunction.SimpleFunction {
     private static final Codec<Double> SCALE_RANGE = Codec.doubleRange(0.001, 1000.0);
     private static final MapCodec<BlendedNoise> DATA_CODEC = RecordCodecBuilder.mapCodec(
@@ -36,6 +38,11 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
     private final double maxValue;
     private final double xzScale;
     private final double yScale;
+
+    private static boolean isBedrockMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && "Bedrock".equals(config.precisionMode);
+    }
 
     public static BlendedNoise createUnseeded(
         final double xzScale, final double yScale, final double xzFactor, final double yFactor, final double smearScaleMultiplier
@@ -141,17 +148,29 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
             pow /= 2.0;
         }
 
-        return Mth.clampedLerp(factor, blendMin / 512.0, blendMax / 512.0) / 128.0;
+        double result = Mth.clampedLerp(factor, blendMin / 512.0, blendMax / 512.0) / 128.0;
+        if (isBedrockMode()) {
+            return (float) result;
+        }
+        return result;
     }
 
     @Override
     public double minValue() {
-        return -this.maxValue();
+        double result = -this.maxValue();
+        if (isBedrockMode()) {
+            return (float) result;
+        }
+        return result;
     }
 
     @Override
     public double maxValue() {
-        return this.maxValue;
+        double result = this.maxValue;
+        if (isBedrockMode()) {
+            return (float) result;
+        }
+        return result;
     }
 
     @VisibleForTesting

@@ -13,6 +13,8 @@ import net.minecraft.resources.RegistryFileCodec;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Util;
 
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
+
 public class NormalNoise {
     private static final double INPUT_FACTOR = 1.0181268882175227;
     private static final double TARGET_DEVIATION = 0.3333333333333333;
@@ -21,6 +23,11 @@ public class NormalNoise {
     private final PerlinNoise second;
     private final double maxValue;
     private final NormalNoise.NoiseParameters parameters;
+
+    private static boolean isBedrockMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && "Bedrock".equals(config.precisionMode);
+    }
 
     @Deprecated
     public static NormalNoise createLegacyNetherBiome(final RandomSource random, final NormalNoise.NoiseParameters parameters) {
@@ -65,7 +72,11 @@ public class NormalNoise {
     }
 
     public double maxValue() {
-        return this.maxValue;
+        double result = this.maxValue;
+        if (isBedrockMode()) {
+            return (float) result;
+        }
+        return result;
     }
 
     private static double expectedDeviation(final int octaveSpan) {
@@ -76,7 +87,11 @@ public class NormalNoise {
         double x2 = x * 1.0181268882175227;
         double y2 = y * 1.0181268882175227;
         double z2 = z * 1.0181268882175227;
-        return (this.first.getValue(x, y, z) + this.second.getValue(x2, y2, z2)) * this.valueFactor;
+        double result = (this.first.getValue(x, y, z) + this.second.getValue(x2, y2, z2)) * this.valueFactor;
+        if (isBedrockMode()) {
+            return (float) result;
+        }
+        return result;
     }
 
     public NormalNoise.NoiseParameters parameters() {

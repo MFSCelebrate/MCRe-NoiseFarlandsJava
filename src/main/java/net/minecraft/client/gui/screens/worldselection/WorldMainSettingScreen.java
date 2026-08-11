@@ -182,19 +182,19 @@ public class WorldMainSettingScreen extends Screen {
                 mode -> switch (mode) {
                     case "32bit" -> Component.literal("32 位");
                     case "64bit" -> Component.literal("64 位");
-                    case "256bit" -> Component.literal("256 位");
+                    case "Bedrock" -> Component.literal("Bedrock");
                     default -> Component.literal(mode);
                 },
                 "32bit"
             )
-            .withValues("32bit", "64bit", "256bit")
+            .withValues("32bit", "64bit", "Bedrock")
             .create(0, 0, CONTENT_WIDTH - 20, 20,
                 Component.literal("精度模式"),
                 (button, val) -> this.configData.precisionMode = val
             );
         this.scrollContent.addChild(precisionModeButton, s -> s.paddingHorizontal(10));
         this.scrollContent.addChild(new StringWidget(
-            Component.literal("§7选择坐标精度等级：32位（经典边境之地）、64位（中期改造）或256位（终极形态）"),
+            Component.literal("§7选择坐标精度等级：32位（经典边境之地）、64位（中期改造）或基岩版边境之地 (Float计算)"),
             this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20).paddingBottom(4));
 

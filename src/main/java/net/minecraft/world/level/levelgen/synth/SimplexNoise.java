@@ -3,6 +3,8 @@ package net.minecraft.world.level.levelgen.synth;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
+
 public class SimplexNoise {
     protected static final int[][] GRADIENT = new int[][]{
         {1, 1, 0},
@@ -29,6 +31,11 @@ public class SimplexNoise {
     public final double xo;
     public final double yo;
     public final double zo;
+
+    private static boolean isBedrockMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && "Bedrock".equals(config.precisionMode);
+    }
 
     public SimplexNoise(final RandomSource random) {
         this.xo = random.nextDouble() * 256.0;
@@ -100,7 +107,11 @@ public class SimplexNoise {
         double n0 = this.getCornerNoise3D(gi0, x0, y0, 0.0, 0.5);
         double n1 = this.getCornerNoise3D(gi1, x1, y1, 0.0, 0.5);
         double n2 = this.getCornerNoise3D(gi2, x2, y2, 0.0, 0.5);
-        return 70.0 * (n0 + n1 + n2);
+        double result = 70.0 * (n0 + n1 + n2);
+        if (isBedrockMode()) {
+            return (float) result;
+        }
+        return result;
     }
 
     public double getValue(final double xin, final double yin, final double zin) {
@@ -189,6 +200,10 @@ public class SimplexNoise {
         double n1 = this.getCornerNoise3D(gi1, x1, y1, z1, 0.6);
         double n2 = this.getCornerNoise3D(gi2, x2, y2, z2, 0.6);
         double n3 = this.getCornerNoise3D(gi3, x3, y3, z3, 0.6);
-        return 32.0 * (n0 + n1 + n2 + n3);
+        double result = 32.0 * (n0 + n1 + n2 + n3);
+        if (isBedrockMode()) {
+            return (float) result;
+        }
+        return result;
     }
 }
