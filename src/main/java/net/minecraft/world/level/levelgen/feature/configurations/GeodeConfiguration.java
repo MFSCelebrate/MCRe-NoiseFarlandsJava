@@ -24,7 +24,7 @@ public record GeodeConfiguration(
     double noiseMultiplier,
     int invalidBlocksThreshold
 ) implements FeatureConfiguration {
-    public static final Codec<Double> CHANCE_RANGE = Codec.doubleRange(0.0, 1.0);
+    public static final Codec<Double> CHANCE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     public static final Codec<GeodeConfiguration> CODEC = RecordCodecBuilder.create(
         i -> i.group(
                 GeodeBlockSettings.CODEC.fieldOf("blocks").forGetter(GeodeConfiguration::geodeBlockSettings),

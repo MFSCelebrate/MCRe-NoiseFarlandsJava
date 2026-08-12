@@ -94,6 +94,11 @@ public class PerlinNoise {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
         return config != null && "Bedrock".equals(config.precisionMode);
     }
+    
+    private boolean isLongBedrockMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && "64bit-Bedrock".equals(config.precisionMode);
+    }
 
     protected PerlinNoise(final RandomSource random, final Pair<Integer, DoubleList> pair, final boolean useNewInitialization) {
         this.firstOctave = pair.getFirst();
@@ -233,6 +238,10 @@ public class PerlinNoise {
             if ("Bedrock".equals(config.precisionMode)) {
                 // Bedrock � 模式：返回 float 精度的值
                 return (float) x;
+            }
+            if ("64bit-Bedrock".equals(config.precisionMode)) {
+                // 64-bit � 模式：折�叠到 ±16,777,216 �� 范�围内
+                return (float)x - (float) Mth.lfloor(x / 3.3554432E7F + 0.5F) * 3.3554432E7F;
             }
         }
         // 32-bit � 模式（默认）：不折�叠，直接返回 x

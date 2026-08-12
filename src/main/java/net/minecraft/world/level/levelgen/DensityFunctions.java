@@ -37,8 +37,8 @@ public final class DensityFunctions {
     private static final Codec<DensityFunction> CODEC = BuiltInRegistries.DENSITY_FUNCTION_TYPE
         .byNameCodec()
         .dispatch(function -> function.codec().codec(), Function.identity());
-    static final double MAX_REASONABLE_NOISE_VALUE = 1000000.0;
-    private static final Codec<Double> NOISE_VALUE_CODEC = Codec.doubleRange(-1000000.0, 1000000.0);
+    static final double MAX_REASONABLE_NOISE_VALUE = Double.POSITIVE_INFINITY;
+    private static final Codec<Double> NOISE_VALUE_CODEC = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
 
     private static boolean isForceSkyGrid() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;

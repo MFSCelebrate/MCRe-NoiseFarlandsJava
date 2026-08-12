@@ -80,6 +80,9 @@ public class NormalNoise {
     }
 
     private static double expectedDeviation(final int octaveSpan) {
+        if (isBedrockMode()) {
+            return (float) 0.1F * (1.0F + 1.0F / (octaveSpan + 1));
+        }
         return 0.1 * (1.0 + 1.0 / (octaveSpan + 1));
     }
 

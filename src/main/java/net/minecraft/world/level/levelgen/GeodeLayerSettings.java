@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 public class GeodeLayerSettings {
-    private static final Codec<Double> LAYER_RANGE = Codec.doubleRange(0.01, 50.0);
+    private static final Codec<Double> LAYER_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     public static final Codec<GeodeLayerSettings> CODEC = RecordCodecBuilder.create(
         i -> i.group(
                 LAYER_RANGE.optionalFieldOf("filling", 1.7).forGetter(c -> c.filling),

@@ -60,6 +60,9 @@ public class SimplexNoise {
     }
 
     protected static double dot(final int[] g, final double x, final double y, final double z) {
+        if (isBedrockMode()) {
+            return g[0] * (float)x + g[1] * (float)y + g[2] * (float)z;
+        }
         return g[0] * x + g[1] * y + g[2] * z;
     }
 
@@ -72,7 +75,9 @@ public class SimplexNoise {
             t0 *= t0;
             n0 = t0 * t0 * dot(GRADIENT[index], x, y, z);
         }
-
+        if (isBedrockMode()) {
+            return (float) n0;
+        }
         return n0;
     }
 

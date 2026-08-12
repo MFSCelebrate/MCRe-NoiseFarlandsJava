@@ -88,7 +88,7 @@ public record DimensionType(
                         Codec.BOOL.fieldOf("has_skylight").forGetter(DimensionType::hasSkyLight),
                         Codec.BOOL.fieldOf("has_ceiling").forGetter(DimensionType::hasCeiling),
                         Codec.BOOL.fieldOf("has_ender_dragon_fight").forGetter(DimensionType::hasEnderDragonFight),
-                        Codec.doubleRange(1.0E-5F, 3.0E7).fieldOf("coordinate_scale").forGetter(DimensionType::coordinateScale),
+                        Codec.doubleRange(1.0E-5F, Double.POSITIVE_INFINITY).fieldOf("coordinate_scale").forGetter(DimensionType::coordinateScale),
                         Codec.intRange(MIN_Y, MAX_Y).fieldOf("min_y").forGetter(DimensionType::minY),
                         Codec.intRange(16, Y_SIZE).fieldOf("height").forGetter(DimensionType::height),
                         Codec.intRange(0, Y_SIZE).fieldOf("logical_height").forGetter(DimensionType::logicalHeight),

@@ -15,14 +15,14 @@ import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 
 public class BlendedNoise implements DensityFunction.SimpleFunction {
-    private static final Codec<Double> SCALE_RANGE = Codec.doubleRange(0.001, 1000.0);
+    private static final Codec<Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     private static final MapCodec<BlendedNoise> DATA_CODEC = RecordCodecBuilder.mapCodec(
         i -> i.group(
                 SCALE_RANGE.fieldOf("xz_scale").forGetter(n -> n.xzScale),
                 SCALE_RANGE.fieldOf("y_scale").forGetter(n -> n.yScale),
                 SCALE_RANGE.fieldOf("xz_factor").forGetter(n -> n.xzFactor),
                 SCALE_RANGE.fieldOf("y_factor").forGetter(n -> n.yFactor),
-                Codec.doubleRange(1.0, 8.0).fieldOf("smear_scale_multiplier").forGetter(n -> n.smearScaleMultiplier)
+                Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("smear_scale_multiplier").forGetter(n -> n.smearScaleMultiplier)
             )
             .apply(i, BlendedNoise::createUnseeded)
     );

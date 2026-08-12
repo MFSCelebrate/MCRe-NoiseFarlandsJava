@@ -16,6 +16,7 @@ public final class ImprovedNoise {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
         return config != null && "Bedrock".equals(config.precisionMode);
     }
+
     public ImprovedNoise(final RandomSource random) {
         this.xo = random.nextDouble() * 256.0;
         this.yo = random.nextDouble() * 256.0;
@@ -86,10 +87,16 @@ public final class ImprovedNoise {
         double xr = x - xf;
         double yr = y - yf;
         double zr = z - zf;
+        if (isBedrockMode()) {
+            return (float) this.sampleWithDerivative(xf, yf, zf, xr, yr, zr, derivativeOut);
+        }
         return this.sampleWithDerivative(xf, yf, zf, xr, yr, zr, derivativeOut);
     }
 
     private static double gradDot(final int hash, final double x, final double y, final double z) {
+        if (isBedrockMode()) {
+            return (float) SimplexNoise.dot(SimplexNoise.GRADIENT[hash & 15], x, y, z);
+        }
         return SimplexNoise.dot(SimplexNoise.GRADIENT[hash & 15], x, y, z);
     }
 
@@ -115,6 +122,9 @@ public final class ImprovedNoise {
         double xAlpha = Mth.smoothstep(xr);
         double yAlpha = Mth.smoothstep(yrOriginal);
         double zAlpha = Mth.smoothstep(zr);
+        if (isBedrockMode()) {
+            return (float) Mth.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
+        }
         return Mth.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
     }
 
@@ -170,6 +180,9 @@ public final class ImprovedNoise {
         derivativeOut[0] += dX;
         derivativeOut[1] += dY;
         derivativeOut[2] += dZ;
+        if (isBedrockMode()) {
+            return (float) Mth.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
+        }
         return Mth.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
     }
 
