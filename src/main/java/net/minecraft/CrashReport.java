@@ -18,6 +18,7 @@ import net.minecraft.util.MemoryReserve;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jspecify.annotations.Nullable;
+import net.minecraft.util.CrashContext; // ← 新增导入
 import org.slf4j.Logger;
 
 public class CrashReport {
