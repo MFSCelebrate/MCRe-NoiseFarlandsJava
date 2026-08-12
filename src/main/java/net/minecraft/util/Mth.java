@@ -48,14 +48,17 @@ public class Mth {
     private static final double[] COS_TAB = new double[257];
 
     public static float sin(final double i) {
+        if (Double.isInfinite(i)) return (float) i;
         return SIN[(int)((long)(i * 10430.378350470453) & 65535L)];
     }
 
     public static float cos(final double i) {
+        if (Double.isInfinite(i)) return (float) i;
         return SIN[(int)((long)(i * 10430.378350470453 + 16384.0) & 65535L)];
     }
 
     public static float sqrt(final float x) {
+        if (Float.isInfinite(x)) return x;
         return (float)Math.sqrt(x);
     }
 
@@ -72,6 +75,7 @@ public class Mth {
     }
 
     public static float abs(final float v) {
+        if (Float.isInfinite(v)) return v;
         return Math.abs(v);
     }
 
@@ -100,14 +104,17 @@ public class Mth {
     }
 
     public static float clamp(final float value, final float min, final float max) {
+        if (Float.isInfinite(value)) return value;
         return value < min ? min : Math.min(value, max);
     }
 
     public static double clamp(final double value, final double min, final double max) {
+        if (Double.isInfinite(value)) return value;
         return value < min ? min : Math.min(value, max);
     }
 
     public static double clampedLerp(final double factor, final double min, final double max) {
+        if (Double.isInfinite(factor)) return factor;
         if (factor < 0.0) {
             return min;
         } else {
@@ -116,6 +123,7 @@ public class Mth {
     }
 
     public static float clampedLerp(final float factor, final float min, final float max) {
+        if (Float.isInfinite(factor)) return factor;
         if (factor < 0.0F) {
             return min;
         } else {
@@ -168,10 +176,12 @@ public class Mth {
     }
 
     public static float positiveModulo(final float input, final float mod) {
+        if (Float.isInfinite(input)) return input;
         return (input % mod + mod) % mod;
     }
 
     public static double positiveModulo(final double input, final double mod) {
+        if (Double.isInfinite(input)) return input;
         return (input % mod + mod) % mod;
     }
 
@@ -201,6 +211,7 @@ public class Mth {
     }
 
     public static float wrapDegrees(final long angle) {
+        if (Float.isInfinite(angle)) return angle;
         float normalizedAngle = (float)(angle % 360L);
         if (normalizedAngle >= 180.0F) {
             normalizedAngle -= 360.0F;
@@ -214,6 +225,7 @@ public class Mth {
     }
 
     public static float wrapDegrees(final float angle) {
+        if (Float.isInfinite(angle)) return angle;
         float normalizedAngle = angle % 360.0F;
         if (normalizedAngle >= 180.0F) {
             normalizedAngle -= 360.0F;
@@ -227,6 +239,7 @@ public class Mth {
     }
 
     public static double wrapDegrees(final double angle) {
+        if (Double.isInfinite(angle)) return angle;
         double normalizedAngle = angle % 360.0;
         if (normalizedAngle >= 180.0) {
             normalizedAngle -= 360.0;
@@ -240,6 +253,7 @@ public class Mth {
     }
 
     public static float wrapDegrees90(final float angle) {
+        if (Float.isInfinite(angle)) return angle;
         float normalizedAngle = angle % 90.0F;
         if (normalizedAngle >= 45.0F) {
             normalizedAngle -= 90.0F;
@@ -316,10 +330,12 @@ public class Mth {
     }
 
     public static float frac(final float num) {
+        if (Float.isInfinite(num)) return num;
         return num - floor(num);
     }
 
     public static double frac(final double num) {
+        if (Double.isInfinite(num)) return num;
         return num - lfloor(num);
     }
 
@@ -342,10 +358,12 @@ public class Mth {
     }
 
     public static double inverseLerp(final double value, final double min, final double max) {
+        if (Double.isInfinite(value) || Double.isInfinite(min) || Double.isInfinite(max)) return value;
         return (value - min) / (max - min);
     }
 
     public static float inverseLerp(final float value, final float min, final float max) {
+        if (Float.isInfinite(value) || Float.isInfinite(min) || Float.isInfinite(max)) return value;
         return (value - min) / (max - min);
     }
 
@@ -389,6 +407,10 @@ public class Mth {
     }
 
     public static double atan2(double y, double x) {
+        // Preserve infinite inputs by delegating to Math.atan2, which handles infinities correctly
+        if (Double.isInfinite(y) || Double.isInfinite(x)) {
+            return Math.atan2(y, x);
+        }
         double d2 = x * x + y * y;
         if (Double.isNaN(d2)) {
             return Double.NaN;
@@ -548,6 +570,11 @@ public class Mth {
     }
 
     public static float lerp(final float alpha1, final float p0, final float p1) {
+        if (Float.isInfinite(alpha1) || Float.isInfinite(p0) || Float.isInfinite(p1)) {
+            // Preserve any infinite argument directly
+            if (Float.isInfinite(alpha1)) return alpha1;
+            return Float.isInfinite(p0) ? p0 : p1;
+        }
         return p0 + alpha1 * (p1 - p0);
     }
 
@@ -556,10 +583,22 @@ public class Mth {
     }
 
     public static double lerp(final double alpha1, final double p0, final double p1) {
+        if (Double.isInfinite(alpha1) || Double.isInfinite(p0) || Double.isInfinite(p1)) {
+            if (Double.isInfinite(alpha1)) return alpha1;
+            return Double.isInfinite(p0) ? p0 : p1;
+        }
         return p0 + alpha1 * (p1 - p0);
     }
 
     public static double lerp2(final double alpha1, final double alpha2, final double x00, final double x10, final double x01, final double x11) {
+        if (Double.isInfinite(alpha1) || Double.isInfinite(alpha2) || Double.isInfinite(x00) || Double.isInfinite(x10) || Double.isInfinite(x01) || Double.isInfinite(x11)) {
+            if (Double.isInfinite(alpha1)) return alpha1;
+            if (Double.isInfinite(alpha2)) return alpha2;
+            if (Double.isInfinite(x00)) return x00;
+            if (Double.isInfinite(x10)) return x10;
+            if (Double.isInfinite(x01)) return x01;
+            return x11;
+        }
         return lerp(alpha2, lerp(alpha1, x00, x10), lerp(alpha1, x01, x11));
     }
 
@@ -576,6 +615,18 @@ public class Mth {
         final double x011,
         final double x111
     ) {
+        // Preserve infinite arguments by returning the first infinite encountered
+        if (Double.isInfinite(alpha1)) return alpha1;
+        if (Double.isInfinite(alpha2)) return alpha2;
+        if (Double.isInfinite(alpha3)) return alpha3;
+        if (Double.isInfinite(x000)) return x000;
+        if (Double.isInfinite(x100)) return x100;
+        if (Double.isInfinite(x010)) return x010;
+        if (Double.isInfinite(x110)) return x110;
+        if (Double.isInfinite(x001)) return x001;
+        if (Double.isInfinite(x101)) return x101;
+        if (Double.isInfinite(x011)) return x011;
+        if (Double.isInfinite(x111)) return x111;
         return lerp(alpha3, lerp2(alpha1, alpha2, x000, x100, x010, x110), lerp2(alpha1, alpha2, x001, x101, x011, x111));
     }
 
@@ -668,6 +719,7 @@ public class Mth {
     }
 
     public static double wobble(final double coord) {
+        if (Double.isInfinite(coord)) return coord;
         return coord + (2.0 * RandomSource.createThreadLocalInstance(floor(coord * 3000.0)).nextDouble() - 1.0) * 1.0E-7 / 2.0;
     }
 

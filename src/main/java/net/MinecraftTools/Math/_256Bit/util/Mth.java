@@ -56,14 +56,17 @@ public class Mth {
     private static final double[] COS_TAB = new double[257];
 
     public static float sin(final double i) {
+        if (Double.isInfinite(i)) return (float) i;
         return SIN[(int) ((long) (i * 10430.378350470453) & 65535L)];
     }
 
     public static float cos(final double i) {
+        if (Double.isInfinite(i)) return (float) i;
         return SIN[(int) ((long) (i * 10430.378350470453 + 16384.0) & 65535L)];
     }
 
     public static float sqrt(final float x) {
+        if (Float.isInfinite(x)) return x;
         return (float) Math.sqrt(x);
     }
 
@@ -80,6 +83,7 @@ public class Mth {
     }
 
     public static float abs(final float v) {
+        if (Float.isInfinite(v)) return v;
         return Math.abs(v);
     }
 
@@ -108,14 +112,17 @@ public class Mth {
     }
 
     public static float clamp(final float value, final float min, final float max) {
+        if (Float.isInfinite(value)) return value;
         return value < min ? min : Math.min(value, max);
     }
 
     public static double clamp(final double value, final double min, final double max) {
+        if (Double.isInfinite(value)) return value;
         return value < min ? min : Math.min(value, max);
     }
 
     public static double clampedLerp(final double factor, final double min, final double max) {
+        if (Double.isInfinite(factor)) return factor;
         if (factor < 0.0) {
             return min;
         } else {
@@ -124,6 +131,7 @@ public class Mth {
     }
 
     public static float clampedLerp(final float factor, final float min, final float max) {
+        if (Float.isInfinite(factor)) return factor;
         if (factor < 0.0F) {
             return min;
         } else {
@@ -209,6 +217,7 @@ public class Mth {
     }
 
     public static float wrapDegrees(final long angle) {
+        if (Float.isInfinite(angle)) return angle;
         float normalizedAngle = (float) (angle % 360L);
         if (normalizedAngle >= 180.0F) {
             normalizedAngle -= 360.0F;
@@ -222,6 +231,7 @@ public class Mth {
     }
 
     public static float wrapDegrees(final float angle) {
+        if (Float.isInfinite(angle)) return angle;
         float normalizedAngle = angle % 360.0F;
         if (normalizedAngle >= 180.0F) {
             normalizedAngle -= 360.0F;
@@ -235,6 +245,7 @@ public class Mth {
     }
 
     public static double wrapDegrees(final double angle) {
+        if (Double.isInfinite(angle)) return angle;
         double normalizedAngle = angle % 360.0;
         if (normalizedAngle >= 180.0) {
             normalizedAngle -= 360.0;
@@ -248,6 +259,7 @@ public class Mth {
     }
 
     public static float wrapDegrees90(final float angle) {
+        if (Float.isInfinite(angle)) return angle;
         float normalizedAngle = angle % 90.0F;
         if (normalizedAngle >= 45.0F) {
             normalizedAngle -= 90.0F;
@@ -324,10 +336,12 @@ public class Mth {
     }
 
     public static float frac(final float num) {
+        if (Float.isInfinite(num)) return num;
         return num - floor(num);
     }
 
     public static double frac(final double num) {
+        if (Double.isInfinite(num)) return num;
         return num - lfloor(num);
     }
 
@@ -350,10 +364,12 @@ public class Mth {
     }
 
     public static double inverseLerp(final double value, final double min, final double max) {
+        if (Double.isInfinite(value)) return value;
         return (value - min) / (max - min);
     }
 
     public static float inverseLerp(final float value, final float min, final float max) {
+        if (Float.isInfinite(value)) return value;
         return (value - min) / (max - min);
     }
 
@@ -455,6 +471,7 @@ public class Mth {
 
     @Deprecated
     public static double fastInvSqrt(double x) {
+        if (Double.isInfinite(x)) return x;
         double xhalf = 0.5 * x;
         long i = Double.doubleToRawLongBits(x);
         i = 6910469410427058090L - (i >> 1);
@@ -463,6 +480,7 @@ public class Mth {
     }
 
     public static float fastInvCubeRoot(final float x) {
+        if (Float.isInfinite(x)) return x;
         int i = Float.floatToIntBits(x);
         i = 1419967116 - i / 3;
         float y = Float.intBitsToFloat(i);
@@ -673,6 +691,7 @@ public class Mth {
     }
 
     public static double wobble(final double coord) {
+        if (Double.isInfinite(coord)) return coord;
         return coord + (2.0 * RandomSource.createThreadLocalInstance(floor(coord * 3000.0)).nextDouble() - 1.0) * 1.0E-7 / 2.0;
     }
 
@@ -778,7 +797,7 @@ public class Mth {
     // 提供全套重载，覆盖边境之地探索 / Perlin 噪声折叠 / 高精度坐标运算场景。
 
     // ─── 256-bit 常量（PerlinNoise.wrap 折叠周期 2^25） ───
-    private static final Int256 I256_PERIOD = Int256.of(33_554_432);      // 2^25
+    private static final Int256 I256_PERIOD = Int256.of(33_554_432); // 2^25
     private static final Int256 I256_HALF_PERIOD = Int256.of(16_777_216); // 2^24
     private static final Float256 F256_PERIOD = Float256.of(33_554_432.0);
     private static final Float256 F256_HALF = Float256.of(0.5);
@@ -838,8 +857,8 @@ public class Mth {
     }
 
     /**
-     * PerlinNoise.wrap() 的 Int256 精确版：
-     * 原版: x - lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7，折叠到 ±2^24
+     * PerlinNoise.wrap() 的 Int256 精确版： 原版: x - lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7，折叠到
+     * ±2^24
      */
     public static Int256 wrap(final Int256 x) {
         Int256 q = floorDiv(x.add(I256_HALF_PERIOD), I256_PERIOD);
@@ -910,6 +929,7 @@ public class Mth {
     }
 
     public static Float256 clamp(final Float256 value, final Float256 min, final Float256 max) {
+        if (value.isInfinity()) return value;
         return value.compareTo(min) < 0 ? min : (value.compareTo(max) > 0 ? max : value);
     }
 
@@ -947,16 +967,22 @@ public class Mth {
     }
 
     public static Float256 lerp(final Float256 alpha, final Float256 p0, final Float256 p1) {
+        if (alpha.isInfinity() || p0.isInfinity() || p1.isInfinity()) {
+            if (alpha.isInfinity()) return alpha;
+            return p0.isInfinity() ? p0 : p1;
+        }
         return p0.add(alpha.multiply(p1.subtract(p0)));
     }
 
     public static Float256 clampedLerp(final Float256 factor, final Float256 min, final Float256 max) {
+        if (factor.isInfinity()) return factor;
         if (factor.compareTo(Float256.ZERO) < 0) return min;
         if (factor.compareTo(Float256.ONE) > 0) return max;
         return lerp(factor, min, max);
     }
 
     public static Float256 inverseLerp(final Float256 value, final Float256 min, final Float256 max) {
+        if (value.isInfinity() || min.isInfinity() || max.isInfinity()) return value;
         return value.subtract(min).divide(max.subtract(min));
     }
 
@@ -970,6 +996,7 @@ public class Mth {
 
     /** 噪声取模：结果恒在 [0, mod) */
     public static Float256 positiveModulo(final Float256 input, final Float256 mod) {
+        if (input.isInfinity()) return input;
         Float256 r = input.subtract(Float256.of(input.divide(mod).floor()).multiply(mod));
         return r.compareTo(Float256.ZERO) < 0 ? r.add(mod) : r;
     }
@@ -1046,6 +1073,7 @@ public class Mth {
     }
 
     public static UFloat256 clamp(final UFloat256 value, final UFloat256 min, final UFloat256 max) {
+        if (value.isInfinity()) return value;
         return value.compareTo(min) < 0 ? min : (value.compareTo(max) > 0 ? max : value);
     }
 
@@ -1074,20 +1102,27 @@ public class Mth {
     }
 
     public static UFloat256 lerp(final UFloat256 alpha, final UFloat256 p0, final UFloat256 p1) {
+        if (alpha.isInfinity() || p0.isInfinity() || p1.isInfinity()) {
+            if (alpha.isInfinity()) return alpha;
+            return p0.isInfinity() ? p0 : p1;
+        }
         return p0.add(alpha.multiply(p1.subtract(p0)));
     }
 
     public static UFloat256 clampedLerp(final UFloat256 factor, final UFloat256 min, final UFloat256 max) {
+        if (factor.isInfinity()) return factor;
         if (factor.compareTo(UFloat256.ZERO) < 0) return min;
         if (factor.compareTo(UFloat256.ONE) > 0) return max;
         return lerp(factor, min, max);
     }
 
     public static UFloat256 inverseLerp(final UFloat256 value, final UFloat256 min, final UFloat256 max) {
+        if (value.isInfinity() || min.isInfinity() || max.isInfinity()) return value;
         return value.subtract(min).divide(max.subtract(min));
     }
 
     public static UFloat256 positiveModulo(final UFloat256 input, final UFloat256 mod) {
+        if (input.isInfinity()) return input;
         return input.subtract(UFloat256.of(input.divide(mod).floor()).multiply(mod));
     }
 
