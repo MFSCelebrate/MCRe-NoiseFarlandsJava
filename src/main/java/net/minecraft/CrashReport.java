@@ -30,10 +30,13 @@ public class CrashReport {
     private boolean trackingStackTrace = true;
     private StackTraceElement[] uncategorizedStackTrace = new StackTraceElement[0];
     private final SystemReport systemReport = new SystemReport();
+    private final Deque<CrashContext.FrameArgs> contextSnapshot;
 
     public CrashReport(final String title, final Throwable t) {
         this.title = title;
         this.exception = t;
+        // 捕获当前线程的参数快照（异常发生瞬间）
+        this.contextSnapshot = CrashContext.snapshot();
     }
 
     public String getTitle() {
@@ -72,7 +75,18 @@ public class CrashReport {
             entry.getDetails(builder);
             builder.append("\n\n");
         }
-
+        // ... 原有的 systemReport.appendToCrashReportString(builder); 上面追加：
+        builder.append("\n\n-- Arguments at each frame (most recent first) --\n");
+        if (this.contextSnapshot.isEmpty()) {
+            builder.append("(No argument snapshots captured)\n");
+        } else {
+            // 栈底是最早入栈的，栈顶是最近的；我们想让最近的（最接近异常点）在前面
+            int idx = 0;
+            for (var it = this.contextSnapshot.descendingIterator(); it.hasNext(); ) {
+                CrashContext.FrameArgs fa = it.next();
+                builder.append(String.format("  [%d] %s%n", idx++, fa));
+            }
+        }
         this.systemReport.appendToCrashReportString(builder);
     }
 
@@ -117,7 +131,8 @@ public class CrashReport {
 
     private static Throwable replaceMessage(final Throwable original, final String title) {
         return switch (original) {
-            case NullPointerException var4 -> copyProperties(original, new NullPointerException(title));
+            case NullPointerException var4 ->
+                    copyProperties(original, new NullPointerException(title));
             case StackOverflowError var5 -> copyProperties(original, new StackOverflowError(title));
             case OutOfMemoryError var6 -> copyProperties(original, new OutOfMemoryError(title));
             default -> original;
@@ -153,7 +168,8 @@ public class CrashReport {
         return this.saveFile;
     }
 
-    public boolean saveToFile(final Path saveFile, final ReportType reportType, final List<String> extraComments) {
+    public boolean saveToFile(final Path saveFile, final ReportType reportType, final List<
+                    String> extraComments) {
         if (this.saveFile != null) {
             return false;
         }
