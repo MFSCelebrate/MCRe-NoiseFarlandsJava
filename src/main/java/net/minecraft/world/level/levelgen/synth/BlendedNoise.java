@@ -41,7 +41,7 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
 
     private static boolean isBedrockMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && "Bedrock".equals(config.precisionMode);
+        return config != null && ("Bedrock".equals(config.precisionMode) || "64bit-Bedrock".equals(config.precisionMode));
     }
 
     public static BlendedNoise createUnseeded(
