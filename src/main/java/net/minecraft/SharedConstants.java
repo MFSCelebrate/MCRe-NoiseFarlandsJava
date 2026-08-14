@@ -128,7 +128,7 @@ public class SharedConstants {
     public static final float MAXIMUM_BLOCK_EXPLOSION_RESISTANCE = 3600000.0F;
     public static final boolean USE_DEVONLY = false;
     public static boolean CHECK_DATA_FIXER_SCHEMA = true;
-    public static boolean IS_RUNNING_IN_IDE = true;
+    public static boolean IS_RUNNING_IN_IDE;
     public static final int WORLD_RESOLUTION = 16;
     public static final int MAX_CHAT_LENGTH = 256;
     public static final int MAX_USER_INPUT_COMMAND_LENGTH = 32500;
