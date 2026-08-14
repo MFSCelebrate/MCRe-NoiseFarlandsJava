@@ -1,4 +1,4 @@
-package net.MinecraftTools.Math._256Bit.util;
+package net.MinecraftTools.Math._256Bit.utils;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
@@ -17,11 +17,12 @@ import org.joml.Vector3fc;
 
 public class Vec3 implements Position {
     public static final Codec<Vec3> CODEC = Codec.DOUBLE
-        .listOf()
-        .comapFlatMap(
-            input -> Util.fixedSize((List<Double>)input, 3).map(doubles -> new Vec3(doubles.get(0), doubles.get(1), doubles.get(2))),
-            pos -> List.of(pos.x(), pos.y(), pos.z())
-        );
+            .listOf()
+            .comapFlatMap(
+                    input -> Util.fixedSize((List<
+                                    Double>) input, 3).map(doubles -> new Vec3(doubles.get(0), doubles.get(1), doubles.get(2))),
+                    pos -> List.of(pos.x(), pos.y(), pos.z())
+            );
     public static final StreamCodec<ByteBuf, Vec3> STREAM_CODEC = new StreamCodec<ByteBuf, Vec3>() {
         public Vec3 decode(final ByteBuf input) {
             return new Vec3(input.readDouble(), input.readDouble(), input.readDouble());
@@ -212,11 +213,11 @@ public class Vec3 implements Position {
     @Override
     public int hashCode() {
         long temp = Double.doubleToLongBits(this.x);
-        int result = (int)(temp ^ temp >>> 32);
+        int result = (int) (temp ^ temp >>> 32);
         temp = Double.doubleToLongBits(this.y);
-        result = 31 * result + (int)(temp ^ temp >>> 32);
+        result = 31 * result + (int) (temp ^ temp >>> 32);
         temp = Double.doubleToLongBits(this.z);
-        return 31 * result + (int)(temp ^ temp >>> 32);
+        return 31 * result + (int) (temp ^ temp >>> 32);
     }
 
     @Override
@@ -272,8 +273,8 @@ public class Vec3 implements Position {
     }
 
     public Vec2 rotation() {
-        float yaw = (float)Math.atan2(-this.x, this.z) * (180.0F / (float)Math.PI);
-        float pitch = (float)Math.asin(-this.y / Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z)) * (180.0F / (float)Math.PI);
+        float yaw = (float) Math.atan2(-this.x, this.z) * (180.0F / (float) Math.PI);
+        float pitch = (float) Math.asin(-this.y / Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z)) * (180.0F / (float) Math.PI);
         return new Vec2(pitch, yaw);
     }
 
@@ -316,7 +317,7 @@ public class Vec3 implements Position {
     }
 
     public Vector3f toVector3f() {
-        return new Vector3f((float)this.x, (float)this.y, (float)this.z);
+        return new Vector3f((float) this.x, (float) this.y, (float) this.z);
     }
 
     public Vec3 projectedOn(final Vec3 onto) {

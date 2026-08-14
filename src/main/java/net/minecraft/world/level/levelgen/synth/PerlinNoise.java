@@ -147,6 +147,9 @@ public class PerlinNoise {
     }
 
     protected double maxValue() {
+        if (isBedrockMode()) {
+            return (float) this.maxValue;
+        }
         return this.maxValue;
     }
 
@@ -155,6 +158,9 @@ public class PerlinNoise {
     }
 
     public double getValue(final double x, final double y, final double z) {
+        if (isBedrockMode()) {
+            return (float) this.getValue(x, y, z, 0.0, 0.0);
+        }
         return this.getValue(x, y, z, 0.0, 0.0);
     }
 

@@ -17,6 +17,11 @@ public final class ImprovedNoise {
         return config != null && ("Bedrock".equals(config.precisionMode) || "64bit-Bedrock".equals(config.precisionMode));
     }
 
+    private static boolean isProgressiveFarlands() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.progressiveFarlands;
+    }
+
     public ImprovedNoise(final RandomSource random) {
         this.xo = random.nextDouble() * 256.0;
         this.yo = random.nextDouble() * 256.0;
@@ -36,6 +41,9 @@ public final class ImprovedNoise {
     }
 
     public double noise(final double _x, final double _y, final double _z) {
+        if (isBedrockMode()) {
+            return (float) this.noise(_x, _y, _z, 0.0, 0.0);
+        }
         return this.noise(_x, _y, _z, 0.0, 0.0);
     }
 
@@ -104,6 +112,39 @@ public final class ImprovedNoise {
         return this.p[x & 0xFF] & 0xFF;
     }
 
+    /** ---------- 本地插值工具（不依赖 Mth） ---------- */
+    private static double lerp(double delta, double start, double end) {
+        if (isProgressiveFarlands()) {
+            return start;
+        }
+        // 等价于  start + delta * (end - start)
+        return start + delta * (end - start);
+    }
+
+    private static double lerp2(double delta1, double delta2,
+            double start1, double end1,
+            double start2, double end2) {
+        // 第一次在第一维上插值，得到两个中间值；再在第二维上插值
+        double mid1 = lerp(delta1, start1, end1);
+        double mid2 = lerp(delta1, start2, end2);
+        return lerp(delta2, mid1, mid2);
+    }
+
+    private static double lerp3(double delta1, double delta2, double delta3,
+            double v000, double v100, double v010, double v110,
+            double v001, double v101, double v011, double v111) {
+        // 按 x → y → z 的顺序做三层线性插值
+        double x00 = lerp(delta1, v000, v100);
+        double x10 = lerp(delta1, v010, v110);
+        double x01 = lerp(delta1, v001, v101);
+        double x11 = lerp(delta1, v011, v111);
+
+        double y0 = lerp(delta2, x00, x10);
+        double y1 = lerp(delta2, x01, x11);
+
+        return lerp(delta3, y0, y1);
+    }
+
     private double sampleAndLerp(final int x, final int y, final int z, final double xr, final double yr, final double zr, final double yrOriginal) {
         int x0 = this.p(x);
         int x1 = this.p(x + 1);
@@ -123,9 +164,9 @@ public final class ImprovedNoise {
         double yAlpha = Mth.smoothstep(yrOriginal);
         double zAlpha = Mth.smoothstep(zr);
         if (isBedrockMode()) {
-            return (float) Mth.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
+            return (float) ImprovedNoise.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
         }
-        return Mth.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
+        return ImprovedNoise.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
     }
 
     private double sampleWithDerivative(final int x, final int y, final int z, final double xr, final double yr, final double zr, final double[] derivativeOut) {
@@ -181,9 +222,9 @@ public final class ImprovedNoise {
         derivativeOut[1] += dY;
         derivativeOut[2] += dZ;
         if (isBedrockMode()) {
-            return (float) Mth.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
+            return (float) ImprovedNoise.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
         }
-        return Mth.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
+        return ImprovedNoise.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
     }
 
     @VisibleForTesting

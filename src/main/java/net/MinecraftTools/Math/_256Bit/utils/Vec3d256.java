@@ -1,4 +1,4 @@
-package net.MinecraftTools.Math._256Bit.util;
+package net.MinecraftTools.Math._256Bit.utils;
 
 import net.minecraft.core.Direction;
 import net.MinecraftTools.Math._256Bit.Float256;

@@ -49,7 +49,7 @@ public class WorldMainSettingScreen extends Screen {
 
     // ==================== 构造函数 ====================
     public WorldMainSettingScreen(final Screen parent, final WorldCreationContext settings) {
-        super(Component.literal("边境旅者 配置"));
+        super(Component.literal("世界自定义设置 │ World custom settings"));
         this.parent = parent;
         this.settings = settings;
         this.configData = new FarLandsConfigData();
@@ -63,7 +63,7 @@ public class WorldMainSettingScreen extends Screen {
         header.defaultCellSetting().alignHorizontallyCenter();
         header.addChild(new StringWidget(this.title.copy().withStyle(ChatFormatting.BOLD), this.font));
         header.addChild(new StringWidget(
-            Component.literal("§7配置边境之地相关参数"),
+            Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"),
             this.font
         ));
         this.layout.addToHeader(header);
@@ -148,6 +148,11 @@ public class WorldMainSettingScreen extends Screen {
             () -> this.configData.forceSkyGrid,
             val -> this.configData.forceSkyGrid = val
         ).withInfo(Component.literal("即使插值前的密度值被限制，也强制生成天空网格"));
+        skyGridBuilder.addSwitch(
+            Component.literal("渐进式边境之地"),
+            () -> this.configData.progressiveFarlands,
+            val -> this.configData.progressiveFarlands = val
+        ).withInfo(Component.literal("强制让自实现的 lerp 方法返回 start，不再进行原计算"));
         this.scrollContent.addChild(skyGridBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第二组：世界边界设置 ==========
@@ -362,6 +367,7 @@ public class WorldMainSettingScreen extends Screen {
         public int stripeLandsDistance = 16777216;
         public boolean enableSkyGrid = false;
         public boolean forceSkyGrid = false;
+        public boolean progressiveFarlands = false;
         public boolean removeWorldBorder = true;
         public boolean removeWorldBoundary = true;
         public boolean removeCoordinateLimits = true;

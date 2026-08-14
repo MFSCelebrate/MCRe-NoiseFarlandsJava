@@ -171,7 +171,15 @@ jobs:
           path: 26.2-Permanent.jar
           if-no-files-found: error
 
-      # ========== 新增：构建摘要 ==========
+      # ===== 新增：上传版本 JSON 元数据 =====
+      - name: 上传版本 JSON 元数据
+        uses: actions/upload-artifact@v4
+        with:
+          name: MinecraftVersionJson
+          path: MinecraftVersionJson/26.2/26.2-Permanent.json
+          if-no-files-found: error
+
+      # ========== 构建摘要 ==========
       - name: 生成构建摘要
         if: always()
         run: |
@@ -254,11 +262,18 @@ jobs:
             由于该改版目前主要更改均在单一分支测试，极少时会在其他分支进行测试，所以每次的构建产物均会上传到这里来 ~~(懒得进行分离发布了)~~
             
             ### 🚅 快速下载
-            可能 Github 原生的下载速度过慢，需要快速下载的请点击 [这里](https://v6.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.jar)
+            可能 Github 原生的下载速度过慢，需要快速下载的请点击下面的链接
+            - [这里下载 26.2-Permanent.jar](https://v6.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.jar)
+            - [这里下载 26.2-Permanent.json](https://v6.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.json)
+            
+            - CDN 线路: 
+               - [26.2-Permanent.jar](https://cdn.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.jar)
+               - [26.2-Permanent.json](https://cdn.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.json)
           files: |
             artifacts/26.2-Permanent.jar
+            artifacts/26.2-Permanent.json
 
-      # ========== 新增：发布摘要 ==========
+      # ========== 发布摘要 ==========
       - name: 生成发布摘要
         if: always()
         run: |
@@ -277,6 +292,11 @@ jobs:
             echo "> 可以在 [Releases](https://github.com/${{ github.repository }}/releases/tag/nightly) 页面下载" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **发布产物**: 未找到 `26.2-Permanent.jar`，发布可能失败" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "artifacts/26.2-Permanent.json" ]; then
+            echo "- 📄 **版本元数据**: `26.2-Permanent.json` 已同步上传" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **版本元数据**: 未找到 `26.2-Permanent.json`，请检查构建步骤" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ⏱️ 运行信息" >> $GITHUB_STEP_SUMMARY
