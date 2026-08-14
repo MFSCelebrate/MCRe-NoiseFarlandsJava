@@ -11,7 +11,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.entity.EntityAccess;
 import net.MinecraftTools.Math._256Bit.Int256;
-import net.MinecraftTools.Math._256Bit.utils.Vec3d256;
+import net.MinecraftTools.Math._256Bit.util.Vec3d256;
 
 /**
  * SectionPos — 区块节坐标（MCRe NoiseFarlands 对象化版）

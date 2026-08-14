@@ -1,4 +1,4 @@
-package net.MinecraftTools.Math._256Bit.utils;
+package net.MinecraftTools.Math._256Bit.util;
 
 import java.util.Locale;
 import java.util.UUID;

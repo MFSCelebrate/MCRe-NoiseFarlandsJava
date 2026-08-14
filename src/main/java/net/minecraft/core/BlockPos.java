@@ -27,7 +27,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.MinecraftTools.Math._256Bit.Int256;
-import net.MinecraftTools.Math._256Bit.utils.Vec3d256;
+import net.MinecraftTools.Math._256Bit.util.Vec3d256;
 import org.apache.commons.lang3.Validate;
 
 /**
