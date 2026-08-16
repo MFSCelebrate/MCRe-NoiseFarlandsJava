@@ -569,7 +569,7 @@ public final class DensityFunctions {
             int chunkZ = sectionZ / 2;
             int subSectionX = sectionX % 2;
             int subSectionZ = sectionZ % 2;
-            float newDoffs;
+            float doffs;
             if (fixEndRingMode()) {
                 doffs = 100.0F - Mth.sqrt((float) sectionX * (float) sectionX + (float) sectionZ * (float) sectionZ) * 8.0F;
             } else {
