@@ -3,6 +3,6 @@
 （原始 Minecraft 代码版权归 Mojang Studios 所有，遵循其最终用户许可协议 EULA。）
 
 **查看项目完整协议文件**：  
-- [项目协议 (LICENSE)](https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/blob/main/LICENSE)  
+- [项目协议 (LICENSE)](https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/blob/26.2-Permanent/LICENSE)  
 
 > ⚠️ **注意**：本 Wiki 页面内容与项目修改代码采用相同协议，但原版 Minecraft 资源及反编译代码仍归 Mojang 所有。
