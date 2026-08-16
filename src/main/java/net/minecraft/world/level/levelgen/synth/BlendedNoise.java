@@ -16,18 +16,20 @@ import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 
 public class BlendedNoise implements DensityFunction.SimpleFunction {
-    private static final Codec<Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+    private static final Codec<
+            Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     private static final MapCodec<BlendedNoise> DATA_CODEC = RecordCodecBuilder.mapCodec(
-        i -> i.group(
-                SCALE_RANGE.fieldOf("xz_scale").forGetter(n -> n.xzScale),
-                SCALE_RANGE.fieldOf("y_scale").forGetter(n -> n.yScale),
-                SCALE_RANGE.fieldOf("xz_factor").forGetter(n -> n.xzFactor),
-                SCALE_RANGE.fieldOf("y_factor").forGetter(n -> n.yFactor),
-                Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("smear_scale_multiplier").forGetter(n -> n.smearScaleMultiplier)
+            i -> i.group(
+                    SCALE_RANGE.fieldOf("xz_scale").forGetter(n -> n.xzScale),
+                    SCALE_RANGE.fieldOf("y_scale").forGetter(n -> n.yScale),
+                    SCALE_RANGE.fieldOf("xz_factor").forGetter(n -> n.xzFactor),
+                    SCALE_RANGE.fieldOf("y_factor").forGetter(n -> n.yFactor),
+                    Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("smear_scale_multiplier").forGetter(n -> n.smearScaleMultiplier)
             )
-            .apply(i, BlendedNoise::createUnseeded)
+                    .apply(i, BlendedNoise::createUnseeded)
     );
-    public static final KeyDispatchDataCodec<BlendedNoise> CODEC = KeyDispatchDataCodec.of(DATA_CODEC);
+    public static final KeyDispatchDataCodec<
+            BlendedNoise> CODEC = KeyDispatchDataCodec.of(DATA_CODEC);
     private final PerlinNoise minLimitNoise;
     private final PerlinNoise maxLimitNoise;
     private final PerlinNoise mainNoise;
@@ -53,8 +55,8 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
     /** 创建 Exp 4 专用 Limit Noise：-15~-6 振幅 1.0，-5~0 振幅 0 */
     private static PerlinNoise createLimitNoiseExp4(RandomSource random) {
         it.unimi.dsi.fastutil.doubles.DoubleArrayList amplitudes = new it.unimi.dsi.fastutil.doubles.DoubleArrayList(new double[16]);
-        for (int i = 0; i < 10; i++) amplitudes.set(i, 1.0);   // -15 ~ -6
-        for (int i = 10; i < 16; i++) amplitudes.set(i, 0.0);  // -5 ~ 0
+        for (int i = 0; i < 10; i++) amplitudes.set(i, 1.0); // -15 ~ -6
+        for (int i = 10; i < 16; i++) amplitudes.set(i, 0.0); // -5 ~ 0
         return new PerlinNoise(random, Pair.of(-15, amplitudes), true);
     }
 
@@ -93,11 +95,11 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         double actualXzScale = exp4 ? 1.0 : xzScale;
 
         this(
-            exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
-            exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
-            exp4 ? PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0))
-                 : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0)),
-            actualXzScale, yScale, xzFactor, yFactor, smearScaleMultiplier
+        exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
+        exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
+        exp4 ? PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0))
+                : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0)),
+        actualXzScale, yScale, xzFactor, yFactor, smearScaleMultiplier
         );
     }
 
@@ -121,13 +123,14 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         boolean optimizeLoop = true;
         double pow = 1.0;
 
-        // mainNoise：走 PerlinNoise.getValue()
+        // mainNoise 循环
         for (int i = 0; i < 8; i++) {
             ImprovedNoise noise = this.mainNoise.getOctaveNoise(i);
             if (noise != null) {
-                mainNoiseValue += noise.noise(
-                        PerlinNoise.wrap(mainX * pow), PerlinNoise.wrap(mainY * pow), PerlinNoise.wrap(mainZ * pow), mainSmear * pow, mainY * pow
-                    ) / pow;
+                mainNoiseValue +=
+                        noise.noise(
+                                        PerlinNoise.wrap(mainX * pow), PerlinNoise.wrap(mainY * pow), PerlinNoise.wrap(mainZ * pow), mainSmear * pow, mainY * pow
+                                ) / pow;
             }
             pow /= 2.0;
         }
@@ -135,11 +138,9 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         double factor = (mainNoiseValue / 10.0 + 1.0) / 2.0;
         boolean isMax = factor >= 1.0;
         boolean isMin = factor <= 0.0;
-        double pow = 1.0;
+        pow = 1.0; // 👈 重置 pow，不要重新声明 double
 
-        // limit noise：纯原版逻辑，依赖 limit noise 自身的振幅数组
-        // Exp4 模式下：limit noise 已在构造函数里设置为 -15~-6 振幅1，-5~0 振幅0
-        // 最高有振幅八度是 i=9 (octave -9)，pow=1/512，自然产生 16 亿远地
+        // limit noise 循环：纯原版逻辑
         for (int i = 0; i < 16; i++) {
             double wx = PerlinNoise.wrap(limitX * pow);
             double wy = PerlinNoise.wrap(limitY * pow);
@@ -206,8 +207,8 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
                         8.555150000000001,
                         4.277575000000001
                 )
-            )
-            .append('}');
+        )
+                .append('}');
     }
 
     @Override
