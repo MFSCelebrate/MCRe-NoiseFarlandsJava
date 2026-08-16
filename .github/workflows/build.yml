@@ -67,7 +67,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
-  build-Minecraft:
+  build:
+    name: Build Minecraft 26.2
     runs-on: ubuntu-24.04
     outputs:
       enable_nightly: ${{ steps.read_config.outputs.enable_nightly }}
@@ -176,7 +177,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MinecraftVersionJson
-          path: MinecraftVersionJson/26.2/26.2-Permanent.json
+          path: MainProjectCatalogue/MinecraftVersionJson/26.2/26.2-Permanent.json
           if-no-files-found: error
 
       # ========== 构建摘要 ==========
@@ -216,7 +217,8 @@ jobs:
           echo "- **提交**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
 
   release:
-    needs: build-Minecraft
+    needs: build
+    name: Release the Beta Version
     if: needs.build-Minecraft.outputs.enable_nightly == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -308,3 +310,44 @@ jobs:
         uses: geekyeggo/delete-artifact@v5
         with:
           name: build-*
+  # 同步 Wiki 的任务
+  sync-wiki:
+    name: Upload Wiki File
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4  # 检出主仓库代码
+
+      - uses: Andrew-Chen-Wang/github-wiki-action@v4  # 同步到 Wiki
+        with:
+          path: MainProjectCatalogue/GithubWiki
+
+      # ========== Wiki 同步摘要 ==========
+      - name: 生成 Wiki 同步摘要
+        if: always()  # 无论同步成功与否都生成摘要（便于排查问题）
+        run: |
+          echo "## 📚 Wiki 同步摘要" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+        
+          echo "### ✅ 同步状态" >> $GITHUB_STEP_SUMMARY
+          if [ $? -eq 0 ]; then
+            echo "- **状态**: 成功 🎉" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **状态**: 失败 ❌" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- **源文件夹**: \`MainProjectCatalogue/GithubWiki\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **目标 Wiki 仓库**: \`${{ github.repository }}.wiki.git\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **触发提交**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+        
+          echo "### 📄 同步的文件列表" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ls -la MainProjectCatalogue/GithubWiki/ 2>/dev/null || echo "（文件夹不存在或为空）" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 🔗 访问 Wiki" >> $GITHUB_STEP_SUMMARY
+          echo "> 本次同步已将源文件夹内容推送至 Wiki 仓库，可在 [Wiki 页面](https://github.com/${{ github.repository }}/wiki) 立即查看。" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> 若 Wiki 页面未及时更新，请手动刷新或稍等片刻（GitHub 缓存约 1~2 分钟）。" >> $GITHUB_STEP_SUMMARY

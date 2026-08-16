@@ -17,7 +17,7 @@ import org.jspecify.annotations.Nullable;
 
 @OnlyIn(Dist.CLIENT)
 public class Tooltip implements NarrationSupplier {
-    private static final int MAX_WIDTH = 170;
+    private static final int MAX_WIDTH = 1024;
     private final Component message;
     private @Nullable List<FormattedCharSequence> cachedTooltip;
     private @Nullable Language splitWithLanguage;
