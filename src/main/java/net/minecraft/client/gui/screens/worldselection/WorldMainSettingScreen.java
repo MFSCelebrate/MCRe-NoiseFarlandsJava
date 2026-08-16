@@ -207,6 +207,8 @@ public class WorldMainSettingScreen extends Screen {
                         Component.literal("边境之地位置"),
                         (button, val) -> this.configData.precisionMode = val
                 );
+        // 添加这一行：将 precisionModeButton 添加到滚动内容中
+        this.scrollContent.addChild(precisionModeButton, s -> s.paddingHorizontal(2));
 
         CycleButton<String> farlandsStyleButton = CycleButton.builder(
                 mode -> switch (mode) {
@@ -374,17 +376,17 @@ public class WorldMainSettingScreen extends Screen {
         public boolean progressiveFarlands = false;
         public boolean fixChunkOutOfBounds = true;
         public boolean fixAverageFunctionOverFlow = true;
-        
+
         public String precisionMode = "32bit";
         public String farlandsStyle = "Java-1.18.2+";
-        
+
         public boolean fixEndRings = false;
         public boolean fixFloatOverFlowCrash = true;
         public boolean expandDatapackValueRange = true;
         public boolean expandNoiseValueRetrievalLimit = true;
         public boolean allowIllegalValuePlayerPosition = true;
         public boolean simulatedWraparoundOverflow = false;
-        
+
         public boolean disabledStructureSpawn = false;
 
         /** 当前活动的 FarLands 配置，由 WorldMainSettingScreen.onDone() 写入 */
