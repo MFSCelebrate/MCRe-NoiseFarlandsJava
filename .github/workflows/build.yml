@@ -219,7 +219,7 @@ jobs:
   release:
     needs: build
     name: Release the Beta Version
-    if: needs.build-Minecraft.outputs.enable_nightly == 'true'
+    if: needs.build.outputs.enable_nightly == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
