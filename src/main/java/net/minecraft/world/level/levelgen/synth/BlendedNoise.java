@@ -54,9 +54,10 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
 
     /** 创建 Exp 4 专用 Limit Noise：-15~-6 振幅 1.0，-5~0 振幅 0 */
     private static PerlinNoise createLimitNoiseExp4(RandomSource random) {
-        it.unimi.dsi.fastutil.doubles.DoubleArrayList amplitudes = new it.unimi.dsi.fastutil.doubles.DoubleArrayList(new double[16]);
-        for (int i = 0; i < 10; i++) amplitudes.set(i, 1.0); // -15 ~ -6
-        for (int i = 10; i < 16; i++) amplitudes.set(i, 0.0); // -5 ~ 0
+        DoubleArrayList amplitudes = new DoubleArrayList(new double[16]);
+        // 只有 -15 ~ -9 (索引 0-6) 有振幅 1.0
+        for (int i = 0; i < 7; i++) amplitudes.set(i, 1.0); // -15 ~ -9
+        for (int i = 7; i < 16; i++) amplitudes.set(i, 0.0); // -8 ~ 0
         return new PerlinNoise(random, Pair.of(-15, amplitudes), true);
     }
 
