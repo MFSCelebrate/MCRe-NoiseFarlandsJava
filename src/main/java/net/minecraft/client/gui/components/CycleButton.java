@@ -20,12 +20,14 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.gui.components.Tooltip;
 import org.jspecify.annotations.Nullable;
 
 @OnlyIn(Dist.CLIENT)
 public class CycleButton<T> extends AbstractButton implements ResettableOptionWidget {
     public static final BooleanSupplier DEFAULT_ALT_LIST_SELECTOR = () -> Minecraft.getInstance().hasAltDown();
-    private static final List<Boolean> BOOLEAN_OPTIONS = ImmutableList.of(Boolean.TRUE, Boolean.FALSE);
+    private static final List<
+            Boolean> BOOLEAN_OPTIONS = ImmutableList.of(Boolean.TRUE, Boolean.FALSE);
     private final Supplier<T> defaultValueSupplier;
     private final Component name;
     private int index;
@@ -39,23 +41,22 @@ public class CycleButton<T> extends AbstractButton implements ResettableOptionWi
     private final CycleButton.SpriteSupplier<T> spriteSupplier;
 
     private CycleButton(
-        final int x,
-        final int y,
-        final int width,
-        final int height,
-        final Component message,
-        final Component name,
-        final int index,
-        final T value,
-        final Supplier<T> defaultValueSupplier,
-        final CycleButton.ValueListSupplier<T> values,
-        final Function<T, Component> valueStringifier,
-        final Function<CycleButton<T>, MutableComponent> narrationProvider,
-        final CycleButton.OnValueChange<T> onValueChange,
-        final OptionInstance.TooltipSupplier<T> tooltipSupplier,
-        final CycleButton.DisplayState displayState,
-        final CycleButton.SpriteSupplier<T> spriteSupplier
-    ) {
+            final int x,
+            final int y,
+            final int width,
+            final int height,
+            final Component message,
+            final Component name,
+            final int index,
+            final T value,
+            final Supplier<T> defaultValueSupplier,
+            final CycleButton.ValueListSupplier<T> values,
+            final Function<T, Component> valueStringifier,
+            final Function<CycleButton<T>, MutableComponent> narrationProvider,
+            final CycleButton.OnValueChange<T> onValueChange,
+            final OptionInstance.TooltipSupplier<T> tooltipSupplier,
+            final CycleButton.DisplayState displayState,
+            final CycleButton.SpriteSupplier<T> spriteSupplier) {
         super(x, y, width, height, message);
         this.name = name;
         this.index = index;
@@ -179,21 +180,24 @@ public class CycleButton<T> extends AbstractButton implements ResettableOptionWi
         return wrapDefaultNarrationMessage(this.displayState == CycleButton.DisplayState.VALUE ? this.createFullName(this.value) : this.getMessage());
     }
 
-    public static <T> CycleButton.Builder<T> builder(final Function<T, Component> valueStringifier, final Supplier<T> defaultValueSupplier) {
+    public static <T> CycleButton.Builder<T> builder(final Function<
+                    T, Component> valueStringifier, final Supplier<T> defaultValueSupplier) {
         return new CycleButton.Builder<>(valueStringifier, defaultValueSupplier);
     }
 
-    public static <T> CycleButton.Builder<T> builder(final Function<T, Component> valueStringifier, final T defaultValue) {
+    public static <T> CycleButton.Builder<T> builder(final Function<
+                    T, Component> valueStringifier, final T defaultValue) {
         return new CycleButton.Builder<>(valueStringifier, () -> defaultValue);
     }
 
-    public static CycleButton.Builder<Boolean> booleanBuilder(final Component trueText, final Component falseText, final boolean defaultValue) {
+    public static CycleButton.Builder<
+                    Boolean> booleanBuilder(final Component trueText, final Component falseText, final boolean defaultValue) {
         return new CycleButton.Builder<>(b -> b == Boolean.TRUE ? trueText : falseText, () -> defaultValue).withValues(BOOLEAN_OPTIONS);
     }
 
     public static CycleButton.Builder<Boolean> onOffBuilder(final boolean initialValue) {
         return new CycleButton.Builder<>(b -> b == Boolean.TRUE ? CommonComponents.OPTION_ON : CommonComponents.OPTION_OFF, () -> initialValue)
-            .withValues(BOOLEAN_OPTIONS);
+                .withValues(BOOLEAN_OPTIONS);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -202,11 +206,14 @@ public class CycleButton<T> extends AbstractButton implements ResettableOptionWi
         private final Function<T, Component> valueStringifier;
         private OptionInstance.TooltipSupplier<T> tooltipSupplier = value -> null;
         private CycleButton.SpriteSupplier<T> spriteSupplier = (button, value) -> null;
-        private Function<CycleButton<T>, MutableComponent> narrationProvider = CycleButton::createDefaultNarrationMessage;
-        private CycleButton.ValueListSupplier<T> values = CycleButton.ValueListSupplier.create(ImmutableList.of());
+        private Function<CycleButton<T>, MutableComponent> narrationProvider = CycleButton
+                ::createDefaultNarrationMessage;
+        private CycleButton.ValueListSupplier<
+                T> values = CycleButton.ValueListSupplier.create(ImmutableList.of());
         private CycleButton.DisplayState displayState = CycleButton.DisplayState.NAME_AND_VALUE;
 
-        public Builder(final Function<T, Component> valueStringifier, final Supplier<T> defaultValueSupplier) {
+        public Builder(final Function<T, Component> valueStringifier, final Supplier<
+                        T> defaultValueSupplier) {
             this.valueStringifier = valueStringifier;
             this.defaultValueSupplier = defaultValueSupplier;
         }
@@ -224,27 +231,41 @@ public class CycleButton<T> extends AbstractButton implements ResettableOptionWi
             return this.withValues(CycleButton.ValueListSupplier.create(CycleButton.DEFAULT_ALT_LIST_SELECTOR, values, altValues));
         }
 
-        public CycleButton.Builder<T> withValues(final BooleanSupplier altCondition, final List<T> values, final List<T> altValues) {
+        public CycleButton.Builder<T> withValues(final BooleanSupplier altCondition, final List<
+                        T> values, final List<T> altValues) {
             return this.withValues(CycleButton.ValueListSupplier.create(altCondition, values, altValues));
         }
 
-        public CycleButton.Builder<T> withValues(final CycleButton.ValueListSupplier<T> valueListSupplier) {
+        public CycleButton.Builder<T> withValues(final CycleButton.ValueListSupplier<
+                        T> valueListSupplier) {
             this.values = valueListSupplier;
             return this;
         }
 
-        public CycleButton.Builder<T> withTooltip(final OptionInstance.TooltipSupplier<T> tooltipSupplier) {
+        public CycleButton.Builder<T> withTooltip(final OptionInstance.TooltipSupplier<
+                        T> tooltipSupplier) {
             this.tooltipSupplier = tooltipSupplier;
             return this;
         }
 
-        public CycleButton.Builder<T> withCustomNarration(final Function<CycleButton<T>, MutableComponent> narrationProvider) {
+        public CycleButton.Builder<T> withCustomNarration(final Function<
+                        CycleButton<T>, MutableComponent> narrationProvider) {
             this.narrationProvider = narrationProvider;
             return this;
         }
 
-        public CycleButton.Builder<T> withSprite(final CycleButton.SpriteSupplier<T> spriteSupplier) {
+        public CycleButton.Builder<T> withSprite(final CycleButton.SpriteSupplier<
+                        T> spriteSupplier) {
             this.spriteSupplier = spriteSupplier;
+            return this;
+        }
+
+        public CycleButton.Builder<T> withInfo(Component info) {
+            this.withTooltip(value -> Tooltip.create(info));
+            this.withCustomNarration(button -> {
+                MutableComponent base = button.createDefaultNarrationMessage();
+                return CommonComponents.joinForNarration(base, info);
+            });
             return this;
         }
 
@@ -257,17 +278,19 @@ public class CycleButton<T> extends AbstractButton implements ResettableOptionWi
             return this.displayState(CycleButton.DisplayState.VALUE);
         }
 
-        public CycleButton<T> create(final Component name, final CycleButton.OnValueChange<T> valueChangeListener) {
+        public CycleButton<T> create(final Component name, final CycleButton.OnValueChange<
+                        T> valueChangeListener) {
             return this.create(0, 0, 150, 20, name, valueChangeListener);
         }
 
-        public CycleButton<T> create(final int x, final int y, final int width, final int height, final Component name) {
+        public CycleButton<
+                        T> create(final int x, final int y, final int width, final int height, final Component name) {
             return this.create(x, y, width, height, name, (button, value) -> {});
         }
 
         public CycleButton<T> create(
-            final int x, final int y, final int width, final int height, final Component name, final CycleButton.OnValueChange<T> valueChangeListener
-        ) {
+                final int x, final int y, final int width, final int height, final Component name, final CycleButton.OnValueChange<
+                        T> valueChangeListener) {
             List<T> values = this.values.getDefaultList();
             if (values.isEmpty()) {
                 throw new IllegalStateException("No values for cycle button");
@@ -278,22 +301,22 @@ public class CycleButton<T> extends AbstractButton implements ResettableOptionWi
             Component valueText = this.valueStringifier.apply(initialValue);
             Component initialTitle = this.displayState == CycleButton.DisplayState.VALUE ? valueText : CommonComponents.optionNameValue(name, valueText);
             return new CycleButton<>(
-                x,
-                y,
-                width,
-                height,
-                initialTitle,
-                name,
-                initialIndex,
-                initialValue,
-                this.defaultValueSupplier,
-                this.values,
-                this.valueStringifier,
-                this.narrationProvider,
-                valueChangeListener,
-                this.tooltipSupplier,
-                this.displayState,
-                this.spriteSupplier
+            x,
+            y,
+            width,
+            height,
+            initialTitle,
+            name,
+            initialIndex,
+            initialValue,
+            this.defaultValueSupplier,
+            this.values,
+            this.valueStringifier,
+            this.narrationProvider,
+            valueChangeListener,
+            this.tooltipSupplier,
+            this.displayState,
+            this.spriteSupplier
             );
         }
     }
@@ -338,7 +361,9 @@ public class CycleButton<T> extends AbstractButton implements ResettableOptionWi
             };
         }
 
-        static <T> CycleButton.ValueListSupplier<T> create(final BooleanSupplier altSelector, final List<T> defaultList, final List<T> altList) {
+        static <T> CycleButton.ValueListSupplier<
+                        T> create(final BooleanSupplier altSelector, final List<
+                        T> defaultList, final List<T> altList) {
             final List<T> defaultCopy = ImmutableList.copyOf(defaultList);
             final List<T> altCopy = ImmutableList.copyOf(altList);
             return new CycleButton.ValueListSupplier<T>() {

@@ -1099,7 +1099,7 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
         error |= MenuScreens.selfTest();
         error |= EntityRenderers.validateRegistrations();
         if (error) {
-            LOGGER.WARN("Although your game data has been corrupted, But MCRe NoiseFarlandsJava has disabled the SelfTest method");
+            LOGGER.warn("Although your game data has been corrupted, But MCRe NoiseFarlandsJava has disabled the SelfTest method");
         }
     }
 

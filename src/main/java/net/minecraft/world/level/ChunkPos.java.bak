@@ -11,7 +11,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.util.Mth;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.level.chunk.status.ChunkPyramid;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Util;
 import net.MinecraftTools.Math._256Bit.Int256;

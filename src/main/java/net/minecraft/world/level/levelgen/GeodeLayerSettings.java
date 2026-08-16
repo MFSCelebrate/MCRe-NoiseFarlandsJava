@@ -22,7 +22,7 @@ public class GeodeLayerSettings {
 
     // 当配置改变时，外部调用此方法刷新 Codec
     public static void refreshCodec() {
-        NOISE_VALUE_CODEC = createCodec();
+        LAYER_RANGE = createCodec();
     }
     public static final Codec<GeodeLayerSettings> CODEC = RecordCodecBuilder.create(
         i -> i.group(

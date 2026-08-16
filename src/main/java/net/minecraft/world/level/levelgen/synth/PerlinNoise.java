@@ -60,8 +60,9 @@ public class PerlinNoise {
     }
 
     public static PerlinNoise create(final RandomSource random, final int firstOctave, final double firstAmplitude, final double amplitudes) {
-        DoubleArrayList amplitudeList = new DoubleArrayList(amplitudes);
-        amplitudeList.add(0, firstAmplitude);
+        DoubleArrayList amplitudeList = new DoubleArrayList();
+        amplitudeList.add(firstAmplitude);
+        amplitudeList.add(amplitudes);
         return new PerlinNoise(random, Pair.of(firstOctave, amplitudeList), true);
     }
 

@@ -137,7 +137,7 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
 
             // 🎯 Exp 4 模式：让第一个有振幅的八度(i=6)表现得像 i=9 (pow=1/512)
             // 即在第 0 轮就预先除以 8 (2^3)，后续自然 /2 到 i=6 时变 1/512
-            if (is1_18Exp4Mode) {
+            if (is1_18Exp4Mode()) {
                 currentPow /= 8.0; // 等效于让 i=0 时 pow=1/8，i=6 时 pow=1/512
             }
 

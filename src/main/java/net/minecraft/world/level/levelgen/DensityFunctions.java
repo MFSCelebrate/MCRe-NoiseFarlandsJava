@@ -25,6 +25,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.util.VisibleForDebug;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.MathUtil;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import net.minecraft.world.level.dimension.DimensionType;
@@ -568,7 +569,12 @@ public final class DensityFunctions {
             int chunkZ = sectionZ / 2;
             int subSectionX = sectionX % 2;
             int subSectionZ = sectionZ % 2;
-            float doffs = 100.0F - Mth.sqrt(sectionX * sectionX + sectionZ * sectionZ) * 8.0F;
+            float newDoffs;
+            if (fixEndRingMode()) {
+                doffs = 100.0F - Mth.sqrt((float) sectionX * (float) sectionX + (float) sectionZ * (float) sectionZ) * 8.0F;
+            } else {
+                doffs = 100.0F - Mth.sqrt(sectionX * sectionX + sectionZ * sectionZ) * 8.0F;
+            }
             doffs = Mth.clamp(doffs, -100.0F, 80.0F);
 
             for (int xo = -12; xo <= 12; xo++) {
@@ -580,12 +586,7 @@ public final class DensityFunctions {
                         float xd = subSectionX - xo * 2;
                         float zd = subSectionZ - zo * 2;
                         BlockPos.MutableBlockPos blockPos;
-                        float newDoffs;
-                        if (fixEndRingMode) {
-                            newDoffs = 100.0F - (float) Mth.sqrt((double) xd * (double) xd + (double) zd * (double) zd) * islandSize;
-                        } else {
-                            newDoffs = 100.0F - Mth.sqrt(xd * xd + zd * zd) * islandSize;
-                        }
+                        float newDoffs = 100.0F - Mth.sqrt(xd * xd + zd * zd) * islandSize;
                         newDoffs = Mth.clamp(newDoffs, -100.0F, 80.0F);
                         doffs = Math.max(doffs, newDoffs);
                     }
