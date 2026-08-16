@@ -23,8 +23,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * 🔥 MCRe NoiseFarlands —— 世界主要设置界面
  *
- * <p>将 FarLandsTraveler 模组的所有配置项移植到世界创建流程中，
- * 允许玩家在创建世界时直接配置边境之地相关参数。</p>
+ * <p>将 FarLandsTraveler 模组的所有配置项移植到世界创建流程中， 允许玩家在创建世界时直接配置边境之地相关参数。
  *
  * @author MCRe Ultimate Scaler
  * @since 2026-08-04
@@ -63,8 +62,8 @@ public class WorldMainSettingScreen extends Screen {
         header.defaultCellSetting().alignHorizontallyCenter();
         header.addChild(new StringWidget(this.title.copy().withStyle(ChatFormatting.BOLD), this.font));
         header.addChild(new StringWidget(
-            Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"),
-            this.font
+        Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"),
+        this.font
         ));
         this.layout.addToHeader(header);
 
@@ -77,12 +76,12 @@ public class WorldMainSettingScreen extends Screen {
         // 底部按钮
         LinearLayout footer = this.layout.addToFooter(LinearLayout.horizontal().spacing(8));
         footer.addChild(Button.builder(
-            Component.literal("完成"),
-            button -> this.onDone()
+                Component.literal("完成"),
+                button -> this.onDone()
         ).build());
         footer.addChild(Button.builder(
-            Component.literal("取消"),
-            button -> this.onClose()
+                Component.literal("取消"),
+                button -> this.onClose()
         ).build());
 
         // 统一注册所有组件
@@ -97,7 +96,7 @@ public class WorldMainSettingScreen extends Screen {
 
         // ========== 第一组：边境之地核心设置 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-            Component.literal("§6§l边境之地设置")
+                Component.literal("§6§l边境之地设置")
         ));
 
         // 1. 边境之地距离（输入框）
@@ -110,13 +109,14 @@ public class WorldMainSettingScreen extends Screen {
             try {
                 int parsed = Integer.parseInt(val.trim());
                 this.configData.farLandsDistance = Mth.clamp(parsed, 10000000, 33554432);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         });
         distanceRow.addChild(distanceInput);
         this.scrollContent.addChild(distanceRow, s -> s.paddingHorizontal(10));
         this.scrollContent.addChild(new StringWidget(
-            Component.literal("§7边境之地生成位置与世界原点的距离\n§7该设置用于各类机制的判定，不影响地形生成"),
-            this.font
+        Component.literal("§7边境之地生成位置与世界原点的距离\n§7该设置用于各类机制的判定，不影响地形生成"),
+        this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20));
 
         // 2. 条纹之地距离（输入框）
@@ -129,142 +129,146 @@ public class WorldMainSettingScreen extends Screen {
             try {
                 int parsed = Integer.parseInt(val.trim());
                 this.configData.stripeLandsDistance = parsed < 0 ? -1 : Mth.clamp(parsed, 0, 33554432);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         });
         stripeRow.addChild(stripeInput);
         this.scrollContent.addChild(stripeRow, s -> s.paddingHorizontal(10));
 
         // 3. 启用天空网格（开关）
         SwitchGrid.Builder skyGridBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
-            .withRowSpacing(4)
-            .withInfoUnderneath(2, true);
+                .withRowSpacing(4)
+                .withInfoUnderneath(2, true);
         skyGridBuilder.addSwitch(
-            Component.literal("启用天空网格"),
-            () -> this.configData.enableSkyGrid,
-            val -> this.configData.enableSkyGrid = val
+                Component.literal("启用天空网格"),
+                () -> this.configData.enableSkyGrid,
+                val -> this.configData.enableSkyGrid = val
         ).withInfo(Component.literal("使边缘之地生成天空网格而不是天空之桥"));
         skyGridBuilder.addSwitch(
-            Component.literal("强制生成天空网格"),
-            () -> this.configData.forceSkyGrid,
-            val -> this.configData.forceSkyGrid = val
+                Component.literal("强制生成天空网格"),
+                () -> this.configData.forceSkyGrid,
+                val -> this.configData.forceSkyGrid = val
         ).withInfo(Component.literal("即使插值前的密度值被限制，也强制生成天空网格"));
         skyGridBuilder.addSwitch(
-            Component.literal("渐进式边境之地"),
-            () -> this.configData.progressiveFarlands,
-            val -> this.configData.progressiveFarlands = val
+                Component.literal("渐进式边境之地"),
+                () -> this.configData.progressiveFarlands,
+                val -> this.configData.progressiveFarlands = val
         ).withInfo(Component.literal("强制让自实现的 lerp 方法返回 start，不再进行原计算"));
         this.scrollContent.addChild(skyGridBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
-        // ========== 第二组：世界边界设置 ==========
+        // ========== 第二组：修复类设置 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-            Component.literal("§6§l世界边界设置")
+                Component.literal("§6§l修复类设置")
         ));
 
         SwitchGrid.Builder borderBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20).withRowSpacing(4);
         borderBuilder.addSwitch(
-            Component.literal("移除世界边界"),
-            () -> this.configData.removeWorldBorder,
-            val -> this.configData.removeWorldBorder = val
-        ).withInfo(Component.literal("移除世界边界的蓝色力场"));
+                Component.literal("修复在 33552992 生成区块时的非法状态异常"),
+                () -> this.configData.fixChunkOutOfBounds,
+                val -> this.configData.fixChunkOutOfBounds = val
+        ).withInfo(Component.literal("从 1.21.2 开始，在 X/Z 超过 ±33552992 的位置生成区块时，会导致游戏崩溃。\n抛出的异常为：IllegalStateException(\"Trying to create chunk out of reasonable bounds: \" + pos)\n这很明显是人为限制。"));
         borderBuilder.addSwitch(
-            Component.literal("移除世界界限"),
-            () -> this.configData.removeWorldBoundary,
-            val -> this.configData.removeWorldBoundary = val
-        ).withInfo(Component.literal("移除x,z坐标30000000处的空气墙\n§c[警告]离开世界界限太远时将造成崩溃！！！"));
+                Component.literal("修复 MineshaftPieces 取平均值导致的 int 溢出崩溃"),
+                () -> this.configData.fixAverageFunctionOverFlow,
+                val -> this.configData.fixAverageFunctionOverFlow = val
+        ).withInfo(Component.literal("当原版的取平均值方法在尝试取 1073741824 以上的平均值时会崩溃\n开启这个设置会解决这个问题"));
         borderBuilder.addSwitch(
-            Component.literal("移除坐标限制"),
-            () -> this.configData.removeCoordinateLimits,
-            val -> this.configData.removeCoordinateLimits = val
-        ).withInfo(Component.literal("移除一切与坐标有关的限制，例如tp指令的坐标限制"));
+                Component.literal("修复末地环"),
+                () -> this.configData.fixEndRings,
+                val -> this.configData.fixEndRings = val
+        ).withInfo(Component.literal("修复在密度函数 getHeightValue 计算距离时导致的 NaN 非法值"));
+        borderBuilder.addSwitch(
+                Component.literal("修复 在Float精度丢失过大时生成除玩家外实体导致的崩溃"),
+                () -> this.configData.fixFloatOverFlowCrash,
+                val -> this.configData.fixFloatOverFlowCrash = val
+        ).withInfo(Component.literal("从某个版本开始，游戏生成的实体必定会强加载一次区块，由于 Float 精度丢失，导致强加载区块必定会崩溃，此设置会修复这个问题。"));
         this.scrollContent.addChild(borderBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第三组：精度系统 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-            Component.literal("§b§l精度系统")
+                Component.literal("§b§l边境之地位置与样式")
         ));
 
         CycleButton<String> precisionModeButton = CycleButton.builder(
                 mode -> switch (mode) {
-                    case "32bit" -> Component.literal("32 位");
-                    case "64bit" -> Component.literal("64 位");
-                    case "Bedrock" -> Component.literal("Bedrock");
-                    case "64bit-Bedrock" -> Component.literal("64bit-Bedrock");
+                    case "32bit" -> Component.literal("Beta");
+                    case "64bit" -> Component.literal("Vanilla");
+                    case "Release" -> Component.literal("Release");
+                    case "1.18-exp-32bit" -> Component.literal("1.18 Experimental Snapshot 4");
+                    case "1.18-exp-64bit" ->
+                            Component.literal("1.18 Experimental Snapshot 4 (64bit Ver)");
                     default -> Component.literal(mode);
                 },
                 "32bit"
-            )
-            .withValues("32bit", "64bit", "Bedrock", "64bit-Bedrock")
-            .create(0, 0, CONTENT_WIDTH - 20, 20,
-                Component.literal("精度模式"),
-                (button, val) -> this.configData.precisionMode = val
-            );
-        this.scrollContent.addChild(precisionModeButton, s -> s.paddingHorizontal(10));
+        )
+                .withInfo(Component.literal("§e控制边境之地的位置\n§fBeta: ±12550821\nVanilla: 2^88/171.103\nRelease: 2^63/171.103\n1.18 Experimental Snapshot 4: 1606505088\n\n§eBeta 属于 infdev 20100327~beta 1.7.3之间的边境之地距离配置\n§eVanilla 属于1.18.2+后边境之地后的距离配置\n§eRelease 属于beta 1.8.1~1.13.2 的边境之地距离配置\n§e1.18 Experimental Snapshot 4: 包含64bit Ver版本，都是只在实验性快照出现的边境之地距离配置"))
+                .withValues("32bit", "64bit", "Release", "1.18-exp-32bit", "1.18-exp-64bit")
+                .create(0, 0, CONTENT_WIDTH - 20, 20,
+                        Component.literal("边境之地位置"),
+                        (button, val) -> this.configData.precisionMode = val
+                );
+
+        CycleButton<String> farlandsStyleButton = CycleButton.builder(
+                mode -> switch (mode) {
+                    case "Java-1.18.2+" -> Component.literal("Java Edition 1.18.2+");
+                    case "Bedrock-Edition" -> Component.literal("Bedrock Edition 1.17.20+");
+                    default -> Component.literal(mode);
+                },
+                "Java-1.18.2+"
+        )
+                .withInfo(Component.literal("§e控制边境之地的样式\n§fJava 1.18.2+: 类似高原地形，从溢出开始形成巨大高墙\nBedrock Edition: 模拟基岩版1.17.20之后的边境之地"))
+                .withValues("Java-1.18.2+", "Bedrock-Edition")
+                .create(0, 0, CONTENT_WIDTH - 20, 20,
+                        Component.literal("边境之地样式"),
+                        (button, val) -> this.configData.farlandsStyle = val
+                );
+        this.scrollContent.addChild(farlandsStyleButton, s -> s.paddingHorizontal(10));
         this.scrollContent.addChild(new StringWidget(
-            Component.literal("§7选择坐标精度等级：32位（经典边境之地）、64位（中期改造）、基岩版边境之地 (Float计算)以及基岩版边境之地的64位变种"),
-            this.font
+        Component.literal("§7用于控制边境之地位置和样式"),
+        this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20).paddingBottom(4));
 
         // ========== 第四组：假区块设置 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-            Component.literal("§d§l假区块设置")
+                Component.literal("§d§l扩展设置")
         ));
 
         SwitchGrid.Builder fcBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
-            .withRowSpacing(3)
-            .withInfoUnderneath(2, false);
+                .withRowSpacing(3)
+                .withInfoUnderneath(2, false);
         fcBuilder.addSwitch(
-            Component.literal("禁用假区块中的方块碰撞"),
-            () -> this.configData.fcDisableBlockCollision,
-            val -> this.configData.fcDisableBlockCollision = val
-        ).withInfo(Component.literal("禁用假区块中的方块碰撞\n除非实体免疫假区块"));
+                Component.literal("扩展数据包密度函数字面量限制"),
+                () -> this.configData.expandDatapackValueRange,
+                val -> this.configData.expandDatapackValueRange = val
+        ).withInfo(Component.literal("由于原版的密度函数插值限制在 [-1000000 ~ 1000000] 之间，这意味着不能加载超过这个限制的数据包\n(例如 1.18.1 边境之地数据包)\n开启这个设置将把 NOISE_VALUE_CODEC 扩展到正负无限之间来解决这个问题"));
         fcBuilder.addSwitch(
-            Component.literal("禁用假区块中的方块效果"),
-            () -> this.configData.fcDisableBlockEffect,
-            val -> this.configData.fcDisableBlockEffect = val
-        ).withInfo(Component.literal("禁用假区块中的方块对实体的效果（如火焰、仙人掌的伤害）\n除非实体免疫假区块"));
+                Component.literal("扩展部分噪声取值限制"),
+                () -> this.configData.expandNoiseValueRetrievalLimit,
+                val -> this.configData.expandNoiseValueRetrievalLimit = val
+        ).withInfo(Component.literal("原版的部分噪声具有取值限制，这些限制将噪声取值到了一个极小的范围内\n开启这个设置将解除这个限制"));
         fcBuilder.addSwitch(
-            Component.literal("禁用假区块中的流体碰撞"),
-            () -> this.configData.fcDisableFluidCollision,
-            val -> this.configData.fcDisableFluidCollision = val
-        ).withInfo(Component.literal("禁用假区块中的流体碰撞\n除非实体免疫假区块"));
+                Component.literal("允许玩家坐标为非法值"),
+                () -> this.configData.allowIllegalValuePlayerPosition,
+                val -> this.configData.allowIllegalValuePlayerPosition = val
+        ).withInfo(Component.literal("在原版中，游戏检测到玩家坐标是非法值，会判定非法发包导致崩溃\n打开此设置将会解决这个问题"));
         fcBuilder.addSwitch(
-            Component.literal("使流体无法流过假区块边界"),
-            () -> this.configData.fcDisableFluidFlowing,
-            val -> this.configData.fcDisableFluidFlowing = val
-        ).withInfo(Component.literal("使流体无法流过假区块边界"));
-        fcBuilder.addSwitch(
-            Component.literal("使实体无法与假区块中的方块交互"),
-            () -> this.configData.fcDisableBlockInteraction,
-            val -> this.configData.fcDisableBlockInteraction = val
-        ).withInfo(Component.literal("使实体（玩家、末影人等）无法与假区块中的方块交互\n除非他们有合适的工具"));
-        fcBuilder.addSwitch(
-            Component.literal("使假区块中的方块不受爆炸影响"),
-            () -> this.configData.fcDisableExplosionEffect,
-            val -> this.configData.fcDisableExplosionEffect = val
-        ).withInfo(Component.literal("使假区块中的方块免疫爆炸，且无法阻挡爆炸射线"));
-        fcBuilder.addSwitch(
-            Component.literal("使假区块中的梯子无法攀爬"),
-            () -> this.configData.fcDisableLadderBehavior,
-            val -> this.configData.fcDisableLadderBehavior = val
-        ).withInfo(Component.literal("使假区块中的梯子类方块无法攀爬"));
-        fcBuilder.addSwitch(
-            Component.literal("使假区块中的活塞无法正常工作（实验性）"),
-            () -> this.configData.fcDisablePistonBehavior,
-            val -> this.configData.fcDisablePistonBehavior = val
-        ).withInfo(Component.literal("使假区块中的活塞无法正常工作\n§e该功能目前无法正常工作"));
+                Component.literal("模拟回绕溢出"),
+                () -> this.configData.simulatedWraparoundOverflow,
+                val -> this.configData.simulatedWraparoundOverflow = val
+        ).withInfo(Component.literal("允许改版在运行部分世界生成器方法时使用回绕溢出而不是原版的饱和溢出\n§e用于模拟基岩版在多架构情况下的多种溢出\n§c[警告] 不保证世界生成器不会损坏"));
         this.scrollContent.addChild(fcBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第五组：结构生成 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-            Component.literal("§a§l结构生成设置")
+                Component.literal("§a§l结构生成设置")
         ));
 
         SwitchGrid.Builder structBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20).withRowSpacing(4);
         structBuilder.addSwitch(
-            Component.literal("生成岩石之令实验室"),
-            () -> this.configData.generateOotsLaboratory,
-            val -> this.configData.generateOotsLaboratory = val
-        ).withInfo(Component.literal("启用岩石之令实验室的生成"));
+                Component.literal("不生成结构"),
+                () -> this.configData.disabledStructureSpawn,
+                val -> this.configData.disabledStructureSpawn = val
+        ).withInfo(Component.literal("无论游戏规则 / 世界生成器怎么定义某个结构，也总是不生成结构"));
         this.scrollContent.addChild(structBuilder.build().layout(), s -> s.paddingHorizontal(10));
     }
 
@@ -292,43 +296,43 @@ public class WorldMainSettingScreen extends Screen {
 
         // ===== 动态总结栏（每次渲染都读取最新值） =====
         Component summary = Component.literal(
-            "§7当前配置：边境之地距离 §e" + String.format("%,d", this.configData.farLandsDistance)
-            + " §r§7| 精度模式 §b" + this.configData.precisionMode
+                "§7当前配置：边境之地距离 §e" + String.format("%,d", this.configData.farLandsDistance)
+                        + " §r§7| 精度模式 §b" + this.configData.precisionMode
         );
         int summaryWidth = this.font.width(summary);
         int summaryY = (this.scrollArea != null ? this.scrollArea.getRectangle().bottom() : this.height / 2) + 5;
         graphics.text(this.font, summary.getVisualOrderText(),
-            (this.width - summaryWidth) / 2, summaryY, -6250336);
+                (this.width - summaryWidth) / 2, summaryY, -6250336);
 
         // 顶部分割线
         if (this.scrollArea != null) {
             int separatorY = this.layout.getHeaderHeight();
             graphics.blit(
-                RenderPipelines.GUI_TEXTURED,
-                Screen.HEADER_SEPARATOR,
-                0,
-                separatorY,
-                0.0F,
-                0.0F,
-                this.width,
-                2,
-                32,
-                2
+                    RenderPipelines.GUI_TEXTURED,
+                    Screen.HEADER_SEPARATOR,
+                    0,
+                    separatorY,
+                    0.0F,
+                    0.0F,
+                    this.width,
+                    2,
+                    32,
+                    2
             );
 
             // 底部分割线
             int footerTop = this.height - this.layout.getFooterHeight();
             graphics.blit(
-                RenderPipelines.GUI_TEXTURED,
-                Screen.FOOTER_SEPARATOR,
-                0,
-                footerTop - 2,
-                0.0F,
-                0.0F,
-                this.width,
-                2,
-                32,
-                2
+                    RenderPipelines.GUI_TEXTURED,
+                    Screen.FOOTER_SEPARATOR,
+                    0,
+                    footerTop - 2,
+                    0.0F,
+                    0.0F,
+                    this.width,
+                    2,
+                    32,
+                    2
             );
         }
     }
@@ -368,19 +372,20 @@ public class WorldMainSettingScreen extends Screen {
         public boolean enableSkyGrid = false;
         public boolean forceSkyGrid = false;
         public boolean progressiveFarlands = false;
-        public boolean removeWorldBorder = true;
-        public boolean removeWorldBoundary = true;
-        public boolean removeCoordinateLimits = true;
+        public boolean fixChunkOutOfBounds = true;
+        public boolean fixAverageFunctionOverFlow = true;
+        
         public String precisionMode = "32bit";
-        public boolean fcDisableBlockCollision = true;
-        public boolean fcDisableBlockEffect = true;
-        public boolean fcDisableFluidCollision = true;
-        public boolean fcDisableFluidFlowing = true;
-        public boolean fcDisableBlockInteraction = true;
-        public boolean fcDisableExplosionEffect = true;
-        public boolean fcDisableLadderBehavior = true;
-        public boolean fcDisablePistonBehavior = true;
-        public boolean generateOotsLaboratory = true;
+        public String farlandsStyle = "Java-1.18.2+";
+        
+        public boolean fixEndRings = false;
+        public boolean fixFloatOverFlowCrash = true;
+        public boolean expandDatapackValueRange = true;
+        public boolean expandNoiseValueRetrievalLimit = true;
+        public boolean allowIllegalValuePlayerPosition = true;
+        public boolean simulatedWraparoundOverflow = false;
+        
+        public boolean disabledStructureSpawn = false;
 
         /** 当前活动的 FarLands 配置，由 WorldMainSettingScreen.onDone() 写入 */
         public static FarLandsConfigData activeConfig = new FarLandsConfigData();

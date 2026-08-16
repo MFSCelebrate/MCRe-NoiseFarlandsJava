@@ -24,7 +24,7 @@ public class DebugEntryPosition implements DebugScreenEntry {
     public static final Identifier GROUP = Identifier.withDefaultNamespace("position");
 
     /** 精确显示小数部分的最大位数（超出截断 + 省略号） */
-    private static final int MAX_FRAC_DIGITS = 25;
+    private static final int MAX_FRAC_DIGITS = 14;
 
     /** double → Float256 → 精确十进制（完整 52-bit 尾数展开，限长显示） */
     private static String fmtExact(final double value) {

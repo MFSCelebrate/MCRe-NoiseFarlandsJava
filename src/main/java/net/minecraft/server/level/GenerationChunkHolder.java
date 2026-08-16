@@ -35,7 +35,7 @@ public abstract class GenerationChunkHolder {
 
     public GenerationChunkHolder(final ChunkPos pos) {
         this.pos = pos;
-        if (!pos.isValid()) {
+        if (!pos.isChunkPosValid()) {
             throw new IllegalStateException("Trying to create chunk out of reasonable bounds: " + pos);
         }
     }

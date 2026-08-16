@@ -218,6 +218,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -287,6 +288,11 @@ public class ServerGamePacketListenerImpl
         player.getTextFilter().join();
         this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(player.getUUID(), server::enforceSecureProfile);
         this.chatMessageChain = new FutureChain(server);
+    }
+    
+    private static boolean allowIllegalValuePlayerPositionMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.allowIllegalValuePlayerPosition;
     }
 
     @Override
@@ -428,6 +434,9 @@ public class ServerGamePacketListenerImpl
     }
 
     private static boolean containsInvalidValues(final double x, final double y, final double z, final float yRot, final float xRot) {
+        if (allowIllegalValuePlayerPositionMode()) {
+            return false;
+        }
         return Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z) || !Floats.isFinite(xRot) || !Floats.isFinite(yRot);
     }
 

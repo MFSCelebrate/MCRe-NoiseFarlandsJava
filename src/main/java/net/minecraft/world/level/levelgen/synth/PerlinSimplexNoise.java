@@ -17,7 +17,7 @@ public class PerlinSimplexNoise {
 
     private static boolean isBedrockMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && ("Bedrock".equals(config.precisionMode) || "64bit-Bedrock".equals(config.precisionMode));
+        return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
     }
 
     public PerlinSimplexNoise(final RandomSource random, final List<Integer> octaveSet) {

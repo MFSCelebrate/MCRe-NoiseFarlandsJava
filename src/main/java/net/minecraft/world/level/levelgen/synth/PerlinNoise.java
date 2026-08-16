@@ -20,15 +20,17 @@ import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 
 /**
- * PerlinNoise — �� 噪声生成器（MCRe NoiseFarlands 精度�适配版）
+ * PerlinNoise — 世界噪声生成器（MCRe NoiseFarlands 适配版）
  *
- * <p>根据 WorldMainSettingScreen.precisionMode � 动态切换计算精度：
+ * <p>根据 WorldMainSettingScreen.precisionMode 动态切换计算精度：
+ *
  * <ul>
- *   <li>32bit：全程 double 计算（保持原版行为）</li>
- *   <li>64bit：坐标折�叠到 ±16,777,216 �� 范�围内（消除 32-bit � 溢出）</li>
- *   <li>Bedrock：所有关�键位置强制 float 精度（模�拟基岩版�噪声表现）</li>
+ *   <li>32bit：全程 double 计算（保持原版行为）
+ *   <li>64bit：坐标折叠到 ±16,777,216 范围内
+ *   <li>Bedrock：所有关键位置强制 float 精度（模拟基岩版噪声表现）
+ *   <li>1.18-exp-32bit：模拟实验性快照边境之地位置，使用直接 return
+ *   <li>1.18-exp-64bit：模拟实验性快照64位边境之地位置，使用折叠
  * </ul>
- * </p>
  */
 public class PerlinNoise {
     private static final int ROUND_OFF = 33554432;
@@ -57,7 +59,7 @@ public class PerlinNoise {
         return new PerlinNoise(random, makeAmplitudes(new IntRBTreeSet(octaveSet)), true);
     }
 
-    public static PerlinNoise create(final RandomSource random, final int firstOctave, final double firstAmplitude, final double... amplitudes) {
+    public static PerlinNoise create(final RandomSource random, final int firstOctave, final double firstAmplitude, final double amplitudes) {
         DoubleArrayList amplitudeList = new DoubleArrayList(amplitudes);
         amplitudeList.add(0, firstAmplitude);
         return new PerlinNoise(random, Pair.of(firstOctave, amplitudeList), true);
@@ -92,10 +94,16 @@ public class PerlinNoise {
 
     private boolean isBedrockMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && ("Bedrock".equals(config.precisionMode) || "64bit-Bedrock".equals(config.precisionMode));
+        return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
     }
 
-    protected PerlinNoise(final RandomSource random, final Pair<Integer, DoubleList> pair, final boolean useNewInitialization) {
+    private boolean is1_18Exp4Mode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && ("1.18-exp-32bit".equals(config.precisionMode) || "1.18-exp-64bit".equals(config.precisionMode));
+    }
+
+    protected PerlinNoise(final RandomSource random, final Pair<
+                    Integer, DoubleList> pair, final boolean useNewInitialization) {
         this.firstOctave = pair.getFirst();
         this.amplitudes = pair.getSecond();
         int octaves = this.amplitudes.size();
@@ -107,7 +115,8 @@ public class PerlinNoise {
             for (int i = 0; i < octaves; i++) {
                 if (this.amplitudes.getDouble(i) != 0.0) {
                     int octave = this.firstOctave + i;
-                    this.noiseLevels[i] = new ImprovedNoise(positional.fromHashOf("octave_" + octave));
+                    this.noiseLevels[
+                    i] = new ImprovedNoise(positional.fromHashOf("octave_" + octave));
                 }
             }
         } else {
@@ -132,7 +141,8 @@ public class PerlinNoise {
                 }
             }
 
-            if (Arrays.stream(this.noiseLevels).filter(Objects::nonNull).count() != this.amplitudes.stream().filter(a -> a != 0.0).count()) {
+            if (Arrays.stream(this.noiseLevels).filter(Objects
+                            ::nonNull).count() != this.amplitudes.stream().filter(a -> a != 0.0).count()) {
                 throw new IllegalStateException("Failed to create correct number of noise levels for given non-zero amplitudes");
             }
 
@@ -219,33 +229,46 @@ public class PerlinNoise {
     }
 
     /**
-     * �� 🔥 MCRe NoiseFarlands —— �� 坐标折�叠�函数
+     * 🔥 MCRe NoiseFarlands —— 坐标折叠函数
      *
      * <p>根据精度模式决定行为：
+     *
      * <ul>
-     *   <li>32bit：直接返回 x（不折�叠，产生经典边境之地）</li>
-     *   <li>64bit：折�叠到 ±16,777,216 �� 范�围内（消除 32-bit � 溢出，保留 64-bit 精度）</li>
-     *   <li>Bedrock：返回 float 精度的值（强制转为 float � 再提升为 double）</li>
+     *   <li>32bit：直接返回 x（不折叠，产生经典边境之地）
+     *   <li>64bit：折�叠到 ±16,777,216 范围内（消除 32-bit 溢出，保留 64-bit 精度）
+     *   <li>Bedrock：返回 float 精度的值（强制转为 float 再提升为 double）
      * </ul>
-     * </p>
      */
+    public static double computeReleaseValue(double x) {
+        long l = Mth.lfloor(x);
+        x -= l; // value 此时变成小数部分
+        l %= 16777216L;
+        return x + l; // 小数部分 + 取模后的整数部分
+    }
+
     public static double wrap(final double x) {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
         if (config != null) {
             if ("64bit".equals(config.precisionMode)) {
-                // 64-bit � 模式：折�叠到 ±16,777,216 �� 范�围内
+                // 64-bit 模式：折叠到 ±16,777,216 范围内
                 return x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7;
             }
-            if ("Bedrock".equals(config.precisionMode)) {
-                // Bedrock � 模式：返回 float 精度的值
-                return (float) x;
+            if ("Release".equals(config.precisionMode)) {
+                // Release 模式：返回 经过循环 精度的值
+                // 原 UltimateScaler 实现: return Math.abs(x) > Long.MAX_VALUE ? x - Math.signum(x) *
+                // Long.MAX_VALUE : (x + 1.6777216E7D) % 3.3554432E7D - 1.6777216E7D;
+                // 由于在原实现情况下具有损坏地形的效果，目前使用了最贴合原版反编译源码的实现
+                return computeReleaseValue(x);
             }
-            if ("64bit-Bedrock".equals(config.precisionMode)) {
-                // 64-bit � 模式：折�叠到 ±16,777,216 �� 范�围内
-                return (float)x - (float) Mth.lfloor(x / 3.3554432E7F + 0.5F) * 3.3554432E7F;
+            if ("1.18-exp-64bit".equals(config.precisionMode)) {
+                // 64-bit 模式：折叠到 ±16,777,216 范围内
+                return x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7;
+            }
+            if ("1.18-exp-32bit".equals(config.precisionMode)) {
+                return x; // 32bit Exp4：直接返回 x，配合 limit noise 自身的振幅截断产生 16 亿
             }
         }
-        // 32-bit � 模式（默认）：不折�叠，直接返回 x
+        // 32-bit 模式（默认）：不折叠，直接返回 x
         return x;
     }
 
@@ -260,7 +283,8 @@ public class PerlinNoise {
     @VisibleForTesting
     public void parityConfigString(final StringBuilder sb) {
         sb.append("PerlinNoise{");
-        List<String> amplitudeStrings = this.amplitudes.stream().map(d -> String.format(Locale.ROOT, "%.2f", d)).toList();
+        List<
+                String> amplitudeStrings = this.amplitudes.stream().map(d -> String.format(Locale.ROOT, "%.2f", d)).toList();
         sb.append("first octave: ").append(this.firstOctave).append(", amplitudes: ").append(amplitudeStrings).append(", noise levels: [");
 
         for (int i = 0; i < this.noiseLevels.length; i++) {

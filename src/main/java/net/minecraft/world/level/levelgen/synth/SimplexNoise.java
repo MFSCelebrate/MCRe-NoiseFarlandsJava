@@ -34,7 +34,7 @@ public class SimplexNoise {
 
     private static boolean isBedrockMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && ("Bedrock".equals(config.precisionMode) || "64bit-Bedrock".equals(config.precisionMode));
+        return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
     }
 
     public SimplexNoise(final RandomSource random) {

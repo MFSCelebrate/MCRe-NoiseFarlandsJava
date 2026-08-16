@@ -2,9 +2,28 @@ package net.minecraft.world.level.levelgen;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 
 public class GeodeLayerSettings {
-    private static final Codec<Double> LAYER_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+    private static boolean expandNoiseValueRetrievalLimitMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.expandNoiseValueRetrievalLimit;
+    }
+    private static Codec<Double> LAYER_RANGE = createCodec();
+    // 工厂方法：根据当前开关生成 Codec
+    private static Codec<Double> createCodec() {
+        if (expandNoiseValueRetrievalLimitMode()) {
+            return Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+        } else {
+            // 使用原版范围，自行替换为实际值
+            return Codec.doubleRange(0.01, 50);
+        }
+    }
+
+    // 当配置改变时，外部调用此方法刷新 Codec
+    public static void refreshCodec() {
+        NOISE_VALUE_CODEC = createCodec();
+    }
     public static final Codec<GeodeLayerSettings> CODEC = RecordCodecBuilder.create(
         i -> i.group(
                 LAYER_RANGE.optionalFieldOf("filling", 1.7).forGetter(c -> c.filling),

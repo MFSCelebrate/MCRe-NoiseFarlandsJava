@@ -13,20 +13,23 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Util;
 import net.MinecraftTools.Math._256Bit.Int256;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 
 /**
  * ChunkPos — 区块坐标（MCRe NoiseFarlands 对象化版）
  *
- * <p>原版用 pack() 将 (int x, int z) 打包进 long（32+32 位），坐标上限被锁死在 int。
- * 本版：坐标升级为 long（突破 2^31 区块限制）、移除打包系统、record 天然对象键
- * （equals/hashCode 按坐标相等），并适配 256-bit（Int256）。
+ * <p>原版用 pack() 将 (int x, int z) 打包进 long（32+32 位），坐标上限被锁死在 int。 本版：坐标升级为 long（突破 2^31
+ * 区块限制）、移除打包系统、record 天然对象键 （equals/hashCode 按坐标相等），并适配 256-bit（Int256）。
  */
 public record ChunkPos(long x, long z) {
     public static final Codec<ChunkPos> CODEC = Codec.LONG_STREAM
-        .<ChunkPos>comapFlatMap(input -> Util.fixedSize(input, 2).map(longs -> new ChunkPos(longs[0], longs[1])), pos -> LongStream.of(pos.x, pos.z))
-        .stable();
-    public static final StreamCodec<ByteBuf, ChunkPos> STREAM_CODEC = new StreamCodec<ByteBuf, ChunkPos>() {
+            .<ChunkPos>
+                    comapFlatMap(input -> Util.fixedSize(input, 2).map(longs -> new ChunkPos(longs[
+                    0], longs[1])), pos -> LongStream.of(pos.x, pos.z))
+            .stable();
+    public static final StreamCodec<ByteBuf, ChunkPos> STREAM_CODEC = new StreamCodec<
+            ByteBuf, ChunkPos>() {
         public ChunkPos decode(final ByteBuf input) {
             return FriendlyByteBuf.readChunkPos(input);
         }
@@ -37,8 +40,10 @@ public record ChunkPos(long x, long z) {
     };
     private static final int SAFETY_MARGIN = 1056;
     public static final ChunkPos ZERO = new ChunkPos(0L, 0L);
+
     /** 无效区块坐标哨兵（原版 INVALID_CHUNK_POS = pack(1875066, 1875066)，对象化后为常量值） */
     public static final ChunkPos INVALID_CHUNK_POS = new ChunkPos(1875066L, 1875066L);
+
     public static final int REGION_BITS = 5;
     public static final int REGION_SIZE = 32;
     private static final int REGION_MASK = 31;
@@ -52,11 +57,16 @@ public record ChunkPos(long x, long z) {
     }
 
     public static ChunkPos minFromRegion(final int regionX, final int regionZ) {
-        return new ChunkPos((long)regionX << 5, (long)regionZ << 5);
+        return new ChunkPos((long) regionX << 5, (long) regionZ << 5);
     }
 
     public static ChunkPos maxFromRegion(final int regionX, final int regionZ) {
-        return new ChunkPos(((long)regionX << 5) + 31L, ((long)regionZ << 5) + 31L);
+        return new ChunkPos(((long) regionX << 5) + 31L, ((long) regionZ << 5) + 31L);
+    }
+
+    private static boolean fixChunkOutOfBoundsMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.fixChunkOutOfBounds;
     }
 
     public boolean isValid() {
@@ -68,6 +78,20 @@ public record ChunkPos(long x, long z) {
         return true;
     }
 
+    public boolean isChunkPosValid() {
+        if (fixChunkOutOfBoundsMode()) {
+            return true;
+        }
+        return isValid(this.x, this.z);
+    }
+
+    public static boolean isChunkPosValid(final int x, final int z) {
+        if (fixChunkOutOfBoundsMode()) {
+            return true;
+        }
+        return Mth.absMax(x, z) <= ChunkPyramid.MAX_CHUNK_COORDINATE_VALUE;
+    }
+
     @Override
     public int hashCode() {
         return hash(this.x, this.z);
@@ -77,7 +101,7 @@ public record ChunkPos(long x, long z) {
     public static int hash(final long x, final long z) {
         long xTransform = HASH_A * x + HASH_C;
         long zTransform = HASH_A * (z ^ HASH_Z_XOR) + HASH_C;
-        return (int)(xTransform ^ zTransform ^ (xTransform >>> 32) ^ (zTransform >>> 32));
+        return (int) (xTransform ^ zTransform ^ (xTransform >>> 32) ^ (zTransform >>> 32));
     }
 
     public long getMiddleBlockX() {
@@ -121,7 +145,7 @@ public record ChunkPos(long x, long z) {
     }
 
     public BlockPos getBlockAt(final int x, final int y, final int z) {
-        return new BlockPos((int)this.getBlockX(x), y, (int)this.getBlockZ(z));
+        return new BlockPos((int) this.getBlockX(x), y, (int) this.getBlockZ(z));
     }
 
     public long getBlockX(final long offset) {
@@ -133,14 +157,14 @@ public record ChunkPos(long x, long z) {
     }
 
     public BlockPos getMiddleBlockPosition(final int y) {
-        return new BlockPos((int)this.getMiddleBlockX(), y, (int)this.getMiddleBlockZ());
+        return new BlockPos((int) this.getMiddleBlockX(), y, (int) this.getMiddleBlockZ());
     }
 
     public boolean contains(final BlockPos pos) {
         return pos.getX() >= this.getMinBlockX()
-            && pos.getZ() >= this.getMinBlockZ()
-            && pos.getX() <= this.getMaxBlockX()
-            && pos.getZ() <= this.getMaxBlockZ();
+                && pos.getZ() >= this.getMinBlockZ()
+                && pos.getX() <= this.getMaxBlockX()
+                && pos.getZ() <= this.getMaxBlockZ();
     }
 
     @Override
@@ -149,7 +173,7 @@ public record ChunkPos(long x, long z) {
     }
 
     public BlockPos getWorldPosition() {
-        return new BlockPos((int)this.getMinBlockX(), 0, (int)this.getMinBlockZ());
+        return new BlockPos((int) this.getMinBlockX(), 0, (int) this.getMinBlockZ());
     }
 
     public long getChessboardDistance(final ChunkPos pos) {

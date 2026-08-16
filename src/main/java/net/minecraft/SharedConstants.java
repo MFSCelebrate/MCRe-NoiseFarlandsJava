@@ -128,7 +128,7 @@ public class SharedConstants {
     public static final float MAXIMUM_BLOCK_EXPLOSION_RESISTANCE = 3600000.0F;
     public static final boolean USE_DEVONLY = false;
     public static boolean CHECK_DATA_FIXER_SCHEMA = true;
-    public static boolean IS_RUNNING_IN_IDE;
+    public static boolean IS_RUNNING_IN_IDE = true;
     public static final int WORLD_RESOLUTION = 16;
     public static final int MAX_CHAT_LENGTH = 256;
     public static final int MAX_USER_INPUT_COMMAND_LENGTH = 32500;
@@ -137,7 +137,7 @@ public class SharedConstants {
     public static final int MAX_CHAINED_NEIGHBOR_UPDATES = 1000000;
     public static final int MAX_RENDER_DISTANCE = 32;
     public static final int MAX_CLOUD_DISTANCE = 128;
-    public static final char[] ILLEGAL_FILE_CHARACTERS = new char[]{'/', '\n', '\r', '\t', '\u0000', '\f', '`', '?', '*', '\\', '<', '>', '|', '"', ':'};
+    public static final char[] ILLEGAL_FILE_CHARACTERS = new char[]{};
     public static final int TICKS_PER_SECOND = 20;
     public static final int MILLIS_PER_TICK = 50;
     public static final int TICKS_PER_MINUTE = 1200;

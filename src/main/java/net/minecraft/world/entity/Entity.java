@@ -10,7 +10,6 @@ import it.unimi.dsi.fastutil.floats.FloatArraySet;
 import it.unimi.dsi.fastutil.floats.FloatArrays;
 import it.unimi.dsi.fastutil.floats.FloatSet;
 
-
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -154,6 +153,7 @@ import net.minecraft.world.scores.Team;
 import net.minecraft.world.waypoints.WaypointTransmitter;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.slf4j.Logger;
 
 public abstract class Entity
@@ -331,6 +331,11 @@ public abstract class Entity
         this.entityData = entityDataBuilder.build();
         this.setPos(0.0, 0.0, 0.0);
         this.eyeHeight = this.dimensions.eyeHeight();
+    }
+
+    private static boolean allowIllegalValuePlayerPositionMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.allowIllegalValuePlayerPosition;
     }
 
     public boolean isColliding(final BlockPos pos, final BlockState state) {
@@ -2168,7 +2173,7 @@ public abstract class Entity
                     Math.abs(motion.x) > 10.0 ? 0.0 : motion.x, Math.abs(motion.y) > 10.0 ? 0.0 : motion.y, Math.abs(motion.z) > 10.0 ? 0.0 : motion.z
             );
             this.needsSync = true;
-            
+
             this.setPosRaw(pos.x, pos.y, pos.z);
             this.setYRot(rotation.x);
             this.setXRot(rotation.y);
@@ -2185,29 +2190,33 @@ public abstract class Entity
                 this.uuid = id;
                 this.stringUUID = this.uuid.toString();
             });
-            if (!Double.isFinite(this.getX()) || !Double.isFinite(this.getY()) || !Double.isFinite(this.getZ())) {
-                throw new IllegalStateException("Entity has invalid position");
+            // 调用方法获取开关状态
+            if (!allowIllegalValuePlayerPositionMode()) {
+                // 开关为 false 时进行原版检查
+                if (!Double.isFinite(this.getX()) || !Double.isFinite(this.getY()) || !Double.isFinite(this.getZ())) {
+                    throw new IllegalStateException("Entity has invalid position");
+                }
+                if (!(Double.isFinite(this.getYRot()) && Double.isFinite(this.getXRot()))) {
+                    throw new IllegalStateException("Entity has invalid rotation");
+                }
             }
 
-            if (Double.isFinite(this.getYRot()) && Double.isFinite(this.getXRot())) {
+            // 无论开关如何，都执行加载（原 if 块内的代码）
+            this.reapplyPosition();
+            this.setRot(this.getYRot(), this.getXRot());
+            this.setCustomName(input.read("CustomName", ComponentSerialization.CODEC).orElse(null));
+            this.setCustomNameVisible(input.getBooleanOr("CustomNameVisible", false));
+            this.setSilent(input.getBooleanOr("Silent", false));
+            this.setNoGravity(input.getBooleanOr("NoGravity", false));
+            this.setGlowingTag(input.getBooleanOr("Glowing", false));
+            this.setTicksFrozen(input.getIntOr("TicksFrozen", 0));
+            this.hasVisualFire = input.getBooleanOr("HasVisualFire", false);
+            this.customData = input.read("data", CustomData.CODEC).orElse(CustomData.EMPTY);
+            this.tags.clear();
+            input.read("Tags", TAG_LIST_CODEC).ifPresent(this.tags::addAll);
+            this.readAdditionalSaveData(input);
+            if (this.repositionEntityAfterLoad()) {
                 this.reapplyPosition();
-                this.setRot(this.getYRot(), this.getXRot());
-                this.setCustomName(input.read("CustomName", ComponentSerialization.CODEC).orElse(null));
-                this.setCustomNameVisible(input.getBooleanOr("CustomNameVisible", false));
-                this.setSilent(input.getBooleanOr("Silent", false));
-                this.setNoGravity(input.getBooleanOr("NoGravity", false));
-                this.setGlowingTag(input.getBooleanOr("Glowing", false));
-                this.setTicksFrozen(input.getIntOr("TicksFrozen", 0));
-                this.hasVisualFire = input.getBooleanOr("HasVisualFire", false);
-                this.customData = input.read("data", CustomData.CODEC).orElse(CustomData.EMPTY);
-                this.tags.clear();
-                input.read("Tags", TAG_LIST_CODEC).ifPresent(this.tags::addAll);
-                this.readAdditionalSaveData(input);
-                if (this.repositionEntityAfterLoad()) {
-                    this.reapplyPosition();
-                }
-            } else {
-                throw new IllegalStateException("Entity has invalid rotation");
             }
         } catch (Throwable t) {
             CrashReport report = CrashReport.forThrowable(t, "Loading entity NBT");

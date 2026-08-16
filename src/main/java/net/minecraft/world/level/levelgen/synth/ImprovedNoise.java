@@ -14,12 +14,17 @@ public final class ImprovedNoise {
 
     private static boolean isBedrockMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && ("Bedrock".equals(config.precisionMode) || "64bit-Bedrock".equals(config.precisionMode));
+        return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
     }
 
     private static boolean isProgressiveFarlands() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
         return config != null && config.progressiveFarlands;
+    }
+
+    private static boolean simulatedWraparoundOverflowMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.simulatedWraparoundOverflow;
     }
 
     public ImprovedNoise(final RandomSource random) {
@@ -47,20 +52,22 @@ public final class ImprovedNoise {
         return this.noise(_x, _y, _z, 0.0, 0.0);
     }
 
-    @Deprecated
     public double noise(final double _x, final double _y, final double _z, final double yScale, final double yFudge) {
         double x = _x + this.xo;
         double y = _y + this.yo;
         double z = _z + this.zo;
-// 原代码：
-// int xf = Mth.floor(x);
-// int yf = Mth.floor(y);
-// int zf = Mth.floor(z);
 
-// 改为：
-        int xf = floorToIntWithWrap(x);
-        int yf = floorToIntWithWrap(y);
-        int zf = floorToIntWithWrap(z);
+        int xf, yf, zf; // 先声明
+        if (simulatedWraparoundOverflowMode()) {
+            xf = floorToIntWithWrap(x);
+            yf = floorToIntWithWrap(y);
+            zf = floorToIntWithWrap(z);
+        } else {
+            xf = Mth.floor(x);
+            yf = Mth.floor(y);
+            zf = Mth.floor(z);
+        }
+
         double xr = x - xf;
         double yr = y - yf;
         double zr = z - zf;

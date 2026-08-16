@@ -15,18 +15,20 @@ import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 
 public class BlendedNoise implements DensityFunction.SimpleFunction {
-    private static final Codec<Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+    private static final Codec<
+            Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     private static final MapCodec<BlendedNoise> DATA_CODEC = RecordCodecBuilder.mapCodec(
-        i -> i.group(
-                SCALE_RANGE.fieldOf("xz_scale").forGetter(n -> n.xzScale),
-                SCALE_RANGE.fieldOf("y_scale").forGetter(n -> n.yScale),
-                SCALE_RANGE.fieldOf("xz_factor").forGetter(n -> n.xzFactor),
-                SCALE_RANGE.fieldOf("y_factor").forGetter(n -> n.yFactor),
-                Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("smear_scale_multiplier").forGetter(n -> n.smearScaleMultiplier)
+            i -> i.group(
+                    SCALE_RANGE.fieldOf("xz_scale").forGetter(n -> n.xzScale),
+                    SCALE_RANGE.fieldOf("y_scale").forGetter(n -> n.yScale),
+                    SCALE_RANGE.fieldOf("xz_factor").forGetter(n -> n.xzFactor),
+                    SCALE_RANGE.fieldOf("y_factor").forGetter(n -> n.yFactor),
+                    Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY).fieldOf("smear_scale_multiplier").forGetter(n -> n.smearScaleMultiplier)
             )
-            .apply(i, BlendedNoise::createUnseeded)
+                    .apply(i, BlendedNoise::createUnseeded)
     );
-    public static final KeyDispatchDataCodec<BlendedNoise> CODEC = KeyDispatchDataCodec.of(DATA_CODEC);
+    public static final KeyDispatchDataCodec<
+            BlendedNoise> CODEC = KeyDispatchDataCodec.of(DATA_CODEC);
     private final PerlinNoise minLimitNoise;
     private final PerlinNoise maxLimitNoise;
     private final PerlinNoise mainNoise;
@@ -41,25 +43,29 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
 
     private static boolean isBedrockMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && ("Bedrock".equals(config.precisionMode) || "64bit-Bedrock".equals(config.precisionMode));
+        return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
+    }
+    
+        
+    private boolean is1_18Exp4Mode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && ("1.18-exp-32bit".equals(config.precisionMode) || "1.18-exp-64bit".equals(config.precisionMode));
     }
 
     public static BlendedNoise createUnseeded(
-        final double xzScale, final double yScale, final double xzFactor, final double yFactor, final double smearScaleMultiplier
-    ) {
+            final double xzScale, final double yScale, final double xzFactor, final double yFactor, final double smearScaleMultiplier) {
         return new BlendedNoise(new XoroshiroRandomSource(0L), xzScale, yScale, xzFactor, yFactor, smearScaleMultiplier);
     }
 
     private BlendedNoise(
-        final PerlinNoise minLimitNoise,
-        final PerlinNoise maxLimitNoise,
-        final PerlinNoise mainNoise,
-        final double xzScale,
-        final double yScale,
-        final double xzFactor,
-        final double yFactor,
-        final double smearScaleMultiplier
-    ) {
+            final PerlinNoise minLimitNoise,
+            final PerlinNoise maxLimitNoise,
+            final PerlinNoise mainNoise,
+            final double xzScale,
+            final double yScale,
+            final double xzFactor,
+            final double yFactor,
+            final double smearScaleMultiplier) {
         this.minLimitNoise = minLimitNoise;
         this.maxLimitNoise = maxLimitNoise;
         this.mainNoise = mainNoise;
@@ -75,17 +81,16 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
 
     @VisibleForTesting
     public BlendedNoise(
-        final RandomSource random, final double xzScale, final double yScale, final double xzFactor, final double yFactor, final double smearScaleMultiplier
-    ) {
+            final RandomSource random, final double xzScale, final double yScale, final double xzFactor, final double yFactor, final double smearScaleMultiplier) {
         this(
-            PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
-            PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
-            PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0)),
-            xzScale,
-            yScale,
-            xzFactor,
-            yFactor,
-            smearScaleMultiplier
+        PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
+        PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
+        PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0)),
+        xzScale,
+        yScale,
+        xzFactor,
+        yFactor,
+        smearScaleMultiplier
         );
     }
 
@@ -112,10 +117,11 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         for (int i = 0; i < 8; i++) {
             ImprovedNoise noise = this.mainNoise.getOctaveNoise(i);
             if (noise != null) {
-                mainNoiseValue += noise.noise(
-                        PerlinNoise.wrap(mainX * pow), PerlinNoise.wrap(mainY * pow), PerlinNoise.wrap(mainZ * pow), mainSmear * pow, mainY * pow
-                    )
-                    / pow;
+                mainNoiseValue +=
+                        noise.noise(
+                                        PerlinNoise.wrap(mainX * pow), PerlinNoise.wrap(mainY * pow), PerlinNoise.wrap(mainZ * pow), mainSmear * pow, mainY * pow
+                                )
+                                / pow;
             }
 
             pow /= 2.0;
@@ -127,21 +133,31 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         pow = 1.0;
 
         for (int i = 0; i < 16; i++) {
-            double wx = PerlinNoise.wrap(limitX * pow);
-            double wy = PerlinNoise.wrap(limitY * pow);
-            double wz = PerlinNoise.wrap(limitZ * pow);
-            double yScalePow = limitSmear * pow;
+            double currentPow = pow;
+
+            // 🎯 Exp 4 模式：让第一个有振幅的八度(i=6)表现得像 i=9 (pow=1/512)
+            // 即在第 0 轮就预先除以 8 (2^3)，后续自然 /2 到 i=6 时变 1/512
+            if (is1_18Exp4Mode) {
+                currentPow /= 8.0; // 等效于让 i=0 时 pow=1/8，i=6 时 pow=1/512
+            }
+
+            double wx = PerlinNoise.wrap(limitX * currentPow);
+            double wy = PerlinNoise.wrap(limitY * currentPow);
+            double wz = PerlinNoise.wrap(limitZ * currentPow);
+            double yScalePow = limitSmear * currentPow;
+            double limitYPow = limitY * currentPow;
+
             if (!isMax) {
                 ImprovedNoise minNoise = this.minLimitNoise.getOctaveNoise(i);
                 if (minNoise != null) {
-                    blendMin += minNoise.noise(wx, wy, wz, yScalePow, limitY * pow) / pow;
+                    blendMin += minNoise.noise(wx, wy, wz, yScalePow, limitYPow) / currentPow;
                 }
             }
 
             if (!isMin) {
                 ImprovedNoise maxNoise = this.maxLimitNoise.getOctaveNoise(i);
                 if (maxNoise != null) {
-                    blendMax += maxNoise.noise(wx, wy, wz, yScalePow, limitY * pow) / pow;
+                    blendMax += maxNoise.noise(wx, wy, wz, yScalePow, limitYPow) / currentPow;
                 }
             }
 
@@ -183,15 +199,15 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         this.mainNoise.parityConfigString(sb);
         sb.append(
                 String.format(
-                    Locale.ROOT,
-                    ", xzScale=%.3f, yScale=%.3f, xzMainScale=%.3f, yMainScale=%.3f, cellWidth=4, cellHeight=8",
-                    684.412,
-                    684.412,
-                    8.555150000000001,
-                    4.277575000000001
+                        Locale.ROOT,
+                        ", xzScale=%.3f, yScale=%.3f, xzMainScale=%.3f, yMainScale=%.3f, cellWidth=4, cellHeight=8",
+                        684.412,
+                        684.412,
+                        8.555150000000001,
+                        4.277575000000001
                 )
-            )
-            .append('}');
+        )
+                .append('}');
     }
 
     @Override
