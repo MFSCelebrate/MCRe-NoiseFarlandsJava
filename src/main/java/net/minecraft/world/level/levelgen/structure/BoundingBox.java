@@ -34,6 +34,10 @@ public class BoundingBox {
         box -> new BlockPos(box.maxX, box.maxY, box.maxZ),
         (min, max) -> new BoundingBox(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ())
     );
+
+    // 添加常量：最大允许块坐标（接近 Integer.MAX_VALUE）
+    private static final int MAX_BLOCK = 2_147_483_632; // 134_217_727 * 16
+
     private int minX;
     private int minY;
     private int minZ;
@@ -196,8 +200,33 @@ public class BoundingBox {
         return this.move(amount.getX(), amount.getY(), amount.getZ());
     }
 
+    // 修改后的 moved 方法：添加溢出保护
     public BoundingBox moved(final int dx, final int dy, final int dz) {
-        return new BoundingBox(this.minX + dx, this.minY + dy, this.minZ + dz, this.maxX + dx, this.maxY + dy, this.maxZ + dz);
+        long newMinX = (long) this.minX + dx;
+        long newMaxX = (long) this.maxX + dx;
+        long newMinZ = (long) this.minZ + dz;
+        long newMaxZ = (long) this.maxZ + dz;
+
+        // 检查 X/Z 方向是否超出允许范围（约 ±21.47 亿）
+        if (newMinX > MAX_BLOCK || newMinX < ~MAX_BLOCK ||
+            newMaxX > MAX_BLOCK || newMaxX < ~MAX_BLOCK ||
+            newMinZ > MAX_BLOCK || newMinZ < ~MAX_BLOCK ||
+            newMaxZ > MAX_BLOCK || newMaxZ < ~MAX_BLOCK) {
+            return this; // 超出范围，不移动
+        }
+        // 检查移动后是否反转
+        if (newMinX > newMaxX || newMinZ > newMaxZ) {
+            return this; // 反转，不移动
+        }
+
+        return new BoundingBox(
+            this.minX + dx,
+            this.minY + dy,
+            this.minZ + dz,
+            this.maxX + dx,
+            this.maxY + dy,
+            this.maxZ + dz
+        );
     }
 
     public BoundingBox inflatedBy(final int amountToAddAllDirections) {

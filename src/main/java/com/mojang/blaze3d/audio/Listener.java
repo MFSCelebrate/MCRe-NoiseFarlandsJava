@@ -10,10 +10,12 @@ public class Listener {
     private ListenerTransform transform = ListenerTransform.INITIAL;
 
     public void setTransform(final ListenerTransform transform) {
-        this.transform = transform;
-        Vec3 position = transform.position();
-        Vec3 forward = transform.forward();
-        Vec3 up = transform.up();
+        // 强制将监听器位置固定在原点，避免大坐标下浮点溢出
+        ListenerTransform fixedTransform = new ListenerTransform(Vec3.ZERO, transform.forward(), transform.up());
+        this.transform = fixedTransform;
+        Vec3 position = fixedTransform.position();
+        Vec3 forward = fixedTransform.forward();
+        Vec3 up = fixedTransform.up();
         AL10.alListener3f(4100, (float)position.x, (float)position.y, (float)position.z);
         AL10.alListenerfv(4111, new float[]{(float)forward.x, (float)forward.y, (float)forward.z, (float)up.x(), (float)up.y(), (float)up.z()});
     }

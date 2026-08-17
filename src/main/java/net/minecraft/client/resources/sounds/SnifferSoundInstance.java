@@ -28,9 +28,9 @@ public class SnifferSoundInstance extends AbstractTickableSoundInstance {
     @Override
     public void tick() {
         if (!this.sniffer.isRemoved() && this.sniffer.getTarget() == null && this.sniffer.canPlayDiggingSound()) {
-            this.x = (float)this.sniffer.getX();
-            this.y = (float)this.sniffer.getY();
-            this.z = (float)this.sniffer.getZ();
+            this.x = this.sniffer.getX();
+            this.y = this.sniffer.getY();
+            this.z = this.sniffer.getZ();
             this.volume = 1.0F;
             this.pitch = 1.0F;
         } else {

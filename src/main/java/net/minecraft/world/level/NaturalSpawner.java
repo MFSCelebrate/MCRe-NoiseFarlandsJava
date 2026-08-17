@@ -97,8 +97,18 @@ public final class NaturalSpawner {
         return new NaturalSpawner.SpawnState(spawnableChunkCount, mobCounts, spawnPotential, localMobCapCalculator);
     }
 
+    // 修改后的 getRoughBiome 方法，支持 LevelChunk 并避免类型转换问题
     private static Biome getRoughBiome(final BlockPos pos, final ChunkAccess chunk) {
-        return chunk.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ())).value();
+        if (chunk instanceof LevelChunk lc) {
+            return lc.getLevel().getNoiseBiome(
+                QuartPos.fromBlock(pos.getX()),
+                QuartPos.fromBlock(pos.getY()),
+                QuartPos.fromBlock(pos.getZ())).value();
+        }
+        return chunk.getNoiseBiome(
+            QuartPos.fromBlock(pos.getX()),
+            QuartPos.fromBlock(pos.getY()),
+            QuartPos.fromBlock(pos.getZ())).value();
     }
 
     public static List<MobCategory> getFilteredSpawningCategories(

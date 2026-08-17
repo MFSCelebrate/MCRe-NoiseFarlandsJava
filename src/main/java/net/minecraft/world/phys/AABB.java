@@ -36,8 +36,16 @@ public class AABB {
         this(begin.x, begin.y, begin.z, end.x, end.y, end.z);
     }
 
+    // 修改：使用 long 避免 int 溢出
     public static AABB of(final BoundingBox box) {
-        return new AABB(box.minX(), box.minY(), box.minZ(), box.maxX() + 1, box.maxY() + 1, box.maxZ() + 1);
+        return new AABB(
+            (double) box.minX(),
+            (double) box.minY(),
+            (double) box.minZ(),
+            (double) ((long) box.maxX() + 1L),
+            (double) ((long) box.maxY() + 1L),
+            (double) ((long) box.maxZ() + 1L)
+        );
     }
 
     public static AABB unitCubeFromLowerCorner(final Vec3 pos) {

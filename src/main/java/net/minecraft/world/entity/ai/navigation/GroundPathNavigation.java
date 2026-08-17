@@ -17,6 +17,9 @@ import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.Vec3;
 
 public class GroundPathNavigation extends PathNavigation {
+    // 添加常量，与 Mixin 中的 Constants.MAX_BLOCK 一致
+    private static final int MAX_BLOCK = 2_147_483_632; // 134_217_727 * 16
+
     private boolean avoidSun;
     private boolean canPathToTargetsBelowSurface;
 
@@ -42,6 +45,13 @@ public class GroundPathNavigation extends PathNavigation {
 
     @Override
     public Path createPath(BlockPos pos, final int reachRange) {
+        // 检查坐标是否超出允许范围，超出则返回 null，避免溢出崩溃
+        int x = pos.getX();
+        int z = pos.getZ();
+        if (x < ~MAX_BLOCK || x > MAX_BLOCK || z < ~MAX_BLOCK || z > MAX_BLOCK) {
+            return null;
+        }
+
         LevelChunk chunk = this.level.getChunkSource().getChunkNow(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
         if (chunk == null) {
             return null;

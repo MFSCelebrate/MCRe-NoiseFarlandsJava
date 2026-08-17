@@ -18,9 +18,9 @@ public class EntityBoundSoundInstance extends AbstractTickableSoundInstance {
         this.volume = volume;
         this.pitch = pitch;
         this.entity = entity;
-        this.x = (float)this.entity.getX();
-        this.y = (float)this.entity.getY();
-        this.z = (float)this.entity.getZ();
+        this.x = entity.getX();
+        this.y = entity.getY();
+        this.z = entity.getZ();
     }
 
     @Override
@@ -33,9 +33,9 @@ public class EntityBoundSoundInstance extends AbstractTickableSoundInstance {
         if (this.entity.isRemoved()) {
             this.stop();
         } else {
-            this.x = (float)this.entity.getX();
-            this.y = (float)this.entity.getY();
-            this.z = (float)this.entity.getZ();
+            this.x = this.entity.getX();
+            this.y = this.entity.getY();
+            this.z = this.entity.getZ();
         }
     }
 }

@@ -56,6 +56,9 @@ public abstract class PathNavigation {
     private boolean isStuck;
     private float requiredPathLength = 16.0F;
 
+    // 添加常量：最大允许块坐标（与 Constants.MAX_BLOCK 一致）
+    private static final int MAX_BLOCK = 2_147_483_632; // 134_217_727 * 16
+
     public PathNavigation(final Mob mob, final Level level) {
         this.mob = mob;
         this.level = level;
@@ -137,6 +140,27 @@ public abstract class PathNavigation {
         return this.createPath(targets, radiusOffset, above, reachRange, this.getMaxPathLength());
     }
 
+    // 添加安全偏移方法，钳制 X/Z 坐标到合法范围
+    private BlockPos safeOffset(BlockPos pos, int dx, int dy, int dz) {
+        long newX = (long) pos.getX() + dx;
+        long newY = (long) pos.getY() + dy;
+        long newZ = (long) pos.getZ() + dz;
+
+        if (newX > MAX_BLOCK) {
+            newX = MAX_BLOCK;
+        } else if (newX < ~MAX_BLOCK) {
+            newX = ~MAX_BLOCK;
+        }
+
+        if (newZ > MAX_BLOCK) {
+            newZ = MAX_BLOCK;
+        } else if (newZ < ~MAX_BLOCK) {
+            newZ = ~MAX_BLOCK;
+        }
+
+        return new BlockPos((int) newX, (int) newY, (int) newZ);
+    }
+
     protected @Nullable Path createPath(
         final Set<BlockPos> targets, final int radiusOffset, final boolean above, final int reachRange, final float maxPathLength
     ) {
@@ -160,7 +184,10 @@ public abstract class PathNavigation {
         profiler.push("pathfind");
         BlockPos fromPos = above ? this.mob.blockPosition().above() : this.mob.blockPosition();
         int radius = (int)(maxPathLength + radiusOffset);
-        PathNavigationRegion region = new PathNavigationRegion(this.level, fromPos.offset(-radius, -radius, -radius), fromPos.offset(radius, radius, radius));
+        // 使用安全偏移代替直接 offset
+        BlockPos minPos = this.safeOffset(fromPos, -radius, -radius, -radius);
+        BlockPos maxPos = this.safeOffset(fromPos, radius, radius, radius);
+        PathNavigationRegion region = new PathNavigationRegion(this.level, minPos, maxPos);
         Path path = this.pathFinder.findPath(region, this.mob, targets, maxPathLength, reachRange, this.maxVisitedNodesMultiplier);
         profiler.pop();
         if (path != null && path.getTarget() != null) {
