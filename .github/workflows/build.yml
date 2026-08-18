@@ -1,0 +1,44 @@
+name: Decompile Beta 1.8.1 with MCP 4.4
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04  # 重点！使用 20.04，因为 MCP 4.4 依赖 Python 2.7
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # 1. 安装 Java 8（MCP 硬要求）
+    - name: Set up Java 8
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '8'
+
+    # 2. 安装 Python 2.7（MCP 4.4 基于 Python 2 编写，Ubuntu 20.04 自带）
+    - name: Install Python 2.7
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python2.7
+
+    # 3. 赋予脚本执行权限并运行反编译
+    - name: Run MCP Decompile
+      working-directory: ./mcp  # 切换到 MCP 目录
+      run: |
+        # 这一步是核心：直接用 Python 2.7 调用反编译脚本
+        python2.7 runtime/decompile.py
+
+    # 4. 将成果上传到 Actions Artifacts（方便你下载）
+    - name: Upload generated sources
+      uses: actions/upload-artifact@v3
+      with:
+        name: mcp-decompiled-src
+        path: |
+          ./mcp/src/           # 反编译后的源码
+          ./mcp/jars/classes/  # 反编译后的 class
+          ./mcp/reobf/         # 如果有混淆输出也保留
