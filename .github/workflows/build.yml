@@ -28,13 +28,15 @@ jobs:
         chmod -R +x .
         echo "All files in mcp/ now have execute permission"
         
-    - name: Download Linux jad binary
+    
+    - name: Download Fernflower
       working-directory: ./mcp
       run: |
         mkdir -p runtime/bin
-        wget -O runtime/bin/jad https://raw.githubusercontent.com/ModCoderPack/MCP-Archive/master/runtime/bin/jad
-        chmod +x runtime/bin/jad
-        file runtime/bin/jad
+        wget -O runtime/bin/fernflower.jar https://repo1.maven.org/maven2/org/jetbrains/intellij/deps/fernflower/1.0/fernflower-1.0.jar
+        chmod +x runtime/bin/fernflower.jar
+        # 确认下载成功
+        ls -la runtime/bin/fernflower.jar
     
     # 运行反编译（容器内 python2 命令可直接用）
     - name: Run MCP Decompile
