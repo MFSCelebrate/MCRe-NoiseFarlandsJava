@@ -27,6 +27,14 @@ jobs:
         # 给 mcp 目录下所有文件加执行权限（包括子目录）
         chmod -R +x .
         echo "All files in mcp/ now have execute permission"
+        
+    - name: Download Linux jad binary
+      working-directory: ./mcp
+      run: |
+        mkdir -p runtime/bin
+        wget -O runtime/bin/jad https://raw.githubusercontent.com/ModCoderPack/MCP-Archive/master/runtime/bin/jad
+        chmod +x runtime/bin/jad
+        file runtime/bin/jad
     
     # 运行反编译（容器内 python2 命令可直接用）
     - name: Run MCP Decompile
