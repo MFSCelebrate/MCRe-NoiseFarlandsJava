@@ -32,8 +32,6 @@ jobs:
     - name: Download Fernflower
       working-directory: ./mcp
       run: |
-        mkdir -p runtime/bin
-        wget -O runtime/bin/fernflower.jar https://repo1.maven.org/maven2/org/jetbrains/intellij/deps/fernflower/1.0/fernflower-1.0.jar
         chmod +x runtime/bin/fernflower.jar
         # 确认下载成功
         ls -la runtime/bin/fernflower.jar
