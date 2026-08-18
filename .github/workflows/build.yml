@@ -1,38 +1,33 @@
 name: Decompile Beta 1.8.1 with MCP 4.4
 
 on:
-  push:
-    branches: [ "MCBeta-1.8.1" ]
-  workflow_dispatch:
+  workflow_dispatch:  # 建议手动触发，方便测试
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # 不再用 20.04，直接上最新版，利用海量算力
+    runs-on: ubuntu-latest
+    # 核心改动：直接在 Ubuntu 20.04 容器里运行，避开 24.04 的软件源问题
+    container: ubuntu:20.04
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: Set up Java 8
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '8'
-
-    # 关键改动：在 Ubuntu 22.04/24.04 上安装 Python 2.7
-    - name: Install Python 2.7
+    # 在容器内安装 Java 8 和 Python 2（20.04 源里都有）
+    - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y python2
+        apt-get update
+        apt-get install -y openjdk-8-jdk python2 wget
 
+    # 运行反编译（容器内 python2 命令可直接用）
     - name: Run MCP Decompile
       working-directory: ./mcp
       run: |
-        # 注意：这里可能要用 python2 而不是 python2.7
         python2 runtime/decompile.py
 
+    # 上传产物（使用 v4，避免弃用警告）
     - name: Upload generated sources
       uses: actions/upload-artifact@v4
       with:
-        name: mcp-decompiled-src
+        name: beta1.8.1-decompiled-src
         path: ./mcp/
