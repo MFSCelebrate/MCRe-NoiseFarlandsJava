@@ -2,55 +2,135 @@ name: Decompile Beta 1.8.1 with MCP 4.4
 
 on:
   push:
-    branches: [ "MCBeta-1.8.1" ]
-  workflow_dispatch:  # 建议手动触发，方便测试
+    branches:
+      - MCBeta-1.8.1
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    # 核心改动：直接在 Ubuntu 20.04 容器里运行，避开 24.04 的软件源问题
-    container: ubuntu:20.04
+    container: ubuntu:20.04  # 使用 Ubuntu 20.04 容器（包含 Python 2.7 支持）
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      # ==================== 1. 检出代码 ====================
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # 在容器内安装 Java 8 和 Python 2（20.04 源里都有）
-    - name: Install dependencies
-      run: |
-        apt-get update
-        apt-get install -y openjdk-8-jdk python2 wget patch
-        
-    - name: Fix all permissions in mcp directory
-      working-directory: ./mcp
-      run: |
-        # 给 mcp 目录下所有文件加执行权限（包括子目录）
-        chmod -R +x .
-        echo "All files in mcp/ now have execute permission"
-        
-    
-    - name: Download Fernflower
-      working-directory: ./mcp
-      run: |
-        mkdir -p runtime/bin
-        wget -O runtime/bin/fernflower.jar https://maven.neoforged.net/releases/net/minecraftforge/fernflower/1.0/fernflower-1.0.jar
-        chmod +x runtime/bin/fernflower.jar
-    
-    # 运行反编译（容器内 python2 命令可直接用）
-    - name: Run MCP Decompile
-      working-directory: ./mcp
-      run: |
-        python2 runtime/decompile.py
-    
-    - name: Check decompiled sources
-      working-directory: ./mcp
-      run: |
-        ls -la src/minecraft/net/minecraft/ || echo "No java files found!"
-        find . -name "*.java" | head -20 || echo "No .java files in whole mcp directory!"
+      # ==================== 2. 安装依赖 ====================
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y openjdk-8-jdk python2 wget patch unzip
 
-    # 上传产物（使用 v4，避免弃用警告）
-    - name: Upload generated sources
-      uses: actions/upload-artifact@v4
-      with:
-        name: beta1.8.1-decompiled-src
-        path: ./mcp/
+      # ==================== 3. 下载兼容的 Fernflower ====================
+      - name: Download compatible Fernflower 1.0
+        working-directory: ./mcp
+        run: |
+          mkdir -p runtime/bin
+          # 从 NeoForged 镜像下载（Minecraft 社区维护，稳定可靠）
+          wget -O runtime/bin/fernflower.jar https://maven.neoforged.net/releases/net/minecraftforge/fernflower/1.0/fernflower-1.0.jar
+          chmod +x runtime/bin/fernflower.jar
+          echo "✅ Fernflower downloaded:"
+          ls -la runtime/bin/fernflower.jar
+
+      # ==================== 4. 修复 mcp.cfg（移除 wine） ====================
+      - name: Fix mcp.cfg for Linux
+        working-directory: ./mcp
+        run: |
+          # 备份原配置
+          cp conf/mcp.cfg conf/mcp.cfg.bak
+          # 将 Jadlinux 指向 Linux 原生版本（虽然我们使用 Fernflower，但保留正确配置以防回退）
+          sed -i 's|^Jadlinux = .*|Jadlinux = runtime/bin/jad|' conf/mcp.cfg
+          # 移除 CmdJadlinux 中的 wine 前缀
+          sed -i 's|^CmdJadlinux = wine .*|CmdJadlinux = {binjad} -b -d {outdir} -dead -o -r -s .java -stat -v "{classes}"|' conf/mcp.cfg
+          echo "✅ mcp.cfg fixed:"
+          grep -E '^Jadlinux|^CmdJadlinux' conf/mcp.cfg
+
+      # ==================== 5. 创建必要目录 ====================
+      - name: Create required directories
+        working-directory: ./mcp
+        run: |
+          mkdir -p temp/ffout/client
+          mkdir -p temp/ffout/server
+          mkdir -p temp/bin/minecraft
+          mkdir -p src/minecraft
+          mkdir -p src/minecraft_server
+          echo "✅ Directories created"
+
+      # ==================== 6. 修复 commands.py 中的 mkdir bug ====================
+      - name: Fix commands.py mkdir bug
+        working-directory: ./mcp
+        run: |
+          # 将 os.mkdir 替换为 os.makedirs，避免父目录不存在时报错
+          sed -i 's/os\.mkdir(pathbinlk\[side\])/os.makedirs(pathbinlk[side])/g' runtime/commands.py
+          sed -i 's/os\.mkdir(self\.binouttmp)/os.makedirs(self.binouttmp)/g' runtime/commands.py
+          echo "✅ commands.py fixed"
+
+      # ==================== 7. 跳过重新编译（修改 decompile.py） ====================
+      - name: Disable recompilation in decompile.py
+        working-directory: ./mcp
+        run: |
+          # 注释掉 recompile 和 gathermd5s 调用
+          sed -i '/^[[:space:]]*recompile\.main(/ s/^/# /' runtime/decompile.py
+          sed -i '/^[[:space:]]*commands\.gathermd5s(/ s/^/# /' runtime/decompile.py
+          # 添加提示日志
+          sed -i '/== Post decompiling operations ==/a \    commands.logger.info('"'"'> Skipped recompilation and MD5 generation (source only)'"'"')' runtime/decompile.py
+          echo "✅ decompile.py modified"
+
+      # ==================== 8. 修复所有文件权限 ====================
+      - name: Fix all permissions
+        working-directory: ./mcp
+        run: |
+          chmod -R +x . 2>/dev/null || true
+          echo "✅ Permissions fixed"
+
+      # ==================== 9. 验证关键文件存在 ====================
+      - name: Verify critical files
+        working-directory: ./mcp
+        run: |
+          echo "=== Checking critical files ==="
+          ls -la jars/bin/minecraft.jar || echo "❌ minecraft.jar not found!"
+          ls -la runtime/bin/fernflower.jar || echo "❌ fernflower.jar not found!"
+          ls -la runtime/commands.py || echo "❌ commands.py not found!"
+          ls -la runtime/decompile.py || echo "❌ decompile.py not found!"
+
+      # ==================== 10. 运行反编译 ====================
+      - name: Run MCP Decompile
+        working-directory: ./mcp
+        run: |
+          python2 runtime/decompile.py
+
+      # ==================== 11. 显示日志（调试用） ====================
+      - name: Show MCP logs
+        working-directory: ./mcp
+        if: always()
+        run: |
+          echo "===== MCP LOG ====="
+          cat logs/mcp.log 2>/dev/null || echo "No mcp.log"
+          echo "===== MCP ERR LOG ====="
+          cat logs/mcperr.log 2>/dev/null || echo "No mcperr.log"
+
+      # ==================== 12. 检查反编译结果 ====================
+      - name: Check decompilation result
+        working-directory: ./mcp
+        run: |
+          if [ -d "src/minecraft/net/minecraft" ]; then
+            JAVA_COUNT=$(find src -name "*.java" 2>/dev/null | wc -l)
+            echo "✅ Success: found $JAVA_COUNT Java files"
+            echo "Sample files:"
+            ls -la src/minecraft/net/minecraft/ | head -10
+          else
+            echo "❌ ERROR: No Java files generated!"
+            echo "Directory structure:"
+            find . -type d 2>/dev/null | head -30
+            exit 1
+          fi
+
+      # ==================== 13. 上传源码 Artifact ====================
+      - name: Upload decompiled sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: beta1.8.1-decompiled-src
+          path: ./mcp/src/minecraft/
+          if-no-files-found: error
+          compression-level: 6
