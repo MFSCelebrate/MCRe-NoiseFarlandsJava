@@ -131,6 +131,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: beta1.8.1-decompiled-src
-          path: ./mcp/src/minecraft/
+          path: ./mcp
           if-no-files-found: error
           compression-level: 6
