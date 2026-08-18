@@ -21,11 +21,12 @@ jobs:
         apt-get update
         apt-get install -y openjdk-8-jdk python2 wget
     
-    - name: Fix all binary permissions
+    - name: Fix all permissions in mcp directory
       working-directory: ./mcp
       run: |
-        chmod -R +x bin/
-        chmod -R +x runtime/
+        # 给 mcp 目录下所有文件加执行权限（包括子目录）
+        chmod -R +x .
+        echo "All files in mcp/ now have execute permission"
     
     # 运行反编译（容器内 python2 命令可直接用）
     - name: Run MCP Decompile
