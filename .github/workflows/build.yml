@@ -21,23 +21,6 @@ jobs:
         apt-get update
         apt-get install -y openjdk-8-jdk python2 wget patch
         
-    - name: Fix MCP config for Linux (remove wine)
-      working-directory: ./mcp
-      run: |
-        # 备份原配置
-        cp conf/mcp.cfg conf/mcp.cfg.bak
-    
-        # 将 Jadlinux 改为指向 Linux 原生二进制文件
-        sed -i 's/^Jadlinux = .*/Jadlinux = runtime\/bin\/jad/' conf/mcp.cfg
-    
-        # 修正 CmdJadlinux，移除 wine 前缀（如果有的话）
-        sed -i 's/^CmdJadlinux = .*/CmdJadlinux = {binjad} -b -d {outdir} -dead -o -r -s .java -stat -v "{classes}"/' conf/mcp.cfg
-    
-        # 确保 Jad 二进制文件有执行权限
-        chmod +x runtime/bin/jad 2>/dev/null || true
-    
-        echo "MCP config fixed for Linux"
-    
     - name: Fix all permissions in mcp directory
       working-directory: ./mcp
       run: |
