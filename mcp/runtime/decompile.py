@@ -97,15 +97,19 @@ def main(conffile=None, force_jad=False):
         srvdone = True
 
     commands.logger.info ('== Post decompiling operations ==')
-    if not cltdone or not srvdone:
-        commands.logger.info ('> Recompiling')
-        recompile.main(conffile)
-    if not cltdone:
-        commands.logger.info ('> Generating the md5 (client)')
-        commands.gathermd5s(0)
-    if not srvdone:
-        commands.logger.info ('> Generating the md5 (server)')
-        commands.gathermd5s(1)
+    # ========== 修改开始：跳过重新编译和 MD5 生成 ==========
+    # 如果你需要重新编译成 .class，可以取消下面注释
+    # if not cltdone or not srvdone:
+    #     commands.logger.info ('> Recompiling')
+    #     recompile.main(conffile)
+    # if not cltdone:
+    #     commands.logger.info ('> Generating the md5 (client)')
+    #     commands.gathermd5s(0)
+    # if not srvdone:
+    #     commands.logger.info ('> Generating the md5 (server)')
+    #     commands.gathermd5s(1)
+    commands.logger.info('> Skipped recompilation and MD5 generation (source only)')
+    # ========== 修改结束 ==========
 
 if __name__ == '__main__':
     parser = OptionParser(version='MCP %s' % Commands.MCPVersion)
