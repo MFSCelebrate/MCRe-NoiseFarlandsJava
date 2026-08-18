@@ -482,6 +482,7 @@ class Commands(object):
             pass
 
     def checkupdates(self, silent=False):
+        return []
         results = []
         #HINT: Each local entry is of the form dict[filename]=(md5,modificationtime)
         md5lcldict = {}

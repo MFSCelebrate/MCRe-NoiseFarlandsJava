@@ -1,6 +1,8 @@
 name: Decompile Beta 1.8.1 with MCP 4.4
 
 on:
+  push:
+    branches: [ "MCBeta-1.8.1" ]
   workflow_dispatch:  # 建议手动触发，方便测试
 
 jobs:
