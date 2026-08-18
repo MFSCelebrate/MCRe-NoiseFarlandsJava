@@ -20,12 +20,24 @@ jobs:
       run: |
         apt-get update
         apt-get install -y openjdk-8-jdk python2 wget
-
+    
+    - name: Fix all binary permissions
+      working-directory: ./mcp
+      run: |
+        chmod -R +x bin/
+        chmod -R +x runtime/
+    
     # 运行反编译（容器内 python2 命令可直接用）
     - name: Run MCP Decompile
       working-directory: ./mcp
       run: |
         python2 runtime/decompile.py
+    
+    - name: Check decompiled sources
+      working-directory: ./mcp
+      run: |
+        ls -la src/minecraft/net/minecraft/ || echo "No java files found!"
+        find . -name "*.java" | head -20 || echo "No .java files in whole mcp directory!"
 
     # 上传产物（使用 v4，避免弃用警告）
     - name: Upload generated sources
