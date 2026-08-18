@@ -32,9 +32,9 @@ jobs:
     - name: Download Fernflower
       working-directory: ./mcp
       run: |
+        mkdir -p runtime/bin
+        wget -O runtime/bin/fernflower.jar https://maven.neoforged.net/releases/net/minecraftforge/fernflower/1.0/fernflower-1.0.jar
         chmod +x runtime/bin/fernflower.jar
-        # 确认下载成功
-        ls -la runtime/bin/fernflower.jar
     
     # 运行反编译（容器内 python2 命令可直接用）
     - name: Run MCP Decompile
