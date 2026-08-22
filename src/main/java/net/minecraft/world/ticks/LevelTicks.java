@@ -1,10 +1,5 @@
 package net.minecraft.world.ticks;
 
-
-
-
-
-
 import it.unimi.dsi.fastutil.longs.Long2LongMap.Entry;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;

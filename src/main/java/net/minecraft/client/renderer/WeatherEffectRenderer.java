@@ -72,8 +72,14 @@ public class WeatherEffectRenderer implements AutoCloseable {
             BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
             RandomSource random = RandomSource.createThreadLocalInstance();
 
-            for (int z = cameraBlockZ - renderState.radius; z <= cameraBlockZ + renderState.radius; z++) {
-                for (int x = cameraBlockX - renderState.radius; x <= cameraBlockX + renderState.radius; x++) {
+            long zStart = (long) cameraBlockZ - renderState.radius;
+            long zEnd = (long) cameraBlockZ + renderState.radius;
+            for (long zL = zStart; zL <= zEnd; zL++) {
+                int z = (int) zL;
+                long xStart = (long) cameraBlockX - renderState.radius;
+                long xEnd = (long) cameraBlockX + renderState.radius;
+                for (long xL = xStart; xL <= xEnd; xL++) {
+                    int x = (int) xL;
                     int terrainHeight = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
                     int y0 = Math.max(cameraBlockY - renderState.radius, terrainHeight);
                     int y1 = Math.max(cameraBlockY + renderState.radius, terrainHeight);
@@ -86,10 +92,10 @@ public class WeatherEffectRenderer implements AutoCloseable {
                             int lightCoords = LightCoordsUtil.getLightCoords(level, mutablePos.set(x, lightSampleY, z));
                             if (precipitation == Biome.Precipitation.RAIN) {
                                 renderState.rainColumns
-                                    .add(this.createRainColumnInstance(random, level.getGameTime(), x, y0, y1, z, lightCoords, partialTicks));
+                                        .add(this.createRainColumnInstance(random, level.getGameTime(), x, y0, y1, z, lightCoords, partialTicks));
                             } else if (precipitation == Biome.Precipitation.SNOW) {
                                 renderState.snowColumns
-                                    .add(this.createSnowColumnInstance(random, level.getGameTime(), x, y0, y1, z, lightCoords, partialTicks));
+                                        .add(this.createSnowColumnInstance(random, level.getGameTime(), x, y0, y1, z, lightCoords, partialTicks));
                             }
                         }
                     }
@@ -127,8 +133,8 @@ public class WeatherEffectRenderer implements AutoCloseable {
             GpuTextureView colorTexture = weatherRenderTarget.getColorTextureView();
             GpuTextureView depthTexture = weatherRenderTarget.getDepthTextureView();
             RenderPipeline renderPipeline = Minecraft.getInstance().gameRenderer.gameRenderState().useShaderTransparency()
-                ? RenderPipelines.WEATHER_DEPTH_WRITE
-                : RenderPipelines.WEATHER_NO_DEPTH_WRITE;
+                    ? RenderPipelines.WEATHER_DEPTH_WRITE
+                    : RenderPipelines.WEATHER_NO_DEPTH_WRITE;
 
             GpuBuffer vertexBuffer;
             GpuBuffer indexBuffer;
@@ -155,7 +161,7 @@ public class WeatherEffectRenderer implements AutoCloseable {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 renderPass.setUniform("DynamicTransforms", dynamicTransforms);
                 renderPass.bindTexture(
-                    "Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR)
+                        "Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR)
                 );
                 renderPass.setIndexBuffer(indexBuffer, indexType);
                 renderPass.setVertexBuffer(0, vertexBuffer.slice());
@@ -166,16 +172,15 @@ public class WeatherEffectRenderer implements AutoCloseable {
     }
 
     private WeatherEffectRenderer.ColumnInstance createRainColumnInstance(
-        final RandomSource random,
-        final long ticks,
-        final int x,
-        final int bottomY,
-        final int topY,
-        final int z,
-        final int lightCoords,
-        final float partialTicks
-    ) {
-        int wrappedTicks = (int)(ticks & 131071L);
+            final RandomSource random,
+            final long ticks,
+            final int x,
+            final int bottomY,
+            final int topY,
+            final int z,
+            final int lightCoords,
+            final float partialTicks) {
+        int wrappedTicks = (int) (ticks & 131071L);
         int tickOffset = x * x * 3121 + x * 45238971 + z * z * 418711 + z * 13761 & 0xFF;
         float blockPosRainSpeed = 3.0F + random.nextFloat();
         float textureOffset = -(wrappedTicks + tickOffset + partialTicks) / 32.0F * blockPosRainSpeed;
@@ -184,39 +189,37 @@ public class WeatherEffectRenderer implements AutoCloseable {
     }
 
     private WeatherEffectRenderer.ColumnInstance createSnowColumnInstance(
-        final RandomSource random,
-        final long ticks,
-        final int x,
-        final int bottomY,
-        final int topY,
-        final int z,
-        final int lightCoords,
-        final float partialTicks
-    ) {
-        int wrappedTicks = (int)(ticks & 131071L);
+            final RandomSource random,
+            final long ticks,
+            final int x,
+            final int bottomY,
+            final int topY,
+            final int z,
+            final int lightCoords,
+            final float partialTicks) {
+        int wrappedTicks = (int) (ticks & 131071L);
         float time = wrappedTicks + partialTicks;
-        float u = (float)(random.nextDouble() + time * 0.01F * (float)random.nextGaussian());
-        float v = (float)(random.nextDouble() + time * (float)random.nextGaussian() * 0.001F);
-        float vOffset = -((float)(ticks & 511L) + partialTicks) / 512.0F;
+        float u = (float) (random.nextDouble() + time * 0.01F * (float) random.nextGaussian());
+        float v = (float) (random.nextDouble() + time * (float) random.nextGaussian() * 0.001F);
+        float vOffset = -((float) (ticks & 511L) + partialTicks) / 512.0F;
         int brightenedLightCoords = LightCoordsUtil.pack((LightCoordsUtil.block(lightCoords) * 3 + 15) / 4, (LightCoordsUtil.sky(lightCoords) * 3 + 15) / 4);
         return new WeatherEffectRenderer.ColumnInstance(x, z, bottomY, topY, u, vOffset + v, brightenedLightCoords);
     }
 
     private void renderInstances(
-        final VertexConsumer builder,
-        final List<WeatherEffectRenderer.ColumnInstance> columns,
-        final Vec3 cameraPos,
-        final float maxAlpha,
-        final int radius,
-        final float intensity
-    ) {
+            final VertexConsumer builder,
+            final List<WeatherEffectRenderer.ColumnInstance> columns,
+            final Vec3 cameraPos,
+            final float maxAlpha,
+            final int radius,
+            final float intensity) {
         if (!columns.isEmpty()) {
             float radiusSq = radius * radius;
 
             for (WeatherEffectRenderer.ColumnInstance column : columns) {
-                float relativeX = (float)(column.x + 0.5 - cameraPos.x);
-                float relativeZ = (float)(column.z + 0.5 - cameraPos.z);
-                float distanceSq = (float)Mth.lengthSquared(relativeX, relativeZ);
+                float relativeX = (float) (column.x + 0.5 - cameraPos.x);
+                float relativeZ = (float) (column.z + 0.5 - cameraPos.z);
+                float distanceSq = (float) Mth.lengthSquared(relativeX, relativeZ);
                 float alpha = Mth.lerp(Math.min(distanceSq / radiusSq, 1.0F), maxAlpha, 0.5F) * intensity;
                 int color = ARGB.white(alpha);
                 int index = (column.z - Mth.floor(cameraPos.z) + 16) * 32 + column.x - Mth.floor(cameraPos.x) + 16;
@@ -224,8 +227,8 @@ public class WeatherEffectRenderer implements AutoCloseable {
                 float halfSizeZ = this.columnSizeZ[index] / 2.0F;
                 float x0 = relativeX - halfSizeX;
                 float x1 = relativeX + halfSizeX;
-                float y1 = (float)(column.topY - cameraPos.y);
-                float y0 = (float)(column.bottomY - cameraPos.y);
+                float y1 = (float) (column.topY - cameraPos.y);
+                float y0 = (float) (column.bottomY - cameraPos.y);
                 float z0 = relativeZ - halfSizeZ;
                 float z1 = relativeZ + halfSizeZ;
                 float u0 = column.uOffset + 0.0F;
@@ -249,6 +252,5 @@ public class WeatherEffectRenderer implements AutoCloseable {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public record ColumnInstance(int x, int z, int bottomY, int topY, float uOffset, float vOffset, int lightCoords) {
-    }
+    public record ColumnInstance(int x, int z, int bottomY, int topY, float uOffset, float vOffset, int lightCoords) {}
 }
