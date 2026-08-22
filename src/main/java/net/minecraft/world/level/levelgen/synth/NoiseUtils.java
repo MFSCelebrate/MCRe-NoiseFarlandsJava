@@ -11,10 +11,15 @@ public class NoiseUtils {
     }
 
     public static double biasTowardsExtreme(final double noise, final double factor) {
-        double result = noise + Math.sin(Math.PI * noise) * factor / Math.PI;
         if (isBedrockMode()) {
+            // === Bedrock 模式：全 float 精度 ===
+            float fNoise = (float) noise;
+            float fFactor = (float) factor;
+            float result = (float) (fNoise + (float) (Math.sin(Math.PI * fNoise) * fFactor / Math.PI));
             return (float) result;
         }
+        // === 原 double 实现 ===
+        double result = noise + Math.sin(Math.PI * noise) * factor / Math.PI;
         return result;
     }
 

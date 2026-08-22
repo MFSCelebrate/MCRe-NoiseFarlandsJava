@@ -34,7 +34,8 @@ public class NormalNoise {
         return new NormalNoise(random, parameters, false);
     }
 
-    public static NormalNoise create(final RandomSource random, final int firstOctave, final double... amplitudes) {
+    public static NormalNoise create(final RandomSource random, final int firstOctave, final double
+                    ... amplitudes) {
         return create(random, new NormalNoise.NoiseParameters(firstOctave, new DoubleArrayList(amplitudes)));
     }
 
@@ -46,17 +47,31 @@ public class NormalNoise {
         int firstOctave = parameters.firstOctave;
         DoubleList amplitudes = parameters.amplitudes;
         this.parameters = parameters;
+
+        boolean isBedrock = isBedrockMode();
+
+        // 在 Bedrock 模式下，截断振幅列表，用于计算 octave 范围和 valueFactor
+        DoubleList effectiveAmplitudes = amplitudes;
+        if (isBedrock) {
+            DoubleArrayList truncated = new DoubleArrayList(amplitudes.size());
+            for (int i = 0; i < amplitudes.size(); i++) {
+                truncated.add((float) amplitudes.getDouble(i));
+            }
+            effectiveAmplitudes = truncated;
+        }
+
+        // 使用 effectiveAmplitudes 创建 PerlinNoise（create 方法内部会再次截断，保持一致性）
         if (useNewInitialization) {
-            this.first = PerlinNoise.create(random, firstOctave, amplitudes);
-            this.second = PerlinNoise.create(random, firstOctave, amplitudes);
+            this.first = PerlinNoise.create(random, firstOctave, effectiveAmplitudes);
+            this.second = PerlinNoise.create(random, firstOctave, effectiveAmplitudes);
         } else {
-            this.first = PerlinNoise.createLegacyForLegacyNetherBiome(random, firstOctave, amplitudes);
-            this.second = PerlinNoise.createLegacyForLegacyNetherBiome(random, firstOctave, amplitudes);
+            this.first = PerlinNoise.createLegacyForLegacyNetherBiome(random, firstOctave, effectiveAmplitudes);
+            this.second = PerlinNoise.createLegacyForLegacyNetherBiome(random, firstOctave, effectiveAmplitudes);
         }
 
         int minOctave = Integer.MAX_VALUE;
         int maxOctave = Integer.MIN_VALUE;
-        DoubleListIterator iterator = amplitudes.iterator();
+        DoubleListIterator iterator = effectiveAmplitudes.iterator();
 
         while (iterator.hasNext()) {
             int i = iterator.nextIndex();
@@ -67,8 +82,20 @@ public class NormalNoise {
             }
         }
 
-        this.valueFactor = 0.16666666666666666 / expectedDeviation(maxOctave - minOctave);
-        this.maxValue = (this.first.maxValue() + this.second.maxValue()) * this.valueFactor;
+        double rawExpectedDeviation = expectedDeviation(maxOctave - minOctave);
+        double rawValueFactor = 0.16666666666666666 / rawExpectedDeviation;
+        if (isBedrock) {
+            this.valueFactor = (float) rawValueFactor;
+        } else {
+            this.valueFactor = rawValueFactor;
+        }
+
+        double rawMaxValue = (this.first.maxValue() + this.second.maxValue()) * this.valueFactor;
+        if (isBedrock) {
+            this.maxValue = (float) rawMaxValue;
+        } else {
+            this.maxValue = rawMaxValue;
+        }
     }
 
     public double maxValue() {
@@ -81,19 +108,42 @@ public class NormalNoise {
 
     private static double expectedDeviation(final int octaveSpan) {
         if (isBedrockMode()) {
-            return (float) 0.1F * (1.0F + 1.0F / (octaveSpan + 1));
+            // === Bedrock 模式：全 float 计算 ===
+            float fOctaveSpan = (float) octaveSpan;
+            float result = 0.1f * (1.0f + 1.0f / (fOctaveSpan + 1.0f));
+            return (float) result;
         }
+        // === 原 double 实现 ===
         return 0.1 * (1.0 + 1.0 / (octaveSpan + 1));
     }
 
     public double getValue(final double x, final double y, final double z) {
+        if (isBedrockMode()) {
+            // === Bedrock 模式：全 float 精度 ===
+            float fx = (float) x;
+            float fy = (float) y;
+            float fz = (float) z;
+
+            // INPUT_FACTOR 转 float 后再乘，模拟单精度
+            float factor = (float) INPUT_FACTOR;
+            float x2 = fx * factor;
+            float y2 = fy * factor;
+            float z2 = fz * factor;
+
+            // 调用 PerlinNoise.getValue（内部会根据模式切换精度）
+            // 但为了确保输入精度已被截断，我们将 float 转回 double 传入（PerlinNoise 内部会再次判断）
+            float val1 = (float) this.first.getValue((double) fx, (double) fy, (double) fz);
+            float val2 = (float) this.second.getValue((double) x2, (double) y2, (double) z2);
+
+            float result = (val1 + val2) * (float) this.valueFactor;
+            return (float) result;
+        }
+
+        // === 原 double 实现 ===
         double x2 = x * 1.0181268882175227;
         double y2 = y * 1.0181268882175227;
         double z2 = z * 1.0181268882175227;
         double result = (this.first.getValue(x, y, z) + this.second.getValue(x2, y2, z2)) * this.valueFactor;
-        if (isBedrockMode()) {
-            return (float) result;
-        }
         return result;
     }
 
@@ -112,20 +162,26 @@ public class NormalNoise {
     }
 
     public record NoiseParameters(int firstOctave, DoubleList amplitudes) {
-        public static final Codec<NormalNoise.NoiseParameters> DIRECT_CODEC = RecordCodecBuilder.create(
-            i -> i.group(
-                    Codec.INT.fieldOf("firstOctave").forGetter(NormalNoise.NoiseParameters::firstOctave),
-                    Codec.DOUBLE.listOf().fieldOf("amplitudes").forGetter(NormalNoise.NoiseParameters::amplitudes)
+        public static final Codec<
+                NormalNoise.NoiseParameters> DIRECT_CODEC = RecordCodecBuilder.create(
+                i -> i.group(
+                        Codec.INT.fieldOf("firstOctave").forGetter(NormalNoise.NoiseParameters
+                                ::firstOctave),
+                        Codec.DOUBLE.listOf().fieldOf("amplitudes").forGetter(NormalNoise.NoiseParameters
+                                ::amplitudes)
                 )
-                .apply(i, NormalNoise.NoiseParameters::new)
+                        .apply(i, NormalNoise.NoiseParameters::new)
         );
-        public static final Codec<Holder<NormalNoise.NoiseParameters>> CODEC = RegistryFileCodec.create(Registries.NOISE, DIRECT_CODEC);
+        public static final Codec<
+                Holder<
+                        NormalNoise.NoiseParameters>> CODEC = RegistryFileCodec.create(Registries.NOISE, DIRECT_CODEC);
 
         public NoiseParameters(final int firstOctave, final List<Double> amplitudes) {
             this(firstOctave, new DoubleArrayList(amplitudes));
         }
 
-        public NoiseParameters(final int firstOctave, final double firstAmplitude, final double... amplitudes) {
+        public NoiseParameters(final int firstOctave, final double firstAmplitude, final double
+                        ... amplitudes) {
             this(firstOctave, Util.make(new DoubleArrayList(amplitudes), list -> list.add(0, firstAmplitude)));
         }
     }

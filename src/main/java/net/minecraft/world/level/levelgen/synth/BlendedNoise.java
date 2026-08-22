@@ -16,8 +16,7 @@ import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 
 public class BlendedNoise implements DensityFunction.SimpleFunction {
-    private static final Codec<
-            Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+    private static final Codec<Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     private static final MapCodec<BlendedNoise> DATA_CODEC = RecordCodecBuilder.mapCodec(
             i -> i.group(
                     SCALE_RANGE.fieldOf("xz_scale").forGetter(n -> n.xzScale),
@@ -28,8 +27,7 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
             )
                     .apply(i, BlendedNoise::createUnseeded)
     );
-    public static final KeyDispatchDataCodec<
-            BlendedNoise> CODEC = KeyDispatchDataCodec.of(DATA_CODEC);
+    public static final KeyDispatchDataCodec<BlendedNoise> CODEC = KeyDispatchDataCodec.of(DATA_CODEC);
     private final PerlinNoise minLimitNoise;
     private final PerlinNoise maxLimitNoise;
     private final PerlinNoise mainNoise;
@@ -52,12 +50,10 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         return config != null && ("1.18-exp-32bit".equals(config.precisionMode) || "1.18-exp-64bit".equals(config.precisionMode));
     }
 
-    /** 创建 Exp 4 专用 Limit Noise：-15~-6 振幅 1.0，-5~0 振幅 0 */
     private static PerlinNoise createLimitNoiseExp4(RandomSource random) {
         DoubleArrayList amplitudes = new DoubleArrayList(new double[16]);
-        // 只有 -15 ~ -9 (索引 0-6) 有振幅 1.0
-        for (int i = 0; i < 7; i++) amplitudes.set(i, 1.0); // -15 ~ -9
-        for (int i = 7; i < 16; i++) amplitudes.set(i, 0.0); // -8 ~ 0
+        for (int i = 0; i < 7; i++) amplitudes.set(i, 1.0);
+        for (int i = 7; i < 16; i++) amplitudes.set(i, 0.0);
         return new PerlinNoise(random, Pair.of(-15, amplitudes), true);
     }
 
@@ -83,24 +79,37 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         this.xzFactor = xzFactor;
         this.yFactor = yFactor;
         this.smearScaleMultiplier = smearScaleMultiplier;
-        this.xzMultiplier = 684.412 * this.xzScale;
-        this.yMultiplier = 684.412 * this.yScale;
+
+        boolean isBedrock = isBedrockMode();
+
+        // 修改：在 Bedrock 模式下对乘数因子进行 float 截断
+        double rawXzMultiplier = 684.412 * this.xzScale;
+        double rawYMultiplier = 684.412 * this.yScale;
+        if (isBedrock) {
+            this.xzMultiplier = (float) rawXzMultiplier;
+            this.yMultiplier = (float) rawYMultiplier;
+        } else {
+            this.xzMultiplier = rawXzMultiplier;
+            this.yMultiplier = rawYMultiplier;
+        }
+
+        // maxValue 通过 minLimitNoise.maxBrokenValue 计算，该方法内部已根据 isBedrockMode() 切换精度
+        // 若当前为 Bedrock 模式，maxBrokenValue 会返回截断后的值
         this.maxValue = minLimitNoise.maxBrokenValue(this.yMultiplier);
     }
 
     @VisibleForTesting
     public BlendedNoise(
             final RandomSource random, final double xzScale, final double yScale, final double xzFactor, final double yFactor, final double smearScaleMultiplier) {
-        // 🎯 关键：Exp4 模式强制 xzScale=1.0，创建特殊振幅的 limit noise
         boolean exp4 = is1_18Exp4Mode();
         double actualXzScale = exp4 ? 1.0 : xzScale;
 
         this(
-        exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
-        exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
-        exp4 ? PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0))
-                : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0)),
-        actualXzScale, yScale, xzFactor, yFactor, smearScaleMultiplier
+                exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
+                exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
+                exp4 ? PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0))
+                        : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0)),
+                actualXzScale, yScale, xzFactor, yFactor, smearScaleMultiplier
         );
     }
 
@@ -110,6 +119,73 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
 
     @Override
     public double compute(final DensityFunction.FunctionContext context) {
+        if (isBedrockMode()) {
+            // === Bedrock 模式：全部使用 float 精度计算 ===
+            float limitX = (float)(context.blockX() * this.xzMultiplier);
+            float limitY = (float)(context.blockY() * this.yMultiplier);
+            float limitZ = (float)(context.blockZ() * this.xzMultiplier);
+            float mainX = limitX / (float)this.xzFactor;
+            float mainY = limitY / (float)this.yFactor;
+            float mainZ = limitZ / (float)this.xzFactor;
+            float limitSmear = (float)(this.yMultiplier * this.smearScaleMultiplier);
+            float mainSmear = limitSmear / (float)this.yFactor;
+
+            float mainNoiseValue = 0.0f;
+            float pow = 1.0f;
+
+            // mainNoise 循环（8 次）
+            for (int i = 0; i < 8; i++) {
+                ImprovedNoise noise = this.mainNoise.getOctaveNoise(i);
+                if (noise != null) {
+                    float wx = (float) PerlinNoise.wrap(mainX * pow);
+                    float wy = (float) PerlinNoise.wrap(mainY * pow);
+                    float wz = (float) PerlinNoise.wrap(mainZ * pow);
+                    float noiseVal = (float) noise.noise(wx, wy, wz, mainSmear * pow, mainY * pow);
+                    mainNoiseValue += noiseVal / pow;
+                }
+                pow /= 2.0f;
+            }
+
+            float factor = (mainNoiseValue / 10.0f + 1.0f) / 2.0f;
+            boolean isMax = factor >= 1.0f;
+            boolean isMin = factor <= 0.0f;
+            pow = 1.0f;
+
+            float blendMin = 0.0f;
+            float blendMax = 0.0f;
+
+            // limit noise 循环（16 次）
+            for (int i = 0; i < 16; i++) {
+                float wx = (float) PerlinNoise.wrap(limitX * pow);
+                float wy = (float) PerlinNoise.wrap(limitY * pow);
+                float wz = (float) PerlinNoise.wrap(limitZ * pow);
+                float yScalePow = limitSmear * pow;
+                float limitYPow = limitY * pow;
+
+                if (!isMax) {
+                    ImprovedNoise minNoise = this.minLimitNoise.getOctaveNoise(i);
+                    if (minNoise != null) {
+                        float noiseVal = (float) minNoise.noise(wx, wy, wz, limitSmear * pow, limitY * pow);
+                        blendMin += noiseVal / pow;
+                    }
+                }
+
+                if (!isMin) {
+                    ImprovedNoise maxNoise = this.maxLimitNoise.getOctaveNoise(i);
+                    if (maxNoise != null) {
+                        float noiseVal = (float) maxNoise.noise(wx, wy, wz, limitSmear * pow, limitY * pow);
+                        blendMax += noiseVal / pow;
+                    }
+                }
+
+                pow /= 2.0f;
+            }
+
+            float result = Mth.clampedLerp(factor, blendMin / 512.0f, blendMax / 512.0f) / 128.0f;
+            return (float) result;
+        }
+
+        // === 原 double 实现 ===
         double limitX = context.blockX() * this.xzMultiplier;
         double limitY = context.blockY() * this.yMultiplier;
         double limitZ = context.blockZ() * this.xzMultiplier;
@@ -124,14 +200,13 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         boolean optimizeLoop = true;
         double pow = 1.0;
 
-        // mainNoise 循环
         for (int i = 0; i < 8; i++) {
             ImprovedNoise noise = this.mainNoise.getOctaveNoise(i);
             if (noise != null) {
                 mainNoiseValue +=
                         noise.noise(
-                                        PerlinNoise.wrap(mainX * pow), PerlinNoise.wrap(mainY * pow), PerlinNoise.wrap(mainZ * pow), mainSmear * pow, mainY * pow
-                                ) / pow;
+                                PerlinNoise.wrap(mainX * pow), PerlinNoise.wrap(mainY * pow), PerlinNoise.wrap(mainZ * pow), mainSmear * pow, mainY * pow
+                        ) / pow;
             }
             pow /= 2.0;
         }
@@ -139,9 +214,8 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         double factor = (mainNoiseValue / 10.0 + 1.0) / 2.0;
         boolean isMax = factor >= 1.0;
         boolean isMin = factor <= 0.0;
-        pow = 1.0; // 👈 重置 pow，不要重新声明 double
+        pow = 1.0;
 
-        // limit noise 循环：纯原版逻辑
         for (int i = 0; i < 16; i++) {
             double wx = PerlinNoise.wrap(limitX * pow);
             double wy = PerlinNoise.wrap(limitY * pow);
@@ -167,9 +241,6 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         }
 
         double result = Mth.clampedLerp(factor, blendMin / 512.0, blendMax / 512.0) / 128.0;
-        if (isBedrockMode()) {
-            return (float) result;
-        }
         return result;
     }
 

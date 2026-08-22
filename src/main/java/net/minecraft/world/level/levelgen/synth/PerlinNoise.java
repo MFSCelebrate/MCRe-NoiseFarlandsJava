@@ -19,20 +19,17 @@ import net.minecraft.world.level.levelgen.PositionalRandomFactory;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 
-/**
- * PerlinNoise — 世界噪声生成器（MCRe NoiseFarlands 适配版）
- *
- * <p>根据 WorldMainSettingScreen.precisionMode 动态切换计算精度：
- *
- * <ul>
- *   <li>32bit：全程 double 计算（保持原版行为）
- *   <li>64bit：坐标折叠到 ±16,777,216 范围内
- *   <li>Bedrock：所有关键位置强制 float 精度（模拟基岩版噪声表现）
- *   <li>1.18-exp-32bit：模拟实验性快照边境之地位置，使用直接 return
- *   <li>1.18-exp-64bit：模拟实验性快照64位边境之地位置，使用折叠
- * </ul>
- */
 public class PerlinNoise {
+    private boolean isBedrockMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
+    }
+
+    private boolean is1_18Exp4Mode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && ("1.18-exp-32bit".equals(config.precisionMode) || "1.18-exp-64bit".equals(config.precisionMode));
+    }
+
     private static final int ROUND_OFF = 33554432;
     private final @Nullable ImprovedNoise[] noiseLevels;
     private final int firstOctave;
@@ -59,15 +56,35 @@ public class PerlinNoise {
         return new PerlinNoise(random, makeAmplitudes(new IntRBTreeSet(octaveSet)), true);
     }
 
+    // 修改：在 Bedrock 模式下截断振幅为 float 精度
     public static PerlinNoise create(final RandomSource random, final int firstOctave, final double firstAmplitude, final double amplitudes) {
         DoubleArrayList amplitudeList = new DoubleArrayList();
-        amplitudeList.add(firstAmplitude);
-        amplitudeList.add(amplitudes);
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        boolean isBedrock = config != null && "Bedrock-Edition".equals(config.farlandsStyle);
+        if (isBedrock) {
+            // 强制截断为 32 位 float，模拟单精度输入
+            amplitudeList.add((float) firstAmplitude);
+            amplitudeList.add((float) amplitudes);
+        } else {
+            amplitudeList.add(firstAmplitude);
+            amplitudeList.add(amplitudes);
+        }
         return new PerlinNoise(random, Pair.of(firstOctave, amplitudeList), true);
     }
 
+    // 修改：在 Bedrock 模式下截断已有的 DoubleList 中的每个元素
     public static PerlinNoise create(final RandomSource random, final int firstOctave, final DoubleList amplitudes) {
-        return new PerlinNoise(random, Pair.of(firstOctave, amplitudes), true);
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        boolean isBedrock = config != null && "Bedrock-Edition".equals(config.farlandsStyle);
+        DoubleList finalAmplitudes = amplitudes;
+        if (isBedrock) {
+            DoubleArrayList truncated = new DoubleArrayList(amplitudes.size());
+            for (int i = 0; i < amplitudes.size(); i++) {
+                truncated.add((float) amplitudes.getDouble(i));
+            }
+            finalAmplitudes = truncated;
+        }
+        return new PerlinNoise(random, Pair.of(firstOctave, finalAmplitudes), true);
     }
 
     private static Pair<Integer, DoubleList> makeAmplitudes(final IntSortedSet octaveSet) {
@@ -93,16 +110,6 @@ public class PerlinNoise {
         return Pair.of(-lowFreqOctaves, amplitudes);
     }
 
-    private boolean isBedrockMode() {
-        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
-    }
-
-    private boolean is1_18Exp4Mode() {
-        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && ("1.18-exp-32bit".equals(config.precisionMode) || "1.18-exp-64bit".equals(config.precisionMode));
-    }
-
     protected PerlinNoise(final RandomSource random, final Pair<
                     Integer, DoubleList> pair, final boolean useNewInitialization) {
         this.firstOctave = pair.getFirst();
@@ -110,9 +117,13 @@ public class PerlinNoise {
         int octaves = this.amplitudes.size();
         int zeroOctaveIndex = -this.firstOctave;
         this.noiseLevels = new ImprovedNoise[octaves];
+
+        // --- 提前获取 Bedrock 模式状态（避免在后续循环中重复调用实例方法） ---
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        boolean isBedrock = config != null && "Bedrock-Edition".equals(config.farlandsStyle);
+
         if (useNewInitialization) {
             PositionalRandomFactory positional = random.forkPositional();
-
             for (int i = 0; i < octaves; i++) {
                 if (this.amplitudes.getDouble(i) != 0.0) {
                     int octave = this.firstOctave + i;
@@ -121,6 +132,7 @@ public class PerlinNoise {
                 }
             }
         } else {
+            // === 旧版初始化逻辑（保持不变） ===
             ImprovedNoise zeroOctave = new ImprovedNoise(random);
             if (zeroOctaveIndex >= 0 && zeroOctaveIndex < octaves) {
                 double zeroOctaveAmplitude = this.amplitudes.getDouble(zeroOctaveIndex);
@@ -152,14 +164,28 @@ public class PerlinNoise {
             }
         }
 
-        this.lowestFreqInputFactor = Math.pow(2.0, -zeroOctaveIndex);
-        this.lowestFreqValueFactor = Math.pow(2.0, octaves - 1) / (Math.pow(2.0, octaves) - 1.0);
+        // === 核心修改：计算倍频因子时强制截断为 float 精度 ===
+        double rawInputFactor = Math.pow(2.0, -zeroOctaveIndex);
+        double rawValueFactor = Math.pow(2.0, octaves - 1) / (Math.pow(2.0, octaves) - 1.0);
+
+        if (isBedrock) {
+            // 模拟 26.3 快照：构造时就将因子截断为 32 位 float 残值，再存入 double 字段
+            this.lowestFreqInputFactor = (float) rawInputFactor;
+            this.lowestFreqValueFactor = (float) rawValueFactor;
+        } else {
+            this.lowestFreqInputFactor = rawInputFactor;
+            this.lowestFreqValueFactor = rawValueFactor;
+        }
+
+        // maxValue 通过 edgeValue 计算，而 edgeValue 内部已根据 isBedrockMode() 自动切换精度
+        // 因此此处无需额外强转，其结果自然符合 Bedrock 模式的截断规则
         this.maxValue = this.edgeValue(2.0);
     }
 
+    // 修改：Bedrock 模式下重新计算并截断
     protected double maxValue() {
         if (isBedrockMode()) {
-            return (float) this.maxValue;
+            return (float) edgeValue(2.0);
         }
         return this.maxValue;
     }
@@ -169,14 +195,40 @@ public class PerlinNoise {
     }
 
     public double getValue(final double x, final double y, final double z) {
-        if (isBedrockMode()) {
-            return (float) this.getValue(x, y, z, 0.0, 0.0);
-        }
         return this.getValue(x, y, z, 0.0, 0.0);
     }
 
     @Deprecated
     public double getValue(final double x, final double y, final double z, final double yScale, final double yFudge) {
+        if (isBedrockMode()) {
+            // === Bedrock 模式：全部使用 float 精度计算 ===
+            float fx = (float) x;
+            float fy = (float) y;
+            float fz = (float) z;
+            float fyScale = (float) yScale;
+            float fyFudge = (float) yFudge;
+
+            float value = 0.0f;
+            float factor = (float) this.lowestFreqInputFactor;
+            float valueFactor = (float) this.lowestFreqValueFactor;
+
+            for (int i = 0; i < this.noiseLevels.length; i++) {
+                ImprovedNoise noise = this.noiseLevels[i];
+                if (noise != null) {
+                    // 注意 wrap 返回 double，但此处我们强制转为 float 参与乘法，模拟单精度计算
+                    float wrapX = (float) wrap(fx * factor);
+                    float wrapY = (float) wrap(fy * factor);
+                    float wrapZ = (float) wrap(fz * factor);
+                    float noiseVal = (float) noise.noise(wrapX, wrapY, wrapZ, fyScale * factor, fyFudge * factor);
+                    value += (float) (this.amplitudes.getDouble(i) * noiseVal * valueFactor);
+                }
+                factor *= 2.0f;
+                valueFactor /= 2.0f;
+            }
+            return (float) value;
+        }
+
+        // === 原 double 实现 ===
         double value = 0.0;
         double factor = this.lowestFreqInputFactor;
         double valueFactor = this.lowestFreqValueFactor;
@@ -192,35 +244,41 @@ public class PerlinNoise {
             valueFactor /= 2.0;
         }
 
-        if (isBedrockMode()) {
-            return (float) value;
-        }
         return value;
     }
 
     public double maxBrokenValue(final double yScale) {
-        double val = this.edgeValue(yScale + 2.0);
         if (isBedrockMode()) {
+            float fYScale = (float) yScale;
+            float val = (float) edgeValue(fYScale + 2.0f);
             return (float) val;
         }
-        return val;
+        return edgeValue(yScale + 2.0);
     }
 
     private double edgeValue(final double noiseValue) {
+        if (isBedrockMode()) {
+            float fNoise = (float) noiseValue;
+            float value = 0.0f;
+            float valueFactor = (float) this.lowestFreqValueFactor;
+            for (int i = 0; i < this.noiseLevels.length; i++) {
+                ImprovedNoise noise = this.noiseLevels[i];
+                if (noise != null) {
+                    value += (float) (this.amplitudes.getDouble(i) * fNoise * valueFactor);
+                }
+                valueFactor /= 2.0f;
+            }
+            return (float) value;
+        }
+
         double value = 0.0;
         double valueFactor = this.lowestFreqValueFactor;
-
         for (int i = 0; i < this.noiseLevels.length; i++) {
             ImprovedNoise noise = this.noiseLevels[i];
             if (noise != null) {
                 value += this.amplitudes.getDouble(i) * noiseValue * valueFactor;
             }
-
             valueFactor /= 2.0;
-        }
-
-        if (isBedrockMode()) {
-            return (float) value;
         }
         return value;
     }
@@ -229,48 +287,31 @@ public class PerlinNoise {
         return this.noiseLevels[this.noiseLevels.length - 1 - i];
     }
 
-    /**
-     * 🔥 MCRe NoiseFarlands —— 坐标折叠函数
-     *
-     * <p>根据精度模式决定行为：
-     *
-     * <ul>
-     *   <li>32bit：直接返回 x（不折叠，产生经典边境之地）
-     *   <li>64bit：折�叠到 ±16,777,216 范围内（消除 32-bit 溢出，保留 64-bit 精度）
-     *   <li>Bedrock：返回 float 精度的值（强制转为 float 再提升为 double）
-     * </ul>
-     */
+    // === 坐标折叠函数（保持不变） ===
     public static double computeReleaseValue(double x) {
         long l = Mth.lfloor(x);
-        x -= l; // value 此时变成小数部分
+        x -= l;
         l %= 16777216L;
-        return x + l; // 小数部分 + 取模后的整数部分
+        return x + l;
     }
 
     public static double wrap(final double x) {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        if (config != null) {
-            if ("64bit".equals(config.precisionMode)) {
-                // 64-bit 模式：折叠到 ±16,777,216 范围内
-                return x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7;
-            }
-            if ("Release".equals(config.precisionMode)) {
-                // Release 模式：返回 经过循环 精度的值
-                // 原 UltimateScaler 实现: return Math.abs(x) > Long.MAX_VALUE ? x - Math.signum(x) *
-                // Long.MAX_VALUE : (x + 1.6777216E7D) % 3.3554432E7D - 1.6777216E7D;
-                // 由于在原实现情况下具有损坏地形的效果，目前使用了最贴合原版反编译源码的实现
-                return computeReleaseValue(x);
-            }
-            if ("1.18-exp-64bit".equals(config.precisionMode)) {
-                // 64-bit 模式：折叠到 ±16,777,216 范围内
-                return x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7;
-            }
-            if ("1.18-exp-32bit".equals(config.precisionMode)) {
-                return x; // 32bit Exp4：直接返回 x，配合 limit noise 自身的振幅截断产生 16 亿
-            }
+        if (config == null) {
+            return x;
         }
-        // 32-bit 模式（默认）：不折叠，直接返回 x
-        return x;
+        String mode = config.precisionMode;
+        switch (mode) {
+            case "64bit":
+            case "1.18-exp-64bit":
+                return x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7;
+            case "Release":
+                return computeReleaseValue(x);
+            case "1.18-exp-32bit":
+                return x;
+            default:
+                return x;
+        }
     }
 
     protected int firstOctave() {
