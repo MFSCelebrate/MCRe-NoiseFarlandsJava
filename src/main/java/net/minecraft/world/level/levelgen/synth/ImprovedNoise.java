@@ -55,9 +55,9 @@ public final class ImprovedNoise {
     public double noise(final double _x, final double _y, final double _z, final double yScale, final double yFudge) {
         if (isBedrockMode()) {
             // === Bedrock 模式：全部使用 float 精度 ===
-            float x = (float)(_x + this.xo);
-            float y = (float)(_y + this.yo);
-            float z = (float)(_z + this.zo);
+            float x = (float) (_x + this.xo);
+            float y = (float) (_y + this.yo);
+            float z = (float) (_z + this.zo);
 
             int xf, yf, zf;
             if (simulatedWraparoundOverflowMode()) {
@@ -132,9 +132,9 @@ public final class ImprovedNoise {
         if (isBedrockMode()) {
             // Bedrock 模式：全部使用 float，但 derivativeOut 保留 double 数组签名（外部可能期望 double）
             // 内部计算用 float，最后赋值时强转回 double
-            float x = (float)(_x + this.xo);
-            float y = (float)(_y + this.yo);
-            float z = (float)(_z + this.zo);
+            float x = (float) (_x + this.xo);
+            float y = (float) (_y + this.yo);
+            float z = (float) (_z + this.zo);
             int xf = Mth.floor(x);
             int yf = Mth.floor(y);
             int zf = Mth.floor(z);
@@ -143,12 +143,11 @@ public final class ImprovedNoise {
             float zr = z - zf;
 
             // 临时 float 数组用于内部计算
-            float[] derivFloat = new float[3];
-            float result = (float) this.sampleWithDerivative(xf, yf, zf, xr, yr, zr, derivFloat);
-            // 将 float 结果转回 double 写入外部数组
-            derivativeOut[0] += derivFloat[0];
-            derivativeOut[1] += derivFloat[1];
-            derivativeOut[2] += derivFloat[2];
+            double[] derivTemp = new double[3];
+            float result = (float) this.sampleWithDerivative(xf, yf, zf, xr, yr, zr, derivTemp);
+            derivativeOut[0] += derivTemp[0];
+            derivativeOut[1] += derivTemp[1];
+            derivativeOut[2] += derivTemp[2];
             return (float) result;
         }
 
@@ -167,7 +166,8 @@ public final class ImprovedNoise {
 
     private static double gradDot(final int hash, final double x, final double y, final double z) {
         if (isBedrockMode()) {
-            return (float) SimplexNoise.dot(SimplexNoise.GRADIENT[hash & 15], (float)x, (float)y, (float)z);
+            return (float) SimplexNoise.dot(SimplexNoise.GRADIENT[
+                    hash & 15], (float) x, (float) y, (float) z);
         }
         return SimplexNoise.dot(SimplexNoise.GRADIENT[hash & 15], x, y, z);
     }
@@ -185,7 +185,7 @@ public final class ImprovedNoise {
             float fDelta = (float) delta;
             float fStart = (float) start;
             float fEnd = (float) end;
-            return (float)(fStart + fDelta * (fEnd - fStart));
+            return (float) (fStart + fDelta * (fEnd - fStart));
         }
         return start + delta * (end - start);
     }
@@ -252,10 +252,10 @@ public final class ImprovedNoise {
 
         if (isBedrockMode()) {
             return (float) ImprovedNoise.lerp3(
-                    (float)xAlpha, (float)yAlpha, (float)zAlpha,
-                    (float)d000, (float)d100, (float)d010, (float)d110,
-                    (float)d001, (float)d101, (float)d011, (float)d111
-            );
+                            (float) xAlpha, (float) yAlpha, (float) zAlpha,
+                            (float) d000, (float) d100, (float) d010, (float) d110,
+                            (float) d001, (float) d101, (float) d011, (float) d111
+                    );
         }
         return ImprovedNoise.lerp3(xAlpha, yAlpha, zAlpha, d000, d100, d010, d110, d001, d101, d011, d111);
     }
@@ -283,13 +283,20 @@ public final class ImprovedNoise {
             float fzr = (float) zr;
 
             float d000 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[p000 & 15], fxr, fyr, fzr);
-            float d100 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[p100 & 15], fxr - 1.0f, fyr, fzr);
-            float d010 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[p010 & 15], fxr, fyr - 1.0f, fzr);
-            float d110 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[p110 & 15], fxr - 1.0f, fyr - 1.0f, fzr);
-            float d001 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[p001 & 15], fxr, fyr, fzr - 1.0f);
-            float d101 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[p101 & 15], fxr - 1.0f, fyr, fzr - 1.0f);
-            float d011 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[p011 & 15], fxr, fyr - 1.0f, fzr - 1.0f);
-            float d111 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[p111 & 15], fxr - 1.0f, fyr - 1.0f, fzr - 1.0f);
+            float d100 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[
+                    p100 & 15], fxr - 1.0f, fyr, fzr);
+            float d010 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[
+                    p010 & 15], fxr, fyr - 1.0f, fzr);
+            float d110 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[
+                    p110 & 15], fxr - 1.0f, fyr - 1.0f, fzr);
+            float d001 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[
+                    p001 & 15], fxr, fyr, fzr - 1.0f);
+            float d101 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[
+                    p101 & 15], fxr - 1.0f, fyr, fzr - 1.0f);
+            float d011 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[
+                    p011 & 15], fxr, fyr - 1.0f, fzr - 1.0f);
+            float d111 = (float) SimplexNoise.dot(SimplexNoise.GRADIENT[
+                    p111 & 15], fxr - 1.0f, fyr - 1.0f, fzr - 1.0f);
 
             float xAlpha = (float) Mth.smoothstep(fxr);
             float yAlpha = (float) Mth.smoothstep(fyr);
@@ -305,9 +312,12 @@ public final class ImprovedNoise {
             float[] g011 = toFloatArray(SimplexNoise.GRADIENT[p011 & 15]);
             float[] g111 = toFloatArray(SimplexNoise.GRADIENT[p111 & 15]);
 
-            float d1x = lerp3Float(xAlpha, yAlpha, zAlpha, g000[0], g100[0], g010[0], g110[0], g001[0], g101[0], g011[0], g111[0]);
-            float d1y = lerp3Float(xAlpha, yAlpha, zAlpha, g000[1], g100[1], g010[1], g110[1], g001[1], g101[1], g011[1], g111[1]);
-            float d1z = lerp3Float(xAlpha, yAlpha, zAlpha, g000[2], g100[2], g010[2], g110[2], g001[2], g101[2], g011[2], g111[2]);
+            float d1x = lerp3Float(xAlpha, yAlpha, zAlpha, g000[0], g100[0], g010[0], g110[0], g001[
+            0], g101[0], g011[0], g111[0]);
+            float d1y = lerp3Float(xAlpha, yAlpha, zAlpha, g000[1], g100[1], g010[1], g110[1], g001[
+            1], g101[1], g011[1], g111[1]);
+            float d1z = lerp3Float(xAlpha, yAlpha, zAlpha, g000[2], g100[2], g010[2], g110[2], g001[
+            2], g101[2], g011[2], g111[2]);
 
             float d2x = lerp2Float(yAlpha, zAlpha, d100 - d000, d110 - d010, d101 - d001, d111 - d011);
             float d2y = lerp2Float(zAlpha, xAlpha, d010 - d000, d011 - d001, d110 - d100, d111 - d101);
@@ -352,9 +362,12 @@ public final class ImprovedNoise {
         double yAlpha = Mth.smoothstep(yr);
         double zAlpha = Mth.smoothstep(zr);
 
-        double d1x = Mth.lerp3(xAlpha, yAlpha, zAlpha, g000[0], g100[0], g010[0], g110[0], g001[0], g101[0], g011[0], g111[0]);
-        double d1y = Mth.lerp3(xAlpha, yAlpha, zAlpha, g000[1], g100[1], g010[1], g110[1], g001[1], g101[1], g011[1], g111[1]);
-        double d1z = Mth.lerp3(xAlpha, yAlpha, zAlpha, g000[2], g100[2], g010[2], g110[2], g001[2], g101[2], g011[2], g111[2]);
+        double d1x = Mth.lerp3(xAlpha, yAlpha, zAlpha, g000[0], g100[0], g010[0], g110[0], g001[
+        0], g101[0], g011[0], g111[0]);
+        double d1y = Mth.lerp3(xAlpha, yAlpha, zAlpha, g000[1], g100[1], g010[1], g110[1], g001[
+        1], g101[1], g011[1], g111[1]);
+        double d1z = Mth.lerp3(xAlpha, yAlpha, zAlpha, g000[2], g100[2], g010[2], g110[2], g001[
+        2], g101[2], g011[2], g111[2]);
 
         double d2x = Mth.lerp2(yAlpha, zAlpha, d100 - d000, d110 - d010, d101 - d001, d111 - d011);
         double d2y = Mth.lerp2(zAlpha, xAlpha, d010 - d000, d011 - d001, d110 - d100, d111 - d101);
@@ -404,7 +417,7 @@ public final class ImprovedNoise {
     }
 
     private static float[] toFloatArray(int[] arr) {
-        return new float[]{(float)arr[0], (float)arr[1], (float)arr[2]};
+        return new float[]{(float) arr[0], (float) arr[1], (float) arr[2]};
     }
 
     @VisibleForTesting
