@@ -47,6 +47,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.slf4j.Logger;
 
 public final class TrialSpawner {
@@ -66,11 +67,10 @@ public final class TrialSpawner {
     private boolean isOminous;
 
     public TrialSpawner(
-        final TrialSpawner.FullConfig config,
-        final TrialSpawner.StateAccessor stateAccessor,
-        final PlayerDetector playerDetector,
-        final PlayerDetector.EntitySelector entitySelector
-    ) {
+            final TrialSpawner.FullConfig config,
+            final TrialSpawner.StateAccessor stateAccessor,
+            final PlayerDetector playerDetector,
+            final PlayerDetector.EntitySelector entitySelector) {
         this.config = config;
         this.stateAccessor = stateAccessor;
         this.playerDetector = playerDetector;
@@ -87,6 +87,11 @@ public final class TrialSpawner {
 
     public TrialSpawnerConfig ominousConfig() {
         return this.config.ominous.value();
+    }
+    
+    private static boolean disabledEntitySpawnMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.disabledEntitySpawn;
     }
 
     public void load(final ValueInput input) {
@@ -152,6 +157,8 @@ public final class TrialSpawner {
             return false;
         } else if (this.overridePeacefulAndMobSpawnRule) {
             return true;
+        } else if (disabledEntitySpawnMode()) {
+            return false;
         } else {
             return level.getDifficulty() == Difficulty.PEACEFUL ? false : level.getGameRules().get(GameRules.SPAWN_MOBS);
         }
@@ -169,16 +176,16 @@ public final class TrialSpawner {
             }
 
             Vec3 spawnPos = input.read("Pos", Vec3.CODEC)
-                .orElseGet(
-                    () -> {
-                        TrialSpawnerConfig activeConfig = this.activeConfig();
-                        return new Vec3(
-                            spawnerPos.getX() + (random.nextDouble() - random.nextDouble()) * activeConfig.spawnRange() + 0.5,
-                            spawnerPos.getY() + random.nextInt(3) - 1,
-                            spawnerPos.getZ() + (random.nextDouble() - random.nextDouble()) * activeConfig.spawnRange() + 0.5
-                        );
-                    }
-                );
+                    .orElseGet(
+                            () -> {
+                                TrialSpawnerConfig activeConfig = this.activeConfig();
+                                return new Vec3(
+                                spawnerPos.getX() + (random.nextDouble() - random.nextDouble()) * activeConfig.spawnRange() + 0.5,
+                                spawnerPos.getY() + random.nextInt(3) - 1,
+                                spawnerPos.getZ() + (random.nextDouble() - random.nextDouble()) * activeConfig.spawnRange() + 0.5
+                                );
+                            }
+                    );
             if (!level.noCollision(entityType.get().getSpawnAABB(spawnPos.x, spawnPos.y, spawnPos.z))) {
                 return Optional.empty();
             }
@@ -233,7 +240,8 @@ public final class TrialSpawner {
         }
     }
 
-    public void ejectReward(final ServerLevel level, final BlockPos pos, final ResourceKey<LootTable> ejectingLootTable) {
+    public void ejectReward(final ServerLevel level, final BlockPos pos, final ResourceKey<
+                    LootTable> ejectingLootTable) {
         LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(ejectingLootTable);
         LootParams params = new LootParams.Builder(level).create(LootContextParamSets.EMPTY);
         ObjectArrayList<ItemStack> lootDrops = lootTable.getRandomItems(params);
@@ -280,9 +288,9 @@ public final class TrialSpawner {
     private static boolean shouldMobBeUntracked(final ServerLevel serverLevel, final BlockPos spawnerPos, final UUID id) {
         Entity entity = serverLevel.getEntity(id);
         return entity == null
-            || !entity.isAlive()
-            || !entity.level().dimension().equals(serverLevel.dimension())
-            || entity.blockPosition().distSqr(spawnerPos) > MAX_MOB_TRACKING_DISTANCE_SQR;
+                || !entity.isAlive()
+                || !entity.level().dimension().equals(serverLevel.dimension())
+                || entity.blockPosition().distSqr(spawnerPos) > MAX_MOB_TRACKING_DISTANCE_SQR;
     }
 
     private static boolean inLineOfSight(final Level level, final Vec3 origin, final Vec3 dest) {
@@ -375,30 +383,34 @@ public final class TrialSpawner {
         }
     }
 
-    public record FullConfig(Holder<TrialSpawnerConfig> normal, Holder<TrialSpawnerConfig> ominous, int targetCooldownLength, int requiredPlayerRange) {
-        public static final MapCodec<TrialSpawner.FullConfig> MAP_CODEC = RecordCodecBuilder.mapCodec(
-            i -> i.group(
-                    TrialSpawnerConfig.CODEC
-                        .optionalFieldOf("normal_config", Holder.direct(TrialSpawnerConfig.DEFAULT))
-                        .forGetter(TrialSpawner.FullConfig::normal),
-                    TrialSpawnerConfig.CODEC
-                        .optionalFieldOf("ominous_config", Holder.direct(TrialSpawnerConfig.DEFAULT))
-                        .forGetter(TrialSpawner.FullConfig::ominous),
-                    ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("target_cooldown_length", 36000).forGetter(TrialSpawner.FullConfig::targetCooldownLength),
-                    Codec.intRange(1, 128).optionalFieldOf("required_player_range", 14).forGetter(TrialSpawner.FullConfig::requiredPlayerRange)
+    public record FullConfig(Holder<TrialSpawnerConfig> normal, Holder<
+                    TrialSpawnerConfig> ominous, int targetCooldownLength, int requiredPlayerRange) {
+        public static final MapCodec<
+                TrialSpawner.FullConfig> MAP_CODEC = RecordCodecBuilder.mapCodec(
+                i -> i.group(
+                        TrialSpawnerConfig.CODEC
+                                .optionalFieldOf("normal_config", Holder.direct(TrialSpawnerConfig.DEFAULT))
+                                .forGetter(TrialSpawner.FullConfig::normal),
+                        TrialSpawnerConfig.CODEC
+                                .optionalFieldOf("ominous_config", Holder.direct(TrialSpawnerConfig.DEFAULT))
+                                .forGetter(TrialSpawner.FullConfig::ominous),
+                        ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("target_cooldown_length", 36000).forGetter(TrialSpawner.FullConfig
+                                ::targetCooldownLength),
+                        Codec.intRange(1, 128).optionalFieldOf("required_player_range", 14).forGetter(TrialSpawner.FullConfig
+                                ::requiredPlayerRange)
                 )
-                .apply(i, TrialSpawner.FullConfig::new)
+                        .apply(i, TrialSpawner.FullConfig::new)
         );
         public static final TrialSpawner.FullConfig DEFAULT = new TrialSpawner.FullConfig(
-            Holder.direct(TrialSpawnerConfig.DEFAULT), Holder.direct(TrialSpawnerConfig.DEFAULT), 36000, 14
+        Holder.direct(TrialSpawnerConfig.DEFAULT), Holder.direct(TrialSpawnerConfig.DEFAULT), 36000, 14
         );
 
         public TrialSpawner.FullConfig overrideEntity(final EntityType<?> type) {
             return new TrialSpawner.FullConfig(
-                Holder.direct(this.normal.value().withSpawning(type)),
-                Holder.direct(this.ominous.value().withSpawning(type)),
-                this.targetCooldownLength,
-                this.requiredPlayerRange
+            Holder.direct(this.normal.value().withSpawning(type)),
+            Holder.direct(this.ominous.value().withSpawning(type)),
+            this.targetCooldownLength,
+            this.requiredPlayerRange
             );
         }
     }

@@ -20,6 +20,7 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.saveddata.WanderingTraderData;
 import net.minecraft.world.level.storage.SavedDataStorage;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 
 public class WanderingTraderSpawner implements CustomSpawner {
@@ -40,10 +41,15 @@ public class WanderingTraderSpawner implements CustomSpawner {
         this.tickDelay = 1200;
         this.traderData = null;
     }
+    
+    private static boolean disabledEntitySpawnMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.disabledEntitySpawn;
+    }
 
     @Override
     public void tick(final ServerLevel level, final boolean spawnEnemies) {
-        if (level.getGameRules().get(GameRules.SPAWN_WANDERING_TRADERS)) {
+        if (level.getGameRules().get(GameRules.SPAWN_WANDERING_TRADERS) && !disabledEntitySpawnMode()) {
             if (--this.tickDelay <= 0) {
                 this.tickDelay = 1200;
                 WanderingTraderData data = this.getTraderData();

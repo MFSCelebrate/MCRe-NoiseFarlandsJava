@@ -36,6 +36,7 @@ import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 
 public class SculkShriekerBlockEntity extends BlockEntity implements GameEventListener.Provider<VibrationSystem.Listener>, VibrationSystem {
@@ -59,6 +60,11 @@ public class SculkShriekerBlockEntity extends BlockEntity implements GameEventLi
 
     public SculkShriekerBlockEntity(final BlockPos worldPosition, final BlockState blockState) {
         super(BlockEntityTypes.SCULK_SHRIEKER, worldPosition, blockState);
+    }
+    
+    private static boolean disabledEntitySpawnMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.disabledEntitySpawn;
     }
 
     @Override
@@ -127,7 +133,8 @@ public class SculkShriekerBlockEntity extends BlockEntity implements GameEventLi
     private boolean canRespond(final ServerLevel level) {
         return this.getBlockState().getValue(SculkShriekerBlock.CAN_SUMMON)
             && level.getDifficulty() != Difficulty.PEACEFUL
-            && level.getGameRules().get(GameRules.SPAWN_WARDENS);
+            && level.getGameRules().get(GameRules.SPAWN_WARDENS)
+            && !disabledEntitySpawnMode();
     }
 
     @Override

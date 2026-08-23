@@ -186,6 +186,7 @@ import net.minecraft.world.level.timers.TimerQueue;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.ScoreboardSaveData;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -364,6 +365,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
 
     protected abstract boolean initServer() throws IOException;
+    
+    private static boolean disabledEntitySpawnMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.disabledEntitySpawn;
+    }
 
     public ChunkLoadStatusView createChunkLoadStatusView(final int radius) {
         return new ChunkLoadStatusView() {
@@ -2131,7 +2137,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                     waypointManager.breakAllConnections();
                 }
             });
-        } else if (rule == GameRules.SPAWN_MONSTERS) {
+        } else if (rule == GameRules.SPAWN_MONSTERS && !disabledEntitySpawnMode()) {
             this.updateMobSpawningFlags();
         } else if (rule == GameRules.ADVANCE_TIME) {
             this.getPlayerList().broadcastAll(this.clockManager().createFullSyncPacket());

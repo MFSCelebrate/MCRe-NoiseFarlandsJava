@@ -49,6 +49,7 @@ import net.minecraft.world.level.levelgen.structure.structures.NetherFortressStr
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -62,6 +63,12 @@ public final class NaturalSpawner {
     private static final MobCategory[] SPAWNING_CATEGORIES = Stream.of(MobCategory.values()).filter(c -> c != MobCategory.MISC).toArray(MobCategory[]::new);
 
     private NaturalSpawner() {
+    
+    }
+    
+    private static boolean disabledEntitySpawnMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.disabledEntitySpawn;
     }
 
     public static NaturalSpawner.SpawnState createState(
@@ -378,7 +385,7 @@ public final class NaturalSpawner {
     ) {
         MobSpawnSettings mobSettings = biome.value().getMobSettings();
         WeightedList<MobSpawnSettings.SpawnerData> mobs = mobSettings.getMobs(MobCategory.CREATURE);
-        if (!mobs.isEmpty() && level.getLevel().getGameRules().get(GameRules.SPAWN_MOBS)) {
+        if (!mobs.isEmpty() && level.getLevel().getGameRules().get(GameRules.SPAWN_MOBS) && !disabledEntitySpawnMode()) {
             int xo = (int)chunkPos.getMinBlockX();
             int zo = (int)chunkPos.getMinBlockZ();
 

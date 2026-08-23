@@ -262,7 +262,7 @@ public class WorldMainSettingScreen extends Screen {
 
         // ========== 第五组：结构生成 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-                Component.literal("§a§l结构生成设置")
+                Component.literal("§a§l控制世界配置")
         ));
 
         SwitchGrid.Builder structBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20).withRowSpacing(4);
@@ -271,6 +271,11 @@ public class WorldMainSettingScreen extends Screen {
                 () -> this.configData.disabledStructureSpawn,
                 val -> this.configData.disabledStructureSpawn = val
         ).withInfo(Component.literal("无论游戏规则 / 世界生成器怎么定义某个结构，也总是不生成结构"));
+                structBuilder.addSwitch(
+                Component.literal("不生成除玩家外任何实体"),
+                () -> this.configData.disabledEntitySpawn,
+                val -> this.configData.disabledEntitySpawn = val
+        ).withInfo(Component.literal("无论游戏规则 / 世界生成器是否需要生成除玩家外实体，也总是一律不生成"));
         this.scrollContent.addChild(structBuilder.build().layout(), s -> s.paddingHorizontal(10));
     }
 
@@ -388,6 +393,7 @@ public class WorldMainSettingScreen extends Screen {
         public boolean simulatedWraparoundOverflow = false;
 
         public boolean disabledStructureSpawn = false;
+        public boolean disabledEntitySpawn = false;
 
         /** 当前活动的 FarLands 配置，由 WorldMainSettingScreen.onDone() 写入 */
         public static FarLandsConfigData activeConfig = new FarLandsConfigData();

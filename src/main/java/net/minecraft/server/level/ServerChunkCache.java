@@ -121,6 +121,11 @@ public class ServerChunkCache extends ChunkSource {
         this.distanceManager.updateSimulationDistance(simulationDistance);
         this.clearCache();
     }
+    
+    private static boolean disabledEntitySpawnMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.disabledEntitySpawn;
+    }
 
     public ThreadedLevelLightEngine getLightEngine() {
         return this.lightEngine;
@@ -376,7 +381,7 @@ public class ServerChunkCache extends ChunkSource {
         boolean doMobSpawning = this.level.getGameRules().get(GameRules.SPAWN_MOBS);
         int tickSpeed = this.level.getGameRules().get(GameRules.RANDOM_TICK_SPEED);
         List<MobCategory> spawningCategories;
-        if (doMobSpawning) {
+        if (doMobSpawning && !disabledEntitySpawnMode()) {
             boolean spawnPersistent = this.level.getGameTime() % 400L == 0L;
             spawningCategories = NaturalSpawner.getFilteredSpawningCategories(spawnCookie, this.spawnEnemies, spawnPersistent);
         } else {
@@ -401,7 +406,7 @@ public class ServerChunkCache extends ChunkSource {
 
         profiler.popPush("tickTickingChunks");
         this.chunkMap.forEachBlockTickingChunk(chunkx -> this.level.tickChunk(chunkx, tickSpeed));
-        if (doMobSpawning) {
+        if (doMobSpawning && !disabledEntitySpawnMode()) {
             profiler.popPush("customSpawners");
             this.level.tickCustomSpawners(this.spawnEnemies);
         }

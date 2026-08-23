@@ -17,14 +17,20 @@ import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 
 public class PhantomSpawner implements CustomSpawner {
     private int nextTick;
+    
+    private static boolean disabledEntitySpawnMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.disabledEntitySpawn;
+    }
 
     @Override
     public void tick(final ServerLevel level, final boolean spawnEnemies) {
         if (spawnEnemies) {
-            if (level.getGameRules().get(GameRules.SPAWN_PHANTOMS)) {
+            if (level.getGameRules().get(GameRules.SPAWN_PHANTOMS) && !disabledEntitySpawnMode()) {
                 RandomSource random = level.getRandom();
                 this.nextTick--;
                 if (this.nextTick <= 0) {
