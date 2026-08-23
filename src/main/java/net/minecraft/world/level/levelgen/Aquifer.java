@@ -27,7 +27,7 @@ public interface Aquifer {
             final int yBlockSize,
             final Aquifer.FluidPicker fluidRule) {
         // [检查 1] 工厂方法入口拦截
-        if (Math.abs((long) pos.x) > SAFE_COORD_LIMIT || Math.abs((long) pos.z) > SAFE_COORD_LIMIT) {
+        if (Math.abs((long) pos.x()) > SAFE_COORD_LIMIT || Math.abs((long) pos.z()) > SAFE_COORD_LIMIT) {
             return Aquifer.createDisabled(fluidRule);
         }
         return new Aquifer.NoiseBasedAquifer(noiseChunk, pos, router, positionalRandomFactory, minBlockY, yBlockSize, fluidRule);
@@ -115,7 +115,7 @@ public interface Aquifer {
                 final int yBlockSize,
                 final Aquifer.FluidPicker globalFluidPicker) {
             // [检查 2] 构造器内双重保险
-            if (Math.abs((long) pos.x) > SAFE_COORD_LIMIT || Math.abs((long) pos.z) > SAFE_COORD_LIMIT) {
+            if (Math.abs((long) pos.x()) > SAFE_COORD_LIMIT || Math.abs((long) pos.z()) > SAFE_COORD_LIMIT) {
                 // 禁用状态：空数组，所有后续计算跳过
                 this.aquiferCache = new Aquifer.FluidStatus[0];
                 this.aquiferLocationCache = new BlockPos[0];
