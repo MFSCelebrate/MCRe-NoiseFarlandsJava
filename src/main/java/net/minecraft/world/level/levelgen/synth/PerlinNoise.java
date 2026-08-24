@@ -297,7 +297,7 @@ public class PerlinNoise {
 
     public static double wrap(final double x) {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        int distance = (config != null) ? config.farLandsDistance : 12550824;  // 回退默认值
+      //  int distance = (config != null) ? config.farLandsDistance : 12550824;  // 回退默认值
         if (config == null) {
             return x;
         }

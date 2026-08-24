@@ -52,6 +52,7 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.LevelData;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelTickAccess;
@@ -385,10 +386,11 @@ public class WorldGenRegion implements WorldGenLevel {
         // 直接使用 level 的难度、时间和月亮亮度，不检查区域边界，避免崩溃
         return new DifficultyInstance(
                 this.level.getDifficulty(),
-                this.level.getDayTime(),   // 或 getOverworldClockTime()
+                this.level.getOverworldClockTime(),   // 或 getOverworldClockTime()
                 0L,
-                this.level.getMoonBrightness()
+                this.serverlevel.getMoonBrightness()
         );
+        //return new DifficultyInstance(this.level.getDifficulty(), this.level.getOverworldClockTime(), 0L, this.level.getMoonBrightness());
     }
 
     @Override
