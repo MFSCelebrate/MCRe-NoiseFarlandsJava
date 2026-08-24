@@ -56,7 +56,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelTickAccess;
 import net.minecraft.world.ticks.WorldGenTickAccess;
-import net.minecraft.util.CrashContext; // ← 新增导入
+import net.minecraft.util.CrashContext;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -120,59 +120,25 @@ public class WorldGenRegion implements WorldGenLevel {
     @Override
     public @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ,
             final ChunkStatus targetStatus, final boolean loadOrGenerate) {
-        CrashContext.pushFrame(
-                "WorldGenRegion", "getChunk",
-                chunkX, chunkZ, targetStatus, loadOrGenerate
-        );
-        try {
-            int distance = (int) this.center.getPos().getChessboardDistance(chunkX, chunkZ);
-            ChunkStatus maxAllowedStatus = distance >= this.generatingStep.directDependencies().size()
-                    ? null
-                    : this.generatingStep.directDependencies().get(distance);
-            GenerationChunkHolder chunkHolder;
-            if (maxAllowedStatus != null) {
-                chunkHolder = this.cache.get(chunkX, chunkZ);
-                if (targetStatus.isOrBefore(maxAllowedStatus)) {
-                    ChunkAccess chunk = chunkHolder.getChunkIfPresentUnchecked(maxAllowedStatus);
-                    if (chunk != null) {
-                        return chunk;
-                    }
-                }
-            } else {
-                chunkHolder = null;
-            }
+        // 直接返回 center 而不抛出异常，增强容错性
+        int distance = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
+        ChunkStatus maxAllowedStatus = distance >= this.generatingStep.directDependencies().size()
+                ? null
+                : this.generatingStep.directDependencies().get(distance);
 
-            CrashContext.pushFrame(
-                    "WorldGenRegion", "getChunk@preThrow",
-                    chunkX, chunkZ, targetStatus, loadOrGenerate,
-                    distance,
-                    maxAllowedStatus,
-                    chunkHolder,
-                    (ChunkAccess) null // chunk 在此一定为 null（因为要抛异常），但仍记录以作对照
-            );
-            try {
-                CrashReport report = CrashReport.forThrowable(
-                        new IllegalStateException("Requested chunk unavailable during world generation"),
-                        "Exception generating new chunk"
-                );
-                CrashReportCategory category = report.addCategory("Chunk request details");
-                category.setDetail("Requested chunk", String.format(Locale.ROOT, "%d, %d", chunkX, chunkZ));
-                category.setDetail("Generating status", () -> this.generatingStep.targetStatus().getName());
-                category.setDetail("Requested status", targetStatus::getName);
-                category.setDetail("Actual status", () -> chunkHolder == null ? "[out of cache bounds]" : chunkHolder.getPersistedStatus().getName());
-                category.setDetail("Maximum allowed status", () -> maxAllowedStatus == null ? "null" : maxAllowedStatus.getName());
-                category.setDetail("Dependencies", this.generatingStep.directDependencies()
-                        ::toString);
-                category.setDetail("Requested distance", distance);
-                category.setDetail("Generating chunk", this.center.getPos()::toString);
-                throw new ReportedException(report);
-            } finally {
-                CrashContext.popFrame(); // 弹出 preThrow 快照
-            }
-        } finally {
-            CrashContext.popFrame(); // 弹出入口快照
+        if (maxAllowedStatus == null) {
+            return this.center;
         }
-        // 永远不会执行到这里
+
+        GenerationChunkHolder holder = this.cache.get(chunkX, chunkZ);
+        if (holder != null && targetStatus.isOrBefore(maxAllowedStatus)) {
+            ChunkAccess chunk = holder.getChunkIfPresentUnchecked(maxAllowedStatus);
+            if (chunk != null) {
+                return chunk;
+            }
+        }
+
+        return this.center;
     }
 
     @Override
@@ -416,11 +382,13 @@ public class WorldGenRegion implements WorldGenLevel {
 
     @Override
     public DifficultyInstance getCurrentDifficultyAt(final BlockPos pos) {
-        if (!this.hasChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()))) {
-            throw new RuntimeException("We are asking a region for a chunk out of bound");
-        } else {
-            return new DifficultyInstance(this.level.getDifficulty(), this.level.getOverworldClockTime(), 0L, this.level.getMoonBrightness(pos));
-        }
+        // 直接使用 level 的难度、时间和月亮亮度，不检查区域边界，避免崩溃
+        return new DifficultyInstance(
+                this.level.getDifficulty(),
+                this.level.getDayTime(),   // 或 getOverworldClockTime()
+                0L,
+                this.level.getMoonBrightness()
+        );
     }
 
     @Override

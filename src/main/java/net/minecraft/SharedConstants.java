@@ -103,7 +103,7 @@ public class SharedConstants {
     public static final boolean DEBUG_JFR_PROFILING_ENABLE_LEVEL_LOADING = debugFlag("JFR_PROFILING_ENABLE_LEVEL_LOADING");
     public static final boolean DEBUG_ENTITY_BLOCK_INTERSECTION = debugFlag("ENTITY_BLOCK_INTERSECTION");
     public static boolean debugGenerateSquareTerrainWithoutNoise = debugFlag("GENERATE_SQUARE_TERRAIN_WITHOUT_NOISE");
-    public static final boolean DEBUG_ONLY_GENERATE_HALF_THE_WORLD = true;
+    public static final boolean DEBUG_ONLY_GENERATE_HALF_THE_WORLD = false;
     public static final boolean DEBUG_DISABLE_FLUID_GENERATION = debugFlag("DISABLE_FLUID_GENERATION");
     public static final boolean DEBUG_DISABLE_AQUIFERS = debugFlag("DISABLE_AQUIFERS");
     public static final boolean DEBUG_DISABLE_SURFACE = debugFlag("DISABLE_SURFACE");
