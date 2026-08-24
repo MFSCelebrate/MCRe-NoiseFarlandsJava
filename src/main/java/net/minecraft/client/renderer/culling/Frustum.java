@@ -44,27 +44,25 @@ public class Frustum {
     }
 
     public Frustum offsetToFullyIncludeCameraCube(final int cubeSize) {
+        // For extremely large camera coordinates, the original float‑based offset logic can lose precision.
+        // If any coordinate exceeds a safe threshold, skip the offset adjustment.
+        double maxAbs = Math.max(Math.abs(this.camX), Math.max(Math.abs(this.camY), Math.abs(this.camZ)));
+        if (maxAbs > 1.0E9) {
+            return this;
+        }
+
         double camX1 = Math.floor(this.camX / cubeSize) * cubeSize;
         double camY1 = Math.floor(this.camY / cubeSize) * cubeSize;
         double camZ1 = Math.floor(this.camZ / cubeSize) * cubeSize;
         double camX2 = Math.ceil(this.camX / cubeSize) * cubeSize;
         double camY2 = Math.ceil(this.camY / cubeSize) * cubeSize;
 
+        // Use the double‑precision cubeInFrustum to avoid float overflow.
         for (double camZ2 = Math.ceil(this.camZ / cubeSize) * cubeSize;
-            this.intersection
-                    .intersectAab(
-                        (float)(camX1 - this.camX),
-                        (float)(camY1 - this.camY),
-                        (float)(camZ1 - this.camZ),
-                        (float)(camX2 - this.camX),
-                        (float)(camY2 - this.camY),
-                        (float)(camZ2 - this.camZ)
-                    )
-                != -2;
-            this.camZ = this.camZ - this.viewVector.z() * 4.0F
-        ) {
-            this.camX = this.camX - this.viewVector.x() * 4.0F;
-            this.camY = this.camY - this.viewVector.y() * 4.0F;
+             this.cubeInFrustum(camX1, camY1, camZ1, camX2, camY2, camZ2) != -2;
+             this.camZ = this.camZ - this.viewVector.z() * 4.0) {
+            this.camX = this.camX - this.viewVector.x() * 4.0;
+            this.camY = this.camY - this.viewVector.y() * 4.0;
         }
 
         return this;

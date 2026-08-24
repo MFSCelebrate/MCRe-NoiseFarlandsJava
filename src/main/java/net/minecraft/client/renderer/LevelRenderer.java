@@ -545,9 +545,9 @@ public class LevelRenderer implements AutoCloseable {
                                 // MCRe：相机相对偏移（far lands 防 int 溢出），shader 里 + CameraOffset 还原
                                 sectionInfos.add(
                                     new DynamicUniforms.ChunkSectionInfo(
-                                        (int)renderOffset.x - (int)camFloorX,
-                                        (int)renderOffset.y - (int)camFloorY,
-                                        (int)renderOffset.z - (int)camFloorZ,
+                                        (int)(renderOffset.x - camFloorX),
+                                        (int)(renderOffset.y - camFloorY),
+                                        (int)(renderOffset.z - camFloorZ),
                                         section.getVisibility(now)
                                     )
                                 );
