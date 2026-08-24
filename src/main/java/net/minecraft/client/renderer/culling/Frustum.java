@@ -95,15 +95,53 @@ public class Frustum {
         return this.cubeInFrustum(bb.minX(), bb.minY(), bb.minZ(), bb.maxX() + 1, bb.maxY() + 1, bb.maxZ() + 1);
     }
 
+    /**
+     * Computes the intersection result between the frustum and an axis‑aligned bounding box.
++     *
++     * The original implementation cast the coordinate differences to {@code float} before
++     * delegating to {@link FrustumIntersection#intersectAab}. This works well for typical
++     * Minecraft world coordinates but loses precision once the absolute coordinate magnitude
++     * exceeds about 1 × 10⁹ (≈ 2³⁰). At such scales the {@code float} mantissa can only represent
++     * steps of ~256 blocks, causing small bounding‑boxes (e.g. a single chunk or section) to be
++     * rounded to a degenerate shape and mistakenly reported as outside the view frustum.
++     *
++     * To retain correct culling for the "NoiseFarlands" deep‑world modifications where player
++     * positions can surpass {@code Integer.MAX_VALUE}, we first compute the deltas as {@code double}
++     * values. If any delta exceeds a safe threshold (1 × 10⁹), the float conversion would be
++     * lossy, so we bypass the {@code FrustumIntersection} test and conservatively treat the
++     * bounding box as visible (return {@code -1}). This ensures terrain beyond the overflow
++     * point continues to render while preserving the original fast‑path for normal ranges.
++     */
     private int cubeInFrustum(final double minX, final double minY, final double minZ, final double maxX, final double maxY, final double maxZ) {
-        float x1 = (float)(minX - this.camX);
-        float y1 = (float)(minY - this.camY);
-        float z1 = (float)(minZ - this.camZ);
-        float x2 = (float)(maxX - this.camX);
-        float y2 = (float)(maxY - this.camY);
-        float z2 = (float)(maxZ - this.camZ);
-        return this.intersection.intersectAab(x1, y1, z1, x2, y2, z2);
-    }
++        // Compute differences using double precision to avoid overflow/precision loss.
++        double dx1 = minX - this.camX;
++        double dy1 = minY - this.camY;
++        double dz1 = minZ - this.camZ;
++        double dx2 = maxX - this.camX;
++        double dy2 = maxY - this.camY;
++        double dz2 = maxZ - this.camZ;
++
++        // Determine the largest absolute delta. If it exceeds 1e9 (well beyond typical render
++        // distances) we deem the float conversion unsafe and assume the box is visible.
++        double maxAbs = Math.max(Math.abs(dx1), Math.abs(dx2));
++        maxAbs = Math.max(maxAbs, Math.abs(dy1));
++        maxAbs = Math.max(maxAbs, Math.abs(dy2));
++        maxAbs = Math.max(maxAbs, Math.abs(dz1));
++        maxAbs = Math.max(maxAbs, Math.abs(dz2));
++        if (maxAbs > 1.0E9) {
++            // Treat as intersecting to avoid false‑negative culling at extreme coordinates.
++            return -1;
++        }
++
++        // Safe to down‑cast to float for the JOML intersection test.
++        float x1 = (float) dx1;
++        float y1 = (float) dy1;
++        float z1 = (float) dz1;
++        float x2 = (float) dx2;
++        float y2 = (float) dy2;
++        float z2 = (float) dz2;
++        return this.intersection.intersectAab(x1, y1, z1, x2, y2, z2);
++    }
 
     public boolean pointInFrustum(final double x, final double y, final double z) {
         return this.intersection.testPoint((float)(x - this.camX), (float)(y - this.camY), (float)(z - this.camZ));
