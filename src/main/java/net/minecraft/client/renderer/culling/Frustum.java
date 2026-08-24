@@ -37,9 +37,9 @@ public class Frustum {
     }
 
     public Frustum offset(final float offset) {
-        this.camX = this.camX  this.viewVector.x * offset;
-        this.camY = this.camY  this.viewVector.y * offset;
-        this.camZ = this.camZ  this.viewVector.z * offset;
+        this.camX = this.camX + this.viewVector.x * offset;
+        this.camY = this.camY + this.viewVector.y * offset;
+        this.camZ = this.camZ + this.viewVector.z * offset;
         return this;
     }
 
@@ -92,7 +92,7 @@ public class Frustum {
     }
 
     public int cubeInFrustum(final BoundingBox bb) {
-        return this.cubeInFrustum(bb.minX(), bb.minY(), bb.minZ(), bb.maxX()  1, bb.maxY()  1, bb.maxZ()  1);
+        return this.cubeInFrustum(bb.minX(), bb.minY(), bb.minZ(), bb.maxX() + 1, bb.maxY() + 1, bb.maxZ() + 1);
     }
 
     /**
@@ -160,7 +160,7 @@ public class Frustum {
         };
         Matrix4f clipToWorldMatrix = this.matrix.invert(new Matrix4f());
 
-        for (int i = 0; i < 8; i) {
+        for (int i = 0; i < 8; i++) {
             clipToWorldMatrix.transform(frustumPoints[i]);
             frustumPoints[i].div(frustumPoints[i].w());
         }
