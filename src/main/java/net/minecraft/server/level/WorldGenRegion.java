@@ -52,6 +52,7 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.LevelData;
+import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -122,7 +123,7 @@ public class WorldGenRegion implements WorldGenLevel {
     public @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ,
             final ChunkStatus targetStatus, final boolean loadOrGenerate) {
         // 直接返回 center 而不抛出异常，增强容错性
-        int distance = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
+        int distance = this.center.getPos().getChessboardDistance((int)chunkX, (int)chunkZ);
         ChunkStatus maxAllowedStatus = distance >= this.generatingStep.directDependencies().size()
                 ? null
                 : this.generatingStep.directDependencies().get(distance);
@@ -380,6 +381,11 @@ public class WorldGenRegion implements WorldGenLevel {
     public LevelData getLevelData() {
         return this.levelData;
     }
+    
+    public float getMoonBrightness(final BlockPos pos) {
+        MoonPhase moonPhase = this.environmentAttributes.getValue(EnvironmentAttributes.MOON_PHASE, pos);
+        return DimensionType.MOON_BRIGHTNESS_PER_PHASE[moonPhase.index()];
+    }
 
     @Override
     public DifficultyInstance getCurrentDifficultyAt(final BlockPos pos) {
@@ -388,7 +394,7 @@ public class WorldGenRegion implements WorldGenLevel {
                 this.level.getDifficulty(),
                 this.level.getOverworldClockTime(),   // 或 getOverworldClockTime()
                 0L,
-                this.serverlevel.getMoonBrightness()
+                this.getMoonBrightness()
         );
         //return new DifficultyInstance(this.level.getDifficulty(), this.level.getOverworldClockTime(), 0L, this.level.getMoonBrightness());
     }
