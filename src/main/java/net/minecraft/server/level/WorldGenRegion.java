@@ -52,8 +52,6 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.LevelData;
-import net.minecraft.world.level.MoonPhase;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelTickAccess;
@@ -71,10 +69,8 @@ public class WorldGenRegion implements WorldGenLevel {
     private final LevelData levelData;
     private final RandomSource random;
     private final DimensionType dimensionType;
-    private final WorldGenTickAccess<
-            Block> blockTicks = new WorldGenTickAccess<>(pos -> this.getChunk(pos).getBlockTicks());
-    private final WorldGenTickAccess<
-            Fluid> fluidTicks = new WorldGenTickAccess<>(pos -> this.getChunk(pos).getFluidTicks());
+    private final WorldGenTickAccess<Block> blockTicks = new WorldGenTickAccess<>(pos -> this.getChunk(pos).getBlockTicks());
+    private final WorldGenTickAccess<Fluid> fluidTicks = new WorldGenTickAccess<>(pos -> this.getChunk(pos).getFluidTicks());
     private final BiomeManager biomeManager;
     private final ChunkStep generatingStep;
     private @Nullable Supplier<String> currentlyGenerating;
@@ -84,8 +80,7 @@ public class WorldGenRegion implements WorldGenLevel {
     private final int centerChunkZ;
     private final int writeRadius;
 
-    public WorldGenRegion(final ServerLevel level, final StaticCache2D<
-                    GenerationChunkHolder> cache, final ChunkStep generatingStep, final ChunkAccess center) {
+    public WorldGenRegion(final ServerLevel level, final StaticCache2D<GenerationChunkHolder> cache, final ChunkStep generatingStep, final ChunkAccess center) {
         this.generatingStep = generatingStep;
         this.cache = cache;
         this.center = center;
@@ -122,11 +117,11 @@ public class WorldGenRegion implements WorldGenLevel {
     @Override
     public @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ,
             final ChunkStatus targetStatus, final boolean loadOrGenerate) {
-        // 直接返回 center 而不抛出异常，增强容错性
-        int distance = this.center.getPos().getChessboardDistance((int)chunkX, (int)chunkZ);
+        // 使用 long 接收距离，避免精度损失
+        long distance = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
         ChunkStatus maxAllowedStatus = distance >= this.generatingStep.directDependencies().size()
                 ? null
-                : this.generatingStep.directDependencies().get(distance);
+                : this.generatingStep.directDependencies().get((int) distance);
 
         if (maxAllowedStatus == null) {
             return this.center;
@@ -145,7 +140,7 @@ public class WorldGenRegion implements WorldGenLevel {
 
     @Override
     public boolean hasChunk(final int chunkX, final int chunkZ) {
-        int distance = (int) this.center.getPos().getChessboardDistance(chunkX, chunkZ);
+        long distance = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
         return distance < this.generatingStep.directDependencies().size();
     }
 
@@ -166,8 +161,7 @@ public class WorldGenRegion implements WorldGenLevel {
     }
 
     @Override
-    public @Nullable Player getNearestPlayer(final double x, final double y, final double z, final double maxDist, final @Nullable
-            Predicate<Entity> predicate) {
+    public @Nullable Player getNearestPlayer(final double x, final double y, final double z, final double maxDist, final @Nullable Predicate<Entity> predicate) {
         return null;
     }
 
@@ -182,8 +176,7 @@ public class WorldGenRegion implements WorldGenLevel {
     }
 
     @Override
-    public Holder<
-                    Biome> getUncachedNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+    public Holder<Biome> getUncachedNoiseBiome(final int quartX, final int quartY, final int quartZ) {
         return this.level.getUncachedNoiseBiome(quartX, quartY, quartZ);
     }
 
@@ -193,8 +186,7 @@ public class WorldGenRegion implements WorldGenLevel {
     }
 
     @Override
-    public boolean destroyBlock(final BlockPos pos, final boolean dropResources, final @Nullable
-            Entity breaker, final int updateLimit) {
+    public boolean destroyBlock(final BlockPos pos, final boolean dropResources, final @Nullable Entity breaker, final int updateLimit) {
         BlockState blockState = this.getBlockState(pos);
         return blockState.isAir() ? false : this.setBlock(pos, Blocks.AIR.defaultBlockState(), 3, updateLimit);
     }
@@ -214,12 +206,10 @@ public class WorldGenRegion implements WorldGenLevel {
                 if (!state.hasBlockEntity()) {
                     return null;
                 }
-
                 blockEntity = ((EntityBlock) state.getBlock()).newBlockEntity(pos, state);
             } else {
                 blockEntity = BlockEntity.loadStatic(pos, state, tag, this.level.registryAccess());
             }
-
             if (blockEntity != null) {
                 chunk.setBlockEntity(blockEntity);
                 return blockEntity;
@@ -229,7 +219,6 @@ public class WorldGenRegion implements WorldGenLevel {
         if (state.hasBlockEntity()) {
             LOGGER.warn("Tried to access a block entity before it was created. {}", pos);
         }
-
         return null;
     }
 
@@ -238,18 +227,9 @@ public class WorldGenRegion implements WorldGenLevel {
             if (!this.isWithinWriteZone(chunkX, chunkZ)) {
                 int readDistance = Math.max(Math.abs(this.centerChunkX - chunkX), Math.abs(this.centerChunkZ - chunkZ));
                 String warning = "Detected unsafe terrain read during worldgen: reading from chunk ["
-                        + chunkX
-                        + ", "
-                        + chunkZ
-                        + "] while generating chunk ["
-                        + this.centerChunkX
-                        + ", "
-                        + this.centerChunkZ
-                        + "] (distance: "
-                        + readDistance
-                        + ", write radius: "
-                        + this.writeRadius
-                        + "), step: "
+                        + chunkX + ", " + chunkZ + "] while generating chunk ["
+                        + this.centerChunkX + ", " + this.centerChunkZ + "] (distance: "
+                        + readDistance + ", write radius: " + this.writeRadius + "), step: "
                         + this.generatingStep.targetStatus().getName()
                         + (this.currentlyGenerating == null ? "" : ", currently generating: " + this.currentlyGenerating.get());
                 Util.logAndPauseIfInIde(warning);
@@ -273,16 +253,9 @@ public class WorldGenRegion implements WorldGenLevel {
             int chunkX = SectionPos.blockToSectionCoord(pos.getX());
             int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
             Util.logAndPauseIfInIde(
-                    "Detected setBlock in a far chunk ["
-                            + chunkX
-                            + ", "
-                            + chunkZ
-                            + "], pos: "
-                            + pos
-                            + ", status: "
-                            + this.generatingStep.targetStatus()
-                            + (this.currentlyGenerating == null ? "" : ", currently generating: " + this.currentlyGenerating.get())
-            );
+                    "Detected setBlock in a far chunk [" + chunkX + ", " + chunkZ + "], pos: " + pos
+                            + ", status: " + this.generatingStep.targetStatus()
+                            + (this.currentlyGenerating == null ? "" : ", currently generating: " + this.currentlyGenerating.get()));
             return false;
         } else if (this.center.isUpgrading()) {
             LevelHeightAccessor levelHeightAccessor = this.center.getHeightAccessorForGeneration();
@@ -330,7 +303,6 @@ public class WorldGenRegion implements WorldGenLevel {
                 this.markPosForPostProcessing(postProcessPos);
             }
         }
-
         return true;
     }
 
@@ -381,22 +353,16 @@ public class WorldGenRegion implements WorldGenLevel {
     public LevelData getLevelData() {
         return this.levelData;
     }
-    
-    public float getMoonBrightness(final BlockPos pos) {
-        MoonPhase moonPhase = this.environmentAttributes.getValue(EnvironmentAttributes.MOON_PHASE, pos);
-        return DimensionType.MOON_BRIGHTNESS_PER_PHASE[moonPhase.index()];
-    }
 
     @Override
     public DifficultyInstance getCurrentDifficultyAt(final BlockPos pos) {
-        // 直接使用 level 的难度、时间和月亮亮度，不检查区域边界，避免崩溃
+        // 直接使用 level 的方法，无需自定义 MoonBrightness 逻辑
         return new DifficultyInstance(
                 this.level.getDifficulty(),
-                this.level.getOverworldClockTime(),   // 或 getOverworldClockTime()
+                this.level.getOverworldClockTime(),
                 0L,
-                this.getMoonBrightness()
+                0.0F
         );
-        //return new DifficultyInstance(this.level.getDifficulty(), this.level.getOverworldClockTime(), 0L, this.level.getMoonBrightness());
     }
 
     @Override
@@ -443,20 +409,16 @@ public class WorldGenRegion implements WorldGenLevel {
     }
 
     @Override
-    public void playSound(
-            final @Nullable
-            Entity except, final BlockPos pos, final SoundEvent sound, final SoundSource source, final float volume, final float pitch) {}
+    public void playSound(final @Nullable Entity except, final BlockPos pos, final SoundEvent sound, final SoundSource source, final float volume, final float pitch) {}
 
     @Override
     public void addParticle(final ParticleOptions particle, final double x, final double y, final double z, final double xd, final double yd, final double zd) {}
 
     @Override
-    public void levelEvent(final @Nullable
-            Entity source, final int type, final BlockPos pos, final int data) {}
+    public void levelEvent(final @Nullable Entity source, final int type, final BlockPos pos, final int data) {}
 
     @Override
-    public void gameEvent(final Holder<
-                    GameEvent> gameEvent, final Vec3 position, final GameEvent.Context context) {}
+    public void gameEvent(final Holder<GameEvent> gameEvent, final Vec3 position, final GameEvent.Context context) {}
 
     @Override
     public DimensionType dimensionType() {
@@ -474,14 +436,12 @@ public class WorldGenRegion implements WorldGenLevel {
     }
 
     @Override
-    public <T extends Entity> List<T> getEntities(final EntityTypeTest<
-                    Entity, T> type, final AABB bb, final Predicate<? super T> selector) {
+    public <T extends Entity> List<T> getEntities(final EntityTypeTest<Entity, T> type, final AABB bb, final Predicate<? super T> selector) {
         return Collections.emptyList();
     }
 
     @Override
-    public List<Entity> getEntities(final @Nullable Entity except, final AABB bb, final @Nullable
-            Predicate<? super Entity> selector) {
+    public List<Entity> getEntities(final @Nullable Entity except, final AABB bb, final @Nullable Predicate<? super Entity> selector) {
         return Collections.emptyList();
     }
 
