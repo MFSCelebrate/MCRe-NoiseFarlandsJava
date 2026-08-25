@@ -140,7 +140,7 @@ public class SectionStorage<R, P> implements AutoCloseable {
     }
 
     protected boolean outsideStoredRange(final SectionPos sectionPos) {
-        int y = SectionPos.sectionToBlockCoord(sectionPos.y());
+        long y = SectionPos.sectionToBlockCoord(sectionPos.y());
         return this.levelHeightAccessor.isOutsideBuildHeight(y);
     }
 
@@ -269,8 +269,8 @@ public class SectionStorage<R, P> implements AutoCloseable {
         );
     }
 
-    private static SectionPos getKey(final ChunkPos chunkPos, final int sectionY) {
-        return SectionPos.of((int)(int)chunkPos.x(), sectionY, (int)(int)chunkPos.z());
+    private static SectionPos getKey(final ChunkPos chunkPos, final long sectionY) {
+        return SectionPos.of(chunkPos.x(), sectionY, chunkPos.z());
     }
 
     protected void onSectionLoad(final SectionPos sectionPos) {

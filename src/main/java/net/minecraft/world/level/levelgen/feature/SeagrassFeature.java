@@ -25,7 +25,7 @@ public class SeagrassFeature extends Feature<ProbabilityFeatureConfiguration> {
         ProbabilityFeatureConfiguration config = context.config();
         int x = random.nextInt(8) - random.nextInt(8);
         int z = random.nextInt(8) - random.nextInt(8);
-        int y = level.getHeight(Heightmap.Types.OCEAN_FLOOR, origin.getX() + x, origin.getZ() + z);
+        long y = level.getHeight(Heightmap.Types.OCEAN_FLOOR, origin.getX() + x, origin.getZ() + z);
         BlockPos grassPos = new BlockPos(origin.getX() + x, y, origin.getZ() + z);
         if (level.getBlockState(grassPos).is(Blocks.WATER)) {
             boolean isTall = random.nextDouble() < config.probability;

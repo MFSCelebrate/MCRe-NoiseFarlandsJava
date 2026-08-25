@@ -1430,7 +1430,7 @@ public abstract class Entity
     public BlockPos adjustSpawnLocation(final ServerLevel level, final BlockPos spawnSuggestion) {
         BlockPos spawnBlockPos = level.getRespawnData().pos();
         Vec3 spawnPos = Vec3.atCenterOf(spawnBlockPos);
-        int spawnHeight = level.getChunkAt(spawnBlockPos).getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawnBlockPos.getX(), spawnBlockPos.getZ()) + 1;
+        long spawnHeight = level.getChunkAt(spawnBlockPos).getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawnBlockPos.getX(), spawnBlockPos.getZ()) + 1;
         return BlockPos.containing(spawnPos.x, spawnHeight, spawnPos.z);
     }
 

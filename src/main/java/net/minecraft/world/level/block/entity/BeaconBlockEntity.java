@@ -134,7 +134,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
         BeaconBeamOwner.Section lastBeamSection = entity.checkingBeamSections.isEmpty()
             ? null
             : entity.checkingBeamSections.get(entity.checkingBeamSections.size() - 1);
-        int lastSetBlock = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+        long lastSetBlock = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
 
         for (int i = 0; i < 10 && checkPos.getY() <= lastSetBlock; i++) {
             BlockState state = level.getBlockState(checkPos);

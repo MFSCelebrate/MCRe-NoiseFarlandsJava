@@ -413,6 +413,7 @@ public record SerializableChunkData(
 
     public CompoundTag write() {
         CompoundTag tag = NbtUtils.addCurrentDataVersion(new CompoundTag());
+        // MCRe NoiseFarlands: NBT 存档兼容边界——保持 IntTag 截断写法（Decision 4），读取端同步
         tag.putInt("xPos", (int)this.chunkPos.x());
         tag.putInt("yPos", this.minSectionY);
         tag.putInt("zPos", (int)this.chunkPos.z());

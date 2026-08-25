@@ -43,7 +43,7 @@ public class CountOnEveryLayerPlacement extends PlacementModifier {
             for (int i = 0; i < this.count.sample(random); i++) {
                 int x = random.nextInt(16) + origin.getX();
                 int z = random.nextInt(16) + origin.getZ();
-                int startY = context.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
+                long startY = context.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
                 int y = findOnGroundYPosition(context, x, startY, z, layer);
                 if (y != Integer.MAX_VALUE) {
                     positions.add(new BlockPos(x, y, z));

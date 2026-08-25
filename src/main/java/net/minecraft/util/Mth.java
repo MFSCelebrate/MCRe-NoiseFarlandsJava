@@ -727,6 +727,14 @@ public class Mth {
         return floor(value / quantizeResolution) * quantizeResolution;
     }
 
+    /**
+     * MCRe：原版 {@code quantize} 返回 int（{@code floor} 饱和截断）。本版返回 long，
+     * 用 {@link #lfloor(double)} 防 |result| ≥ 2^31 时坍塌到 {@link Integer#MAX_VALUE}。
+     */
+    public static long quantize(final double value, final long quantizeResolution) {
+        return lfloor(value / quantizeResolution) * quantizeResolution;
+    }
+
     public static IntStream outFromOrigin(final int origin, final int lowerBound, final int upperBound) {
         return outFromOrigin(origin, lowerBound, upperBound, 1);
     }

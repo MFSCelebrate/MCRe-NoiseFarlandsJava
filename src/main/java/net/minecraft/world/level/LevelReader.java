@@ -30,7 +30,7 @@ public interface LevelReader
     @Deprecated
     boolean hasChunk(int chunkX, int chunkZ);
 
-    int getHeight(Heightmap.Types type, int x, int z);
+    long getHeight(Heightmap.Types type, long x, long z);
 
     default int getHeight(final Heightmap.Types type, final BlockPos pos) {
         return this.getHeight(type, pos.getX(), pos.getZ());

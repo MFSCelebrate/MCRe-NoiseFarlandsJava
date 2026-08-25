@@ -77,7 +77,7 @@ public class AmbientDesertBlockSoundsPlayer {
     }
 
     private static boolean columnContainsTriggeringBlock(final Level level, final BlockPos.MutableBlockPos mutablePos) {
-        int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, mutablePos) - 1;
+        long surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, mutablePos) - 1;
         if (Math.abs(surfaceY - mutablePos.getY()) > 5) {
             mutablePos.move(Direction.UP, 6);
             BlockState aboveBlockState = level.getBlockState(mutablePos);

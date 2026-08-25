@@ -81,7 +81,7 @@ public class ConcentricRingsStructurePlacement extends StructurePlacement {
     }
 
     @Override
-    protected boolean isPlacementChunk(final ChunkGeneratorStructureState generatorState, final int sourceX, final int sourceZ) {
+    protected boolean isPlacementChunk(final ChunkGeneratorStructureState generatorState, final long sourceX, final long sourceZ) {
         List<ChunkPos> positions = generatorState.getRingPositionsFor(this);
         return positions == null ? false : positions.contains(new ChunkPos(sourceX, sourceZ));
     }

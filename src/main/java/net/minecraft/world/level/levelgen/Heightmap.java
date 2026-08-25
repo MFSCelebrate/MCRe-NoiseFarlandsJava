@@ -78,8 +78,8 @@ public class Heightmap {
         }
     }
 
-    public boolean update(final int localX, final int localY, final int localZ, final BlockState state) {
-        int firstAvailable = this.getFirstAvailable(localX, localZ);
+    public boolean update(final int localX, final long localY, final int localZ, final BlockState state) {
+        long firstAvailable = this.getFirstAvailable(localX, localZ);
         if (localY <= firstAvailable - 2) {
             return false;
         }
@@ -92,7 +92,7 @@ public class Heightmap {
         } else if (firstAvailable - 1 == localY) {
             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
-            for (int y = localY - 1; y >= this.chunk.getMinY(); y--) {
+            for (long y = localY - 1; y >= this.chunk.getMinY(); y--) {
                 pos.set(localX, y, localZ);
                 if (this.isOpaque.test(this.chunk.getBlockState(pos))) {
                     this.setHeight(localX, localZ, y + 1);
@@ -107,20 +107,21 @@ public class Heightmap {
         return false;
     }
 
-    public int getFirstAvailable(final int x, final int z) {
+    public long getFirstAvailable(final int x, final int z) {
         return this.getFirstAvailable(getIndex(x, z));
     }
 
-    public int getHighestTaken(final int x, final int z) {
+    public long getHighestTaken(final int x, final int z) {
         return this.getFirstAvailable(getIndex(x, z)) - 1;
     }
 
-    private int getFirstAvailable(final int index) {
-        return this.data.get(index) + this.chunk.getMinY();
+    private long getFirstAvailable(final int index) {
+        return (long) this.data.get(index) + this.chunk.getMinY();
     }
 
-    private void setHeight(final int x, final int z, final int height) {
-        this.data.set(getIndex(x, z), height - this.chunk.getMinY());
+    private void setHeight(final int x, final int z, final long height) {
+        // MCRe NoiseFarlands: BitStorage 只支持 int，存相对 minY 偏移（世界高度量级，安全）
+        this.data.set(getIndex(x, z), Math.toIntExact(height - this.chunk.getMinY()));
     }
 
     public void setRawData(final ChunkAccess chunk, final Heightmap.Types type, final long[] data) {

@@ -648,7 +648,7 @@ public class StructureTemplate {
             for (int i = 0; i < mainPaletteBlocks.size(); i++) {
                 StructureTemplate.StructureBlockInfo blockInfo = mainPaletteBlocks.get(i);
                 CompoundTag blockTag = new CompoundTag();
-                blockTag.put("pos", this.newIntegerList(blockInfo.pos.getX(), blockInfo.pos.getY(), blockInfo.pos.getZ()));
+                blockTag.put("pos", this.newLongList(blockInfo.pos.getX(), blockInfo.pos.getY(), blockInfo.pos.getZ()));
                 int id = mainPalette.idFor(blockInfo.state);
                 blockTag.putInt("state", id);
                 if (blockInfo.nbt != null) {
@@ -694,7 +694,7 @@ public class StructureTemplate {
         for (StructureTemplate.StructureEntityInfo entityInfo : this.entityInfoList) {
             CompoundTag entityTag = new CompoundTag();
             entityTag.put("pos", this.newDoubleList(entityInfo.pos.x, entityInfo.pos.y, entityInfo.pos.z));
-            entityTag.put("blockPos", this.newIntegerList(entityInfo.blockPos.getX(), entityInfo.blockPos.getY(), entityInfo.blockPos.getZ()));
+            entityTag.put("blockPos", this.newLongList(entityInfo.blockPos.getX(), entityInfo.blockPos.getY(), entityInfo.blockPos.getZ()));
             if (entityInfo.nbt != null) {
                 entityTag.put("nbt", entityInfo.nbt);
             }
@@ -703,7 +703,7 @@ public class StructureTemplate {
         }
 
         tag.put("entities", entityList);
-        tag.put("size", this.newIntegerList(this.size.getX(), this.size.getY(), this.size.getZ()));
+        tag.put("size", this.newIntegerList((int) this.size.getX(), (int) this.size.getY(), (int) this.size.getZ()));
         return NbtUtils.addCurrentDataVersion(tag);
     }
 
@@ -758,6 +758,22 @@ public class StructureTemplate {
 
         for (int value : values) {
             res.add(IntTag.valueOf(value));
+        }
+
+        return res;
+    }
+
+    /**
+     * MCRe：原版用 {@code newIntegerList} 写 int 坐标，BlockPos long 化后签名不匹配。
+     * 本版加 long 版重载（NBT tag 仍用 IntTag 但每次 (int) 截断），保持 NBT 存档兼容性。
+     * 远距离（≥ 2^31）结构导出坐标会坍塌到 {@link Integer#MAX_VALUE}，但结构生成
+     * 通常在世界原点附近，不会触发该问题。
+     */
+    private ListTag newLongList(final long... values) {
+        ListTag res = new ListTag();
+
+        for (long value : values) {
+            res.add(IntTag.valueOf((int) value));
         }
 
         return res;

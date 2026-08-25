@@ -492,16 +492,16 @@ public class SurfaceRules {
                 int zNorth = Math.max(chunkBlockZ - 1, 0);
                 int zSouth = Math.min(chunkBlockZ + 1, 15);
                 ChunkAccess chunk = this.context.chunk;
-                int heightNorth = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, chunkBlockX, zNorth);
-                int heightSouth = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, chunkBlockX, zSouth);
+                long heightNorth = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, chunkBlockX, zNorth);
+                long heightSouth = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, chunkBlockX, zSouth);
                 if (heightSouth >= heightNorth + 4) {
                     return true;
                 }
 
                 int xWest = Math.max(chunkBlockX - 1, 0);
                 int xEast = Math.min(chunkBlockX + 1, 15);
-                int heightWest = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, xWest, chunkBlockZ);
-                int heightEast = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, xEast, chunkBlockZ);
+                long heightWest = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, xWest, chunkBlockZ);
+                long heightEast = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, xEast, chunkBlockZ);
                 return heightWest >= heightEast + 4;
             }
         }

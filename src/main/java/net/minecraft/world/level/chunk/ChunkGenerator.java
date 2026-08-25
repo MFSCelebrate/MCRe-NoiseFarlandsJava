@@ -189,8 +189,8 @@ public abstract class ChunkGenerator {
         }
 
         if (!randomSpreadEntries.isEmpty()) {
-            int chunkOriginX = SectionPos.blockToSectionCoord(pos.getX());
-            int chunkOriginZ = SectionPos.blockToSectionCoord(pos.getZ());
+            long chunkOriginX = SectionPos.blockToSectionCoord(pos.getX());
+            long chunkOriginZ = SectionPos.blockToSectionCoord(pos.getZ());
 
             for (int radius = 0; radius <= maxSearchRadius; radius++) {
                 boolean foundSomething = false;
@@ -268,8 +268,8 @@ public abstract class ChunkGenerator {
             final Set<Holder<Structure>> structures,
             final LevelReader level,
             final StructureManager structureManager,
-            final int chunkOriginX,
-            final int chunkOriginZ,
+            final long chunkOriginX,
+            final long chunkOriginZ,
             final int radius,
             final boolean createReference,
             final long seed,
@@ -282,8 +282,8 @@ public abstract class ChunkGenerator {
             for (int z = -radius; z <= radius; z++) {
                 boolean zEdge = z == -radius || z == radius;
                 if (xEdge || zEdge) {
-                    int sectorX = chunkOriginX + spacing * x;
-                    int sectorZ = chunkOriginZ + spacing * z;
+                    long sectorX = chunkOriginX + (long) spacing * x;
+                    long sectorZ = chunkOriginZ + (long) spacing * z;
                     ChunkPos chunkTarget = config.getPotentialStructureChunk(seed, sectorX, sectorZ);
                     Pair<BlockPos, Holder<Structure>> generating = getStructureGeneratingAt(
                     structures, level, structureManager, createReference, config, chunkTarget
@@ -524,7 +524,7 @@ public abstract class ChunkGenerator {
                                     }
                                 }
 
-                                if (featurePlacement.isStructureChunk(state, (int) sourceChunkPos.x(), (int) sourceChunkPos.z())) {
+                                if (featurePlacement.isStructureChunk(state, sourceChunkPos.x(), sourceChunkPos.z())) {
                                     if (structures.size() == 1) {
                                         this.tryGenerateStructure(
                                                 structures.get(0),
@@ -543,7 +543,7 @@ public abstract class ChunkGenerator {
                                                 StructureSet.StructureSelectionEntry> options = new ArrayList<>(structures.size());
                                         options.addAll(structures);
                                         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
-                                        random.setLargeFeatureSeed(state.getLevelSeed(), (int) sourceChunkPos.x(), (int) sourceChunkPos.z());
+                                        random.setLargeFeatureSeed(state.getLevelSeed(), sourceChunkPos.x(), sourceChunkPos.z());
                                         int total = 0;
 
                                         for (StructureSet.StructureSelectionEntry option : options) {

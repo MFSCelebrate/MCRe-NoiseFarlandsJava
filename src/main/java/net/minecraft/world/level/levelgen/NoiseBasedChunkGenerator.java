@@ -340,7 +340,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
 
                     for (Holder<ConfiguredWorldCarver<?>> carverHolder : carvers) {
                         ConfiguredWorldCarver<?> carver = carverHolder.value();
-                        random.setLargeFeatureSeed(seed + index, (int)sourcePos.x(), (int)sourcePos.z());
+                        random.setLargeFeatureSeed(seed + index, sourcePos.x(), sourcePos.z());
                         if (carver.isStartChunk(random)) {
                             carver.carve(context, chunk, correctBiomeManager::getBiome, random, aquifer, sourcePos, mask);
                         }
@@ -497,7 +497,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
             ChunkPos center = worldGenRegion.getCenter();
             Holder<Biome> biome = worldGenRegion.getBiome(center.getWorldPosition().atY(worldGenRegion.getMaxY()));
             WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(RandomSupport.generateUniqueSeed()));
-            random.setDecorationSeed(worldGenRegion.getSeed(), (int)center.getMinBlockX(), (int)center.getMinBlockZ());
+            random.setDecorationSeed(worldGenRegion.getSeed(), center.getMinBlockX(), center.getMinBlockZ());
             NaturalSpawner.spawnMobsForChunkGeneration(worldGenRegion, biome, center, random);
         }
     }

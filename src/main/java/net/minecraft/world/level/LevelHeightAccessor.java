@@ -28,24 +28,41 @@ public interface LevelHeightAccessor {
         return this.isInsideBuildHeight(pos.getY());
     }
 
-    default boolean isInsideBuildHeight(final int blockY) {
+    default boolean isInsideBuildHeight(final long blockY) {
         return blockY >= this.getMinY() && blockY <= this.getMaxY();
+    }
+
+    default boolean isInsideBuildHeight(final int blockY) {
+        return this.isInsideBuildHeight((long) blockY);
     }
 
     default boolean isOutsideBuildHeight(final BlockPos pos) {
         return this.isOutsideBuildHeight(pos.getY());
     }
 
-    default boolean isOutsideBuildHeight(final int blockY) {
+    default boolean isOutsideBuildHeight(final long blockY) {
         return blockY < this.getMinY() || blockY > this.getMaxY();
+    }
+
+    default boolean isOutsideBuildHeight(final int blockY) {
+        return this.isOutsideBuildHeight((long) blockY);
     }
 
     default int getSectionIndex(final int blockY) {
         return this.getSectionIndexFromSectionY(SectionPos.blockToSectionCoord(blockY));
     }
 
+    default int getSectionIndex(final long blockY) {
+        return this.getSectionIndexFromSectionY(SectionPos.blockToSectionCoord(blockY));
+    }
+
     default int getSectionIndexFromSectionY(final int sectionY) {
         return sectionY - this.getMinSectionY();
+    }
+
+    default int getSectionIndexFromSectionY(final long sectionY) {
+        // MCRe NoiseFarlands: sectionY Long 化入参，返回值为 0-24 数组索引保持 int
+        return Math.toIntExact(sectionY - this.getMinSectionY());
     }
 
     default int getSectionYFromSectionIndex(final int sectionIndex) {

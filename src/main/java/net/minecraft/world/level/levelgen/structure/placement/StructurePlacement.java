@@ -79,47 +79,47 @@ public abstract class StructurePlacement {
         return this.exclusionZone;
     }
 
-    public boolean isStructureChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ) {
+    public boolean isStructureChunk(final ChunkGeneratorStructureState state, final long sourceX, final long sourceZ) {
         return this.isPlacementChunk(state, sourceX, sourceZ)
             && this.applyAdditionalChunkRestrictions(sourceX, sourceZ, state.getLevelSeed())
             && this.applyInteractionsWithOtherStructures(state, sourceX, sourceZ);
     }
 
-    public boolean applyAdditionalChunkRestrictions(final int sourceX, final int sourceZ, final long levelSeed) {
+    public boolean applyAdditionalChunkRestrictions(final long sourceX, final long sourceZ, final long levelSeed) {
         return !(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(levelSeed, this.salt, sourceX, sourceZ, this.frequency);
     }
 
-    public boolean applyInteractionsWithOtherStructures(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ) {
+    public boolean applyInteractionsWithOtherStructures(final ChunkGeneratorStructureState state, final long sourceX, final long sourceZ) {
         return !this.exclusionZone.isPresent() || !this.exclusionZone.get().isPlacementForbidden(state, sourceX, sourceZ);
     }
 
-    protected abstract boolean isPlacementChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ);
+    protected abstract boolean isPlacementChunk(final ChunkGeneratorStructureState state, final long sourceX, final long sourceZ);
 
     public BlockPos getLocatePos(final ChunkPos chunkPos) {
-        return new BlockPos((int)chunkPos.getMinBlockX(), 0, (int)chunkPos.getMinBlockZ()).offset(this.locateOffset());
+        return new BlockPos(chunkPos.getMinBlockX(), 0, chunkPos.getMinBlockZ()).offset(this.locateOffset());
     }
 
     public abstract StructurePlacementType<?> type();
 
-    private static boolean probabilityReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
+    private static boolean probabilityReducer(final long seed, final int salt, final long sourceX, final long sourceZ, final float probability) {
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
         random.setLargeFeatureWithSalt(seed, salt, sourceX, sourceZ);
         return random.nextFloat() < probability;
     }
 
-    private static boolean legacyProbabilityReducerWithDouble(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
+    private static boolean legacyProbabilityReducerWithDouble(final long seed, final int salt, final long sourceX, final long sourceZ, final float probability) {
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
         random.setLargeFeatureSeed(seed, sourceX, sourceZ);
         return random.nextDouble() < probability;
     }
 
-    private static boolean legacyArbitrarySaltProbabilityReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
+    private static boolean legacyArbitrarySaltProbabilityReducer(final long seed, final int salt, final long sourceX, final long sourceZ, final float probability) {
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
         random.setLargeFeatureWithSalt(seed, sourceX, sourceZ, 10387320);
         return random.nextFloat() < probability;
     }
 
-    private static boolean legacyPillagerOutpostReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
+    private static boolean legacyPillagerOutpostReducer(final long seed, final int salt, final long sourceX, final long sourceZ, final float probability) {
         int cx = sourceX >> 4;
         int cz = sourceZ >> 4;
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
@@ -140,14 +140,14 @@ public abstract class StructurePlacement {
                 .apply(i, StructurePlacement.ExclusionZone::new)
         );
 
-        private boolean isPlacementForbidden(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ) {
+        private boolean isPlacementForbidden(final ChunkGeneratorStructureState state, final long sourceX, final long sourceZ) {
             return state.hasStructureChunkInRange(this.otherSet, sourceX, sourceZ, this.chunkCount);
         }
     }
 
     @FunctionalInterface
     public interface FrequencyReducer {
-        boolean shouldGenerate(long seed, final int salt, final int sourceX, final int sourceZ, float probability);
+        boolean shouldGenerate(long seed, final int salt, final long sourceX, final long sourceZ, float probability);
     }
 
     public enum FrequencyReductionMethod implements StringRepresentable {
@@ -167,7 +167,7 @@ public abstract class StructurePlacement {
             this.reducer = reducer;
         }
 
-        public boolean shouldGenerate(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
+        public boolean shouldGenerate(final long seed, final int salt, final long sourceX, final long sourceZ, final float probability) {
             return this.reducer.shouldGenerate(seed, salt, sourceX, sourceZ, probability);
         }
 

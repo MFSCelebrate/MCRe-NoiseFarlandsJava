@@ -293,7 +293,7 @@ public class Blender {
 
                         for (int x = minX; x <= maxX; x++) {
                             for (int z = minZ; z <= maxZ; z++) {
-                                int maxY = Math.min(oldMaxY, chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z)) + 1;
+                                long maxY = Math.min(oldMaxY, chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z)) + 1;
 
                                 for (int y = oldMinY; y < maxY; y++) {
                                     generateBorderTick(chunk, pos.setWithOffset(chunkOrigin, x, y, z));

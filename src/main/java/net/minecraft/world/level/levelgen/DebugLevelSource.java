@@ -95,13 +95,14 @@ public class DebugLevelSource extends ChunkGenerator {
     public void addDebugScreenInfo(final List<String> result, final RandomState randomState, final BlockPos feetPos) {
     }
 
-    public static BlockState getBlockStateFor(int worldX, int worldZ) {
+    public static BlockState getBlockStateFor(final long worldX, final long worldZ) {
         BlockState state = AIR;
         if (worldX > 0 && worldZ > 0 && worldX % 2 != 0 && worldZ % 2 != 0) {
-            worldX /= 2;
-            worldZ /= 2;
-            if (worldX <= GRID_WIDTH && worldZ <= GRID_HEIGHT) {
-                int index = Mth.abs(worldX * GRID_WIDTH + worldZ);
+            long wx = worldX / 2;
+            long wz = worldZ / 2;
+            if (wx <= GRID_WIDTH && wz <= GRID_HEIGHT) {
+                // ALL_BLOCKS 数组索引，int 域边界
+                int index = Math.toIntExact(Mth.abs(wx * GRID_WIDTH + wz));
                 if (index < ALL_BLOCKS.size()) {
                     state = ALL_BLOCKS.get(index);
                 }

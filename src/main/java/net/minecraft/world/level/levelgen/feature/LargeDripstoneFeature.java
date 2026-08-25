@@ -172,7 +172,7 @@ public class LargeDripstoneFeature extends Feature<LargeDripstoneConfiguration> 
 
                             BlockPos.MutableBlockPos pos = this.root.offset(dx, 0, dz).mutable();
                             boolean hasBeenOutOfStone = false;
-                            int maxY = this.pointingUp ? level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, pos.getX(), pos.getZ()) : Integer.MAX_VALUE;
+                            long maxY = this.pointingUp ? level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, pos.getX(), pos.getZ()) : Integer.MAX_VALUE;
 
                             for (int i = 0; i < height && pos.getY() < maxY; i++) {
                                 BlockPos windAdjustedPos = wind.offset(pos);

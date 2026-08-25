@@ -23,8 +23,8 @@ public class SurfaceWaterDepthFilter extends PlacementFilter {
 
     @Override
     protected boolean shouldPlace(final PlacementContext context, final RandomSource random, final BlockPos origin) {
-        int yOceanFloor = context.getHeight(Heightmap.Types.OCEAN_FLOOR, origin.getX(), origin.getZ());
-        int ySurfaceFloor = context.getHeight(Heightmap.Types.WORLD_SURFACE, origin.getX(), origin.getZ());
+        long yOceanFloor = context.getHeight(Heightmap.Types.OCEAN_FLOOR, origin.getX(), origin.getZ());
+        long ySurfaceFloor = context.getHeight(Heightmap.Types.WORLD_SURFACE, origin.getX(), origin.getZ());
         return ySurfaceFloor - yOceanFloor <= this.maxWaterDepth;
     }
 

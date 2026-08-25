@@ -80,7 +80,7 @@ public class WeatherEffectRenderer implements AutoCloseable {
                 long xEnd = (long) cameraBlockX + renderState.radius;
                 for (long xL = xStart; xL <= xEnd; xL++) {
                     int x = (int) xL;
-                    int terrainHeight = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
+                    long terrainHeight = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
                     int y0 = Math.max(cameraBlockY - renderState.radius, terrainHeight);
                     int y1 = Math.max(cameraBlockY + renderState.radius, terrainHeight);
                     if (y1 - y0 != 0) {

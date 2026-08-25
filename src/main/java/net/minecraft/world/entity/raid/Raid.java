@@ -673,7 +673,7 @@ public class Raid {
             float angle = startAngle + (float) Math.PI * i / 8.0F;
             int spawnX = this.center.getX() + Mth.floor(Mth.cos(angle) * 32.0F * howFar) + this.random.nextInt(3) * Mth.floor(howFar);
             int spawnZ = this.center.getZ() + Mth.floor(Mth.sin(angle) * 32.0F * howFar) + this.random.nextInt(3) * Mth.floor(howFar);
-            int spawnY = level.getHeight(Heightmap.Types.WORLD_SURFACE, spawnX, spawnZ);
+            long spawnY = level.getHeight(Heightmap.Types.WORLD_SURFACE, spawnX, spawnZ);
             if (Mth.abs(spawnY - this.center.getY()) <= 96) {
                 spawnPos.set(spawnX, spawnY, spawnZ);
                 if (!level.isVillage(spawnPos) || secondsRemaining <= 7) {

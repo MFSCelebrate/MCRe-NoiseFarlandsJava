@@ -109,14 +109,14 @@ public class SurfaceSystem {
             for (int z = 0; z < 16; z++) {
                 int blockX = minBlockX + x;
                 int blockZ = minBlockZ + z;
-                int startingHeight = protoChunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) + 1;
+                long startingHeight = protoChunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) + 1;
                 columnPos.setX(blockX).setZ(blockZ);
                 Holder<Biome> surfaceBiome = biomeManager.getBiome(blockPos.set(blockX, useLegacyRandom ? 0 : startingHeight, blockZ));
                 if (surfaceBiome.is(Biomes.ERODED_BADLANDS)) {
                     this.erodedBadlandsExtension(column, blockX, blockZ, startingHeight, protoChunk);
                 }
 
-                int height = protoChunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) + 1;
+                long height = protoChunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) + 1;
                 context.updateXZ(blockX, blockZ);
                 int stoneAboveDepth = 0;
                 int waterHeight = Integer.MIN_VALUE;

@@ -41,7 +41,7 @@ public class WorldgenRandom extends LegacyRandomSource {
         }
     }
 
-    public long setDecorationSeed(final long seed, final int chunkX, final int chunkZ) {
+    public long setDecorationSeed(final long seed, final long chunkX, final long chunkZ) {
         this.setSeed(seed);
         long xScale = this.nextLong() | 1L;
         long zScale = this.nextLong() | 1L;
@@ -55,7 +55,7 @@ public class WorldgenRandom extends LegacyRandomSource {
         this.setSeed(result);
     }
 
-    public void setLargeFeatureSeed(final long seed, final int chunkX, final int chunkZ) {
+    public void setLargeFeatureSeed(final long seed, final long chunkX, final long chunkZ) {
         this.setSeed(seed);
         long xScale = this.nextLong();
         long zScale = this.nextLong();
@@ -63,7 +63,7 @@ public class WorldgenRandom extends LegacyRandomSource {
         this.setSeed(result);
     }
 
-    public void setLargeFeatureWithSalt(final long seed, final int x, final int z, final int blend) {
+    public void setLargeFeatureWithSalt(final long seed, final long x, final long z, final int blend) {
         long result = x * 341873128712L + z * 132897987541L + seed + blend;
         this.setSeed(result);
     }

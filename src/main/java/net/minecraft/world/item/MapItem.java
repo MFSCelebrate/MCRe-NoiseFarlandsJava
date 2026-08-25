@@ -123,7 +123,7 @@ public class MapItem extends Item {
                                     for (int averagingAreaDeltaX = 0; averagingAreaDeltaX < scale; averagingAreaDeltaX++) {
                                         for (int averagingAreaDeltaZ = 0; averagingAreaDeltaZ < scale; averagingAreaDeltaZ++) {
                                             blockPos.set(averagingAreaMinX + averagingAreaDeltaX, 0, averagingAreaMinZ + averagingAreaDeltaZ);
-                                            int columnY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, blockPos.getX(), blockPos.getZ()) + 1;
+                                            long columnY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, blockPos.getX(), blockPos.getZ()) + 1;
                                             BlockState state;
                                             if (columnY <= level.getMinY()) {
                                                 state = Blocks.BEDROCK.defaultBlockState();

@@ -417,6 +417,11 @@ public enum Direction implements StringRepresentable {
             }
 
             @Override
+            public long choose(final long x, final long y, final long z) {
+                return x;
+            }
+
+            @Override
             public Direction getPositive() {
                 return Direction.EAST;
             }
@@ -443,6 +448,11 @@ public enum Direction implements StringRepresentable {
             }
 
             @Override
+            public long choose(final long x, final long y, final long z) {
+                return y;
+            }
+
+            @Override
             public Direction getPositive() {
                 return Direction.UP;
             }
@@ -465,6 +475,11 @@ public enum Direction implements StringRepresentable {
 
             @Override
             public boolean choose(final boolean x, final boolean y, final boolean z) {
+                return z;
+            }
+
+            @Override
+            public long choose(final long x, final long y, final long z) {
                 return z;
             }
 
@@ -541,6 +556,8 @@ public enum Direction implements StringRepresentable {
         public abstract double choose(final double x, final double y, final double z);
 
         public abstract boolean choose(final boolean x, final boolean y, final boolean z);
+
+        public abstract long choose(final long x, final long y, final long z);
     }
 
     public enum AxisDirection {

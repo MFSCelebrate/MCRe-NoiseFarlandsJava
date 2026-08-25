@@ -114,7 +114,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
         }
     }
 
-    public GameEventListenerRegistry getListenerRegistry(final int section) {
+    public GameEventListenerRegistry getListenerRegistry(final long section) {
         return GameEventListenerRegistry.NOOP;
     }
 
@@ -177,7 +177,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
         return this.heightmaps.get(type) != null;
     }
 
-    public int getHeight(final Heightmap.Types type, final int x, final int z) {
+    public long getHeight(final Heightmap.Types type, final long x, final long z) {
         Heightmap heightmap = this.heightmaps.get(type);
         if (heightmap == null) {
             if (SharedConstants.IS_RUNNING_IN_IDE && this instanceof LevelChunk) {
@@ -188,7 +188,8 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
             heightmap = this.heightmaps.get(type);
         }
 
-        return heightmap.getFirstAvailable(x & 15, z & 15) - 1;
+        // MCRe NoiseFarlands: 0-15 局部坐标保持 int，一次性边界强转
+        return heightmap.getFirstAvailable((int) (x & 15), (int) (z & 15)) - 1;
     }
 
     public ChunkPos getPos() {

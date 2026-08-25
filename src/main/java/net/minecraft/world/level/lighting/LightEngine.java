@@ -75,8 +75,8 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
     }
 
     protected BlockState getState(final BlockPos pos) {
-        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
-        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
+        long chunkX = SectionPos.blockToSectionCoord(pos.getX());
+        long chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
         LightChunk chunk = this.getChunk(chunkX, chunkZ);
         return chunk == null ? Blocks.BEDROCK.defaultBlockState() : chunk.getBlockState(pos);
     }
@@ -91,7 +91,7 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
         return Shapes.faceShapeOccludes(fromShape, toShape);
     }
 
-    protected @Nullable LightChunk getChunk(final int chunkX, final int chunkZ) {
+    protected @Nullable LightChunk getChunk(final long chunkX, final long chunkZ) {
         ChunkPos pos = new ChunkPos(chunkX, chunkZ);
 
         for (int i = 0; i < 2; i++) {
@@ -127,7 +127,7 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
     }
 
     public void retainData(final ChunkPos pos, final boolean retain) {
-        this.storage.retainData(SectionPos.of((int)pos.x(), 0, (int)pos.z()), retain);
+        this.storage.retainData(SectionPos.of(pos.x(), 0, pos.z()), retain);
     }
 
     @Override
@@ -137,7 +137,7 @@ public abstract class LightEngine<M extends DataLayerStorageMap<M>, S extends La
 
     @Override
     public void setLightEnabled(final ChunkPos pos, final boolean enable) {
-        this.storage.setLightEnabled(SectionPos.of((int)pos.x(), 0, (int)pos.z()), enable);
+        this.storage.setLightEnabled(SectionPos.of(pos.x(), 0, pos.z()), enable);
     }
 
     @Override

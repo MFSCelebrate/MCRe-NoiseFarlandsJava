@@ -271,7 +271,8 @@ public class ServerChunkCache extends ChunkSource {
     }
 
     @Override
-    public @Nullable LightChunk getChunkForLighting(final int x, final int z) {
+    public @Nullable LightChunk getChunkForLighting(final long x, final long z) {
+        // MCRe NoiseFarlands: x/z 已 Long 化；ChunkPos 构造器已接受 long ✅
         ChunkPos key = new ChunkPos(x, z);
         ChunkHolder chunkHolder = this.getVisibleChunkIfPresent(key);
         return chunkHolder == null ? null : chunkHolder.getChunkIfPresentUnchecked(ChunkStatus.INITIALIZE_LIGHT.getParent());

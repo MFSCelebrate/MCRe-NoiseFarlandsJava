@@ -200,7 +200,7 @@ public class ExecuteCommand {
                                 throw BlockPosArgument.ERROR_NOT_LOADED.create();
                             }
 
-                            int height = level.getHeight(HeightmapTypeArgument.getHeightmap(c, "heightmap"), Mth.floor(x), Mth.floor(z));
+                            long height = level.getHeight(HeightmapTypeArgument.getHeightmap(c, "heightmap"), Mth.floor(x), Mth.floor(z));
                             return c.getSource().withPosition(new Vec3(x, height, z));
                         })))
                 )

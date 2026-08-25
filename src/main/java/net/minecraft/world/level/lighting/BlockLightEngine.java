@@ -120,7 +120,7 @@ public final class BlockLightEngine extends LightEngine<BlockLightSectionStorage
     @Override
     public void propagateLightSources(final ChunkPos pos) {
         this.setLightEnabled(pos, true);
-        LightChunk chunk = this.chunkSource.getChunkForLighting((int)pos.x(), (int)pos.z());
+        LightChunk chunk = this.chunkSource.getChunkForLighting(pos.x(), pos.z());
         if (chunk != null) {
             chunk.findBlockLightSources((lightPos, state) -> {
                 int lightEmission = state.getLightEmission();

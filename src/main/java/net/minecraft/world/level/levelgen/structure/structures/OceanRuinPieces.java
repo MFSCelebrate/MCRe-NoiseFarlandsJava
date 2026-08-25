@@ -355,7 +355,7 @@ public class OceanRuinPieces {
             final ChunkPos chunkPos,
             final BlockPos referencePos
         ) {
-            int height = level.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, this.templatePosition.getX(), this.templatePosition.getZ());
+            long height = level.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, this.templatePosition.getX(), this.templatePosition.getZ());
             this.templatePosition = new BlockPos(this.templatePosition.getX(), height, this.templatePosition.getZ());
             BlockPos corner = StructureTemplate.transform(
                     new BlockPos(this.template.getSize().getX() - 1, 0, this.template.getSize().getZ() - 1),

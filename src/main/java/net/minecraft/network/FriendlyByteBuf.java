@@ -387,7 +387,7 @@ public class FriendlyByteBuf extends ByteBuf {
     }
 
     public static BlockPos readBlockPos(final ByteBuf input) {
-        return new BlockPos(input.readInt(), input.readInt(), input.readInt());
+        return new BlockPos(input.readLong(), input.readLong(), input.readLong());
     }
 
     public FriendlyByteBuf writeBlockPos(final BlockPos pos) {
@@ -396,9 +396,9 @@ public class FriendlyByteBuf extends ByteBuf {
     }
 
     public static void writeBlockPos(final ByteBuf output, final BlockPos pos) {
-        output.writeInt(pos.getX());
-        output.writeInt(pos.getY());
-        output.writeInt(pos.getZ());
+        output.writeLong(pos.getX());
+        output.writeLong(pos.getY());
+        output.writeLong(pos.getZ());
     }
 
     public ChunkPos readChunkPos() {

@@ -26,7 +26,7 @@ public class SeaPickleFeature extends Feature<CountConfiguration> {
         for (int i = 0; i < count; i++) {
             int x = random.nextInt(8) - random.nextInt(8);
             int z = random.nextInt(8) - random.nextInt(8);
-            int y = level.getHeight(Heightmap.Types.OCEAN_FLOOR, origin.getX() + x, origin.getZ() + z);
+            long y = level.getHeight(Heightmap.Types.OCEAN_FLOOR, origin.getX() + x, origin.getZ() + z);
             BlockPos picklePos = new BlockPos(origin.getX() + x, y, origin.getZ() + z);
             BlockState pickleState = Blocks.SEA_PICKLE.defaultBlockState().setValue(SeaPickleBlock.PICKLES, random.nextInt(4) + 1);
             if (level.getBlockState(picklePos).is(Blocks.WATER) && pickleState.canSurvive(level, picklePos)) {

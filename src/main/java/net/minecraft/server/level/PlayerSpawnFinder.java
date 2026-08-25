@@ -148,12 +148,12 @@ public class PlayerSpawnFinder {
     protected static @Nullable BlockPos getLevelRespawnPos(final ServerLevel level, final int x, final int z) {
         boolean caveWorld = level.dimensionType().hasCeiling();
         LevelChunk chunk = level.getChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z));
-        int topY = caveWorld ? level.getChunkSource().getGenerator().getSpawnHeight(level) : chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15);
+        long topY = caveWorld ? level.getChunkSource().getGenerator().getSpawnHeight(level) : chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15);
         if (topY < level.getMinY()) {
             return null;
         }
 
-        int surface = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
+        long surface = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
         if (surface <= topY && surface > chunk.getHeight(Heightmap.Types.OCEAN_FLOOR, x & 15, z & 15)) {
             return null;
         }

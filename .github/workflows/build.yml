@@ -67,7 +67,32 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
+  # ===== 测试组：必须在 Build Minecraft 26.2 之前通过 =====
+  Tests:
+    name: Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      # Test 1：检测 src/main/java 下所有 .java 文件内是否残留 Patch 的 Diff 格式
+      # 原理：diff 中新增行以 "+ "、删除行以 "- " 开头（+/- 后必跟一个空格）
+      # 检测到 → 直接失败并中断后续 Build 步骤；未检测到 → 继续运行
+      - name: Test for No Residual Patch Diff
+        run: |
+          echo "🧪 [Test 1] 正在检查 src/main/java 下所有 .java 文件是否存在残留 Patch Diff 格式..."
+          MATCHES=$(grep -rnE '^\+ |^- ' src/main/java --include='*.java' || true)
+          if [ -n "$MATCHES" ]; then
+            COUNT=$(echo "$MATCHES" | wc -l)
+            echo "❌ 检测到残留 Patch Diff 格式！共 $COUNT 处："
+            echo ""
+            echo "$MATCHES"
+            exit 1
+          fi
+          echo "✅ 未检测到残留 Patch Diff，检查通过"
+
   build:
+    needs: Tests
     name: Build Minecraft 26.2
     runs-on: ubuntu-24.04
     outputs:
@@ -312,6 +337,7 @@ jobs:
           name: build-*
   # 同步 Wiki 的任务
   sync-wiki:
+    needs: build
     name: Upload Wiki File
     runs-on: ubuntu-latest
     permissions:

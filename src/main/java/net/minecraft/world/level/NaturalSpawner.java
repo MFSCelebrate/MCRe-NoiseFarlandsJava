@@ -361,7 +361,7 @@ public final class NaturalSpawner {
         ChunkPos pos = chunk.getPos();
         int x = (int)pos.getMinBlockX() + level.random.nextInt(16);
         int z = (int)pos.getMinBlockZ() + level.random.nextInt(16);
-        int topEmptyY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1;
+        long topEmptyY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1;
         int y = Mth.randomBetweenInclusive(level.random, level.getMinY(), topEmptyY);
         return new BlockPos(x, y, z);
     }

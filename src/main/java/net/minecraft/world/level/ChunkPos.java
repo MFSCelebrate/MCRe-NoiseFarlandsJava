@@ -147,7 +147,7 @@ public record ChunkPos(long x, long z) {
     }
 
     public BlockPos getBlockAt(final int x, final int y, final int z) {
-        return new BlockPos((int) this.getBlockX(x), y, (int) this.getBlockZ(z));
+        return new BlockPos(this.getBlockX(x), y, this.getBlockZ(z));
     }
 
     public long getBlockX(final long offset) {
@@ -159,7 +159,7 @@ public record ChunkPos(long x, long z) {
     }
 
     public BlockPos getMiddleBlockPosition(final int y) {
-        return new BlockPos((int) this.getMiddleBlockX(), y, (int) this.getMiddleBlockZ());
+        return new BlockPos(this.getMiddleBlockX(), y, this.getMiddleBlockZ());
     }
 
     public boolean contains(final BlockPos pos) {
@@ -175,7 +175,7 @@ public record ChunkPos(long x, long z) {
     }
 
     public BlockPos getWorldPosition() {
-        return new BlockPos((int) this.getMinBlockX(), 0, (int) this.getMinBlockZ());
+        return new BlockPos(this.getMinBlockX(), 0L, this.getMinBlockZ());
     }
 
     public long getChessboardDistance(final ChunkPos pos) {

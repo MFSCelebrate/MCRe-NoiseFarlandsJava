@@ -21,7 +21,7 @@ public class KelpFeature extends Feature<NoneFeatureConfiguration> {
         WorldGenLevel level = context.level();
         BlockPos origin = context.origin();
         RandomSource random = context.random();
-        int y = level.getHeight(Heightmap.Types.OCEAN_FLOOR, origin.getX(), origin.getZ());
+        long y = level.getHeight(Heightmap.Types.OCEAN_FLOOR, origin.getX(), origin.getZ());
         BlockPos kelpPos = new BlockPos(origin.getX(), y, origin.getZ());
         if (level.getBlockState(kelpPos).is(Blocks.WATER)) {
             BlockState stateTop = Blocks.KELP.defaultBlockState();

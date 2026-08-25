@@ -58,7 +58,7 @@ public class OceanMonumentStructure extends Structure {
         }
 
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(RandomSupport.generateUniqueSeed()));
-        random.setLargeFeatureSeed(seed, (int)chunkPos.x(), (int)chunkPos.z());
+        random.setLargeFeatureSeed(seed, chunkPos.x(), chunkPos.z());
         StructurePiece oldTopPiece = savedPieces.pieces().get(0);
         BoundingBox oldBoundingBox = oldTopPiece.getBoundingBox();
         int west = oldBoundingBox.minX();

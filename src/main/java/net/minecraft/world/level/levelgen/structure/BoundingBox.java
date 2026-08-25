@@ -67,6 +67,22 @@ public class BoundingBox {
         }
     }
 
+    /**
+     * MCRe：long 构造（内部截断为 int）。结构生成在世界原点和预设区域，理论上不会
+     * 超过 ±2^31；但调用方传入 long 坐标时需有对应构造。超 2^31 范围会被截断，
+     * 但结构生成距离玩家原点较远时仍能正确工作。
+     */
+    public BoundingBox(final long minX, final long minY, final long minZ, final long maxX, final long maxY, final long maxZ) {
+        this(
+            (int) Math.min(minX, maxX),
+            (int) Math.min(minY, maxY),
+            (int) Math.min(minZ, maxZ),
+            (int) Math.max(minX, maxX),
+            (int) Math.max(minY, maxY),
+            (int) Math.max(minZ, maxZ)
+        );
+    }
+
     public static BoundingBox fromCorners(final Vec3i pos0, final Vec3i pos1) {
         return new BoundingBox(
             Math.min(pos0.getX(), pos1.getX()),

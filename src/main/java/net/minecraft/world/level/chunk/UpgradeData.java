@@ -118,10 +118,10 @@ public class UpgradeData {
             boolean north = directions.contains(Direction.NORTH);
             boolean singular = directions.size() == 1;
             ChunkPos chunkPos = chunk.getPos();
-            int minX = (int)chunkPos.getMinBlockX() + (!singular || !north && !south ? (west ? 0 : 15) : 1);
-            int maxX = (int)chunkPos.getMinBlockX() + (!singular || !north && !south ? (west ? 0 : 15) : 14);
-            int minZ = (int)chunkPos.getMinBlockZ() + (!singular || !east && !west ? (north ? 0 : 15) : 1);
-            int maxZ = (int)chunkPos.getMinBlockZ() + (!singular || !east && !west ? (north ? 0 : 15) : 14);
+            long minX = chunkPos.getMinBlockX() + (!singular || !north && !south ? (west ? 0 : 15) : 1);
+            long maxX = chunkPos.getMinBlockX() + (!singular || !north && !south ? (west ? 0 : 15) : 14);
+            long minZ = chunkPos.getMinBlockZ() + (!singular || !east && !west ? (north ? 0 : 15) : 1);
+            long maxZ = chunkPos.getMinBlockZ() + (!singular || !east && !west ? (north ? 0 : 15) : 14);
             Direction[] updateDirections = Direction.values();
             BlockPos.MutableBlockPos neighbourPos = new BlockPos.MutableBlockPos();
 
@@ -160,19 +160,19 @@ public class UpgradeData {
                 Direction[] directions = Direction.values();
                 PalettedContainer<BlockState> states = chunkSection.getStates();
                 int sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
-                int bottomYInSection = SectionPos.sectionToBlockCoord(sectionY);
+                long bottomYInSection = SectionPos.sectionToBlockCoord(sectionY);
 
                 for (int coordinate : upgradeIndex) {
                     int x = coordinate & 15;
                     int y = coordinate >> 8 & 15;
                     int z = coordinate >> 4 & 15;
-                    pos.set((int)chunkPos.getMinBlockX() + x, bottomYInSection + y, (int)chunkPos.getMinBlockZ() + z);
+                    pos.set(chunkPos.getMinBlockX() + x, bottomYInSection + y, chunkPos.getMinBlockZ() + z);
                     BlockState state = states.get(coordinate);
                     BlockState newState = state;
 
                     for (Direction direction : directions) {
                         neighbourPos.setWithOffset(pos, direction);
-                        if (SectionPos.blockToSectionCoord(pos.getX()) == (int)chunkPos.x() && SectionPos.blockToSectionCoord(pos.getZ()) == (int)chunkPos.z()) {
+                        if (SectionPos.blockToSectionCoord(pos.getX()) == chunkPos.x() && SectionPos.blockToSectionCoord(pos.getZ()) == chunkPos.z()) {
                             newState = updateState(newState, direction, level, pos, neighbourPos);
                         }
                     }
@@ -184,7 +184,7 @@ public class UpgradeData {
 
         for (int i = 0; i < this.index.length; i++) {
             if (this.index[i] != null) {
-                LOGGER.warn("Discarding update data for section {} for chunk ({} {})", level.getSectionYFromSectionIndex(i), (int)chunkPos.x(), (int)chunkPos.z());
+                LOGGER.warn("Discarding update data for section {} for chunk ({} {})", level.getSectionYFromSectionIndex(i), chunkPos.x(), chunkPos.z());
             }
 
             this.index[i] = null;

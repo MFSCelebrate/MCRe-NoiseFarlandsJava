@@ -249,7 +249,7 @@ public abstract class Structure {
 
         private static WorldgenRandom makeRandom(final long seed, final ChunkPos chunkPos) {
             WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
-            random.setLargeFeatureSeed(seed, (int)chunkPos.x(), (int)chunkPos.z());
+            random.setLargeFeatureSeed(seed, chunkPos.x(), chunkPos.z());
             return random;
         }
     }
