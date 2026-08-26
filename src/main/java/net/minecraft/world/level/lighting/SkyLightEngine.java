@@ -1,6 +1,7 @@
 package net.minecraft.world.level.lighting;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.mojang.logging.LogUtils;
 import java.util.Objects;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -12,12 +13,14 @@ import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.LightChunk;
 import net.minecraft.world.level.chunk.LightChunkGetter;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
 
 /**
  * SkyLightEngine — 天空光照引擎（MCRe NoiseFarlands 对象化版）
  * blockNode/sectionNode(long 打包) → BlockPos/SectionPos 对象。
  */
 public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.SkyDataLayerStorageMap, SkyLightSectionStorage> {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final long REMOVE_TOP_SKY_SOURCE_ENTRY = LightEngine.QueueEntry.decreaseAllDirections(15);
     private static final long REMOVE_SKY_SOURCE_ENTRY = LightEngine.QueueEntry.decreaseSkipOneDirection(15, Direction.UP);
     private static final long ADD_SKY_SOURCE_ENTRY = LightEngine.QueueEntry.increaseSkipOneDirection(15, false, Direction.UP);
@@ -116,10 +119,38 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         );
         long startY = Math.max(lowestSourceY, worldBottomY);
 
+        // MCRe NoiseFarlands: 看门狗——该循环依赖 isAboveData 终止，若光照数据哨兵异常会无限向上。
+        // 正常迭代 ≤ 世界 section 高度（~32）；超限先限流告警，超过 10000 直接熔断抛错定位。
+        int watchdog = 0;
+
         for (SectionPos sectionNode = SectionPos.of(sectionX, SectionPos.blockToSectionCoord(startY), sectionZ);
             !this.storage.isAboveData(sectionNode);
             sectionNode = sectionNode.offset(0, 1, 0)
         ) {
+            if (++watchdog > 10000) {
+                throw new IllegalStateException(
+                    "SkyLightEngine.addSourcesAbove infinite loop: node="
+                        + sectionNode
+                        + ", startY="
+                        + startY
+                        + ", lowestSourceY="
+                        + lowestSourceY
+                        + ", worldBottomY="
+                        + worldBottomY
+                );
+            }
+
+            if ((watchdog & (watchdog - 1)) == 0) {
+                LOGGER.warn(
+                    "addSourcesAbove watchdog: iteration {}, node={}, startY={}, lowestSourceY={}, worldBottomY={}",
+                    watchdog,
+                    sectionNode,
+                    startY,
+                    lowestSourceY,
+                    worldBottomY
+                );
+            }
+
             if (this.storage.storingLightForSection(sectionNode)) {
                 long sectionBottomY = SectionPos.sectionToBlockCoord(sectionNode.y());
                 long sectionTopY = sectionBottomY + 15;

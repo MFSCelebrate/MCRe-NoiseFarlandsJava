@@ -3,11 +3,10 @@ package net.minecraft.world.level.chunk;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -90,7 +89,8 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
     private final Level level;
     private @Nullable Supplier<FullChunkStatus> fullStatus;
     private LevelChunk.@Nullable PostLoadProcessor postLoad;
-    private final Long2ObjectMap<GameEventListenerRegistry> gameEventListenerRegistrySections;
+    // MCRe NoiseFarlands: 对象化——section Y 坐标 Long 化，统一 java.util 容器
+    private final Map<Long, GameEventListenerRegistry> gameEventListenerRegistrySections;
     private final LevelChunkTicks<Block> blockTicks;
     private final LevelChunkTicks<Fluid> fluidTicks;
     private LevelChunk.UnsavedListener unsavedListener = chunkPos -> {};
@@ -112,7 +112,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
     ) {
         super(pos, upgradeData, level, level.palettedContainerFactory(), inhabitedTime, sections, blendingData);
         this.level = level;
-        this.gameEventListenerRegistrySections = new Long2ObjectOpenHashMap<>();
+        this.gameEventListenerRegistrySections = new HashMap<>();
 
         for (Heightmap.Types type : Heightmap.Types.values()) {
             if (ChunkStatus.FULL.heightmapsAfter().contains(type)) {

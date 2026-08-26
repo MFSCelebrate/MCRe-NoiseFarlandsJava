@@ -1,0 +1,241 @@
+---- Minecraft Crash Report ----
+// I just don't know what went wrong :(
+
+Time: 2026-08-23 17:38:52
+Description: Exception generating new chunk
+
+java.lang.IllegalStateException: Requested chunk unavailable during world generation
+	at net.minecraft.server.level.WorldGenRegion.getChunk(WorldGenRegion.java:154)
+	at net.minecraft.world.level.LevelReader.getNoiseBiome(LevelReader.java:59)
+	at net.minecraft.world.level.biome.BiomeManager.getBiome(BiomeManager.java:64)
+	at net.minecraft.world.level.LevelReader.getBiome(LevelReader.java:44)
+	at net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator.spawnOriginalMobs(NoiseBasedChunkGenerator.java:498)
+	at net.minecraft.world.level.chunk.status.ChunkStatusTasks.generateSpawn(ChunkStatusTasks.java:175)
+	at net.minecraft.world.level.chunk.status.ChunkStep.apply(ChunkStep.java:24)
+	at net.minecraft.server.level.ChunkMap.applyStep(ChunkMap.java:636)
+	at net.minecraft.server.level.GenerationChunkHolder.applyStep(GenerationChunkHolder.java:67)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleChunkInLayer(ChunkGenerationTask.java:144)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleLayer(ChunkGenerationTask.java:123)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleNextLayer(ChunkGenerationTask.java:70)
+	at net.minecraft.server.level.ChunkGenerationTask.runUntilWait(ChunkGenerationTask.java:55)
+	at net.minecraft.server.level.ChunkMap.lambda$runGenerationTask$0(ChunkMap.java:660)
+	at net.minecraft.server.level.ChunkTaskDispatcher.lambda$scheduleForExecution$1(ChunkTaskDispatcher.java:90)
+	at net.minecraft.util.thread.TaskScheduler.lambda$scheduleWithResult$0(TaskScheduler.java:20)
+	at net.minecraft.util.Util.runNamed(Util.java:332)
+	at net.minecraft.util.thread.AbstractConsecutiveExecutor.pollTask(AbstractConsecutiveExecutor.java:49)
+	at net.minecraft.util.thread.AbstractConsecutiveExecutor.run(AbstractConsecutiveExecutor.java:56)
+	at java.base/java.util.concurrent.ForkJoinTask$RunnableExecuteAction.compute(ForkJoinTask.java:1750)
+	at java.base/java.util.concurrent.ForkJoinTask$RunnableExecuteAction.compute(ForkJoinTask.java:1742)
+	at java.base/java.util.concurrent.ForkJoinTask$InterruptibleTask.exec(ForkJoinTask.java:1659)
+	at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:511)
+	at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1450)
+	at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2019)
+	at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Render thread
+Stacktrace:
+	at net.minecraft.server.level.WorldGenRegion.getChunk(WorldGenRegion.java:154)
+	at net.minecraft.world.level.LevelReader.getNoiseBiome(LevelReader.java:59)
+	at net.minecraft.world.level.biome.BiomeManager.getBiome(BiomeManager.java:64)
+	at net.minecraft.world.level.LevelReader.getBiome(LevelReader.java:44)
+	at net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator.spawnOriginalMobs(NoiseBasedChunkGenerator.java:498)
+	at net.minecraft.world.level.chunk.status.ChunkStatusTasks.generateSpawn(ChunkStatusTasks.java:175)
+	at net.minecraft.world.level.chunk.status.ChunkStep.apply(ChunkStep.java:24)
+	at net.minecraft.server.level.ChunkMap.applyStep(ChunkMap.java:636)
+	at net.minecraft.server.level.GenerationChunkHolder.applyStep(GenerationChunkHolder.java:67)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleChunkInLayer(ChunkGenerationTask.java:144)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleLayer(ChunkGenerationTask.java:123)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleNextLayer(ChunkGenerationTask.java:70)
+	at net.minecraft.server.level.ChunkGenerationTask.runUntilWait(ChunkGenerationTask.java:55)
+	at net.minecraft.server.level.ChunkMap.lambda$runGenerationTask$0(ChunkMap.java:660)
+	at net.minecraft.server.level.ChunkTaskDispatcher.lambda$scheduleForExecution$1(ChunkTaskDispatcher.java:90)
+	at net.minecraft.util.thread.TaskScheduler.lambda$scheduleWithResult$0(TaskScheduler.java:20)
+	at net.minecraft.util.Util.runNamed(Util.java:332)
+	at net.minecraft.util.thread.AbstractConsecutiveExecutor.pollTask(AbstractConsecutiveExecutor.java:49)
+
+-- Chunk request details --
+Details:
+	Requested chunk: -134217728, -7
+	Generating status: minecraft:spawn
+	Requested status: minecraft:biomes
+	Actual status: [out of cache bounds]
+	Maximum allowed status: null
+	Dependencies: [minecraft:light, minecraft:biomes]
+	Requested distance: 268435457
+	Generating chunk: [134217729, -7]
+Stacktrace:
+	at net.minecraft.server.level.WorldGenRegion.getChunk(WorldGenRegion.java:154)
+	at net.minecraft.world.level.LevelReader.getNoiseBiome(LevelReader.java:59)
+	at net.minecraft.world.level.biome.BiomeManager.getBiome(BiomeManager.java:64)
+	at net.minecraft.world.level.LevelReader.getBiome(LevelReader.java:44)
+	at net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator.spawnOriginalMobs(NoiseBasedChunkGenerator.java:498)
+	at net.minecraft.world.level.chunk.status.ChunkStatusTasks.generateSpawn(ChunkStatusTasks.java:175)
+	at net.minecraft.world.level.chunk.status.ChunkStep.apply(ChunkStep.java:24)
+	at net.minecraft.server.level.ChunkMap.applyStep(ChunkMap.java:636)
+	at net.minecraft.server.level.GenerationChunkHolder.applyStep(GenerationChunkHolder.java:67)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleChunkInLayer(ChunkGenerationTask.java:144)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleLayer(ChunkGenerationTask.java:123)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleNextLayer(ChunkGenerationTask.java:70)
+	at net.minecraft.server.level.ChunkGenerationTask.runUntilWait(ChunkGenerationTask.java:55)
+	at net.minecraft.server.level.ChunkMap.lambda$runGenerationTask$0(ChunkMap.java:660)
+	at net.minecraft.server.level.ChunkTaskDispatcher.lambda$scheduleForExecution$1(ChunkTaskDispatcher.java:90)
+	at net.minecraft.util.thread.TaskScheduler.lambda$scheduleWithResult$0(TaskScheduler.java:20)
+	at net.minecraft.util.Util.runNamed(Util.java:332)
+	at net.minecraft.util.thread.AbstractConsecutiveExecutor.pollTask(AbstractConsecutiveExecutor.java:49)
+	at net.minecraft.util.thread.AbstractConsecutiveExecutor.run(AbstractConsecutiveExecutor.java:56)
+	at java.base/java.util.concurrent.ForkJoinTask$RunnableExecuteAction.compute(ForkJoinTask.java:1750)
+	at java.base/java.util.concurrent.ForkJoinTask$RunnableExecuteAction.compute(ForkJoinTask.java:1742)
+	at java.base/java.util.concurrent.ForkJoinTask$InterruptibleTask.exec(ForkJoinTask.java:1659)
+	at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:511)
+	at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1450)
+	at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2019)
+	at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- Chunk to be generated --
+Details:
+	Status being generated: minecraft:spawn
+	Location: 134217729,-7
+	Position: [134217729, -7]
+	Generator: net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator@414d17fa
+Stacktrace:
+	at net.minecraft.server.level.ChunkMap.applyStep(ChunkMap.java:636)
+	at net.minecraft.server.level.GenerationChunkHolder.applyStep(GenerationChunkHolder.java:67)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleChunkInLayer(ChunkGenerationTask.java:144)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleLayer(ChunkGenerationTask.java:123)
+	at net.minecraft.server.level.ChunkGenerationTask.scheduleNextLayer(ChunkGenerationTask.java:70)
+	at net.minecraft.server.level.ChunkGenerationTask.runUntilWait(ChunkGenerationTask.java:55)
+	at net.minecraft.server.level.ChunkMap.lambda$runGenerationTask$0(ChunkMap.java:660)
+	at net.minecraft.server.level.ChunkTaskDispatcher.lambda$scheduleForExecution$1(ChunkTaskDispatcher.java:90)
+	at net.minecraft.util.thread.TaskScheduler.lambda$scheduleWithResult$0(TaskScheduler.java:20)
+	at net.minecraft.util.Util.runNamed(Util.java:332)
+	at net.minecraft.util.thread.AbstractConsecutiveExecutor.pollTask(AbstractConsecutiveExecutor.java:49)
+	at net.minecraft.util.thread.AbstractConsecutiveExecutor.run(AbstractConsecutiveExecutor.java:56)
+	at java.base/java.util.concurrent.ForkJoinTask$RunnableExecuteAction.compute(ForkJoinTask.java:1750)
+	at java.base/java.util.concurrent.ForkJoinTask$RunnableExecuteAction.compute(ForkJoinTask.java:1742)
+	at java.base/java.util.concurrent.ForkJoinTask$InterruptibleTask.exec(ForkJoinTask.java:1659)
+	at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:511)
+	at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1450)
+	at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2019)
+	at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- ThreadInfo --
+Details:
+	Name: Worker-Main-5
+Stacktrace:
+	at net.minecraft.util.Util.onThreadException(Util.java:299)
+	at java.base/java.util.concurrent.ForkJoinTask$RunnableExecuteAction.onAuxExceptionSet(ForkJoinTask.java:1757)
+	at java.base/java.util.concurrent.ForkJoinTask.trySetException(ForkJoinTask.java:384)
+	at java.base/java.util.concurrent.ForkJoinTask$InterruptibleTask.exec(ForkJoinTask.java:1661)
+	at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:511)
+	at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1450)
+	at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2019)
+	at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- Uptime --
+Details:
+	JVM uptime: 256.004s
+	Wall uptime: 222.911s
+	High-res time: 221.844s
+	Client ticks: 3721 ticks / 186.050s
+
+-- Affected level --
+Details:
+	All players: 1 total; LocalPlayer{name=Defoko, id=1, pos=(2.147483658505393E9, 87.22623301483249, -53.68104620473216), mode=SPECTATOR, permission=owner}
+	Chunk stats: 3025, 380
+	Level dimension: minecraft:overworld
+	Level time: 2618 game time, 2618 day time
+	Level spawn location: World: (400,84,-32), Section: (at 0,4,0 in 25,5,-2; chunk contains blocks 400,-64,-32 to 415,319,-17), Region: (0,-1; contains chunks 0,-32 to 31,-1, blocks 0,-64,-512 to 511,319,-1)
+	Server brand: vanilla
+	Server type: Integrated singleplayer server
+	Tracked entity count: 1
+	Client weather: Raining: false, thundering: false
+
+-- Last reload --
+Details:
+	Reload number: 1
+	Reload reason: initial
+	Finished: Yes
+	Packs: vanilla
+
+
+
+-- Arguments at each frame (most recent first) --
+  [0] WorldGenRegion.getChunk@preThrow([-134217728, -7, minecraft:biomes, false, 268435457, null, null, null])
+  [1] WorldGenRegion.getChunk([-134217728, -7, minecraft:biomes, false])
+-- System Details --
+Details:
+	Minecraft Version: 26.2 [Permanent]
+	Minecraft Version ID: 26.2
+	Operating System: Linux (aarch64) version Android-14
+	Java Version: 25.0.3-internal, N/A
+	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode), Oracle Corporation
+	Memory: 838002688 bytes (799 MiB) / 2147483648 bytes (2048 MiB) up to 2147483648 bytes (2048 MiB)
+	Memory (heap): init: 2048MiB, used: 1248MiB, committed: 2048MiB, max: 2048MiB
+	Memory (non-head): init: 007MiB, used: 205MiB, committed: 218MiB, max: 000MiB
+	CPUs: 8
+	processor: ~~ERROR~~ UncheckedIOException: java.nio.file.AccessDeniedException: /sys/devices/system/cpu/memlat/c4_memlat/cpu4-cpu-l3-lat
+	Graphics card #0 name: unknown
+	Graphics card #0 vendor: unknown
+	Graphics card #0 VRAM (MiB): 0.00
+	Graphics card #0 deviceId: unknown
+	Graphics card #0 versionInfo: unknown
+	Virtual memory max (MiB): 17083.25
+	Virtual memory used (MiB): 13325.79
+	Swap memory total (MiB): 11377.17
+	Swap memory used (MiB): 4135.68
+	Space in storage for jna.tmpdir (MiB): available: 43513.57, total: 230212.00
+	Space in storage for org.lwjgl.system.SharedLibraryExtractPath (MiB): available: 43513.57, total: 230212.00
+	Space in storage for io.netty.native.workdir (MiB): available: 43513.57, total: 230212.00
+	Space in storage for java.io.tmpdir (MiB): available: 43513.57, total: 230212.00
+	Space in storage for workdir (MiB): available: 43513.57, total: 230212.00
+	Operating System Version: Toybox Unknown unknown (unknown)
+	Process Elevated: false
+	Process Loads: Uptime: 0s, user: 880s (87968000.00%), kernel: 331s (33120000.00%), total: 1211s (121088000.00%)
+	Process Virtual Size (MiB): 22203.19
+	Process Resident Size (MiB): 2421.49
+	JVM Flags: 10 total; -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=logs/heap_dump.hprof -Xlog:gc*:file=logs/gc.log:time,uptime,level,tags:filecount=10,filesize=100M -Xlog:gc+heap=debug:file=logs/gc_heap.log:time,uptime:filecount=5,filesize=50M -XX:OnOutOfMemoryError=kill -3 %p -Xms2048M -Xmx2048M -XX:ActiveProcessorCount=8 -Xbootclasspath/a:/data/user/0/com.movtery.zalithlauncher.v2/files/components/caciocavallo17/cacio-agent.jar:/data/user/0/com.movtery.zalithlauncher.v2/files/components/caciocavallo17/cacio-shared-1.19.1-SNAPSHOT.jar:/data/user/0/com.movtery.zalithlauncher.v2/files/components/caciocavallo17/cacio-tta-1.19.1-SNAPSHOT.jar
+	Debug Flags: 0 total; 
+	Launched Version: 26.2-Permanent
+	Launcher name: Zalith Launcher
+	Backend library: LWJGL version 3.3.6-snapshot
+	Window size: 2232x1080
+	Surface Info: FIFO, 2232 x 1080
+	GFLW Platform: x11
+	Graphics Device: Adreno (TM) 642L | OpenGL ES 3.2
+	Graphics Backend: OpenGL
+	Graphics Vendor: Swung0x48, BZLZHH, Tungsten
+	Graphics Drivers: 4.0.0 MobileGlues 2.0.0
+	Graphics Device Extensions: GL_ARB_buffer_storage, GL_ARB_vertex_attrib_binding
+	Graphics Device Type: OTHER
+	Graphics Device Features: DeviceFeatures[shaderDrawParameters=false, multiDrawDirectInterleaved=false, multiDrawDirectSeparate=true, multiDrawIndirect=false, drawIndirect=false, nonZeroFirstInstance=false, persistentMapping=true]
+	GL debug messages: <debugging unavailable>
+	Is Modded: Very likely; Client jar signature invalidated
+	Universe: 400921fb54442d18
+	Type: Client
+	Transparency: regular
+	Render Distance: 24/24 chunks
+	Narrator config: OFF
+	Narrator status: false
+	Resource Packs: vanilla
+	Sound Cache: 48816 bytes in 1 buffers
+	Current Language: zh_cn
+	Locale: zh_CN
+	System encoding: UTF-8
+	File encoding: UTF-8
+	CPU: <unknown>
+	Server Running: true
+	Player Count: 1 / 8; [ServerPlayer['Defoko'/1, l='ServerLevel[新的世界]', x=2147483658.51, y=87.23, z=-53.68]]
+	Active Data Packs: vanilla
+	Available Data Packs: minecart_improvements, redstone_experiments, trade_rebalance, vanilla
+	Enabled Feature Flags: minecraft:vanilla
+	World Generation: Stable
+	World Seed: -3130413947441001963
+	Suppressed Exceptions: ~~NONE~~
+	Type: Integrated Server
+	Is Modded: Very likely; Client jar signature invalidated; Server jar signature invalidated
+	Launched Version: 26.2-Permanent

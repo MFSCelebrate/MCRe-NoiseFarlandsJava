@@ -9,8 +9,6 @@ import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.OptionalDynamic;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -297,7 +295,8 @@ public class SectionStorage<R, P> implements AutoCloseable {
         this.simpleRegionStorage.close();
     }
 
-    private record PackedChunk<T>(Long2ObjectMap<T> sectionsByY, boolean versionChanged) {
+    // MCRe NoiseFarlands: 对象化——section Y 坐标 Long 化，统一 java.util 容器
+    private record PackedChunk<T>(Map<Long, T> sectionsByY, boolean versionChanged) {
         public static <T> SectionStorage.PackedChunk<T> parse(
             final Codec<T> codec,
             final DynamicOps<Tag> ops,
@@ -309,7 +308,8 @@ public class SectionStorage<R, P> implements AutoCloseable {
             Dynamic<Tag> fixedTag = simpleRegionStorage.upgradeChunkTag(originalTag, 1945);
             boolean versionChanged = originalTag != fixedTag;
             OptionalDynamic<Tag> sections = fixedTag.get("Sections");
-            Long2ObjectMap<T> sectionsByY = new Long2ObjectOpenHashMap<>();
+            // MCRe NoiseFarlands: 对象化——section Y Long 装箱
+            Map<Long, T> sectionsByY = new HashMap<>();
 
             for (long sectionY = levelHeightAccessor.getMinSectionY(); sectionY <= levelHeightAccessor.getMaxSectionY(); sectionY++) {
                 Optional<T> section = sections.get(String.valueOf(sectionY))

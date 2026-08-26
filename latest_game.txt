@@ -1,0 +1,673 @@
+==================== Launch Minecraft ====================
+▷ Launcher version: 2.4.10 (200033)
+▷ Architecture: arm64
+▷ Device model: HONOR, NTH-AN00
+▷ API version: 34
+▷ Renderer: MobileGlues (OpenGL 4.0, 1.17+)
+▷ Renderer Summary: 来自 MobileGlues 插件
+▷ Selected Minecraft version: 26.2-Permanent
+▷ Minecraft Info: 26.2
+▷ Game Path: /storage/emulated/0/ZL_Two/versions/26.2-Permanent (Isolation: true)
+▷ Custom Java arguments: -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=logs/heap_dump.hprof -Xlog:gc*:file=logs/gc.log:time,uptime,level,tags:filecount=10,filesize=100M -Xlog:gc+heap=debug:file=logs/gc_heap.log:time,uptime:filecount=5,filesize=50M -XX:OnOutOfMemoryError="kill -3 %p"
+▷ Java Runtime: Internal-25
+▷ Account: Defoko (Local)
+Using offline Yggdrasil server on port 42193
+==================== Env Map ====================
+▷ ZALITH_VERSION_CODE = 200033
+▷ TMPDIR = /data/user/0/com.movtery.zalithlauncher.v2/cache
+▷ AWTSTUB_WIDTH = 2232
+▷ MG_COUNT_LAUNCH = 1
+▷ POJAV_BIG_CORE_AFFINITY = 1
+▷ POJAV_NATIVEDIR = /data/app/~~UZ8XG-4NBMA9JICNgLMByg==/com.movtery.zalithlauncher.v2-6o6BRZmGB6RI-dSyLQatcQ==/lib/arm64
+▷ LIBGL_EGL = libmobileglues.so
+▷ DRIVER_PATH = /data/app/~~UZ8XG-4NBMA9JICNgLMByg==/com.movtery.zalithlauncher.v2-6o6BRZmGB6RI-dSyLQatcQ==/lib/arm64
+▷ HOME = /storage/emulated/0/Android/data/com.movtery.zalithlauncher.v2/files
+▷ PATH = /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin
+▷ MOD_ANDROID_RUNTIME = /data/user/0/com.movtery.zalithlauncher.v2/app_runtime_mod
+▷ POJAV_VSYNC_IN_ZINK = 1
+▷ LD_LIBRARY_PATH = /system/lib64:/vendor/lib64:/vendor/lib64/hw:/system_ext/lib64:/data/app/~~KLP1QkgHXxo-r4aM2L2-Ew==/com.fcl.plugin.mobileglues-ZdKaUpTzglB2f4XVQx5m3A==/lib/arm64:/data/user/0/com.movtery.zalithlauncher.v2/app_runtime_mod:/data/app/~~UZ8XG-4NBMA9JICNgLMByg==/com.movtery.zalithlauncher.v2-6o6BRZmGB6RI-dSyLQatcQ==/lib/arm64
+▷ POJAV_RENDERER = opengles3
+▷ LIBGL_ES = 3
+▷ POJAVEXEC_EGL = libmobileglues.so
+▷ JAVA_HOME = /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25
+▷ AWTSTUB_HEIGHT = 1080
+==================== DLOPEN Java Runtime ====================
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libjli.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/server/libjvm.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libfreetype.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libverify.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libjava.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libnet.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libnio.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libawt.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libawt_headless.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libfontmanager.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libsleef.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libsyslookup.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libjimage.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libprefs.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libzip.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libmanagement_ext.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libnio.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libmanagement.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/librmi.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libjavajpeg.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/server/libjvm.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/server/libjsig.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libfontmanager.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libjawt.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libjdwp.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libextnet.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libjava.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libverify.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libj2gss.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libdt_socket.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libjaas.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libj2pkcs11.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/liblcms.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libsctp.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libjli.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libawt_headless.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libfreetype.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libjsig.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libawt_xawt.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libawt.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libnet.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libmanagement_agent.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libinstrument.so , success
+[DEBUG] DLOPEN: /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/libmlib_image.so , success
+[DEBUG] DLOPEN: /data/app/~~UZ8XG-4NBMA9JICNgLMByg==/com.movtery.zalithlauncher.v2-6o6BRZmGB6RI-dSyLQatcQ==/lib/arm64/libopenal.so , success
+==================== DLOPEN Renderer ====================
+Initializing MobileGlues ...
+The Open Source License of MobileGlues: 
+  GNU LGPL-2.1 License
+MG_DIR_PATH = /sdcard/MG
+[MobileGlues] Setting: enableAngle                 = false
+[MobileGlues] Setting: ignoreError                 = 0
+[MobileGlues] Setting: enableExtComputeShader      = true
+[MobileGlues] Setting: enableExtTimerQuery         = false
+[MobileGlues] Setting: enableExtDirectStateAccess  = false
+[MobileGlues] Setting: maxGlslCacheSize            = 0
+[MobileGlues] Setting: angleDepthClearFixMode      = 0
+[MobileGlues] Setting: bufferCoherentAsFlush       = 1
+[MobileGlues] Setting: customGLVersion             = 4.0.0
+[MobileGlues] Setting: fsr1Setting                 = 0
+[MobileGlues] Setting: hideMGEnvLevel              = 0
+EGL initialized successfully
+OpenGL ES Version: OpenGL ES 3.2 (320)
+Not Detected GL_EXT_multi_draw_indirect!
+Enable-capability extensions: multisample_compatibility=0 clip_cull_distance=1 depth_clamp=0 sRGB_write_control=1 NV_polygon_mode=0 OES_sample_shading=1
+multidrawMode/multidrawDisableBackends are no longer used. The selection is an order now: multidrawOrder (global, backend names best first, may contain "native") and multidrawOrder<EntryPoint> for per-function exceptions.
+multidrawModeArrays is no longer used; see multidrawOrder / multidrawOrderArrays
+[MobileGlues] multidrawOrderArrays               = unroll
+[MobileGlues] multidrawOrderElements             = unroll > indirect
+[MobileGlues] multidrawOrderElementsBaseVertex   = basevertex > indirect > compute > unroll
+[MobileGlues] multidrawOrderArraysIndirect       = indirect
+[MobileGlues] multidrawOrderElementsIndirect     = indirect
+[DEBUG] DLOPEN: /data/app/~~KLP1QkgHXxo-r4aM2L2-Ew==/com.fcl.plugin.mobileglues-ZdKaUpTzglB2f4XVQx5m3A==/lib/arm64/libmobileglues.so , success
+==================== JVM Args ====================
+▷ /data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/bin/java
+▷ -XX:+UseG1GC
+▷ -XX:+HeapDumpOnOutOfMemoryError
+▷ -XX:HeapDumpPath=logs/heap_dump.hprof
+▷ -Xlog:gc*:file=logs/gc.log:time,uptime,level,tags:filecount=10,filesize=100M
+▷ -Xlog:gc+heap=debug:file=logs/gc_heap.log:time,uptime:filecount=5,filesize=50M
+▷ -XX:OnOutOfMemoryError=kill -3 %p
+▷ -Djava.home=/data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25
+▷ -Djava.io.tmpdir=/data/user/0/com.movtery.zalithlauncher.v2/cache
+▷ -Djna.boot.library.path=/data/user/0/com.movtery.zalithlauncher.v2/files/games/jna_dir/jna/5.17.0
+▷ -Duser.home=/storage/emulated/0/ZL_Two
+▷ -Duser.language=zh
+▷ -Duser.country=CN
+▷ -Duser.timezone=Asia/Shanghai
+▷ -Dos.name=Linux
+▷ -Dos.version=Android-14
+▷ -Dpojav.path.minecraft=/storage/emulated/0/ZL_Two
+▷ -Dpojav.path.private.account=/data/user/0/com.movtery.zalithlauncher.v2/databases
+▷ -Dorg.lwjgl.vulkan.libname=libvulkan.so
+▷ -Dglfwstub.windowWidth=2232
+▷ -Dglfwstub.windowHeight=1080
+▷ -Dglfwstub.initEgl=false
+▷ -Dext.net.resolvPath=/data/user/0/com.movtery.zalithlauncher.v2/files/games/resolv.conf
+▷ -Dlog4j2.formatMsgNoLookups=true
+▷ -Djava.rmi.server.useCodebaseOnly=true
+▷ -Dcom.sun.jndi.rmi.object.trustURLCodebase=false
+▷ -Dcom.sun.jndi.cosnaming.object.trustURLCodebase=false
+▷ -Dnet.minecraft.clientmodname=Zalith Launcher
+▷ -Dfml.earlyprogresswindow=false
+▷ -Dfml.ignoreInvalidMinecraftCertificates=true
+▷ -Dfml.ignorePatchDiscrepancies=true
+▷ -Dloader.disable_forked_guis=true
+▷ -Djdk.lang.Process.launchMechanism=FORK
+▷ -Dsodium.checks.issue2561=false
+▷ -javaagent:/data/user/0/com.movtery.zalithlauncher.v2/files/components/launcher/MioLibPatcher.jar
+▷ -Xms2048M
+▷ -Xmx2048M
+▷ -Dorg.lwjgl.openal.libname=/data/app/~~UZ8XG-4NBMA9JICNgLMByg==/com.movtery.zalithlauncher.v2-6o6BRZmGB6RI-dSyLQatcQ==/lib/arm64/libopenal.so
+▷ -Dorg.lwjgl.freetype.libname=/data/app/~~UZ8XG-4NBMA9JICNgLMByg==/com.movtery.zalithlauncher.v2-6o6BRZmGB6RI-dSyLQatcQ==/lib/arm64/libfreetype.so
+▷ -Dorg.lwjgl.spvc.libname=spirv-cross-c-shared
+▷ -Dorg.lwjgl.system.allocator=system
+▷ -XX:ActiveProcessorCount=8
+▷ -Dorg.lwjgl.opengl.libname=/data/app/~~KLP1QkgHXxo-r4aM2L2-Ew==/com.fcl.plugin.mobileglues-ZdKaUpTzglB2f4XVQx5m3A==/lib/arm64/libmobileglues.so
+▷ -javaagent:/data/user/0/com.movtery.zalithlauncher.v2/files/components/auth_libs/authlib-injector.jar=http://localhost:42193
+▷ -Dauthlibinjector.side=client
+▷ -Djava.awt.headless=false
+▷ -Dcacio.managed.screensize=2232x1080
+▷ -Dcacio.font.fontmanager=sun.awt.X11FontManager
+▷ -Dcacio.font.fontscaler=sun.font.FreetypeFontScaler
+▷ -Dswing.defaultlaf=javax.swing.plaf.nimbus.NimbusLookAndFeel
+▷ -Dawt.toolkit=com.github.caciocavallosilano.cacio.ctc.CTCToolkit
+▷ -Djava.awt.graphicsenv=com.github.caciocavallosilano.cacio.ctc.CTCGraphicsEnvironment
+▷ -javaagent:/data/user/0/com.movtery.zalithlauncher.v2/files/components/caciocavallo17/cacio-agent.jar
+▷ --add-exports=java.desktop/java.awt=ALL-UNNAMED
+▷ --add-exports=java.desktop/java.awt.peer=ALL-UNNAMED
+▷ --add-exports=java.desktop/sun.awt.image=ALL-UNNAMED
+▷ --add-exports=java.desktop/sun.java2d=ALL-UNNAMED
+▷ --add-exports=java.desktop/java.awt.dnd.peer=ALL-UNNAMED
+▷ --add-exports=java.desktop/sun.awt=ALL-UNNAMED
+▷ --add-exports=java.desktop/sun.awt.event=ALL-UNNAMED
+▷ --add-exports=java.desktop/sun.awt.datatransfer=ALL-UNNAMED
+▷ --add-exports=java.desktop/sun.font=ALL-UNNAMED
+▷ --add-exports=java.base/sun.security.action=ALL-UNNAMED
+▷ --add-opens=java.base/java.util=ALL-UNNAMED
+▷ --add-opens=java.desktop/java.awt=ALL-UNNAMED
+▷ --add-opens=java.desktop/sun.font=ALL-UNNAMED
+▷ --add-opens=java.desktop/sun.java2d=ALL-UNNAMED
+▷ --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+▷ --add-opens=java.base/java.net=ALL-UNNAMED
+▷ -Xbootclasspath/a:/data/user/0/com.movtery.zalithlauncher.v2/files/components/caciocavallo17/cacio-agent.jar:/data/user/0/com.movtery.zalithlauncher.v2/files/components/caciocavallo17/cacio-shared-1.19.1-SNAPSHOT.jar:/data/user/0/com.movtery.zalithlauncher.v2/files/components/caciocavallo17/cacio-tta-1.19.1-SNAPSHOT.jar
+▷ -Dlog4j.configurationFile=/storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml
+▷ -Dminecraft.client.jar=/storage/emulated/0/ZL_Two/versions/26.2-Permanent/26.2-Permanent.jar
+▷ -Dminecraft.launcher.brand=Zalith Launcher
+▷ -Dminecraft.launcher.version=2.4.10
+▷ --sun-misc-unsafe-memory-access=allow
+▷ --enable-native-access=ALL-UNNAMED
+▷ -Djava.library.path=/data/app/~~KLP1QkgHXxo-r4aM2L2-Ew==/com.fcl.plugin.mobileglues-ZdKaUpTzglB2f4XVQx5m3A==/lib/arm64:/data/app/~~Q3q6mWuxEHY8brEd0sTXgQ==/com.commonlauncher.nativeplugin.imgui_java-uRcl_DlmG7mFq91k8j9J9A==/lib/arm64:/data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/jli:/data/user/0/com.movtery.zalithlauncher.v2/files/games/runtimes/Internal-25/lib/server:/system/lib64:/vendor/lib64:/vendor/lib64/hw:/system_ext/lib64:/data/user/0/com.movtery.zalithlauncher.v2/files/games/jna_dir/jna:/data/user/0/com.movtery.zalithlauncher.v2/app_runtime_mod:/data/app/~~UZ8XG-4NBMA9JICNgLMByg==/com.movtery.zalithlauncher.v2-6o6BRZmGB6RI-dSyLQatcQ==/lib/arm64:/data/user/0/com.movtery.zalithlauncher.v2/files/games/jna_dir/jna/5.17.0
+▷ -Djna.tmpdir=/data/user/0/com.movtery.zalithlauncher.v2/cache/jna
+▷ -Dorg.lwjgl.system.SharedLibraryExtractPath=/data/user/0/com.movtery.zalithlauncher.v2/cache/lwjgl
+▷ -Dio.netty.native.workdir=/data/user/0/com.movtery.zalithlauncher.v2/cache/netty
+▷ -Dminecraft.launcher.brand=Zalith Launcher
+▷ -Dminecraft.launcher.version=2.4.10
+▷ -cp
+▷ /data/user/0/com.movtery.zalithlauncher.v2/files/components/lwjgl3/lwjgl-glfw-classes.jar:/storage/emulated/0/ZL_Two/libraries/at/yawk/lz4/lz4-java/1.10.1/lz4-java-1.10.1.jar:/storage/emulated/0/ZL_Two/libraries/com/azure/azure-json/1.4.0/azure-json-1.4.0.jar:/storage/emulated/0/ZL_Two/libraries/com/github/oshi/oshi-core/6.9.0/oshi-core-6.9.0.jar:/storage/emulated/0/ZL_Two/libraries/com/google/code/gson/gson/2.14.0/gson-2.14.0.jar:/storage/emulated/0/ZL_Two/libraries/com/google/guava/failureaccess/1.0.3/failureaccess-1.0.3.jar:/storage/emulated/0/ZL_Two/libraries/com/google/guava/guava/33.6.0-jre/guava-33.6.0-jre.jar:/storage/emulated/0/ZL_Two/libraries/com/ibm/icu/icu4j/78.3/icu4j-78.3.jar:/storage/emulated/0/ZL_Two/libraries/com/microsoft/azure/msal4j/1.24.1/msal4j-1.24.1.jar:/storage/emulated/0/ZL_Two/libraries/com/mojang/authlib/9.0.75/authlib-9.0.75.jar:/storage/emulated/0/ZL_Two/libraries/com/mojang/blocklist/1.0.10/blocklist-1.0.10.jar:/storage/emulated/0/ZL_Two/libraries/com/mojang/brigadier/1.3.10/brigadier-1.3.10.jar:/storage/emulated/0/ZL_Two/libraries/com/mojang/datafixerupper/10.0.21/datafixerupper-10.0.21.jar:/storage/emulated/0/ZL_Two/libraries/com/mojang/jtracy/1.0.37/jtracy-1.0.37.jar:/storage/emulated/0/ZL_Two/libraries/com/mojang/jtracy/1.0.37/jtracy-1.0.37-natives-linux.jar:/storage/emulated/0/ZL_Two/libraries/com/mojang/jtracy/1.0.37/jtracy-1.0.37-natives-windows.jar:/storage/emulated/0/ZL_Two/libraries/com/mojang/logging/1.7.12/logging-1.7.12.jar:/storage/emulated/0/ZL_Two/libraries/com/mojang/patchy/2.2.10/patchy-2.2.10.jar:/storage/emulated/0/ZL_Two/libraries/com/mojang/text2speech/1.19.12/text2speech-1.19.12.jar:/storage/emulated/0/ZL_Two/libraries/commons-codec/commons-codec/1.22.0/commons-codec-1.22.0.jar:/storage/emulated/0/ZL_Two/libraries/commons-io/commons-io/2.20.0/commons-io-2.20.0.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-buffer/4.2.15.Final/netty-buffer-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-codec-base/4.2.15.Final/netty-codec-base-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-codec-compression/4.2.15.Final/netty-codec-compression-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-codec-http/4.2.15.Final/netty-codec-http-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-common/4.2.15.Final/netty-common-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-handler/4.2.15.Final/netty-handler-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-resolver/4.2.15.Final/netty-resolver-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-transport-classes-epoll/4.2.15.Final/netty-transport-classes-epoll-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-transport-classes-kqueue/4.2.15.Final/netty-transport-classes-kqueue-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-transport-native-epoll/4.2.15.Final/netty-transport-native-epoll-4.2.15.Final-linux-aarch_64.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-transport-native-epoll/4.2.15.Final/netty-transport-native-epoll-4.2.15.Final-linux-x86_64.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-transport-native-unix-common/4.2.15.Final/netty-transport-native-unix-common-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/io/netty/netty-transport/4.2.15.Final/netty-transport-4.2.15.Final.jar:/storage/emulated/0/ZL_Two/libraries/it/unimi/dsi/fastutil/8.5.18/fastutil-8.5.18.jar:/storage/emulated/0/ZL_Two/libraries/net/java/dev/jna/jna-platform/5.17.0/jna-platform-5.17.0.jar:/storage/emulated/0/ZL_Two/libraries/net/java/dev/jna/jna/5.17.0/jna-5.17.0.jar:/storage/emulated/0/ZL_Two/libraries/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar:/storage/emulated/0/ZL_Two/libraries/org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.jar:/storage/emulated/0/ZL_Two/libraries/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.jar:/storage/emulated/0/ZL_Two/libraries/org/apache/logging/log4j/log4j-api/2.26.0/log4j-api-2.26.0.jar:/storage/emulated/0/ZL_Two/libraries/org/apache/logging/log4j/log4j-core/2.26.0/log4j-core-2.26.0.jar:/storage/emulated/0/ZL_Two/libraries/org/apache/logging/log4j/log4j-slf4j2-impl/2.26.0/log4j-slf4j2-impl-2.26.0.jar:/storage/emulated/0/ZL_Two/libraries/org/jcraft/jorbis/0.0.17/jorbis-0.0.17.jar:/storage/emulated/0/ZL_Two/libraries/org/joml/joml/1.10.8/joml-1.10.8.jar:/storage/emulated/0/ZL_Two/libraries/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar:/storage/emulated/0/ZL_Two/libraries/dev/onvoid/webrtc/webrtc-java/0.14.0/webrtc-java-0.14.0.jar:/storage/emulated/0/ZL_Two/libraries/dev/onvoid/webrtc/webrtc-java/0.14.0/webrtc-java-0.14.0-linux-aarch32.jar:/storage/emulated/0/ZL_Two/libraries/dev/onvoid/webrtc/webrtc-java/0.14.0/webrtc-java-0.14.0-linux-aarch64.jar:/storage/emulated/0/ZL_Two/libraries/dev/onvoid/webrtc/webrtc-java/0.14.0/webrtc-java-0.14.0-linux-x86_64.jar:/storage/emulated/0/ZL_Two/libraries/dev/onvoid/webrtc/webrtc-java/0.14.0/webrtc-java-0.14.0-windows-x86_64.jar:/storage/emulated/0/ZL_Two/libraries/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar:/storage/emulated/0/ZL_Two/versions/26.2-Permanent/26.2-Permanent.jar
+▷ -Dimgui.library.path=/data/app/~~Q3q6mWuxEHY8brEd0sTXgQ==/com.commonlauncher.nativeplugin.imgui_java-uRcl_DlmG7mFq91k8j9J9A==/lib/arm64
+▷ -Dimgui.library.name=libimgui-java.so
+▷ --add-exports
+▷ net.minecraft.client.main/net.minecraft.client.main=ALL-UNNAMED
+▷ net.minecraft.client.main.Main
+▷ --username
+▷ Defoko
+▷ --version
+▷ 26.2-Permanent
+▷ --gameDir
+▷ /storage/emulated/0/ZL_Two/versions/26.2-Permanent
+▷ --assetsDir
+▷ /storage/emulated/0/ZL_Two/assets
+▷ --assetIndex
+▷ 32
+▷ --uuid
+▷ 000000000000300690000000079C8DC1
+▷ --accessToken
+▷ ********************
+▷ --clientId
+▷ ${clientid}
+▷ --xuid
+▷ 
+▷ --versionType
+▷ DRS NoRuleServer Client2.4.10
+[DEBUG] Done processing args
+[DEBUG] Found JLI lib
+[DEBUG] Calling JLI_Launch
+WARNING: Unknown module: net.minecraft.client.main specified to --add-exports
+WARNING: package sun.security.action not in java.base
+[MioLibPatcher/INFO]: MioPatcher is running!
+[authlib-injector] [INFO] Logging file: /storage/emulated/0/ZL_Two/versions/26.2-Permanent/authlib-injector.log
+[authlib-injector] [INFO] Version: 1.2.7
+[authlib-injector] [INFO] Authentication server: http://localhost:42193
+[authlib-injector] [WARNING] You are using HTTP protocol, which is INSECURE! Please switch to HTTPS if possible.
+java.lang.ClassNotFoundException: sun/java2d/SurfaceManagerFactory
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:467)
+	at java.base/java.lang.Class.forName(Class.java:458)
+	at com.github.caciocavallosilano.cacio.agent.CTCJavaAgent.initializeCTCEnvironment(CTCJavaAgent.java:52)
+	at com.github.caciocavallosilano.cacio.agent.CTCJavaAgent.premain(CTCJavaAgent.java:24)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.instrument/sun.instrument.InstrumentationImpl.loadClassAndStartAgent(InstrumentationImpl.java:544)
+	at java.instrument/sun.instrument.InstrumentationImpl.loadClassAndCallPremain(InstrumentationImpl.java:556)
+[authlib-injector] [INFO] Transformed [net.minecraft.client.main.Main] with [Main Arguments Transformer]
+2026-08-26T09:39:25.494676121Z main DEBUG Apache Log4j Core 2.26 initializing configuration XmlConfiguration[location=/storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml, lastModified=2026-07-29T14:07:26.748Z]
+2026-08-26T09:39:25.499465392Z main DEBUG PluginManager 'Core' found 137 plugins
+2026-08-26T09:39:25.499923986Z main DEBUG PluginManager 'Level' found 0 plugins
+2026-08-26T09:39:25.512114767Z main DEBUG PluginManager 'Lookup' found 15 plugins
+2026-08-26T09:39:25.515622631Z main DEBUG Building Plugin[name=layout, class=org.apache.logging.log4j.core.layout.PatternLayout].
+2026-08-26T09:39:25.557454715Z main DEBUG PluginManager 'TypeConverter' found 26 plugins
+2026-08-26T09:39:25.613083777Z main DEBUG PatternLayout$Builder(pattern="[%d{HH:mm:ss}] [%t/%level]: %msg{nolookups}%n", PatternSelector=null, Configuration(/storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml), Replace=null, charset="null", alwaysWriteExceptions="null", disableAnsi="null", noConsoleNoAnsi="null", header="null", footer="null")
+2026-08-26T09:39:25.616646798Z main DEBUG PluginManager 'Converter' found 45 plugins
+2026-08-26T09:39:25.688547840Z main INFO The nolookups option will be ignored. Message Lookups are no longer supported.
+2026-08-26T09:39:25.709687058Z main DEBUG Building Plugin[name=TimeBasedTriggeringPolicy, class=org.apache.logging.log4j.core.appender.rolling.TimeBasedTriggeringPolicy].
+2026-08-26T09:39:25.719126225Z main DEBUG TimeBasedTriggeringPolicy$Builder(interval="null", modulate="null", maxRandomDelay="null")
+2026-08-26T09:39:25.719731642Z main DEBUG Building Plugin[name=OnStartupTriggeringPolicy, class=org.apache.logging.log4j.core.appender.rolling.OnStartupTriggeringPolicy].
+2026-08-26T09:39:25.737234715Z main DEBUG createPolicy(minSize="1")
+2026-08-26T09:39:25.797251642Z main DEBUG Building Plugin[name=Policies, class=org.apache.logging.log4j.core.appender.rolling.CompositeTriggeringPolicy].
+2026-08-26T09:39:25.798996017Z main DEBUG createPolicy(={TimeBasedTriggeringPolicy(nextRolloverMillis=0, interval=1, modulate=false), OnStartupTriggeringPolicy})
+2026-08-26T09:39:25.801013881Z main DEBUG Building Plugin[name=appender, class=org.apache.logging.log4j.core.appender.ConsoleAppender].
+2026-08-26T09:39:25.824985288Z main DEBUG ConsoleAppender$Builder(target="SYSTEM_OUT", follow="null", direct="null", bufferedIo="null", bufferSize="null", immediateFlush="null", ignoreExceptions="null", PatternLayout([%d{HH:mm:ss}] [%t/%level]: %msg{nolookups}%n), name="SysOut", Configuration(/storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml), Filter=null, ={})
+2026-08-26T09:39:25.825638152Z main ERROR appender Console has no parameter that matches element Policies
+2026-08-26T09:39:25.829376485Z main DEBUG Starting OutputStreamManager SYSTEM_OUT.false.false
+2026-08-26T09:39:25.829898881Z main DEBUG Building Plugin[name=layout, class=org.apache.logging.log4j.core.layout.PatternLayout].
+2026-08-26T09:39:25.831200704Z main DEBUG PatternLayout$Builder(pattern="[%d{HH:mm:ss}] [%t/%level]: %msg{nolookups}%n", PatternSelector=null, Configuration(/storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml), Replace=null, charset="null", alwaysWriteExceptions="null", disableAnsi="null", noConsoleNoAnsi="null", header="null", footer="null")
+2026-08-26T09:39:25.833128360Z main INFO The nolookups option will be ignored. Message Lookups are no longer supported.
+2026-08-26T09:39:25.833713517Z main DEBUG Building Plugin[name=TimeBasedTriggeringPolicy, class=org.apache.logging.log4j.core.appender.rolling.TimeBasedTriggeringPolicy].
+2026-08-26T09:39:25.834361277Z main DEBUG TimeBasedTriggeringPolicy$Builder(interval="null", modulate="null", maxRandomDelay="null")
+2026-08-26T09:39:25.834661746Z main DEBUG Building Plugin[name=OnStartupTriggeringPolicy, class=org.apache.logging.log4j.core.appender.rolling.OnStartupTriggeringPolicy].
+2026-08-26T09:39:25.835430808Z main DEBUG createPolicy(minSize="1")
+2026-08-26T09:39:25.835746173Z main DEBUG Building Plugin[name=Policies, class=org.apache.logging.log4j.core.appender.rolling.CompositeTriggeringPolicy].
+2026-08-26T09:39:25.836411381Z main DEBUG createPolicy(={TimeBasedTriggeringPolicy(nextRolloverMillis=0, interval=1, modulate=false), OnStartupTriggeringPolicy})
+2026-08-26T09:39:25.836729506Z main DEBUG Building Plugin[name=appender, class=org.apache.logging.log4j.core.appender.RollingRandomAccessFileAppender].
+2026-08-26T09:39:25.846085965Z main DEBUG RollingRandomAccessFileAppender$Builder(fileName="logs/latest.log", filePattern="logs/%d{yyyy-MM-dd}-%i.log.gz", append="null", Policies(CompositeTriggeringPolicy(policies=[TimeBasedTriggeringPolicy(nextRolloverMillis=0, interval=1, modulate=false), OnStartupTriggeringPolicy])), Strategy=null, advertise="null", advertiseURI="null", filePermissions="null", fileOwner="null", fileGroup="null", bufferedIo="null", bufferSize="null", immediateFlush="null", ignoreExceptions="null", PatternLayout([%d{HH:mm:ss}] [%t/%level]: %msg{nolookups}%n), name="File", Configuration(/storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml), Filter=null, ={})
+2026-08-26T09:39:25.868198725Z main DEBUG Starting RollingRandomAccessFileManager logs/latest.log
+2026-08-26T09:39:25.880260756Z main DEBUG PluginManager 'FileConverter' found 2 plugins
+2026-08-26T09:39:25.892037006Z main DEBUG Setting prev file time to 2026-08-26T17:37:19.988+0800
+2026-08-26T09:39:25.892573256Z main DEBUG Initializing triggering policy CompositeTriggeringPolicy(policies=[TimeBasedTriggeringPolicy(nextRolloverMillis=0, interval=1, modulate=false), OnStartupTriggeringPolicy])
+2026-08-26T09:39:25.892913256Z main DEBUG Initializing triggering policy TimeBasedTriggeringPolicy(nextRolloverMillis=0, interval=1, modulate=false)
+2026-08-26T09:39:25.995710183Z main DEBUG Initializing triggering policy OnStartupTriggeringPolicy
+2026-08-26T09:39:25.996232631Z main DEBUG Initiating rollover at startup
+2026-08-26T09:39:25.997715860Z main DEBUG Formatting file name. useCurrentTime=false. currentFileTime=0, prevFileTime=1787673600000
+2026-08-26T09:39:26.001184610Z main DEBUG Current file: logs/latest.log
+2026-08-26T09:39:26.066742631Z main DEBUG Eligible files: {1=logs/2026-08-26-1.log.gz, 2=logs/2026-08-26-2.log.gz}
+2026-08-26T09:39:26.067465912Z main DEBUG Formatting file name. useCurrentTime=false. currentFileTime=0, prevFileTime=1787673600000
+2026-08-26T09:39:26.075330912Z main DEBUG RollingFileManager executing synchronous FileRenameAction[logs/latest.log to logs/2026-08-26-3.log, renameEmptyFiles=false]
+2026-08-26T09:39:26.089898881Z main DEBUG RollingFileManager executing async GzCompressAction[logs/2026-08-26-3.log to logs/2026-08-26-3.log.gz, deleteSource=true]
+2026-08-26T09:39:26.114797892Z main DEBUG Building Plugin[name=Appenders, class=org.apache.logging.log4j.core.config.AppendersPlugin].
+2026-08-26T09:39:26.115946746Z main DEBUG createAppenders(={SysOut, File})
+2026-08-26T09:39:26.116824871Z main DEBUG Building Plugin[name=filter, class=org.apache.logging.log4j.core.filter.MarkerFilter].
+2026-08-26T09:39:26.123403100Z main DEBUG createFilter(marker="NETWORK_PACKETS", onMatch="DENY", onMismatch="NEUTRAL")
+2026-08-26T09:39:26.130111225Z main DEBUG Building Plugin[name=Filters, class=org.apache.logging.log4j.core.filter.CompositeFilter].
+2026-08-26T09:39:26.140044662Z main DEBUG createFilters(={NETWORK_PACKETS})
+2026-08-26T09:39:26.142020339Z main DEBUG Building Plugin[name=AppenderRef, class=org.apache.logging.log4j.core.config.AppenderRef].
+2026-08-26T09:39:26.143501433Z main DEBUG createAppenderRef(ref="SysOut", level="null", Filter=null)
+2026-08-26T09:39:26.147390704Z main DEBUG Building Plugin[name=AppenderRef, class=org.apache.logging.log4j.core.config.AppenderRef].
+2026-08-26T09:39:26.148537892Z main DEBUG createAppenderRef(ref="File", level="null", Filter=null)
+2026-08-26T09:39:26.148935652Z main DEBUG Building Plugin[name=Root, class=org.apache.logging.log4j.core.config.LoggerConfig$RootLogger].
+2026-08-26T09:39:26.154733725Z main DEBUG LoggerConfig$RootLogger$Builder(additivity="null", level="DEBUG", levelAndRefs="null", includeLocation="null", ={SysOut, File}, ={}, Configuration(/storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml), filters({NETWORK_PACKETS}))
+2026-08-26T09:39:26.160311121Z main DEBUG Building Plugin[name=Loggers, class=org.apache.logging.log4j.core.config.LoggersPlugin].
+2026-08-26T09:39:26.162076589Z main DEBUG createLoggers(={root})
+2026-08-26T09:39:26.163241277Z main DEBUG Configuration XmlConfiguration[location=/storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml, lastModified=2026-07-29T14:07:26.748Z] initialized
+2026-08-26T09:39:26.163634506Z main INFO Starting configuration XmlConfiguration[location=/storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml, lastModified=2026-07-29T14:07:26.748Z]...
+2026-08-26T09:39:26.164228517Z main INFO Configuration XmlConfiguration[location=/storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml, lastModified=2026-07-29T14:07:26.748Z] started.
+2026-08-26T09:39:26.171251954Z main INFO Stopping configuration org.apache.logging.log4j.core.config.DefaultConfiguration@70e38ce1...
+2026-08-26T09:39:26.171968152Z main DEBUG Shutting down OutputStreamManager SYSTEM_OUT.false.false-1
+2026-08-26T09:39:26.172308464Z main DEBUG OutputStream closed
+2026-08-26T09:39:26.172715704Z main DEBUG Shut down OutputStreamManager SYSTEM_OUT.false.false-1, all resources released: true
+2026-08-26T09:39:26.173032371Z main DEBUG Appender DefaultConsole-1 stopped with status true
+2026-08-26T09:39:26.173397839Z main INFO Configuration org.apache.logging.log4j.core.config.DefaultConfiguration@70e38ce1 stopped.
+2026-08-26T09:39:26.177716537Z main DEBUG org.apache.logging.log4j.core.util.SystemClock supports precise timestamps.
+2026-08-26T09:39:26.178903881Z main DEBUG Reconfiguration complete for context[name=12bc6874] at URI /storage/emulated/0/ZL_Two/versions/26.2-Permanent/log4j2.xml (org.apache.logging.log4j.core.LoggerContext@1e8ce150) with optional ClassLoader: null
+2026-08-26T09:39:26.179324714Z main DEBUG Shutdown hook enabled. Registering a new one.
+2026-08-26T09:39:26.182595860Z main DEBUG LoggerContext[name=12bc6874, org.apache.logging.log4j.core.LoggerContext@1e8ce150] started OK.
+[17:39:26] [main/DEBUG]: Using SLF4J as the default logging framework
+[17:39:26] [main/DEBUG]: -Dio.netty.leakDetection.level: simple
+[17:39:26] [main/DEBUG]: -Dio.netty.leakDetection.targetRecords: 4
+[authlib-injector] [INFO] Transformed [com.mojang.authlib.properties.Property] with [Yggdrasil Public Key Transformer]
+[17:39:26] [main/INFO]: 🚀 MCRe ModMetadata loaded: 26.2
+[17:39:26] [main/DEBUG]: -Dio.netty.threadLocalMap.stringBuilder.initialSize: 1024
+[17:39:26] [main/DEBUG]: -Dio.netty.threadLocalMap.stringBuilder.maxSize: 4096
+[17:39:26] [main/DEBUG]: -Dio.netty.initialSeedUniquifier: 0x01840a5920d17245
+[17:39:26] [main/DEBUG]: Loading LWJGL system
+[MioLibPatcher/INFO]: Patch target class: org/lwjgl/system/Library
+[INFO] <Native> Saving JVM environ...
+Registered forkAndExec
+EGLBridge: LWJGL-side Vulkan loader requested the Vulkan handle
+AdrenoSupp: Loaded Turnip, loader address: 0xafa327b2b7848d01
+[17:39:27] [main/DEBUG]: Loading tinyfd
+[17:39:27] [main/DEBUG]: Loading shaderc
+[17:39:27] [main/DEBUG]: Loading GLFW
+[17:39:27] [main/DEBUG]: Loading STB
+[17:39:27] [main/DEBUG]: Loading vma
+[17:39:27] [main/DEBUG]: Loading OpenAL
+[17:39:27] [main/DEBUG]: Loading spvc
+[17:39:27] [main/DEBUG]: Loading OpenGL
+[17:39:27] [main/DEBUG]: Loading freetype
+[17:39:27] [main/DEBUG]: Library load time: 603 ms
+[MioLibPatcher/INFO]: Patch target class: oshi/hardware/CentralProcessor$ProcessorIdentifier
+[17:39:30] [main/WARN]: Did not find udev library in operating system. Some features may not work.
+[17:39:30] [main/WARN]: File not found or not readable: /proc/stat
+[17:39:30] [main/DEBUG]: Reading file /proc/uptime
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/uevent
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/uevent
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/topology/core_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/topology/core_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/topology/physical_package_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/topology/physical_package_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cpu_capacity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cpu_capacity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index2/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index2/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index2/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index2/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index2/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index2/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index2/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index0/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index0/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index0/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index0/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index0/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index0/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index0/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index3/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index3/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index3/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index3/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index3/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index3/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index3/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index1/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index1/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index1/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index1/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index1/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index1/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu7/cache/index1/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/uevent
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/uevent
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/topology/core_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/topology/core_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/topology/physical_package_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/topology/physical_package_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cpu_capacity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cpu_capacity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index2/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index2/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index2/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index2/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index2/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index2/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index2/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index0/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index0/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index0/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index0/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index0/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index0/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index0/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index3/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index3/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index3/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index3/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index3/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index3/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index3/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index1/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index1/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index1/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index1/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index1/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index1/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu5/cache/index1/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/uevent
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/uevent
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/topology/core_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/topology/core_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/topology/physical_package_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/topology/physical_package_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cpu_capacity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cpu_capacity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index2/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index2/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index2/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index2/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index2/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index2/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index2/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index0/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index0/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index0/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index0/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index0/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index0/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index0/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index3/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index3/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index3/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index3/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index3/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index3/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index3/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index1/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index1/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index1/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index1/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index1/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index1/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu3/cache/index1/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/uevent
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/uevent
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/topology/core_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/topology/core_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/topology/physical_package_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/topology/physical_package_id
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cpu_capacity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cpu_capacity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index2/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index2/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index2/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index2/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index2/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index2/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index2/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index0/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index0/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index0/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index0/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index0/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index0/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index0/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index3/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index3/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index3/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index3/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index3/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index3/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index3/size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index1/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index1/level
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index1/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index1/type
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index1/ways_of_associativity
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index1/coherency_line_size
+[17:39:30] [main/DEBUG]: Reading file /sys/devices/system/cpu/cpu1/cache/index1/size
+[17:39:31] [main/WARN]: Failed retrieving info for group processor
+java.io.UncheckedIOException: java.nio.file.AccessDeniedException: /sys/devices/system/cpu/memlat/c4_memlat/cpu4-cpu-l3-lat
+	at java.base/java.nio.file.FileTreeIterator.fetchNextIfNeeded(FileTreeIterator.java:85)
+	at java.base/java.nio.file.FileTreeIterator.hasNext(FileTreeIterator.java:101)
+	at java.base/java.util.Iterator.forEachRemaining(Iterator.java:132)
+	at java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1939)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:570)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)
+	at oshi.hardware.platform.linux.LinuxCentralProcessor.readTopologyFromSysfs(LinuxCentralProcessor.java:248)
+	at oshi.hardware.platform.linux.LinuxCentralProcessor.initProcessorCounts(LinuxCentralProcessor.java:176)
+	at oshi.hardware.common.AbstractCentralProcessor.<init>(AbstractCentralProcessor.java:68)
+	at oshi.hardware.platform.linux.LinuxCentralProcessor.<init>(LinuxCentralProcessor.java:59)
+	at oshi.hardware.platform.linux.LinuxHardwareAbstractionLayer.createProcessor(LinuxHardwareAbstractionLayer.java:43)
+	at oshi.util.Memoizer$1.get(Memoizer.java:65)
+	at oshi.hardware.common.AbstractHardwareAbstractionLayer.getProcessor(AbstractHardwareAbstractionLayer.java:48)
+	at net.minecraft.SystemReport.lambda$putHardware$0(SystemReport.java:105)
+	at net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120)
+	at net.minecraft.SystemReport.putHardware(SystemReport.java:105)
+	at net.minecraft.SystemReport.lambda$new$6(SystemReport.java:67)
+	at net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120)
+	at net.minecraft.SystemReport.<init>(SystemReport.java:67)
+	at net.minecraft.CrashReport.<init>(CrashReport.java:34)
+	at net.minecraft.CrashReport.preload(CrashReport.java:257)
+	at net.minecraft.client.main.Main.main(Main.java:159)
+Caused by: java.nio.file.AccessDeniedException: /sys/devices/system/cpu/memlat/c4_memlat/cpu4-cpu-l3-lat
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:90)
+	at java.base/sun.nio.fs.UnixException.asIOException(UnixException.java:115)
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newDirectoryStream(UnixFileSystemProvider.java:456)
+	at java.base/java.nio.file.Files.newDirectoryStream(Files.java:445)
+	at java.base/java.nio.file.FileTreeWalker.visit(FileTreeWalker.java:288)
+	at java.base/java.nio.file.FileTreeWalker.next(FileTreeWalker.java:354)
+	at java.base/java.nio.file.FileTreeIterator.fetchNextIfNeeded(FileTreeIterator.java:81)
+	... 25 more
+[17:39:31] [main/DEBUG]: Reading file /proc/meminfo
+[17:39:31] [main/DEBUG]: Reading file /proc/meminfo
+[17:39:31] [main/WARN]: File not found or not readable: /etc/os-release
+[17:39:31] [main/WARN]: File not found or not readable: /etc/lsb-release
+[17:39:31] [main/WARN]: File not found or not readable: /proc/version
+[17:39:31] [main/DEBUG]: Reading file /proc/11964/io
+[17:39:31] [main/DEBUG]: Reading file /proc/11964/status
+[17:39:31] [main/DEBUG]: Reading file /proc/11964/status
+[17:39:31] [main/DEBUG]: Reading file /proc/11964/stat
+[17:39:31] [main/DEBUG]: Reading file /proc/11964/stat
+[17:39:31] [main/DEBUG]: Reading file /proc/self/stat
+[17:39:31] [main/DEBUG]: Reading file /proc/self/stat
+[17:39:31] [Datafixer Bootstrap #0/INFO]: 295 Datafixer optimizations took 1999 milliseconds
+[17:39:49] [main/WARN]: Ambiguity between arguments [teleport, location] and [teleport, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
+[17:39:49] [main/WARN]: Ambiguity between arguments [teleport, location] and [teleport, targets] with inputs: [0.1 -0.5 .9, 0 0 0]
+[17:39:49] [main/WARN]: Ambiguity between arguments [teleport, destination] and [teleport, targets] with inputs: [Player, 0123, @e, dd12be42-52a9-4a91-a8a1-11c01849e498]
+[17:39:49] [main/WARN]: Ambiguity between arguments [teleport, targets] and [teleport, destination] with inputs: [Player, 0123, dd12be42-52a9-4a91-a8a1-11c01849e498]
+[17:39:49] [main/WARN]: Ambiguity between arguments [teleport, targets, location] and [teleport, targets, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
+[17:39:49] [main/WARN]: Ambiguity between arguments [time, set, time] and [time, set, timemarker] with inputs: [0, 0s, 0d, 0t]
+[17:39:49] [main/WARN]: Ambiguity between arguments [time, set, timemarker] and [time, set, time] with inputs: [012]
+[17:39:49] [main/WARN]: Ambiguity between arguments [time, of, clock, set, time] and [time, of, clock, set, timemarker] with inputs: [0, 0s, 0d, 0t]
+[17:39:49] [main/WARN]: Ambiguity between arguments [time, of, clock, set, timemarker] and [time, of, clock, set, time] with inputs: [012]
+[authlib-injector] [INFO] Transformed [com.mojang.authlib.HttpAuthenticationService] with [ConcatenateURL Workaround]
+[authlib-injector] [INFO] Httpd is running on port 42073
+[authlib-injector] [INFO] Transformed [com.mojang.authlib.yggdrasil.YggdrasilEnvironment] with [Constant URL Transformer]
+[17:39:50] [Render thread/INFO]: Environment: Environment[sessionHost=http://127.0.0.1:42073/https/sessionserver.mojang.com, servicesHost=http://127.0.0.1:42073/https/api.minecraftservices.com, profilesHost=http://127.0.0.1:42073/https/api.mojang.com, name=PROD]
+[authlib-injector] [INFO] Transformed [com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo] with [Yggdrasil Public Key Transformer]
+[17:39:50] [Yggdrasil Key Fetcher/DEBUG]: Connecting to http://127.0.0.1:42073/https/api.minecraftservices.com/publickeys
+[17:39:50] [Download-1/DEBUG]: Connecting to http://127.0.0.1:42073/https/sessionserver.mojang.com/session/minecraft/profile/000000000000300690000000079c8dc1?unsigned=false
+[17:39:50] [Render thread/INFO]: Setting user: Defoko
+[17:39:50] [Download-2/DEBUG]: Connecting to http://127.0.0.1:42073/https/api.minecraftservices.com/player/attributes
+[17:39:50] [Download-1/DEBUG]: Successfully fetched profile properties for GameProfile[id=00000000-0000-3006-9000-0000079c8dc1, name=Defoko, properties={textures=[Property[name=textures, value=eyJ0aW1lc3RhbXAiOjE3ODc3MzcxOTAyMDEsInByb2ZpbGVJZCI6IjAwMDAwMDAwMDAwMDMwMDY5MDAwMDAwMDA3OUM4REMxIiwicHJvZmlsZU5hbWUiOiJEZWZva28iLCJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NDIxOTMvdGV4dHVyZXMvZWM1NjZjMjg3ZTFjMTIwZmMwNzM3Y2Q1YzJlYjViZDcwMzUwYzVhMDA4MThlMWJkM2YyOWRjZWUzYzg0NmY1NyIsIm1ldGFkYXRhIjp7Im1vZGVsIjoic2xpbSJ9fX19, signature=mV+bTVv74/20GNI8DdQAEUJOXU9peXgZNmbIrG33XnaIvH1i6JHSqEDpiSrSAQhDG65+gxju85Mx3xRSVt7XaR4oGsMVAV3J/GNkb6QwqdnPmGSdapiDlTFY9BPY4uWArSlAvZU3qJ32QUVFRqYc7Qphg8y7RVovbj2XVnqwANyOXZS6ae673DybVQ3cc/c8+2oExoKWi+IwKkoARAak95F58iUBPA/MRDXJpWQevBjVbR/RoUNV2g9gotUUUiPe2hMbtiqy7KZM3w36WVgSFAMJzAUnA+4bp5+xfes9Z9w/blrenycncqmE/63cax4qwL7UE66ZOI0gWOG419LBBA==]]}]
+[17:39:50] [Render thread/INFO]: Backend library: LWJGL version 3.3.6-snapshot
+EGLBridge: Binding to OpenGL ES
+[17:39:50] [Render thread/INFO]: Using graphics backend OpenGL, using drivers: 4.0.0 MobileGlues 2.0.0
+[17:39:50] [Render thread/INFO]: Using graphics device: Adreno (TM) 642L | OpenGL ES 3.2 (Swung0x48, BZLZHH, Tungsten)
+[17:39:50] [Render thread/INFO]: Using graphics device extensions: GL_ARB_buffer_storage, GL_ARB_vertex_attrib_binding
+[17:39:51] [Render thread/DEBUG]: Using polling for tracking audio device changes
+[17:39:52] [Render thread/INFO]: [STDOUT]@.(LogUtil.java:5): [MioLibPatcher/INFO]: Patch target class: com/mojang/text2speech/Narrator
+[17:39:52] [Render thread/INFO]: Reloading ResourceManager: vanilla
+[INFO] <NativeInput> Input ready: 1
+[17:39:53] [Render thread/DEBUG]: Growing IndexBuffer: Old limit 0, new limit 60.
+[17:39:55] [resourceLoad/INFO]: Found unifont_all_no_pua-17.0.01.hex, loading
+[17:39:55] [resourceLoad/INFO]: Found unifont_pua-17.0.01.hex, loading
+[17:39:56] [resourceLoad/INFO]: Found unifont_jp_patch-17.0.01.hex, loading
+[17:39:56] [resourceLoad/DEBUG]: Redundant texture list for particle: minecraft:ambient_entity_effect
+[17:39:57] [Download-1/INFO]: Could not authorize you against Realms server: java.lang.RuntimeException: Failed to parse into SignedJWT: 0
+[17:39:57] [Download-1/ERROR]: Failed to fetch Realms feature flags
+com.mojang.realmsclient.exception.RealmsServiceException: Realms authentication error with message 'java.lang.RuntimeException: Failed to parse into SignedJWT: 0'
+	at com.mojang.realmsclient.client.RealmsClient.execute(RealmsClient.java:517)
+	at com.mojang.realmsclient.client.RealmsClient.fetchFeatureFlags(RealmsClient.java:162)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1789)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+[17:40:01] [Render thread/DEBUG]: Finished reloading LanguageManager
+[17:40:01] [Render thread/DEBUG]: Finished reloading TextureManager
+[17:40:02] [Render thread/DEBUG]: Finished reloading Shader Loader
+[17:40:02] [Render thread/DEBUG]: Not having sound event for: minecraft:entity.chicken_picky.step
+[17:40:02] [Render thread/INFO]: OpenAL initialized on device Oboe Default
+[17:40:02] [Render thread/INFO]: Sound engine started
+[17:40:02] [Render thread/DEBUG]: Finished reloading SoundManager
+[17:40:02] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/particles.png-atlas
+[17:40:02] [Render thread/INFO]: Created: 128x128x0 minecraft:textures/atlas/decorated_pot.png-atlas
+[17:40:02] [Render thread/INFO]: Created: 2048x1024x0 minecraft:textures/atlas/armor_trims.png-atlas
+[17:40:02] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/paintings.png-atlas
+[17:40:02] [Render thread/INFO]: Created: 1024x512x0 minecraft:textures/atlas/shield_patterns.png-atlas
+[17:40:02] [Render thread/INFO]: Created: 1024x512x0 minecraft:textures/atlas/blocks.png-atlas
+[17:40:03] [Render thread/INFO]: Created: 512x512x0 minecraft:textures/atlas/chest.png-atlas
+[17:40:03] [Render thread/INFO]: Created: 256x128x0 minecraft:textures/atlas/celestials.png-atlas
+[17:40:03] [Render thread/INFO]: Created: 1024x512x0 minecraft:textures/atlas/banner_patterns.png-atlas
+[17:40:03] [Render thread/INFO]: Created: 1024x512x0 minecraft:textures/atlas/items.png-atlas
+[17:40:04] [Render thread/INFO]: Created: 1024x1024x0 minecraft:textures/atlas/gui.png-atlas
+[17:40:04] [Render thread/INFO]: Created: 128x64x0 minecraft:textures/atlas/map_decorations.png-atlas
+[17:40:04] [Render thread/INFO]: Created: 512x512x0 minecraft:textures/atlas/shulker_boxes.png-atlas
+[17:40:04] [Render thread/DEBUG]: Finished reloading AtlasManager
+[17:40:04] [Render thread/DEBUG]: Finished reloading FontManager
+[17:40:04] [Render thread/DEBUG]: Finished reloading GrassColorReloadListener
+[17:40:04] [Render thread/DEBUG]: Finished reloading FoliageColorReloadListener
+[17:40:04] [Render thread/DEBUG]: Finished reloading DryFoliageColorReloadListener
+[17:40:04] [Render thread/DEBUG]: Finished reloading ModelManager
+[17:40:04] [Render thread/DEBUG]: Finished reloading EquipmentAssetManager
+[17:40:05] [Render thread/DEBUG]: Finished reloading EntityRenderDispatcher
+[17:40:05] [Render thread/DEBUG]: Finished reloading BlockEntityRenderDispatcher
+[17:40:05] [Render thread/DEBUG]: Finished reloading ParticleResources
+[17:40:05] [Render thread/DEBUG]: Finished reloading LevelExtractor
+[17:40:05] [Render thread/DEBUG]: Finished reloading CloudRenderer
+[17:40:05] [Render thread/DEBUG]: Finished reloading GpuWarnlistManager
+[17:40:05] [Render thread/DEBUG]: Finished reloading PeriodicNotificationManager
+[17:40:05] [Render thread/DEBUG]: Finished reloading SplashManager
+[17:40:05] [Render thread/DEBUG]: Finished reloading WaypointStyleManager
+[17:40:05] [Render thread/INFO]: Resource reload finished after 12906 ms
+[17:40:05] [Render thread/INFO]: LanguageManager took approximately 1 tasks/142 ms (0 tasks/0 ms preparing, 1 tasks/142 ms applying)
+[17:40:05] [Render thread/INFO]: TextureManager took approximately 6 tasks/4353 ms (5 tasks/4286 ms preparing, 1 tasks/67 ms applying)
+[17:40:05] [Render thread/INFO]: Shader Loader took approximately 2 tasks/1900 ms (1 tasks/827 ms preparing, 1 tasks/1073 ms applying)
+[17:40:05] [Render thread/INFO]: SoundManager took approximately 2 tasks/1158 ms (1 tasks/939 ms preparing, 1 tasks/219 ms applying)
+[17:40:05] [Render thread/INFO]: AtlasManager took approximately 3799 tasks/20508 ms (3798 tasks/18495 ms preparing, 1 tasks/2013 ms applying)
+[17:40:05] [Render thread/INFO]: FontManager took approximately 26 tasks/4448 ms (25 tasks/4067 ms preparing, 1 tasks/381 ms applying)
+[17:40:05] [Render thread/INFO]: GrassColorReloadListener took approximately 2 tasks/39 ms (1 tasks/38 ms preparing, 1 tasks/1 ms applying)
+[17:40:05] [Render thread/INFO]: FoliageColorReloadListener took approximately 2 tasks/23 ms (1 tasks/22 ms preparing, 1 tasks/1 ms applying)
+[17:40:05] [Render thread/INFO]: DryFoliageColorReloadListener took approximately 2 tasks/6 ms (1 tasks/6 ms preparing, 1 tasks/0 ms applying)
+[17:40:05] [Render thread/INFO]: ModelManager took approximately 6897 tasks/22754 ms (6896 tasks/22752 ms preparing, 1 tasks/2 ms applying)
+[17:40:05] [Render thread/INFO]: EquipmentAssetManager took approximately 2 tasks/115 ms (1 tasks/113 ms preparing, 1 tasks/2 ms applying)
+[17:40:05] [Render thread/INFO]: EntityRenderDispatcher took approximately 1 tasks/593 ms (0 tasks/0 ms preparing, 1 tasks/593 ms applying)
+[17:40:05] [Render thread/INFO]: BlockEntityRenderDispatcher took approximately 1 tasks/79 ms (0 tasks/0 ms preparing, 1 tasks/79 ms applying)
+[17:40:05] [Render thread/INFO]: ParticleResources took approximately 114 tasks/102 ms (113 tasks/100 ms preparing, 1 tasks/2 ms applying)
+[17:40:05] [Render thread/INFO]: LevelExtractor took approximately 1 tasks/0 ms (0 tasks/0 ms preparing, 1 tasks/0 ms applying)
+[17:40:05] [Render thread/INFO]: CloudRenderer took approximately 2 tasks/38 ms (1 tasks/38 ms preparing, 1 tasks/0 ms applying)
+[17:40:05] [Render thread/INFO]: GpuWarnlistManager took approximately 2 tasks/20 ms (1 tasks/20 ms preparing, 1 tasks/0 ms applying)
+[17:40:05] [Render thread/INFO]: PeriodicNotificationManager took approximately 2 tasks/10 ms (1 tasks/7 ms preparing, 1 tasks/3 ms applying)
+[17:40:05] [Render thread/INFO]: SplashManager took approximately 2 tasks/15 ms (1 tasks/15 ms preparing, 1 tasks/0 ms applying)
+[17:40:05] [Render thread/INFO]: WaypointStyleManager took approximately 2 tasks/7 ms (1 tasks/4 ms preparing, 1 tasks/3 ms applying)
+[17:40:05] [Render thread/INFO]: Total blocking time: 4581 ms
+[17:40:06] [Download-1/INFO]: Could not authorize you against Realms server: java.lang.RuntimeException: Failed to parse into SignedJWT: 0
+[17:40:06] [Download-1/ERROR]: Couldn't connect to realms
+com.mojang.realmsclient.exception.RealmsServiceException: Realms authentication error with message 'java.lang.RuntimeException: Failed to parse into SignedJWT: 0'
+	at com.mojang.realmsclient.client.RealmsClient.execute(RealmsClient.java:517)
+	at com.mojang.realmsclient.client.RealmsClient.clientCompatible(RealmsClient.java:284)
+	at com.mojang.realmsclient.RealmsAvailability.lambda$check$0(RealmsAvailability.java:50)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1789)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+[17:40:06] [Render thread/DEBUG]: Growing IndexBuffer: Old limit 60, new limit 252.
+[17:40:07] [Render thread/DEBUG]: Growing IndexBuffer: Old limit 252, new limit 1824.
+[17:40:12] [Render thread/DEBUG]: Playing sound minecraft:random/click_stereo for event minecraft:ui.button.click
+[17:40:13] [Render thread/DEBUG]: Growing IndexBuffer: Old limit 1824, new limit 8976.
+[17:40:13] [Render thread/DEBUG]: Removed channel net.minecraft.client.sounds.ChannelAccess$ChannelHandle@512b716d because it's not playing anymore
+[17:40:15] [Render thread/DEBUG]: Playing sound minecraft:random/click_stereo for event minecraft:ui.button.click
+[17:40:15] [Render thread/WARN]: Missing data pack tests
+[17:40:20] [Render thread/INFO]: Loaded 1585 recipes
+[17:40:20] [Render thread/DEBUG]: Finished reloading RecipeManager
+[17:40:20] [Render thread/DEBUG]: Finished reloading ServerFunctionLibrary
+[17:40:20] [Render thread/INFO]: Loaded 1688 advancements
+[17:40:20] [Render thread/DEBUG]: Finished reloading ServerAdvancementManager
+[17:40:20] [Render thread/INFO]: Resource reload finished after 1505 ms
+[17:40:20] [Render thread/INFO]: RecipeManager took approximately 2 tasks/888 ms (1 tasks/888 ms preparing, 1 tasks/0 ms applying)
+[17:40:20] [Render thread/INFO]: ServerFunctionLibrary took approximately 3 tasks/2 ms (2 tasks/1 ms preparing, 1 tasks/1 ms applying)
+[17:40:20] [Render thread/INFO]: ServerAdvancementManager took approximately 2 tasks/1492 ms (1 tasks/1436 ms preparing, 1 tasks/56 ms applying)
+[17:40:20] [Render thread/INFO]: Total blocking time: 57 ms
+[17:40:20] [Render thread/DEBUG]: Resource load for world creation blocked for 4551 ms
+[17:40:21] [Render thread/DEBUG]: Removed channel net.minecraft.client.sounds.ChannelAccess$ChannelHandle@be766a5 because it's not playing anymore
+[17:40:22] [Render thread/DEBUG]: Playing sound minecraft:music/menu/beginning_2 for event minecraft:music.menu
+[17:40:23] [Render thread/DEBUG]: Playing sound minecraft:random/click_stereo for event minecraft:ui.button.click
+[17:40:23] [Render thread/DEBUG]: Playing sound minecraft:random/click_stereo for event minecraft:ui.button.click
+[17:40:24] [Render thread/DEBUG]: Removed channel net.minecraft.client.sounds.ChannelAccess$ChannelHandle@600989e7 because it's not playing anymore
+[17:40:24] [Render thread/DEBUG]: Removed channel net.minecraft.client.sounds.ChannelAccess$ChannelHandle@66d756b1 because it's not playing anymore
+[17:40:25] [Render thread/DEBUG]: Playing sound minecraft:random/click_stereo for event minecraft:ui.button.click
+[17:40:26] [Render thread/DEBUG]: Removed channel net.minecraft.client.sounds.ChannelAccess$ChannelHandle@178941d0 because it's not playing anymore
+[17:40:27] [Render thread/DEBUG]: Playing sound minecraft:random/click_stereo for event minecraft:ui.button.click
+[17:40:28] [Render thread/DEBUG]: Removed channel net.minecraft.client.sounds.ChannelAccess$ChannelHandle@69c22c77 because it's not playing anymore
+[17:40:29] [Render thread/DEBUG]: Playing sound minecraft:random/click_stereo for event minecraft:ui.button.click
+[17:40:30] [Server thread/INFO]: Starting integrated minecraft server version 26.2 [Permanent]
+[17:40:30] [Server thread/INFO]: Generating keypair
+[17:40:33] [Server thread/INFO]: Selecting global world spawn...
+[17:40:41] [structureRings/DEBUG]: Calculation for Reference{ResourceKey[minecraft:worldgen/structure_set / minecraft:strongholds]=StructureSet[structures=[StructureSelectionEntry[structure=Reference{ResourceKey[minecraft:worldgen/structure / minecraft:stronghold]=net.minecraft.world.level.levelgen.structure.structures.StrongholdStructure@7c5b8adc}, weight=1]], placement=net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement@4bad37a4]} took 10.199s
