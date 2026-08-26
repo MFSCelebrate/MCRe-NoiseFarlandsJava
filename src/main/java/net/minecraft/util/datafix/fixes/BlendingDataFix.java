@@ -59,9 +59,10 @@ public class BlendingDataFix extends DataFix {
             chunkTag.createMap(
                 Map.of(
                     chunkTag.createString("min_section"),
-                    chunkTag.createInt(SectionPos.blockToSectionCoord(minY)),
+                    // MCRe NoiseFarlands: NBT IntTag 边界（Decision 4）
+                    chunkTag.createInt((int) SectionPos.blockToSectionCoord(minY)),
                     chunkTag.createString("max_section"),
-                    chunkTag.createInt(SectionPos.blockToSectionCoord(minY + height))
+                    chunkTag.createInt((int) SectionPos.blockToSectionCoord(minY + height))
                 )
             )
         );

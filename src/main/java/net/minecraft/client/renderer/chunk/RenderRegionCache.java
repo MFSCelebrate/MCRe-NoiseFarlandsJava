@@ -16,20 +16,20 @@ public class RenderRegionCache {
     private final Map<SectionPos, SectionCopy> sectionCopyCache = new HashMap<>();
 
     public RenderSectionRegion createRegion(final ClientLevel level, final SectionPos sectionNode) {
-        int sectionX = sectionNode.x();
-        int sectionY = sectionNode.y();
-        int sectionZ = sectionNode.z();
-        int minSectionX = sectionX - 1;
-        int minSectionY = sectionY - 1;
-        int minSectionZ = sectionZ - 1;
-        int maxSectionX = sectionX + 1;
-        int maxSectionY = sectionY + 1;
-        int maxSectionZ = sectionZ + 1;
+        long sectionX = sectionNode.x();
+        long sectionY = sectionNode.y();
+        long sectionZ = sectionNode.z();
+        long minSectionX = sectionX - 1;
+        long minSectionY = sectionY - 1;
+        long minSectionZ = sectionZ - 1;
+        long maxSectionX = sectionX + 1;
+        long maxSectionY = sectionY + 1;
+        long maxSectionZ = sectionZ + 1;
         SectionCopy[] regionSections = new SectionCopy[27];
 
-        for (int regionSectionZ = minSectionZ; regionSectionZ <= maxSectionZ; regionSectionZ++) {
-            for (int regionSectionY = minSectionY; regionSectionY <= maxSectionY; regionSectionY++) {
-                for (int regionSectionX = minSectionX; regionSectionX <= maxSectionX; regionSectionX++) {
+        for (long regionSectionZ = minSectionZ; regionSectionZ <= maxSectionZ; regionSectionZ++) {
+            for (long regionSectionY = minSectionY; regionSectionY <= maxSectionY; regionSectionY++) {
+                for (long regionSectionX = minSectionX; regionSectionX <= maxSectionX; regionSectionX++) {
                     int index = RenderSectionRegion.index(minSectionX, minSectionY, minSectionZ, regionSectionX, regionSectionY, regionSectionZ);
                     regionSections[index] = this.getSectionDataCopy(level, regionSectionX, regionSectionY, regionSectionZ);
                 }
@@ -39,7 +39,7 @@ public class RenderRegionCache {
         return new RenderSectionRegion(level, minSectionX, minSectionY, minSectionZ, regionSections);
     }
 
-    private SectionCopy getSectionDataCopy(final Level level, final int sectionX, final int sectionY, final int sectionZ) {
+    private SectionCopy getSectionDataCopy(final Level level, final long sectionX, final long sectionY, final long sectionZ) {
         return this.sectionCopyCache.computeIfAbsent(SectionPos.of(sectionX, sectionY, sectionZ), k -> {
             LevelChunk chunk = level.getChunk(sectionX, sectionZ);
             return new SectionCopy(chunk, chunk.getSectionIndexFromSectionY(sectionY));

@@ -19,15 +19,16 @@ public class DiskFeature extends Feature<DiskConfiguration> {
         WorldGenLevel level = context.level();
         RandomSource random = context.random();
         boolean placedAny = false;
-        int originY = origin.getY();
-        int top = originY + config.halfHeight();
-        int bottom = originY - config.halfHeight() - 1;
+        long originY = origin.getY();
+        // MCRe NoiseFarlands: 世界 Y Long 化
+        long top = originY + config.halfHeight();
+        long bottom = originY - config.halfHeight() - 1;
         int r = config.radius().sample(random);
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
         for (BlockPos columnPos : BlockPos.betweenClosed(origin.offset(-r, 0, -r), origin.offset(r, 0, r))) {
-            int xd = columnPos.getX() - origin.getX();
-            int zd = columnPos.getZ() - origin.getZ();
+            long xd = columnPos.getX() - origin.getX();
+            long zd = columnPos.getZ() - origin.getZ();
             if (xd * xd + zd * zd <= r * r) {
                 placedAny |= this.placeColumn(config, level, random, top, bottom, mutablePos.set(columnPos));
             }
@@ -40,14 +41,16 @@ public class DiskFeature extends Feature<DiskConfiguration> {
         final DiskConfiguration config,
         final WorldGenLevel level,
         final RandomSource random,
-        final int top,
-        final int bottom,
+        // MCRe NoiseFarlands: 世界 Y Long 化
+        final long top,
+        final long bottom,
         final BlockPos.MutableBlockPos pos
     ) {
         boolean placedAny = false;
         boolean placedAbove = false;
 
-        for (int y = top; y > bottom; y--) {
+        // MCRe NoiseFarlands: 世界 Y Long 化
+        for (long y = top; y > bottom; y--) {
             pos.setY(y);
             if (config.target().test(level, pos)) {
                 BlockState state = config.stateProvider().getOptionalState(level, random, pos);

@@ -49,7 +49,8 @@ public class SectionOcclusionGraph {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Direction[] DIRECTIONS = Direction.values();
     private static final int MINIMUM_ADVANCED_CULLING_DISTANCE = 60;
-    private static final int MINIMUM_ADVANCED_CULLING_SECTION_DISTANCE = SectionPos.blockToSectionCoord(60);
+    // MCRe NoiseFarlands: section 距离常量 Long 化
+    private static final long MINIMUM_ADVANCED_CULLING_SECTION_DISTANCE = SectionPos.blockToSectionCoord(60);
     private static final double CEILED_SECTION_DIAGONAL = Math.ceil(Math.sqrt(3.0) * 16.0);
     private boolean needsFullUpdate = true;
     private @Nullable Future<?> fullUpdateTask;
@@ -224,15 +225,16 @@ public class SectionOcclusionGraph {
     private void initializeQueueForFullUpdate(final BlockPos cameraPosition, final Queue<
                     SectionOcclusionGraph.Node> queue) {
         SectionPos cameraSectionNode = SectionPos.of(cameraPosition);
-        int cameraSectionY = cameraSectionNode.y();
+        long cameraSectionY = cameraSectionNode.y();
         SectionRenderDispatcher.RenderSection cameraSection = this.viewArea.getRenderSection(cameraSectionNode);
         if (cameraSection == null) {
             boolean isBelowTheWorld = cameraSectionY < this.viewArea.minSectionY();
-            int sectionY = isBelowTheWorld ? this.viewArea.minSectionY() : this.viewArea.maxSectionY();
+            // MCRe NoiseFarlands: section Y Long 化
+            long sectionY = isBelowTheWorld ? this.viewArea.minSectionY() : this.viewArea.maxSectionY();
             int viewDistance = this.viewArea.getViewDistance();
             List<SectionOcclusionGraph.Node> toAdd = Lists.newArrayList();
-            int cameraSectionX = cameraSectionNode.x();
-            int cameraSectionZ = cameraSectionNode.z();
+            long cameraSectionX = cameraSectionNode.x();
+            long cameraSectionZ = cameraSectionNode.z();
 
             for (int sectionX = -viewDistance; sectionX <= viewDistance; sectionX++) {
                 for (int sectionZ = -viewDistance; sectionZ <= viewDistance; sectionZ++) {
@@ -328,9 +330,9 @@ public class SectionOcclusionGraph {
                         }
 
                         if (smartCull && distantFromCamera) {
-                            long renderSectionOriginX = sectionNode.minBlockXLong();
-                            long renderSectionOriginY = sectionNode.minBlockYLong();
-                            long renderSectionOriginZ = sectionNode.minBlockZLong();
+                            long renderSectionOriginX = sectionNode.minBlockX();
+                            long renderSectionOriginY = sectionNode.minBlockY();
+                            long renderSectionOriginZ = sectionNode.minBlockZ();
                             boolean maxX = direction.getAxis() == Direction.Axis.X
                                     ? cameraSectionCenterX > renderSectionOriginX
                                     : cameraSectionCenterX < renderSectionOriginX;

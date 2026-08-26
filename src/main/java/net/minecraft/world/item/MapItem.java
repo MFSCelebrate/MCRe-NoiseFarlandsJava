@@ -41,7 +41,8 @@ public class MapItem extends Item {
     }
 
     public static ItemStack create(
-        final ServerLevel level, final int originX, final int originZ, final byte scale, final boolean trackPosition, final boolean unlimitedTracking
+        // MCRe NoiseFarlands: 世界坐标 Long 化
+        final ServerLevel level, final long originX, final long originZ, final byte scale, final boolean trackPosition, final boolean unlimitedTracking
     ) {
         ItemStack map = new ItemStack(Items.FILLED_MAP);
         MapId newId = createNewSavedData(level, originX, originZ, scale, trackPosition, unlimitedTracking, level.dimension());
@@ -58,10 +59,11 @@ public class MapItem extends Item {
         return getSavedData(id, level);
     }
 
+    // MCRe NoiseFarlands: 世界坐标 Long 化
     private static MapId createNewSavedData(
         final ServerLevel level,
-        final int xSpawn,
-        final int zSpawn,
+        final long xSpawn,
+        final long zSpawn,
         final int scale,
         final boolean trackingPosition,
         final boolean unlimitedTracking,
@@ -134,7 +136,8 @@ public class MapItem extends Item {
                                                 } while (state.getMapColor(level, blockPos) == MapColor.NONE && columnY > level.getMinY());
 
                                                 if (columnY > level.getMinY() && !state.getFluidState().isEmpty()) {
-                                                    int solidY = columnY - 1;
+                                                    // MCRe NoiseFarlands: 世界 Y Long 化
+        long solidY = columnY - 1;
                                                     belowPos.set(blockPos);
 
                                                     BlockState belowBlock;

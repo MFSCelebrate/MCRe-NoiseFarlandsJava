@@ -188,9 +188,11 @@ public class LocateCommand {
         return distance;
     }
 
-    private static float dist(final int x1, final int z1, final int x2, final int z2) {
-        int dx = x2 - x1;
-        int dz = z2 - z1;
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    private static float dist(final long x1, final long z1, final long x2, final long z2) {
+        // MCRe NoiseFarlands: 相对差 long 域
+        long dx = x2 - x1;
+        long dz = z2 - z1;
         return Mth.sqrt(dx * dx + dz * dz);
     }
 }

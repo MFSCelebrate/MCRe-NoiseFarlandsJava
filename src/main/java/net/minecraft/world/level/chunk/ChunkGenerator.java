@@ -677,16 +677,19 @@ public abstract class ChunkGenerator {
 
     public abstract int getMinY();
 
-    public abstract int getBaseHeight(int x, int z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState);
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public abstract long getBaseHeight(long x, long z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState);
 
-    public abstract NoiseColumn getBaseColumn(final int x, final int z, final LevelHeightAccessor heightAccessor, final RandomState randomState);
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public abstract NoiseColumn getBaseColumn(final long x, final long z, final LevelHeightAccessor heightAccessor, final RandomState randomState);
 
-    public int getFirstFreeHeight(final int x, final int z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public long getFirstFreeHeight(final long x, final long z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         return this.getBaseHeight(x, z, type, heightAccessor, randomState);
     }
 
-    public int getFirstOccupiedHeight(
-            final int x, final int z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    public long getFirstOccupiedHeight(
+        final long x, final long z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         return this.getBaseHeight(x, z, type, heightAccessor, randomState) - 1;
     }
 

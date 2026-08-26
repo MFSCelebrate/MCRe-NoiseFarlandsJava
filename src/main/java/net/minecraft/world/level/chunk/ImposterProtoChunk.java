@@ -109,12 +109,12 @@ public class ImposterProtoChunk extends ProtoChunk {
     }
 
     @Override
-    public int getHeight(final Heightmap.Types type, final int x, final int z) {
+    public long getHeight(final Heightmap.Types type, final long x, final long z) {
         return this.wrapped.getHeight(this.fixType(type), x, z);
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+    public Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ) {
         return this.wrapped.getNoiseBiome(quartX, quartY, quartZ);
     }
 

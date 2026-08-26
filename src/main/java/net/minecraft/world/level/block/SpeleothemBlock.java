@@ -213,7 +213,7 @@ public abstract class SpeleothemBlock extends Block implements SimpleWaterlogged
         while (isStalactite(fallState)) {
             FallingBlockEntity entity = FallingBlockEntity.fall(level, fallPos, fallState);
             if (isTip(fallState, true)) {
-                int size = Math.max(1 + pos.getY() - fallPos.getY(), 6);
+                long size = Math.max(1 + pos.getY() - fallPos.getY(), 6);
                 float damagePerFallDistance = 1.0F * size;
                 entity.setHurtsEntities(damagePerFallDistance, 40);
                 break;

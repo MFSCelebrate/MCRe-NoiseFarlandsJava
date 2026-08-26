@@ -8,8 +8,9 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.OptionalDynamic;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -208,13 +209,13 @@ public class SectionStorage<R, P> implements AutoCloseable {
 
     private void unpackChunk(final ChunkPos pos, final SectionStorage.@Nullable PackedChunk<P> packedChunk) {
         if (packedChunk == null) {
-            for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
+            for (long sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
                 this.storage.put(getKey(pos, sectionY), Optional.empty());
             }
         } else {
             boolean versionChanged = packedChunk.versionChanged();
 
-            for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
+            for (long sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
                 SectionPos key = getKey(pos, sectionY);
                 Optional<R> section = Optional.ofNullable(packedChunk.sectionsByY.get(sectionY))
                     .map(packed -> this.unpacker.apply((P)packed, () -> this.setDirty(key)));
@@ -246,12 +247,12 @@ public class SectionStorage<R, P> implements AutoCloseable {
     private <T> Dynamic<T> writeChunk(final ChunkPos chunkPos, final DynamicOps<T> ops) {
         Map<T, T> sections = Maps.newHashMap();
 
-        for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
+        for (long sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
             SectionPos key = getKey(chunkPos, sectionY);
             Optional<R> r = this.storage.get(key);
             if (r != null && !r.isEmpty()) {
                 DataResult<T> serializedSection = this.codec.encodeStart(ops, this.packer.apply(r.get()));
-                String yName = Integer.toString(sectionY);
+                String yName = String.valueOf(sectionY);
                 serializedSection.resultOrPartial(LOGGER::error).ifPresent(s -> sections.put(ops.createString(yName), (T)s));
             }
         }
@@ -296,7 +297,7 @@ public class SectionStorage<R, P> implements AutoCloseable {
         this.simpleRegionStorage.close();
     }
 
-    private record PackedChunk<T>(Int2ObjectMap<T> sectionsByY, boolean versionChanged) {
+    private record PackedChunk<T>(Long2ObjectMap<T> sectionsByY, boolean versionChanged) {
         public static <T> SectionStorage.PackedChunk<T> parse(
             final Codec<T> codec,
             final DynamicOps<Tag> ops,
@@ -308,10 +309,10 @@ public class SectionStorage<R, P> implements AutoCloseable {
             Dynamic<Tag> fixedTag = simpleRegionStorage.upgradeChunkTag(originalTag, 1945);
             boolean versionChanged = originalTag != fixedTag;
             OptionalDynamic<Tag> sections = fixedTag.get("Sections");
-            Int2ObjectMap<T> sectionsByY = new Int2ObjectOpenHashMap<>();
+            Long2ObjectMap<T> sectionsByY = new Long2ObjectOpenHashMap<>();
 
-            for (int sectionY = levelHeightAccessor.getMinSectionY(); sectionY <= levelHeightAccessor.getMaxSectionY(); sectionY++) {
-                Optional<T> section = sections.get(Integer.toString(sectionY))
+            for (long sectionY = levelHeightAccessor.getMinSectionY(); sectionY <= levelHeightAccessor.getMaxSectionY(); sectionY++) {
+                Optional<T> section = sections.get(String.valueOf(sectionY))
                     .result()
                     .flatMap(sectionData -> codec.parse((Dynamic<Tag>)sectionData).resultOrPartial(SectionStorage.LOGGER::error));
                 if (section.isPresent()) {

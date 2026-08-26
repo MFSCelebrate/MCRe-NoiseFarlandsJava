@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
 public interface CollisionGetter extends BlockGetter {
     WorldBorder getWorldBorder();
 
-    @Nullable BlockGetter getChunkForCollisions(int chunkX, int chunkZ);
+    @Nullable BlockGetter getChunkForCollisions(long chunkX, long chunkZ);
 
     default boolean isUnobstructed(final @Nullable Entity source, final VoxelShape shape) {
         return true;

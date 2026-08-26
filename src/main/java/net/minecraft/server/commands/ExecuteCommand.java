@@ -196,7 +196,8 @@ public class ExecuteCommand {
                             ServerLevel level = c.getSource().getLevel();
                             double x = position.x();
                             double z = position.z();
-                            if (!level.hasChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z))) {
+                            // MCRe NoiseFarlands: double 坐标用 posToSectionCoord
+                            if (!level.hasChunk(SectionPos.posToSectionCoord(x), SectionPos.posToSectionCoord(z))) {
                                 throw BlockPosArgument.ERROR_NOT_LOADED.create();
                             }
 

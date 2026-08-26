@@ -519,7 +519,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     @Override
-    public boolean hasChunk(final int chunkX, final int chunkZ) {
+    public boolean hasChunk(final long chunkX, final long chunkZ) {
         return true;
     }
 
@@ -558,7 +558,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
         this.minecraft.getPlayerSocialManager().getPresenceHandler().tryUpdatePresence();
     }
 
-    public void animateTick(final int xt, final int yt, final int zt) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public void animateTick(final long xt, final long yt, final long zt) {
         int r = 32;
         RandomSource animateRandom = RandomSource.createThreadLocalInstance();
         Block markerParticleTarget = this.getMarkerParticleTarget();
@@ -583,17 +584,19 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     public void doAnimateTick(
-        final int xt,
-        final int yt,
-        final int zt,
+        // MCRe NoiseFarlands: 世界坐标 Long 化
+        final long xt,
+        final long yt,
+        final long zt,
         final int r,
         final RandomSource animateRandom,
         final @Nullable Block markerParticleTarget,
         final BlockPos.MutableBlockPos pos
     ) {
-        int x = xt + this.random.nextInt(r) - this.random.nextInt(r);
-        int y = yt + this.random.nextInt(r) - this.random.nextInt(r);
-        int z = zt + this.random.nextInt(r) - this.random.nextInt(r);
+        // MCRe NoiseFarlands: 世界坐标 Long 化（随机偏移后仍为世界坐标）
+        long x = xt + this.random.nextInt(r) - this.random.nextInt(r);
+        long y = yt + this.random.nextInt(r) - this.random.nextInt(r);
+        long z = zt + this.random.nextInt(r) - this.random.nextInt(r);
         pos.set(x, y, z);
         BlockState state = this.getBlockState(pos);
         state.getBlock().animateTick(state, this, pos, animateRandom);
@@ -840,12 +843,13 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
         this.levelExtractor.setBlockDirty(pos, oldState, newState);
     }
 
-    public void setSectionDirtyWithNeighbors(final int chunkX, final int chunkY, final int chunkZ) {
+    public void setSectionDirtyWithNeighbors(final long chunkX, final long chunkY, final long chunkZ) {
         this.levelExtractor.setSectionDirtyWithNeighbors(chunkX, chunkY, chunkZ);
     }
 
+    // MCRe NoiseFarlands: section 世界坐标 Long 化
     public void setSectionRangeDirty(
-        final int minSectionX, final int minSectionY, final int minSectionZ, final int maxSectionX, final int maxSectionY, final int maxSectionZ
+        final long minSectionX, final long minSectionY, final long minSectionZ, final long maxSectionX, final long maxSectionY, final long maxSectionZ
     ) {
         this.levelExtractor.setSectionRangeDirty(minSectionX, minSectionY, minSectionZ, maxSectionX, maxSectionY, maxSectionZ);
     }
@@ -991,7 +995,7 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     }
 
     @Override
-    public Holder<Biome> getUncachedNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+    public Holder<Biome> getUncachedNoiseBiome(final long quartX, final long quartY, final long quartZ) {
         return this.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.PLAINS);
     }
 
@@ -1121,9 +1125,9 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
     public void addBreakingBlockEffect(final BlockPos pos, final Direction direction) {
         BlockState blockState = this.getBlockState(pos);
         if (blockState.getRenderShape() != RenderShape.INVISIBLE && blockState.shouldSpawnTerrainParticles()) {
-            int x = pos.getX();
-            int y = pos.getY();
-            int z = pos.getZ();
+            long x = pos.getX();
+            long y = pos.getY();
+            long z = pos.getZ();
             float r = 0.1F;
             AABB shape = blockState.getShape(this, pos).bounds();
             double xp = x + this.random.nextDouble() * (shape.maxX - shape.minX - 0.2F) + 0.1F + shape.minX;

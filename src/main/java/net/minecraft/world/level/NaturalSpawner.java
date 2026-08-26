@@ -175,15 +175,15 @@ public final class NaturalSpawner {
     ) {
         StructureManager structureManager = level.structureManager();
         ChunkGenerator generator = level.getChunkSource().getGenerator();
-        int yStart = start.getY();
+        long yStart = start.getY();
         BlockState state = chunk.getBlockState(start);
         if (!state.isRedstoneConductor(chunk, start)) {
             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
             int clusterSize = 0;
 
             for (int groupCount = 0; groupCount < 3; groupCount++) {
-                int x = start.getX();
-                int z = start.getZ();
+                long x = start.getX();
+                long z = start.getZ();
                 int ss = 6;
                 MobSpawnSettings.SpawnerData currentSpawnData = null;
                 SpawnGroupData groupData = null;
@@ -362,7 +362,8 @@ public final class NaturalSpawner {
         int x = (int)pos.getMinBlockX() + level.random.nextInt(16);
         int z = (int)pos.getMinBlockZ() + level.random.nextInt(16);
         long topEmptyY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1;
-        int y = Mth.randomBetweenInclusive(level.random, level.getMinY(), topEmptyY);
+        // MCRe NoiseFarlands: 高度域(int) 边界强转
+        int y = Mth.randomBetweenInclusive(level.random, level.getMinY(), (int) topEmptyY);
         return new BlockPos(x, y, z);
     }
 
@@ -460,7 +461,7 @@ public final class NaturalSpawner {
     }
 
     private static BlockPos getTopNonCollidingPos(final LevelReader level, final EntityType<?> type, final int x, final int z) {
-        int levelHeight = level.getHeight(SpawnPlacements.getHeightmapType(type), x, z);
+        long levelHeight = level.getHeight(SpawnPlacements.getHeightmapType(type), x, z);
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, levelHeight, z);
         if (level.dimensionType().hasCeiling()) {
             do {

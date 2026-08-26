@@ -54,7 +54,7 @@ public abstract class AbstractHugeMushroomFeature extends Feature<HugeMushroomFe
         final BlockPos.MutableBlockPos blockPos,
         final HugeMushroomFeatureConfiguration config
     ) {
-        int y = origin.getY();
+        long y = origin.getY();
         if (y >= level.getMinY() + 1 && y + treeHeight + 1 <= level.getMaxY()) {
             if (!config.canPlaceOn().test(level, origin.below())) {
                 return false;

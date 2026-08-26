@@ -56,7 +56,7 @@ public class MultiNoiseBiomeSource extends BiomeSource {
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ, final Climate.Sampler sampler) {
+    public Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ, final Climate.Sampler sampler) {
         return this.getNoiseBiome(sampler.sample(quartX, quartY, quartZ));
     }
 
@@ -67,9 +67,9 @@ public class MultiNoiseBiomeSource extends BiomeSource {
 
     @Override
     public void addDebugInfo(final List<String> result, final BlockPos feetPos, final Climate.Sampler sampler) {
-        int quartX = QuartPos.fromBlock(feetPos.getX());
-        int quartY = QuartPos.fromBlock(feetPos.getY());
-        int quartZ = QuartPos.fromBlock(feetPos.getZ());
+        long quartX = QuartPos.fromBlock(feetPos.getX());
+        long quartY = QuartPos.fromBlock(feetPos.getY());
+        long quartZ = QuartPos.fromBlock(feetPos.getZ());
         Climate.TargetPoint sampleQuantized = sampler.sample(quartX, quartY, quartZ);
         float continentalness = Climate.unquantizeCoord(sampleQuantized.continentalness());
         float erosion = Climate.unquantizeCoord(sampleQuantized.erosion());

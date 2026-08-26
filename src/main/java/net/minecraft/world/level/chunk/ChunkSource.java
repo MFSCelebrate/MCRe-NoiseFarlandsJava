@@ -10,11 +10,11 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
 import org.jspecify.annotations.Nullable;
 
 public abstract class ChunkSource implements AutoCloseable, LightChunkGetter {
-    public @Nullable LevelChunk getChunk(final int x, final int z, final boolean loadOrGenerate) {
+    public @Nullable LevelChunk getChunk(final long x, final long z, final boolean loadOrGenerate) {
         return (LevelChunk)this.getChunk(x, z, ChunkStatus.FULL, loadOrGenerate);
     }
 
-    public @Nullable LevelChunk getChunkNow(final int x, final int z) {
+    public @Nullable LevelChunk getChunkNow(final long x, final long z) {
         return this.getChunk(x, z, false);
     }
 
@@ -24,11 +24,11 @@ public abstract class ChunkSource implements AutoCloseable, LightChunkGetter {
         return this.getChunk((int) x, (int) z, ChunkStatus.EMPTY, false);
     }
 
-    public boolean hasChunk(final int x, final int z) {
+    public boolean hasChunk(final long x, final long z) {
         return this.getChunk(x, z, ChunkStatus.FULL, false) != null;
     }
 
-    public abstract @Nullable ChunkAccess getChunk(int x, int z, ChunkStatus targetStatus, boolean loadOrGenerate);
+    public abstract @Nullable ChunkAccess getChunk(long x, long z, ChunkStatus targetStatus, boolean loadOrGenerate);
 
     public abstract void tick(BooleanSupplier haveTime, final boolean tickChunks);
 

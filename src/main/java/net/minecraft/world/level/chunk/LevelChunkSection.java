@@ -190,12 +190,13 @@ public class LevelChunkSection {
         return this.states.maybeHas(predicate);
     }
 
-    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
-        return this.biomes.get(quartX, quartY, quartZ);
+    public Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ) {
+        // MCRe NoiseFarlands: 0-3 quart 局部坐标，PalettedContainer int 域边界
+        return this.biomes.get((int) (quartX & 3), (int) (quartY & 3), (int) (quartZ & 3));
     }
 
     public void fillBiomesFromNoise(
-        final BiomeResolver biomeResolver, final Climate.Sampler sampler, final int quartMinX, final int quartMinY, final int quartMinZ
+        final BiomeResolver biomeResolver, final Climate.Sampler sampler, final long quartMinX, final long quartMinY, final long quartMinZ
     ) {
         PalettedContainer<Holder<Biome>> newBiomes = this.biomes.recreate();
         int size = 4;

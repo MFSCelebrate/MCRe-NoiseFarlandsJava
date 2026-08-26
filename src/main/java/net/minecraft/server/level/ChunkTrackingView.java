@@ -7,7 +7,8 @@ import net.minecraft.world.level.ChunkPos;
 public interface ChunkTrackingView {
     ChunkTrackingView EMPTY = new ChunkTrackingView() {
         @Override
-        public boolean contains(final int chunkX, final int chunkZ, final boolean includeNeighbors) {
+        // MCRe NoiseFarlands: chunk 坐标 Long 化
+        public boolean contains(final long chunkX, final long chunkZ, final boolean includeNeighbors) {
             return false;
         }
 
@@ -52,24 +53,28 @@ public interface ChunkTrackingView {
         return this.contains((int)pos.x(), (int)pos.z());
     }
 
-    default boolean contains(final int x, final int z) {
+    // MCRe NoiseFarlands
+    default boolean contains(final long x, final long z) {
         return this.contains(x, z, true);
     }
 
-    boolean contains(int chunkX, int chunkZ, boolean includeNeighbors);
+    boolean contains(long chunkX, long chunkZ, boolean includeNeighbors);
 
     void forEach(Consumer<ChunkPos> consumer);
 
-    default boolean isInViewDistance(final int chunkX, final int chunkZ) {
+    // MCRe NoiseFarlands: chunk 坐标 Long 化
+    default boolean isInViewDistance(final long chunkX, final long chunkZ) {
         return this.contains(chunkX, chunkZ, false);
     }
 
-    static boolean isInViewDistance(final int centerX, final int centerZ, final int viewDistance, final int chunkX, final int chunkZ) {
+    // MCRe NoiseFarlands: chunk 坐标 Long 化
+    static boolean isInViewDistance(final long centerX, final long centerZ, final int viewDistance, final long chunkX, final long chunkZ) {
         return isWithinDistance(centerX, centerZ, viewDistance, chunkX, chunkZ, false);
     }
 
+    // MCRe NoiseFarlands: chunk 坐标 Long 化
     static boolean isWithinDistance(
-        final int centerX, final int centerZ, final int viewDistance, final int chunkX, final int chunkZ, final boolean includeNeighbors
+        final long centerX, final long centerZ, final int viewDistance, final long chunkX, final long chunkZ, final boolean includeNeighbors
     ) {
         int bufferRange = includeNeighbors ? 2 : 1;
         long deltaX = Math.max(0, Math.abs(chunkX - centerX) - bufferRange);
@@ -102,7 +107,8 @@ public interface ChunkTrackingView {
         }
 
         @Override
-        public boolean contains(final int chunkX, final int chunkZ, final boolean includeNeighbors) {
+        // MCRe NoiseFarlands: chunk 坐标 Long 化
+        public boolean contains(final long chunkX, final long chunkZ, final boolean includeNeighbors) {
             return ChunkTrackingView.isWithinDistance((int)this.center.x(), (int)this.center.z(), this.viewDistance, chunkX, chunkZ, includeNeighbors);
         }
 

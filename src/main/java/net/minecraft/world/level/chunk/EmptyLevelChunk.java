@@ -65,7 +65,7 @@ public class EmptyLevelChunk extends LevelChunk {
     }
 
     @Override
-    public boolean isYSpaceEmpty(final int yStartInclusive, final int yEndInclusive) {
+    public boolean isYSpaceEmpty(final long yStartInclusive, final long yEndInclusive) {
         return true;
     }
 
@@ -75,7 +75,7 @@ public class EmptyLevelChunk extends LevelChunk {
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+    public Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ) {
         return this.biome;
     }
 }

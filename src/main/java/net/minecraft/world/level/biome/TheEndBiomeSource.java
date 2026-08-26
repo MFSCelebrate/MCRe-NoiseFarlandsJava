@@ -58,17 +58,17 @@ public class TheEndBiomeSource extends BiomeSource {
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ, final Climate.Sampler sampler) {
-        int blockX = QuartPos.toBlock(quartX);
-        int blockY = QuartPos.toBlock(quartY);
-        int blockZ = QuartPos.toBlock(quartZ);
-        int chunkX = SectionPos.blockToSectionCoord(blockX);
-        int chunkZ = SectionPos.blockToSectionCoord(blockZ);
+    public Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ, final Climate.Sampler sampler) {
+        long blockX = QuartPos.toBlock(quartX);
+        long blockY = QuartPos.toBlock(quartY);
+        long blockZ = QuartPos.toBlock(quartZ);
+        long chunkX = SectionPos.blockToSectionCoord(blockX);
+        long chunkZ = SectionPos.blockToSectionCoord(blockZ);
         if ((long)chunkX * chunkX + (long)chunkZ * chunkZ <= 4096L) {
             return this.end;
         } else {
-            int weirdBlockX = (SectionPos.blockToSectionCoord(blockX) * 2 + 1) * 8;
-            int weirdBlockZ = (SectionPos.blockToSectionCoord(blockZ) * 2 + 1) * 8;
+            long weirdBlockX = (SectionPos.blockToSectionCoord(blockX) * 2 + 1) * 8;
+            long weirdBlockZ = (SectionPos.blockToSectionCoord(blockZ) * 2 + 1) * 8;
             double heightValue = sampler.erosion().compute(new DensityFunction.SinglePointContext(weirdBlockX, blockY, weirdBlockZ));
             if (heightValue > 0.25) {
                 return this.highlands;

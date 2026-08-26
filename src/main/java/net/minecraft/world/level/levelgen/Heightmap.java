@@ -45,7 +45,8 @@ public class Heightmap {
             int size = types.size();
             ObjectList<Heightmap> heightmaps = new ObjectArrayList<>(size);
             ObjectListIterator<Heightmap> iterator = heightmaps.iterator();
-            int highestSectionPosition = chunk.getHighestSectionPosition() + 16;
+            // MCRe NoiseFarlands: 世界 Y Long 化
+            long highestSectionPosition = chunk.getHighestSectionPosition() + 16;
             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
             for (int x = 0; x < 16; x++) {
@@ -54,7 +55,7 @@ public class Heightmap {
                         heightmaps.add(chunk.getOrCreateHeightmapUnprimed(type));
                     }
 
-                    for (int y = highestSectionPosition - 1; y >= chunk.getMinY(); y--) {
+                    for (long y = highestSectionPosition - 1; y >= chunk.getMinY(); y--) {
                         pos.set(x, y, z);
                         BlockState state = chunk.getBlockState(pos);
                         if (!state.is(Blocks.AIR)) {

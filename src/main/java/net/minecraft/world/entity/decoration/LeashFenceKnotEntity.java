@@ -129,9 +129,9 @@ public class LeashFenceKnotEntity extends BlockAttachedEntity {
     }
 
     public static Optional<LeashFenceKnotEntity> getKnot(final Level level, final BlockPos pos) {
-        int x = pos.getX();
-        int y = pos.getY();
-        int z = pos.getZ();
+        long x = pos.getX();
+        long y = pos.getY();
+        long z = pos.getZ();
 
         for (LeashFenceKnotEntity knot : level.getEntitiesOfClass(LeashFenceKnotEntity.class, new AABB(x - 1.0, y - 1.0, z - 1.0, x + 1.0, y + 1.0, z + 1.0))) {
             if (knot.getPos().equals(pos)) {

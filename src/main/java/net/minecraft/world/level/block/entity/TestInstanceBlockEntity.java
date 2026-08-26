@@ -209,8 +209,8 @@ public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxR
         Vec3i size = this.getSize();
         Rotation rotation = this.getRotation();
         boolean axesSwitched = rotation == Rotation.CLOCKWISE_90 || rotation == Rotation.COUNTERCLOCKWISE_90;
-        int xSize = axesSwitched ? size.getZ() : size.getX();
-        int zSize = axesSwitched ? size.getX() : size.getZ();
+        long xSize = axesSwitched ? size.getZ() : size.getX();
+        long zSize = axesSwitched ? size.getX() : size.getZ();
         return new Vec3i(xSize, size.getY(), zSize);
     }
 

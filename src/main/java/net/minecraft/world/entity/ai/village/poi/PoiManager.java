@@ -15,6 +15,7 @@ import java.util.function.BiPredicate;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -107,9 +108,9 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
 
     @VisibleForDebug
     public Stream<PoiRecord> getInChunk(final Predicate<Holder<PoiType>> predicate, final ChunkPos chunkPos, final PoiManager.Occupancy occupancy) {
-        return IntStream.rangeClosed(this.levelHeightAccessor.getMinSectionY(), this.levelHeightAccessor.getMaxSectionY())
-            .boxed()
-            .map(sectionY -> this.getOrLoad(SectionPos.of(chunkPos, sectionY)))
+        // MCRe NoiseFarlands: section Y Long 化，LongStream
+        return LongStream.rangeClosed(this.levelHeightAccessor.getMinSectionY(), this.levelHeightAccessor.getMaxSectionY())
+            .mapToObj(sectionY -> this.getOrLoad(SectionPos.of(chunkPos, sectionY)))
             .filter(Optional::isPresent)
             .flatMap(poiSection -> poiSection.get().getRecords(predicate, occupancy));
     }
@@ -274,8 +275,9 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> {
         pos.blocksInside()
             .forEach(
                 blockPos -> {
+                    // MCRe NoiseFarlands: 0-15 局部坐标，LevelChunkSection int 域边界
                     BlockState state = blockSection.getBlockState(
-                        SectionPos.sectionRelative(blockPos.getX()), SectionPos.sectionRelative(blockPos.getY()), SectionPos.sectionRelative(blockPos.getZ())
+                        (int) SectionPos.sectionRelative(blockPos.getX()), (int) SectionPos.sectionRelative(blockPos.getY()), (int) SectionPos.sectionRelative(blockPos.getZ())
                     );
                     PoiTypes.forState(state).ifPresent(type -> output.accept(blockPos, (Holder<PoiType>)type));
                 }

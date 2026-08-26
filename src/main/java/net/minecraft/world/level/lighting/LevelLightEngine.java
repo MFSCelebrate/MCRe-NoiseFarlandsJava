@@ -154,15 +154,17 @@ public class LevelLightEngine implements LightEventListener {
             || this.blockEngine.storage.lightOnInColumn(sectionZeroNode) && (this.skyEngine == null || this.skyEngine.storage.lightOnInColumn(sectionZeroNode));
     }
 
+    // MCRe NoiseFarlands: 数量为高度域 int
     public int getLightSectionCount() {
         return this.levelHeightAccessor.getSectionsCount() + 2;
     }
 
-    public int getMinLightSection() {
+    // MCRe NoiseFarlands: section Y Long 化
+    public long getMinLightSection() {
         return this.levelHeightAccessor.getMinSectionY() - 1;
     }
 
-    public int getMaxLightSection() {
+    public long getMaxLightSection() {
         return this.getMinLightSection() + this.getLightSectionCount();
     }
 }

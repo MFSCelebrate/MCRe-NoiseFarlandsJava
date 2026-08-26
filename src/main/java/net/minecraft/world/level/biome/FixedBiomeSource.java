@@ -32,20 +32,21 @@ public class FixedBiomeSource extends BiomeSource implements BiomeManager.NoiseB
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ, final Climate.Sampler sampler) {
+    public Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ, final Climate.Sampler sampler) {
         return this.biome;
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+    public Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ) {
         return this.biome;
     }
 
     @Override
+    // MCRe NoiseFarlands: 世界坐标 Long 化
     public @Nullable Pair<BlockPos, Holder<Biome>> findBiomeHorizontal(
-        final int originX,
-        final int originY,
-        final int originZ,
+        final long originX,
+        final long originY,
+        final long originZ,
         final int r,
         final int skipStep,
         final Predicate<Holder<Biome>> allowed,
@@ -76,7 +77,7 @@ public class FixedBiomeSource extends BiomeSource implements BiomeManager.NoiseB
     }
 
     @Override
-    public Set<Holder<Biome>> getBiomesWithin(final int x, final int y, final int z, final int r, final Climate.Sampler sampler) {
+    public Set<Holder<Biome>> getBiomesWithin(final long x, final long y, final long z, final int r, final Climate.Sampler sampler) {
         return Sets.newHashSet(Set.of(this.biome));
     }
 }

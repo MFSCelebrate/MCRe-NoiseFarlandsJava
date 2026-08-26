@@ -78,7 +78,7 @@ public class FillBiomeCommand {
         );
     }
 
-    private static int quantize(final int blockCoord) {
+    private static long quantize(final long blockCoord) {
         return QuartPos.toBlock(QuartPos.fromBlock(blockCoord));
     }
 
@@ -90,11 +90,12 @@ public class FillBiomeCommand {
         final MutableInt count, final ChunkAccess chunk, final BoundingBox region, final Holder<Biome> toFill, final Predicate<Holder<Biome>> filter
     ) {
         return (quartX, quartY, quartZ, sampler) -> {
-            int blockX = QuartPos.toBlock(quartX);
-            int blockY = QuartPos.toBlock(quartY);
-            int blockZ = QuartPos.toBlock(quartZ);
+            long blockX = QuartPos.toBlock(quartX);
+            long blockY = QuartPos.toBlock(quartY);
+            long blockZ = QuartPos.toBlock(quartZ);
             Holder<Biome> currentBiome = chunk.getNoiseBiome(quartX, quartY, quartZ);
-            if (region.isInside(blockX, blockY, blockZ) && filter.test(currentBiome)) {
+            // MCRe NoiseFarlands: Decision 5 BoundingBox int 域边界
+            if (region.isInside((int) blockX, (int) blockY, (int) blockZ) && filter.test(currentBiome)) {
                 count.increment();
                 return toFill;
             } else {
@@ -126,8 +127,8 @@ public class FillBiomeCommand {
 
         List<ChunkAccess> chunks = new ArrayList<>();
 
-        for (int chunkZ = SectionPos.blockToSectionCoord(region.minZ()); chunkZ <= SectionPos.blockToSectionCoord(region.maxZ()); chunkZ++) {
-            for (int chunkX = SectionPos.blockToSectionCoord(region.minX()); chunkX <= SectionPos.blockToSectionCoord(region.maxX()); chunkX++) {
+        for (long chunkZ = SectionPos.blockToSectionCoord(region.minZ()); chunkZ <= SectionPos.blockToSectionCoord(region.maxZ()); chunkZ++) {
+            for (long chunkX = SectionPos.blockToSectionCoord(region.minX()); chunkX <= SectionPos.blockToSectionCoord(region.maxX()); chunkX++) {
                 ChunkAccess chunk = level.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
                 if (chunk == null) {
                     return Either.right(ERROR_NOT_LOADED.create());

@@ -54,7 +54,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
     @Override
     public Node getStart() {
         BlockPos.MutableBlockPos reusablePos = new BlockPos.MutableBlockPos();
-        int startY = this.mob.getBlockY();
+        long startY = this.mob.getBlockY();
         BlockState blockState = this.currentContext.getBlockState(reusablePos.set(this.mob.getX(), startY, this.mob.getZ()));
         if (!this.mob.canStandOnFluid(blockState.getFluidState())) {
             if (this.canFloat() && this.mob.isInWater()) {
@@ -229,9 +229,9 @@ public class WalkNodeEvaluator extends NodeEvaluator {
     }
 
     protected @Nullable Node findAcceptedNode(
-        final int x,
-        final int y,
-        final int z,
+        final long x,
+        final long y,
+        final long z,
         final int jumpSize,
         final double nodeHeight,
         final Direction travelDirection,
@@ -280,21 +280,21 @@ public class WalkNodeEvaluator extends NodeEvaluator {
         return Math.max(1.125, this.mob.maxUpStep());
     }
 
-    private Node getNodeAndUpdateCostToMax(final int x, final int y, final int z, final PathType pathType, final float cost) {
+    private Node getNodeAndUpdateCostToMax(final long x, final long y, final long z, final PathType pathType, final float cost) {
         Node node = this.getNode(x, y, z);
         node.type = pathType;
         node.costMalus = Math.max(node.costMalus, cost);
         return node;
     }
 
-    private Node getBlockedNode(final int x, final int y, final int z) {
+    private Node getBlockedNode(final long x, final long y, final long z) {
         Node node = this.getNode(x, y, z);
         node.type = PathType.BLOCKED;
         node.costMalus = -1.0F;
         return node;
     }
 
-    private Node getClosedNode(final int x, final int y, final int z, final PathType pathType) {
+    private Node getClosedNode(final long x, final long y, final long z, final PathType pathType) {
         Node node = this.getNode(x, y, z);
         node.closed = true;
         node.type = pathType;
@@ -303,9 +303,9 @@ public class WalkNodeEvaluator extends NodeEvaluator {
     }
 
     private @Nullable Node tryJumpOn(
-        final int x,
-        final int y,
-        final int z,
+        final long x,
+        final long y,
+        final long z,
         final int jumpSize,
         final double nodeHeight,
         final Direction travelDirection,
@@ -339,7 +339,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
         return this.hasCollisions(grow) ? null : nodeAbove;
     }
 
-    private @Nullable Node tryFindFirstNonWaterBelow(final int x, int y, final int z, @Nullable Node best) {
+    private @Nullable Node tryFindFirstNonWaterBelow(final long x, long y, final long z, @Nullable Node best) {
         y--;
 
         while (y > this.mob.level().getMinY()) {
@@ -355,8 +355,8 @@ public class WalkNodeEvaluator extends NodeEvaluator {
         return best;
     }
 
-    private Node tryFindFirstGroundNodeBelow(final int x, final int y, final int z) {
-        for (int currentY = y - 1; currentY >= this.mob.level().getMinY(); currentY--) {
+    private Node tryFindFirstGroundNodeBelow(final long x, final long y, final long z) {
+        for (long currentY = y - 1; currentY >= this.mob.level().getMinY(); currentY--) {
             if (y - currentY > this.mob.getMaxFallDistance()) {
                 return this.getBlockedNode(x, currentY, z);
             }
@@ -379,12 +379,12 @@ public class WalkNodeEvaluator extends NodeEvaluator {
         return this.collisionCache.computeIfAbsent(aabb, bb -> !this.currentContext.level().noCollision(this.mob, aabb));
     }
 
-    protected PathType getCachedPathType(final int x, final int y, final int z) {
+    protected PathType getCachedPathType(final long x, final long y, final long z) {
         return this.pathTypesByPosCacheByMob.computeIfAbsent(new BlockPos(x, y, z), k -> this.getPathTypeOfMob(this.currentContext, x, y, z, this.mob));
     }
 
     @Override
-    public PathType getPathTypeOfMob(final PathfindingContext context, final int x, final int y, final int z, final Mob mob) {
+    public PathType getPathTypeOfMob(final PathfindingContext context, final long x, final long y, final long z, final Mob mob) {
         Set<PathType> blockTypes = this.getPathTypeWithinMobBB(context, x, y, z);
         if (blockTypes.size() == 1) {
             return blockTypes.iterator().next();
@@ -426,15 +426,17 @@ public class WalkNodeEvaluator extends NodeEvaluator {
         }
     }
 
-    public Set<PathType> getPathTypeWithinMobBB(final PathfindingContext context, final int x, final int y, final int z) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public Set<PathType> getPathTypeWithinMobBB(final PathfindingContext context, final long x, final long y, final long z) {
         EnumSet<PathType> blockTypes = EnumSet.noneOf(PathType.class);
 
         for (int dx = 0; dx < this.entityWidth; dx++) {
             for (int dy = 0; dy < this.entityHeight; dy++) {
                 for (int dz = 0; dz < this.entityDepth; dz++) {
-                    int xx = dx + x;
-                    int yy = dy + y;
-                    int zz = dz + z;
+                    // MCRe NoiseFarlands: 世界坐标 Long 化
+                    long xx = dx + x;
+                    long yy = dy + y;
+                    long zz = dz + z;
                     PathType blockType = this.getPathType(context, xx, yy, zz);
                     BlockPos mobPosition = this.mob.blockPosition();
                     boolean canPassDoors = this.canPassDoors();
@@ -461,7 +463,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
     }
 
     @Override
-    public PathType getPathType(final PathfindingContext context, final int x, final int y, final int z) {
+    public PathType getPathType(final PathfindingContext context, final long x, final long y, final long z) {
         return getPathTypeStatic(context, new BlockPos.MutableBlockPos(x, y, z));
     }
 
@@ -470,9 +472,9 @@ public class WalkNodeEvaluator extends NodeEvaluator {
     }
 
     public static PathType getPathTypeStatic(final PathfindingContext context, final BlockPos.MutableBlockPos pos) {
-        int x = pos.getX();
-        int y = pos.getY();
-        int z = pos.getZ();
+        long x = pos.getX();
+        long y = pos.getY();
+        long z = pos.getZ();
         PathType blockPathType = context.getPathTypeFromState(x, y, z);
         if (blockPathType == PathType.OPEN && y >= context.level().getMinY() + 1) {
             return switch (context.getPathTypeFromState(x, y - 1, z)) {
@@ -490,7 +492,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
         }
     }
 
-    public static PathType checkNeighbourBlocks(final PathfindingContext context, final int x, final int y, final int z, final PathType blockPathType) {
+    public static PathType checkNeighbourBlocks(final PathfindingContext context, final long x, final long y, final long z, final PathType blockPathType) {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {

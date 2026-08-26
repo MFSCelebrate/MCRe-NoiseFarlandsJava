@@ -528,9 +528,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
         }
 
         BlockPos spawnPos = respawnData.pos();
-        int xd = Mth.abs(pos.getX() - spawnPos.getX());
-        int zd = Mth.abs(pos.getZ() - spawnPos.getZ());
-        int dist = Math.max(xd, zd);
+        // MCRe NoiseFarlands: 相对距离 int 域边界
+        long xd = Mth.abs(pos.getX() - spawnPos.getX());
+        long zd = Mth.abs(pos.getZ() - spawnPos.getZ());
+        int dist = (int) Math.max(xd, zd);
         return dist <= this.spawnProtectionRadius();
     }
 

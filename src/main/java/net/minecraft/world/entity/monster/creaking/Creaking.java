@@ -597,7 +597,7 @@ public class Creaking extends Monster {
         private static final int MAX_DISTANCE_TO_HOME_SQ = 1024;
 
         @Override
-        public PathType getPathType(final PathfindingContext context, final int x, final int y, final int z) {
+        public PathType getPathType(final PathfindingContext context, final long x, final long y, final long z) {
             BlockPos homePos = Creaking.this.getHomePos();
             if (homePos == null) {
                 return super.getPathType(context, x, y, z);

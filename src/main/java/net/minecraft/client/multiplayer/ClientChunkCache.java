@@ -71,7 +71,7 @@ public class ClientChunkCache extends ChunkSource {
         }
     }
 
-    public @Nullable LevelChunk getChunk(final int x, final int z, final ChunkStatus targetStatus, final boolean loadOrGenerate) {
+    public @Nullable LevelChunk getChunk(final long x, final long z, final ChunkStatus targetStatus, final boolean loadOrGenerate) {
         if (this.storage.inRange(x, z)) {
             LevelChunk chunk = this.storage.getChunk(this.storage.getIndex(x, z));
             if (isValidChunk(chunk, x, z)) {
@@ -102,8 +102,9 @@ public class ClientChunkCache extends ChunkSource {
     }
 
     public @Nullable LevelChunk replaceWithPacketData(
-        final int chunkX,
-        final int chunkZ,
+        // MCRe NoiseFarlands: chunk 坐标 Long 化
+        final long chunkX,
+        final long chunkZ,
         final FriendlyByteBuf readBuffer,
         final Map<Heightmap.Types, long[]> heightmaps,
         final Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> blockEntities
@@ -326,8 +327,8 @@ public class ClientChunkCache extends ChunkSource {
             try (FileOutputStream stream = new FileOutputStream(file)) {
                 int chunkRadius = ClientChunkCache.this.storage.chunkRadius;
 
-                for (int z = this.viewCenterZ - chunkRadius; z <= this.viewCenterZ + chunkRadius; z++) {
-                    for (int x = this.viewCenterX - chunkRadius; x <= this.viewCenterX + chunkRadius; x++) {
+                for (long z = this.viewCenterZ - chunkRadius; z <= this.viewCenterZ + chunkRadius; z++) {
+                    for (long x = this.viewCenterX - chunkRadius; x <= this.viewCenterX + chunkRadius; x++) {
                         LevelChunk chunk = ClientChunkCache.this.storage.chunks.get(ClientChunkCache.this.storage.getIndex(x, z));
                         if (chunk != null) {
                             ChunkPos pos = chunk.getPos();

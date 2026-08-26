@@ -37,9 +37,11 @@ public class ShipwreckStructure extends Structure {
         );
         if (piece.isTooBigToFitInWorldGenRegion()) {
             BoundingBox bb = piece.getBoundingBox();
-            int height;
+            // MCRe NoiseFarlands: 世界 Y Long 化
+            long height;
             if (this.isBeached) {
-                int minY = Structure.getLowestY(context, bb.minX(), bb.getXSpan(), bb.minZ(), bb.getZSpan());
+                // MCRe NoiseFarlands: 世界 Y Long 化
+                long minY = Structure.getLowestY(context, bb.minX(), bb.getXSpan(), bb.minZ(), bb.getZSpan());
                 height = piece.calculateBeachedPosition(minY, context.random());
             } else {
                 height = Structure.getMeanFirstOccupiedHeight(context, bb.minX(), bb.getXSpan(), bb.minZ(), bb.getZSpan());

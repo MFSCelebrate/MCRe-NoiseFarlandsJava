@@ -120,8 +120,9 @@ public abstract class StructurePlacement {
     }
 
     private static boolean legacyPillagerOutpostReducer(final long seed, final int salt, final long sourceX, final long sourceZ, final float probability) {
-        int cx = sourceX >> 4;
-        int cz = sourceZ >> 4;
+// MCRe NoiseFarlands: cell 坐标 Long 化
+        long cx = sourceX >> 4;
+        long cz = sourceZ >> 4;
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
         random.setSeed(cx ^ cz << 4 ^ seed);
         random.nextInt();

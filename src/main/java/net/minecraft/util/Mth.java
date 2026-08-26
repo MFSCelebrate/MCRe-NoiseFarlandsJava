@@ -79,6 +79,10 @@ public class Mth {
         return Math.abs(v);
     }
 
+    public static long abs(final long v) {
+        return Math.abs(v);
+    }
+
     public static int ceil(final float v) {
         return (int)Math.ceil(v);
     }
@@ -329,7 +333,8 @@ public class Mth {
     }
 
     @Deprecated
-    public static long getSeed(final int x, final int y, final int z) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public static long getSeed(final long x, final long y, final long z) {
         long seed = x * 3129871 ^ z * 116129781L ^ y;
         seed = seed * seed * 42317861L + seed * 11L;
         return seed >> 16;

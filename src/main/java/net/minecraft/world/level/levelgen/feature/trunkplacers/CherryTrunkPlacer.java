@@ -171,7 +171,7 @@ public class CherryTrunkPlacer extends TrunkPlacer {
         Direction verticalDirection = branchEndPos.getY() > logPos.getY() ? Direction.UP : Direction.DOWN;
 
         while (true) {
-            int distance = logPos.distManhattan(branchEndPos);
+            long distance = logPos.distManhattan(branchEndPos);
             if (distance == 0) {
                 return new FoliagePlacer.FoliageAttachment(branchEndPos.above(), 0, false);
             }

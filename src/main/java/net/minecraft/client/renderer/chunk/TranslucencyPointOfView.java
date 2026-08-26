@@ -18,14 +18,16 @@ public final class TranslucencyPointOfView {
     }
 
     public TranslucencyPointOfView set(final Vec3 cameraPos, final SectionPos sectionPos) {
+        // MCRe NoiseFarlands: section 世界坐标 Long 化
         this.x = getCoordinate(cameraPos.x(), sectionPos.x());
         this.y = getCoordinate(cameraPos.y(), sectionPos.y());
         this.z = getCoordinate(cameraPos.z(), sectionPos.z());
         return this;
     }
 
-    private static int getCoordinate(final double cameraCoordinate, final int section) {
-        int relativeSection = (int)(Mth.lfloor(cameraCoordinate) >> 4) - section;
+    // MCRe NoiseFarlands: 相对 section 偏移 -1~1，int 域边界
+    private static int getCoordinate(final double cameraCoordinate, final long section) {
+        int relativeSection = (int) ((Mth.lfloor(cameraCoordinate) >> 4) - section);
         return Mth.clamp(relativeSection, -1, 1);
     }
 

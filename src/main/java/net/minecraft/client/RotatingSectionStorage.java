@@ -15,17 +15,20 @@ import org.jspecify.annotations.Nullable;
 public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> implements Iterable<T> {
     private final RotatingSectionStorage.Node<T>[] nodes;
     private final int radius;
-    private final int minY;
-    private final int maxY;
+    // MCRe NoiseFarlands: section Y 坐标 Long 化
+    private final long minY;
+    private final long maxY;
     private final int sectionGridSizeY;
     private final int sectionGridSizeXZ;
     private SectionPos centerSectionPos = SectionPos.of(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
 
-    public RotatingSectionStorage(final int radius, final int minY, final int maxY, final RotatingSectionStorage.ValueCreator<T> valueCreator) {
+    // MCRe NoiseFarlands: section Y 坐标 Long 化
+    public RotatingSectionStorage(final int radius, final long minY, final long maxY, final RotatingSectionStorage.ValueCreator<T> valueCreator) {
         this.radius = radius;
         this.minY = minY;
         this.maxY = maxY;
-        this.sectionGridSizeY = maxY - minY + 1;
+        // MCRe NoiseFarlands: 网格尺寸 int 域边界
+        this.sectionGridSizeY = (int) (maxY - minY + 1);
         this.sectionGridSizeXZ = radius * 2 + 1;
         int totalSections = this.sectionGridSizeXZ * this.sectionGridSizeXZ * this.sectionGridSizeY;
         this.nodes = new RotatingSectionStorage.Node[totalSections];
@@ -46,17 +49,19 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
             return false;
         }
 
-        int lowestX = newCenterSectionPos.x() - this.radius;
-        int lowestZ = newCenterSectionPos.z() - this.radius;
+        long lowestX = newCenterSectionPos.x() - this.radius;
+        long lowestZ = newCenterSectionPos.z() - this.radius;
 
         for (int gridX = 0; gridX < this.sectionGridSizeXZ; gridX++) {
-            int newSectionX = lowestX + Math.floorMod(gridX - lowestX, this.sectionGridSizeXZ);
+            // MCRe NoiseFarlands: section 坐标 Long 化
+        long newSectionX = lowestX + Math.floorMod(gridX - lowestX, this.sectionGridSizeXZ);
 
             for (int gridZ = 0; gridZ < this.sectionGridSizeXZ; gridZ++) {
-                int newSectionZ = lowestZ + Math.floorMod(gridZ - lowestZ, this.sectionGridSizeXZ);
+                long newSectionZ = lowestZ + Math.floorMod(gridZ - lowestZ, this.sectionGridSizeXZ);
 
                 for (int gridY = 0; gridY < this.sectionGridSizeY; gridY++) {
-                    int newSectionY = this.minY + gridY;
+                    // MCRe NoiseFarlands: section Y Long 化
+                    long newSectionY = this.minY + gridY;
                     T value = this.nodes[this.getSectionIndex(gridX, gridY, gridZ)].value;
                     SectionPos sectionNode = value.getSectionNode();
                     if (!sectionNode.equals(SectionPos.of(newSectionX, newSectionY, newSectionZ))) {
@@ -74,11 +79,12 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
         return this.radius;
     }
 
-    public int minY() {
+    // MCRe NoiseFarlands: section Y Long 化
+    public long minY() {
         return this.minY;
     }
 
-    public int maxY() {
+    public long maxY() {
         return this.maxY;
     }
 
@@ -95,24 +101,28 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
     }
 
     public @Nullable T getValue(final SectionPos sectionNode) {
-        int sectionX = sectionNode.x();
-        int sectionY = sectionNode.y();
-        int sectionZ = sectionNode.z();
+        long sectionX = sectionNode.x();
+        long sectionY = sectionNode.y();
+        long sectionZ = sectionNode.z();
         return this.getValue(sectionX, sectionY, sectionZ);
     }
 
-    public @Nullable T getValue(final int sectionX, final int sectionY, final int sectionZ) {
+    // MCRe NoiseFarlands: section 坐标 Long 化
+    public @Nullable T getValue(final long sectionX, final long sectionY, final long sectionZ) {
         if (!this.containsSection(sectionX, sectionY, sectionZ)) {
             return null;
         }
 
-        int y = sectionY - this.minY;
-        int x = Math.floorMod(sectionX, this.sectionGridSizeXZ);
+        // MCRe NoiseFarlands: 相对域 int 边界
+        int y = (int) (sectionY - this.minY);
+        // MCRe NoiseFarlands: 相对索引 int 边界
+        int x = (int) Math.floorMod(sectionX, this.sectionGridSizeXZ);
         int z = Math.floorMod(sectionZ, this.sectionGridSizeXZ);
         return this.nodes[this.getSectionIndex(x, y, z)].value;
     }
 
-    private boolean containsSection(final int sectionX, final int sectionY, final int sectionZ) {
+    // MCRe NoiseFarlands: section 坐标 Long 化
+    private boolean containsSection(final long sectionX, final long sectionY, final long sectionZ) {
         if (sectionY >= this.minY && sectionY <= this.maxY) {
             return sectionX < this.centerSectionPos.x() - this.radius || sectionX > this.centerSectionPos.x() + this.radius
                 ? false

@@ -501,7 +501,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             ChunkPos spawnChunk = ChunkPos.containing(chunkSource.randomState().sampler().findSpawnPosition());
             levelLoadListener.start(LevelLoadListener.Stage.PREPARE_GLOBAL_SPAWN, 0);
             levelLoadListener.updateFocus(level.dimension(), spawnChunk);
-            int height = chunkSource.getGenerator().getSpawnHeight(level);
+            // MCRe NoiseFarlands: 世界 Y Long 化
+            long height = chunkSource.getGenerator().getSpawnHeight(level);
             if (height < level.getMinY()) {
                 BlockPos worldPosition = spawnChunk.getWorldPosition();
                 height = level.getHeight(Heightmap.Types.WORLD_SURFACE, worldPosition.getX() + 8, worldPosition.getZ() + 8);

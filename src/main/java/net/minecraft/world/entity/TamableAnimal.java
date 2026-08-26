@@ -263,7 +263,8 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
         }
     }
 
-    private boolean maybeTeleportTo(final int x, final int y, final int z) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    private boolean maybeTeleportTo(final long x, final long y, final long z) {
         if (!this.canTeleportTo(new BlockPos(x, y, z))) {
             return false;
         }

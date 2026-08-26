@@ -35,7 +35,7 @@ public class LinearPosTest extends PosRuleTest {
 
     @Override
     public boolean test(final BlockPos inTemplatePos, final BlockPos worldPos, final BlockPos worldReference, final RandomSource random) {
-        int dist = worldPos.distManhattan(worldReference);
+        long dist = worldPos.distManhattan(worldReference);
         float rnd = random.nextFloat();
         return rnd <= Mth.clampedLerp(Mth.inverseLerp(dist, this.minDist, this.maxDist), this.minChance, this.maxChance);
     }

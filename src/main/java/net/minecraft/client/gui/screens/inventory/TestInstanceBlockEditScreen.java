@@ -134,9 +134,9 @@ public class TestInstanceBlockEditScreen extends Screen {
     }
 
     private void setSize(final Vec3i size) {
-        this.sizeXEdit.setValue(Integer.toString(size.getX()));
-        this.sizeYEdit.setValue(Integer.toString(size.getY()));
-        this.sizeZEdit.setValue(Integer.toString(size.getZ()));
+        this.sizeXEdit.setValue(String.valueOf(size.getX()));
+        this.sizeYEdit.setValue(String.valueOf(size.getY()));
+        this.sizeZEdit.setValue(String.valueOf(size.getZ()));
     }
 
     private int widgetX(final int index, final int count) {

@@ -91,7 +91,8 @@ public class FlatLevelSource extends ChunkGenerator {
     }
 
     @Override
-    public int getBaseHeight(final int x, final int z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public long getBaseHeight(final long x, final long z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         List<BlockState> layers = this.settings.getLayers();
 
         for (int layerIndex = Math.min(layers.size() - 1, heightAccessor.getMaxY()); layerIndex >= 0; layerIndex--) {
@@ -105,7 +106,8 @@ public class FlatLevelSource extends ChunkGenerator {
     }
 
     @Override
-    public NoiseColumn getBaseColumn(final int x, final int z, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public NoiseColumn getBaseColumn(final long x, final long z, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         return new NoiseColumn(
             heightAccessor.getMinY(),
             this.settings

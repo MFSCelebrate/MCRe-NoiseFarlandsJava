@@ -159,9 +159,10 @@ public class StructureTemplate {
         final List<StructureTemplate.StructureBlockInfo> blockEntitiesList,
         final List<StructureTemplate.StructureBlockInfo> otherBlocksList
     ) {
-        Comparator<StructureTemplate.StructureBlockInfo> comparator = Comparator.<StructureTemplate.StructureBlockInfo>comparingInt(o -> o.pos.getY())
-            .thenComparingInt(o -> o.pos.getX())
-            .thenComparingInt(o -> o.pos.getZ());
+        // MCRe NoiseFarlands: Vec3i 坐标已 Long 化，comparingLong
+        Comparator<StructureTemplate.StructureBlockInfo> comparator = Comparator.<StructureTemplate.StructureBlockInfo>comparingLong(o -> o.pos.getY())
+            .thenComparingLong(o -> o.pos.getX())
+            .thenComparingLong(o -> o.pos.getZ());
         fullBlockList.sort(comparator);
         otherBlocksList.sort(comparator);
         blockEntitiesList.sort(comparator);
@@ -270,12 +271,12 @@ public class StructureTemplate {
             List<BlockPos> toFill = Lists.newArrayListWithCapacity(settings.shouldApplyWaterlogging() ? blockInfoList.size() : 0);
             List<BlockPos> lockedFluids = Lists.newArrayListWithCapacity(settings.shouldApplyWaterlogging() ? blockInfoList.size() : 0);
             List<Pair<BlockPos, CompoundTag>> placed = Lists.newArrayListWithCapacity(blockInfoList.size());
-            int minX = Integer.MAX_VALUE;
-            int minY = Integer.MAX_VALUE;
-            int minZ = Integer.MAX_VALUE;
-            int maxX = Integer.MIN_VALUE;
-            int maxY = Integer.MIN_VALUE;
-            int maxZ = Integer.MIN_VALUE;
+            long minX = Long.MAX_VALUE;
+            long minY = Long.MAX_VALUE;
+            long minZ = Long.MAX_VALUE;
+            long maxX = Long.MIN_VALUE;
+            long maxY = Long.MIN_VALUE;
+            long maxZ = Long.MIN_VALUE;
             List<StructureTemplate.StructureBlockInfo> processedBlockInfoList = processBlockInfos(level, position, referencePos, settings, blockInfoList);
 
             try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(LOGGER)) {
@@ -355,14 +356,16 @@ public class StructureTemplate {
 
                 if (minX <= maxX) {
                     if (!settings.getKnownShape()) {
-                        DiscreteVoxelShape shape = new BitSetDiscreteVoxelShape(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
-                        int startX = minX;
-                        int startY = minY;
-                        int startZ = minZ;
+                        // MCRe NoiseFarlands: shape 为 int 域网格，尺寸为结构大小量级，一次性边界强转
+                        DiscreteVoxelShape shape = new BitSetDiscreteVoxelShape((int) (maxX - minX + 1), (int) (maxY - minY + 1), (int) (maxZ - minZ + 1));
+                        long startX = minX;
+                        long startY = minY;
+                        long startZ = minZ;
 
                         for (Pair<BlockPos, CompoundTag> blockInfo : placed) {
                             BlockPos blockPos = blockInfo.getFirst();
-                            shape.fill(blockPos.getX() - startX, blockPos.getY() - startY, blockPos.getZ() - startZ);
+                            // 相对 shape 原点的偏移，int 域边界
+                            shape.fill((int) (blockPos.getX() - startX), (int) (blockPos.getY() - startY), (int) (blockPos.getZ() - startZ));
                         }
 
                         updateShapeAtEdge(level, updateMode, shape, startX, startY, startZ);
@@ -417,9 +420,9 @@ public class StructureTemplate {
         final LevelAccessor level,
         final @Block.UpdateFlags int updateMode,
         final DiscreteVoxelShape shape,
-        final int startX,
-        final int startY,
-        final int startZ
+        final long startX,
+        final long startY,
+        final long startZ
     ) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         BlockPos.MutableBlockPos neighborPos = new BlockPos.MutableBlockPos();
@@ -542,9 +545,9 @@ public class StructureTemplate {
     }
 
     public static BlockPos transform(final BlockPos pos, final Mirror mirror, final Rotation rotation, final BlockPos pivot) {
-        int x = pos.getX();
-        int y = pos.getY();
-        int z = pos.getZ();
+        long x = pos.getX();
+        long y = pos.getY();
+        long z = pos.getZ();
         boolean wasMirrored = true;
         switch (mirror) {
             case LEFT_RIGHT:
@@ -557,8 +560,8 @@ public class StructureTemplate {
                 wasMirrored = false;
         }
 
-        int pivotX = pivot.getX();
-        int pivotZ = pivot.getZ();
+        long pivotX = pivot.getX();
+        long pivotZ = pivot.getZ();
 
         return switch (rotation) {
             case COUNTERCLOCKWISE_90 -> new BlockPos(pivotX - pivotZ + z, y, pivotX + pivotZ - x);
@@ -584,8 +587,8 @@ public class StructureTemplate {
                 wasMirrored = false;
         }
 
-        int pivotX = pivot.getX();
-        int pivotZ = pivot.getZ();
+        long pivotX = pivot.getX();
+        long pivotZ = pivot.getZ();
 
         return switch (rotation) {
             case COUNTERCLOCKWISE_90 -> new Vec3(pivotX - pivotZ + z, y, pivotX + pivotZ + 1 - x);
@@ -596,7 +599,7 @@ public class StructureTemplate {
     }
 
     public BlockPos getZeroPositionWithTransform(final BlockPos zeroPos, final Mirror mirror, final Rotation rotation) {
-        return getZeroPositionWithTransform(zeroPos, mirror, rotation, this.getSize().getX(), this.getSize().getZ());
+        return getZeroPositionWithTransform(zeroPos, mirror, rotation, (int) this.getSize().getX(), (int) this.getSize().getZ());
     }
 
     public static BlockPos getZeroPositionWithTransform(final BlockPos zeroPos, final Mirror mirror, final Rotation rotation, int sizeX, int sizeZ) {

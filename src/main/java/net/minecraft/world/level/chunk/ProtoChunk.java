@@ -235,7 +235,7 @@ public class ProtoChunk extends ChunkAccess {
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+    public Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ) {
         if (this.getHighestGeneratedStatus().isOrAfter(ChunkStatus.BIOMES)) {
             return super.getNoiseBiome(quartX, quartY, quartZ);
         } else {

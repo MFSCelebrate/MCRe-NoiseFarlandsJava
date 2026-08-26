@@ -46,7 +46,7 @@ public class PortalForcer {
             .map(PoiRecord::getPos)
             .filter(worldBorder::isWithinBounds)
             .filter(pos -> this.level.getBlockState(pos).hasProperty(BlockStateProperties.HORIZONTAL_AXIS))
-            .min(Comparator.<BlockPos>comparingDouble(p -> p.distSqr(approximateExitPos)).thenComparingInt(Vec3i::getY));
+            .min(Comparator.<BlockPos>comparingDouble(p -> p.distSqr(approximateExitPos)).thenComparingLong(Vec3i::getY));
     }
 
     public Optional<BlockUtil.FoundRectangle> createPortal(final BlockPos origin, final Direction.Axis portalAxis) {
@@ -65,17 +65,20 @@ public class PortalForcer {
             if (worldBorder.isWithinBounds(columnPos) && worldBorder.isWithinBounds(columnPos.move(direction, 1))) {
                 columnPos.move(direction.getOpposite(), 1);
 
-                for (int y = height; y >= this.level.getMinY(); y--) {
+                // MCRe NoiseFarlands: 世界 Y Long 化
+        for (long y = height; y >= this.level.getMinY(); y--) {
                     columnPos.setY(y);
                     if (this.canPortalReplaceBlock(columnPos)) {
-                        int firstEmptyY = y;
+                        // MCRe NoiseFarlands: 世界 Y Long 化
+                        long firstEmptyY = y;
 
                         while (y > this.level.getMinY() && this.canPortalReplaceBlock(columnPos.move(Direction.DOWN))) {
                             y--;
                         }
 
                         if (y + 4 <= maxPlaceableY) {
-                            int deltaY = firstEmptyY - y;
+                            // MCRe NoiseFarlands: 相对差 int 域边界
+                            int deltaY = (int) (firstEmptyY - y);
                             if (deltaY <= 0 || deltaY >= 3) {
                                 columnPos.setY(y);
                                 if (this.canHostFrame(columnPos, mutable, direction, 0)) {

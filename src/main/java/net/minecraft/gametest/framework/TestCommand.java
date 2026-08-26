@@ -222,8 +222,8 @@ public class TestCommand {
                         String tpCommand = String.format(
                             Locale.ROOT, "/tp @s %d %d %d %d 0", telportPosition.getX(), telportPosition.getY(), telportPosition.getZ(), teleportYRot
                         );
-                        int dx = sourcePos.getX() - structurePos.getX();
-                        int dz = sourcePos.getZ() - structurePos.getZ();
+                        long dx = sourcePos.getX() - structurePos.getX();
+                        long dz = sourcePos.getZ() - structurePos.getZ();
                         int distance = Mth.floor(Mth.sqrt(dx * dx + dz * dz));
                         MutableComponent coordinates = ComponentUtils.wrapInSquareBrackets(
                                 Component.translatable("chat.coordinates", structurePos.getX(), structurePos.getY(), structurePos.getZ())
@@ -572,7 +572,7 @@ public class TestCommand {
 
     private static BlockPos createTestPositionAround(final CommandSourceStack source) {
         BlockPos playerPos = BlockPos.containing(source.getPosition());
-        int surfaceY = source.getLevel().getHeightmapPos(Heightmap.Types.WORLD_SURFACE, playerPos).getY();
+        long surfaceY = source.getLevel().getHeightmapPos(Heightmap.Types.WORLD_SURFACE, playerPos).getY();
         return new BlockPos(playerPos.getX(), surfaceY, playerPos.getZ() + 3);
     }
 

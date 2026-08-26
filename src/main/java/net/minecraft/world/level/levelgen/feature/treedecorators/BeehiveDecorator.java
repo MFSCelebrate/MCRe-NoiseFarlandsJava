@@ -40,7 +40,8 @@ public class BeehiveDecorator extends TreeDecorator {
         if (!logs.isEmpty()) {
             RandomSource random = context.random();
             if (!(random.nextFloat() >= this.probability)) {
-                int hiveY = !leaves.isEmpty()
+                // MCRe NoiseFarlands: 世界 Y Long 化
+                long hiveY = !leaves.isEmpty()
                     ? Math.max(leaves.getFirst().getY() - 1, logs.getFirst().getY() + 1)
                     : Math.min(logs.getFirst().getY() + 1 + random.nextInt(3), logs.getLast().getY());
                 List<BlockPos> hivePlacements = logs.stream()

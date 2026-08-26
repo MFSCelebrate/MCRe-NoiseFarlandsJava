@@ -46,8 +46,8 @@ public class HeightMapRenderer implements DebugRenderer.SimpleDebugRenderer {
 
                     for (int relativeX = 0; relativeX < 16; relativeX++) {
                         for (int relativeZ = 0; relativeZ < 16; relativeZ++) {
-                            int xx = SectionPos.sectionToBlockCoord((int)chunkPos.x(), relativeX);
-                            int zz = SectionPos.sectionToBlockCoord((int)chunkPos.z(), relativeZ);
+                            long xx = SectionPos.sectionToBlockCoord((int)chunkPos.x(), relativeX);
+                            long zz = SectionPos.sectionToBlockCoord((int)chunkPos.z(), relativeZ);
                             float height = level.getHeight(type, xx, zz) + type.ordinal() * 0.09375F;
                             Gizmos.cuboid(
                                 new AABB(xx + 0.25F, height, zz + 0.25F, xx + 0.75F, height + 0.09375F, zz + 0.75F),

@@ -63,7 +63,8 @@ public class WorldgenRandom extends LegacyRandomSource {
         this.setSeed(result);
     }
 
-    public void setLargeFeatureWithSalt(final long seed, final long x, final long z, final int blend) {
+    // MCRe NoiseFarlands: 四参均为 hash 参与值（调用方可能以 salt/x/z 任意顺序传入），全 Long 化
+    public void setLargeFeatureWithSalt(final long seed, final long x, final long z, final long blend) {
         long result = x * 341873128712L + z * 132897987541L + seed + blend;
         this.setSeed(result);
     }

@@ -93,9 +93,9 @@ public class MonsterRoomFeature extends Feature<NoneFeatureConfiguration> {
 
             for (int cc = 0; cc < 2; cc++) {
                 for (int i = 0; i < 3; i++) {
-                    int xc = origin.getX() + random.nextInt(xr * 2 + 1) - xr;
-                    int yc = origin.getY();
-                    int zc = origin.getZ() + random.nextInt(zr * 2 + 1) - zr;
+                    long xc = origin.getX() + random.nextInt(xr * 2 + 1) - xr;
+                    long yc = origin.getY();
+                    long zc = origin.getZ() + random.nextInt(zr * 2 + 1) - zr;
                     BlockPos chestPos = new BlockPos(xc, yc, zc);
                     if (level.isEmptyBlock(chestPos)) {
                         int wallCount = 0;

@@ -24,8 +24,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.Nullable;
 
 public class PathNavigationRegion implements CollisionGetter {
-    protected final int centerX;
-    protected final int centerZ;
+    protected final long centerX;
+    protected final long centerZ;
     protected final ChunkAccess[][] chunks;
     protected boolean allEmpty;
     protected final Level level;
@@ -36,21 +36,22 @@ public class PathNavigationRegion implements CollisionGetter {
         this.plains = Suppliers.memoize(() -> level.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.PLAINS));
         this.centerX = SectionPos.blockToSectionCoord(start.getX());
         this.centerZ = SectionPos.blockToSectionCoord(start.getZ());
-        int xc2 = SectionPos.blockToSectionCoord(end.getX());
-        int zc2 = SectionPos.blockToSectionCoord(end.getZ());
-        this.chunks = new ChunkAccess[xc2 - this.centerX + 1][zc2 - this.centerZ + 1];
+        long xc2 = SectionPos.blockToSectionCoord(end.getX());
+        long zc2 = SectionPos.blockToSectionCoord(end.getZ());
+        // MCRe NoiseFarlands: region 数组尺寸为寻路范围量级，int 域边界
+        this.chunks = new ChunkAccess[(int) (xc2 - this.centerX + 1)][(int) (zc2 - this.centerZ + 1)];
         ChunkSource chunkSource = level.getChunkSource();
         this.allEmpty = true;
 
-        for (int xc = this.centerX; xc <= xc2; xc++) {
-            for (int zc = this.centerZ; zc <= zc2; zc++) {
-                this.chunks[xc - this.centerX][zc - this.centerZ] = chunkSource.getChunkNow(xc, zc);
+        for (long xc = this.centerX; xc <= xc2; xc++) {
+            for (long zc = this.centerZ; zc <= zc2; zc++) {
+                this.chunks[(int) (xc - this.centerX)][(int) (zc - this.centerZ)] = chunkSource.getChunkNow(xc, zc);
             }
         }
 
-        for (int xc = SectionPos.blockToSectionCoord(start.getX()); xc <= SectionPos.blockToSectionCoord(end.getX()); xc++) {
-            for (int zc = SectionPos.blockToSectionCoord(start.getZ()); zc <= SectionPos.blockToSectionCoord(end.getZ()); zc++) {
-                ChunkAccess chunk = this.chunks[xc - this.centerX][zc - this.centerZ];
+        for (long xc = SectionPos.blockToSectionCoord(start.getX()); xc <= SectionPos.blockToSectionCoord(end.getX()); xc++) {
+            for (long zc = SectionPos.blockToSectionCoord(start.getZ()); zc <= SectionPos.blockToSectionCoord(end.getZ()); zc++) {
+                ChunkAccess chunk = this.chunks[(int) (xc - this.centerX)][(int) (zc - this.centerZ)];
                 if (chunk != null && !chunk.isYSpaceEmpty(start.getY(), end.getY())) {
                     this.allEmpty = false;
                     return;
@@ -63,9 +64,10 @@ public class PathNavigationRegion implements CollisionGetter {
         return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
     }
 
-    private ChunkAccess getChunk(final int chunkX, final int chunkZ) {
-        int xc = chunkX - this.centerX;
-        int zc = chunkZ - this.centerZ;
+    private ChunkAccess getChunk(final long chunkX, final long chunkZ) {
+        // MCRe NoiseFarlands: 相对偏移为 region 内小范围索引，int 域边界
+        int xc = (int) (chunkX - this.centerX);
+        int zc = (int) (chunkZ - this.centerZ);
         if (xc >= 0 && xc < this.chunks.length && zc >= 0 && zc < this.chunks[xc].length) {
             ChunkAccess chunk = this.chunks[xc][zc];
             return chunk != null ? chunk : new EmptyLevelChunk(this.level, new ChunkPos(chunkX, chunkZ), this.plains.get());
@@ -80,7 +82,7 @@ public class PathNavigationRegion implements CollisionGetter {
     }
 
     @Override
-    public BlockGetter getChunkForCollisions(final int chunkX, final int chunkZ) {
+    public BlockGetter getChunkForCollisions(final long chunkX, final long chunkZ) {
         return this.getChunk(chunkX, chunkZ);
     }
 
@@ -122,6 +124,7 @@ public class PathNavigationRegion implements CollisionGetter {
 
     @Override
     public int getHeight() {
+        // MCRe NoiseFarlands: getHeight() 为高度配置域(int) 契约，保持
         return this.level.getHeight();
     }
 }

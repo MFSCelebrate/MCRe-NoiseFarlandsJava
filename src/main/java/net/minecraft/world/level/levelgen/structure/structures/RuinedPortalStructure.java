@@ -110,11 +110,13 @@ public class RuinedPortalStructure extends Structure {
         BlockPos basePosition = context.chunkPos().getWorldPosition();
         BoundingBox boundingBox = template.getBoundingBox(basePosition, rotation, pivot, mirror);
         BlockPos center = boundingBox.getCenter();
-        int surfaceY = chunkGenerator.getBaseHeight(
+        // MCRe NoiseFarlands: 世界 Y Long 化
+        long surfaceY = chunkGenerator.getBaseHeight(
                 center.getX(), center.getZ(), RuinedPortalPiece.getHeightMapType(setup.placement()), heightAccessor, randomState
             )
             - 1;
-        int projectedY = findSuitableY(
+        // MCRe NoiseFarlands: 世界 Y Long 化
+        long projectedY = findSuitableY(
             random, chunkGenerator, setup.placement(), airPocket, surfaceY, boundingBox.getYSpan(), boundingBox, heightAccessor, randomState
         );
         BlockPos origin = new BlockPos(basePosition.getX(), projectedY, basePosition.getZ());
@@ -173,19 +175,20 @@ public class RuinedPortalStructure extends Structure {
         return biome.value().coldEnoughToSnow(pos, seaLevel);
     }
 
-    private static int findSuitableY(
+    // MCRe NoiseFarlands: 世界 Y Long 化
+    private static long findSuitableY(
         final RandomSource random,
         final ChunkGenerator generator,
         final RuinedPortalPiece.VerticalPlacement verticalPlacement,
         final boolean airPocket,
-        final int surfaceYAtCenter,
+        final long surfaceYAtCenter,
         final int ySpan,
         final BoundingBox boundingBox,
         final LevelHeightAccessor heightAccessor,
         final RandomState randomState
     ) {
         int minY = heightAccessor.getMinY() + 15;
-        int newY;
+        long newY;
         if (verticalPlacement == RuinedPortalPiece.VerticalPlacement.IN_NETHER) {
             if (airPocket) {
                 newY = Mth.randomBetweenInclusive(random, 32, 100);
@@ -195,15 +198,15 @@ public class RuinedPortalStructure extends Structure {
                 newY = Mth.randomBetweenInclusive(random, 29, 100);
             }
         } else if (verticalPlacement == RuinedPortalPiece.VerticalPlacement.IN_MOUNTAIN) {
-            int maxY = surfaceYAtCenter - ySpan;
-            newY = getRandomWithinInterval(random, 70, maxY);
+            long maxY = surfaceYAtCenter - ySpan;
+            newY = getRandomWithinInterval(random, 70, (int) maxY);
         } else if (verticalPlacement == RuinedPortalPiece.VerticalPlacement.UNDERGROUND) {
-            int maxY = surfaceYAtCenter - ySpan;
-            newY = getRandomWithinInterval(random, minY, maxY);
+            long maxY = surfaceYAtCenter - ySpan;
+            newY = getRandomWithinInterval(random, (int) minY, (int) maxY);
         } else if (verticalPlacement == RuinedPortalPiece.VerticalPlacement.PARTLY_BURIED) {
-            newY = surfaceYAtCenter - ySpan + Mth.randomBetweenInclusive(random, 2, 8);
+            newY = (int) (surfaceYAtCenter - ySpan + Mth.randomBetweenInclusive(random, 2, 8));
         } else {
-            newY = surfaceYAtCenter;
+            newY = (int) surfaceYAtCenter;
         }
 
         List<BlockPos> bottomCorners = ImmutableList.of(
@@ -219,7 +222,7 @@ public class RuinedPortalStructure extends Structure {
             ? Heightmap.Types.OCEAN_FLOOR_WG
             : Heightmap.Types.WORLD_SURFACE_WG;
 
-        int projectedY;
+        long projectedY;
         for (projectedY = newY; projectedY > minY; projectedY--) {
             int cornersOnSolidGround = 0;
 

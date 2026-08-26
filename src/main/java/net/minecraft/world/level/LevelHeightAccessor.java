@@ -12,15 +12,17 @@ public interface LevelHeightAccessor {
         return this.getMinY() + this.getHeight() - 1;
     }
 
+    // MCRe NoiseFarlands: section 数量为高度配置域 int，差值运算后强转（安全）
     default int getSectionsCount() {
-        return this.getMaxSectionY() - this.getMinSectionY() + 1;
+        return (int) (this.getMaxSectionY() - this.getMinSectionY() + 1);
     }
 
-    default int getMinSectionY() {
+    // MCRe NoiseFarlands: section Y 坐标为世界域，Long 化
+    default long getMinSectionY() {
         return SectionPos.blockToSectionCoord(this.getMinY());
     }
 
-    default int getMaxSectionY() {
+    default long getMaxSectionY() {
         return SectionPos.blockToSectionCoord(this.getMaxY());
     }
 
@@ -57,7 +59,8 @@ public interface LevelHeightAccessor {
     }
 
     default int getSectionIndexFromSectionY(final int sectionY) {
-        return sectionY - this.getMinSectionY();
+        // MCRe NoiseFarlands: section 数组索引 int 域边界
+        return (int) (sectionY - this.getMinSectionY());
     }
 
     default int getSectionIndexFromSectionY(final long sectionY) {
@@ -65,7 +68,8 @@ public interface LevelHeightAccessor {
         return Math.toIntExact(sectionY - this.getMinSectionY());
     }
 
-    default int getSectionYFromSectionIndex(final int sectionIndex) {
+    // MCRe NoiseFarlands: section Y 坐标 Long 化
+    default long getSectionYFromSectionIndex(final int sectionIndex) {
         return sectionIndex + this.getMinSectionY();
     }
 

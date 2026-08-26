@@ -273,7 +273,7 @@ public class Bee extends Animal implements NeutralMob {
         Vec3 targetVec = Vec3.atBottomCenterOf(targetPos);
         int yAdjust = 0;
         BlockPos beePos = this.blockPosition();
-        int yDelta = (int)targetVec.y - beePos.getY();
+        long yDelta = (int)targetVec.y - beePos.getY();
         if (yDelta > 2) {
             yAdjust = 4;
         } else if (yDelta < -2) {
@@ -282,10 +282,11 @@ public class Bee extends Animal implements NeutralMob {
 
         int xzDist = 6;
         int yDist = 8;
-        int dist = beePos.distManhattan(targetPos);
+        long dist = beePos.distManhattan(targetPos);
         if (dist < 15) {
-            xzDist = dist / 2;
-            yDist = dist / 2;
+            // MCRe NoiseFarlands: 相对距离 int 域边界
+                xzDist = (int) (dist / 2);
+            yDist = (int) (dist / 2);
         }
 
         Vec3 nextPosTowards = AirRandomPos.getPosTowards(this, xzDist, yDist, yAdjust, targetVec, (float) (Math.PI / 10));

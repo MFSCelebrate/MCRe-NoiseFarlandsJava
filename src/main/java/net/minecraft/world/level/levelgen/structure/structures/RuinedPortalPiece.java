@@ -242,8 +242,8 @@ public class RuinedPortalPiece extends TemplateStructurePiece {
         boolean followGroundSurface = this.verticalPlacement == RuinedPortalPiece.VerticalPlacement.ON_LAND_SURFACE
             || this.verticalPlacement == RuinedPortalPiece.VerticalPlacement.ON_OCEAN_FLOOR;
         BlockPos center = this.boundingBox.getCenter();
-        int centerX = center.getX();
-        int centerZ = center.getZ();
+        long centerX = center.getX();
+        long centerZ = center.getZ();
         float[] netherrackProbabilityByDistance = new float[]{1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.9F, 0.9F, 0.8F, 0.7F, 0.6F, 0.4F, 0.2F};
         int maxDistance = netherrackProbabilityByDistance.length;
         int averageWidth = (this.boundingBox.getXSpan() + this.boundingBox.getZSpan()) / 2;
@@ -251,15 +251,17 @@ public class RuinedPortalPiece extends TemplateStructurePiece {
         int maxYDiff = 3;
         BlockPos.MutableBlockPos pos = BlockPos.ZERO.mutable();
 
-        for (int x = centerX - maxDistance; x <= centerX + maxDistance; x++) {
-            for (int z = centerZ - maxDistance; z <= centerZ + maxDistance; z++) {
-                int distance = Math.abs(x - centerX) + Math.abs(z - centerZ);
+        for (long x = centerX - maxDistance; x <= centerX + maxDistance; x++) {
+            for (long z = centerZ - maxDistance; z <= centerZ + maxDistance; z++) {
+                // MCRe NoiseFarlands: 距离为 netherrack 概率表索引（≤14），int 域边界
+                int distance = (int) (Math.abs(x - centerX) + Math.abs(z - centerZ));
                 int adjustedDistance = Math.max(0, distance + distanceAdjustment);
                 if (adjustedDistance < maxDistance) {
                     float probabilityOfNetherrack = netherrackProbabilityByDistance[adjustedDistance];
                     if (random.nextDouble() < probabilityOfNetherrack) {
-                        int surfaceY = getSurfaceY(level, x, z, this.verticalPlacement);
-                        int y = followGroundSurface ? surfaceY : Math.min(this.boundingBox.minY(), surfaceY);
+                        // MCRe NoiseFarlands: 世界 Y Long 化
+                        long surfaceY = getSurfaceY(level, x, z, this.verticalPlacement);
+                        long y = followGroundSurface ? surfaceY : Math.min(this.boundingBox.minY(), surfaceY);
                         pos.set(x, y, z);
                         if (Math.abs(y - this.boundingBox.minY()) <= 3 && this.canBlockBeReplacedByNetherrackOrMagma(level, pos)) {
                             this.placeNetherrackOrMagma(random, level, pos);
@@ -291,7 +293,7 @@ public class RuinedPortalPiece extends TemplateStructurePiece {
         }
     }
 
-    private static int getSurfaceY(final LevelAccessor level, final int x, final int z, final RuinedPortalPiece.VerticalPlacement verticalPlacement) {
+    private static long getSurfaceY(final LevelAccessor level, final long x, final long z, final RuinedPortalPiece.VerticalPlacement verticalPlacement) {
         return level.getHeight(getHeightMapType(verticalPlacement), x, z) - 1;
     }
 

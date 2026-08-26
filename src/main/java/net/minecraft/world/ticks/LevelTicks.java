@@ -214,13 +214,13 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
     }
 
     private void forContainersInArea(final BoundingBox bb, final LevelTicks.PosAndContainerConsumer<T> ouput) {
-        int xMin = SectionPos.posToSectionCoord(bb.minX());
-        int zMin = SectionPos.posToSectionCoord(bb.minZ());
-        int xMax = SectionPos.posToSectionCoord(bb.maxX());
-        int zMax = SectionPos.posToSectionCoord(bb.maxZ());
+        long xMin = SectionPos.posToSectionCoord(bb.minX());
+        long zMin = SectionPos.posToSectionCoord(bb.minZ());
+        long xMax = SectionPos.posToSectionCoord(bb.maxX());
+        long zMax = SectionPos.posToSectionCoord(bb.maxZ());
 
-        for (int x = xMin; x <= xMax; x++) {
-            for (int z = zMin; z <= zMax; z++) {
+        for (long x = xMin; x <= xMax; x++) {
+            for (long z = zMin; z <= zMax; z++) {
                 ChunkPos containerPos = new ChunkPos(x, z);
                 LevelChunkTicks<T> container = this.allContainers.get(containerPos);
                 if (container != null) {

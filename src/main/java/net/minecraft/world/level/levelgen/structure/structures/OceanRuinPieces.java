@@ -370,16 +370,17 @@ public class OceanRuinPieces {
             super.postProcess(level, structureManager, generator, random, chunkBB, chunkPos, referencePos);
         }
 
-        private int getHeight(final BlockPos pos, final BlockGetter level, final BlockPos corner) {
-            int newY = pos.getY();
-            int minY = 512;
-            int topY = newY - 1;
+        // MCRe NoiseFarlands: 海底高度探测为世界 Y，Long 化
+        private long getHeight(final BlockPos pos, final BlockGetter level, final BlockPos corner) {
+            long newY = pos.getY();
+            long minY = 512;
+            long topY = newY - 1;
             int area = 0;
 
             for (BlockPos p : BlockPos.betweenClosed(pos, corner)) {
-                int x = p.getX();
-                int z = p.getZ();
-                int floorY = pos.getY() - 1;
+                long x = p.getX();
+                long z = p.getZ();
+                long floorY = pos.getY() - 1;
                 BlockPos.MutableBlockPos tempPos = new BlockPos.MutableBlockPos(x, floorY, z);
                 BlockState tempState = level.getBlockState(tempPos);
 
@@ -397,7 +398,7 @@ public class OceanRuinPieces {
                 }
             }
 
-            int width = Math.abs(pos.getX() - corner.getX());
+            long width = Math.abs(pos.getX() - corner.getX());
             if (topY - minY > 2 && area > width - 2) {
                 newY = minY + 1;
             }

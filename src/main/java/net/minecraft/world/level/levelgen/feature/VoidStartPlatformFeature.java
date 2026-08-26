@@ -17,7 +17,8 @@ public class VoidStartPlatformFeature extends Feature<NoneFeatureConfiguration> 
         super(codec);
     }
 
-    private static int checkerboardDistance(final int xa, final int za, final int xb, final int zb) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    private static long checkerboardDistance(final long xa, final long za, final long xb, final long zb) {
         return Math.max(Math.abs(xa - xb), Math.abs(za - zb));
     }
 
@@ -25,7 +26,7 @@ public class VoidStartPlatformFeature extends Feature<NoneFeatureConfiguration> 
     public boolean place(final FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
         ChunkPos currentChunkPos = ChunkPos.containing(context.origin());
-        if (checkerboardDistance((int)currentChunkPos.x(), (int)currentChunkPos.z(), (int)PLATFORM_ORIGIN_CHUNK.x(), (int)PLATFORM_ORIGIN_CHUNK.z()) > 1) {
+        if (checkerboardDistance(currentChunkPos.x(), currentChunkPos.z(), PLATFORM_ORIGIN_CHUNK.x(), PLATFORM_ORIGIN_CHUNK.z()) > 1) {
             return true;
         }
 

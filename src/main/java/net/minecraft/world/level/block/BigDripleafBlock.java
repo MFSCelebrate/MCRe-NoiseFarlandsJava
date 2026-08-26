@@ -96,7 +96,7 @@ public class BigDripleafBlock extends HorizontalDirectionalBlock implements Simp
             pos.move(Direction.UP);
         }
 
-        int leafY = stemBottomPos.getY() + height - 1;
+        long leafY = stemBottomPos.getY() + height - 1;
         pos.setY(stemBottomPos.getY());
 
         while (pos.getY() < leafY) {

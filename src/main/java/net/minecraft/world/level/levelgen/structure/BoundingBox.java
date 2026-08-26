@@ -124,10 +124,10 @@ public class BoundingBox {
     }
 
     public Stream<ChunkPos> intersectingChunks() {
-        int minChunkX = SectionPos.blockToSectionCoord(this.minX());
-        int minChunkZ = SectionPos.blockToSectionCoord(this.minZ());
-        int maxChunkX = SectionPos.blockToSectionCoord(this.maxX());
-        int maxChunkZ = SectionPos.blockToSectionCoord(this.maxZ());
+        long minChunkX = SectionPos.blockToSectionCoord(this.minX());
+        long minChunkZ = SectionPos.blockToSectionCoord(this.minZ());
+        long maxChunkX = SectionPos.blockToSectionCoord(this.maxX());
+        long maxChunkZ = SectionPos.blockToSectionCoord(this.maxZ());
         return ChunkPos.rangeClosed(new ChunkPos(minChunkX, minChunkZ), new ChunkPos(maxChunkX, maxChunkZ));
     }
 
@@ -191,12 +191,13 @@ public class BoundingBox {
 
     @Deprecated
     public BoundingBox encapsulate(final BlockPos pos) {
-        this.minX = Math.min(this.minX, pos.getX());
-        this.minY = Math.min(this.minY, pos.getY());
-        this.minZ = Math.min(this.minZ, pos.getZ());
-        this.maxX = Math.max(this.maxX, pos.getX());
-        this.maxY = Math.max(this.maxY, pos.getY());
-        this.maxZ = Math.max(this.maxZ, pos.getZ());
+        // MCRe NoiseFarlands: Decision 5 —— BoundingBox 内部字段保持 int 域，入口一次性强转
+        this.minX = (int) Math.min(this.minX, pos.getX());
+        this.minY = (int) Math.min(this.minY, pos.getY());
+        this.minZ = (int) Math.min(this.minZ, pos.getZ());
+        this.maxX = (int) Math.max(this.maxX, pos.getX());
+        this.maxY = (int) Math.max(this.maxY, pos.getY());
+        this.maxZ = (int) Math.max(this.maxZ, pos.getZ());
         return this;
     }
 
@@ -213,7 +214,8 @@ public class BoundingBox {
 
     @Deprecated
     public BoundingBox move(final Vec3i amount) {
-        return this.move(amount.getX(), amount.getY(), amount.getZ());
+        // Decision 5: move 参数为内部 int 域
+        return this.move((int) amount.getX(), (int) amount.getY(), (int) amount.getZ());
     }
 
     // 修改后的 moved 方法：添加溢出保护
@@ -256,7 +258,8 @@ public class BoundingBox {
     }
 
     public boolean isInside(final Vec3i pos) {
-        return this.isInside(pos.getX(), pos.getY(), pos.getZ());
+        // Decision 5: isInside 为内部 int 域比较
+        return this.isInside((int) pos.getX(), (int) pos.getY(), (int) pos.getZ());
     }
 
     public boolean isInside(final int x, final int y, final int z) {

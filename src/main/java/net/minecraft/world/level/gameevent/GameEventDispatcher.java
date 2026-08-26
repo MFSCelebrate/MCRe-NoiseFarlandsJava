@@ -22,12 +22,12 @@ public class GameEventDispatcher {
     public void post(final Holder<GameEvent> gameEvent, final Vec3 position, final GameEvent.Context context) {
         int radius = gameEvent.value().notificationRadius();
         BlockPos center = BlockPos.containing(position);
-        int sectionMinX = SectionPos.blockToSectionCoord(center.getX() - radius);
-        int sectionMinY = SectionPos.blockToSectionCoord(center.getY() - radius);
-        int sectionMinZ = SectionPos.blockToSectionCoord(center.getZ() - radius);
-        int sectionMaxX = SectionPos.blockToSectionCoord(center.getX() + radius);
-        int sectionMaxY = SectionPos.blockToSectionCoord(center.getY() + radius);
-        int sectionMaxZ = SectionPos.blockToSectionCoord(center.getZ() + radius);
+        long sectionMinX = SectionPos.blockToSectionCoord(center.getX() - radius);
+        long sectionMinY = SectionPos.blockToSectionCoord(center.getY() - radius);
+        long sectionMinZ = SectionPos.blockToSectionCoord(center.getZ() - radius);
+        long sectionMaxX = SectionPos.blockToSectionCoord(center.getX() + radius);
+        long sectionMaxY = SectionPos.blockToSectionCoord(center.getY() + radius);
+        long sectionMaxZ = SectionPos.blockToSectionCoord(center.getZ() + radius);
         List<GameEvent.ListenerInfo> toHandleByDistance = new ArrayList<>();
         GameEventListenerRegistry.ListenerVisitor visitListeners = (listener, pos) -> {
             if (listener.getDeliveryMode() == GameEventListener.DeliveryMode.BY_DISTANCE) {
@@ -38,11 +38,11 @@ public class GameEventDispatcher {
         };
         boolean applicable = false;
 
-        for (int chunkX = sectionMinX; chunkX <= sectionMaxX; chunkX++) {
-            for (int chunkZ = sectionMinZ; chunkZ <= sectionMaxZ; chunkZ++) {
+        for (long chunkX = sectionMinX; chunkX <= sectionMaxX; chunkX++) {
+            for (long chunkZ = sectionMinZ; chunkZ <= sectionMaxZ; chunkZ++) {
                 ChunkAccess chunk = this.level.getChunkSource().getChunkNow(chunkX, chunkZ);
                 if (chunk != null) {
-                    for (int section = sectionMinY; section <= sectionMaxY; section++) {
+                    for (long section = sectionMinY; section <= sectionMaxY; section++) {
                         applicable |= chunk.getListenerRegistry(section).visitInRangeListeners(gameEvent, position, context, visitListeners);
                     }
                 }

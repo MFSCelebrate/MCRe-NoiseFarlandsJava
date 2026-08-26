@@ -115,11 +115,11 @@ public record ChunkPos(long x, long z) {
     }
 
     public long getMinBlockX() {
-        return SectionPos.sectionToBlockCoordLong(this.x);
+        return SectionPos.sectionToBlockCoord(this.x);
     }
 
     public long getMinBlockZ() {
-        return SectionPos.sectionToBlockCoordLong(this.z);
+        return SectionPos.sectionToBlockCoord(this.z);
     }
 
     public long getMaxBlockX() {
@@ -151,14 +151,15 @@ public record ChunkPos(long x, long z) {
     }
 
     public long getBlockX(final long offset) {
-        return SectionPos.sectionToBlockCoordLong(this.x, offset);
+        return SectionPos.sectionToBlockCoord(this.x, offset);
     }
 
     public long getBlockZ(final long offset) {
-        return SectionPos.sectionToBlockCoordLong(this.z, offset);
+        return SectionPos.sectionToBlockCoord(this.z, offset);
     }
 
-    public BlockPos getMiddleBlockPosition(final int y) {
+    // MCRe NoiseFarlands: 世界 Y Long 化
+    public BlockPos getMiddleBlockPosition(final long y) {
         return new BlockPos(this.getMiddleBlockX(), y, this.getMiddleBlockZ());
     }
 

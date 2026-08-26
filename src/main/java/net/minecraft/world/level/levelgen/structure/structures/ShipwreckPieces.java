@@ -160,18 +160,19 @@ public class ShipwreckPieces {
             final BlockPos referencePos
         ) {
             if (!this.heightAdjusted && !this.isTooBigToFitInWorldGenRegion()) {
-                int minY = level.getMaxY() + 1;
-                int mean = 0;
+                // MCRe NoiseFarlands: 世界 Y Long 化（maxY 高度域自动提升）
+                long minY = level.getMaxY() + 1;
+                long mean = 0;
                 Vec3i templateSize = this.template.getSize();
                 Heightmap.Types heightmapType = this.isBeached ? Heightmap.Types.WORLD_SURFACE_WG : Heightmap.Types.OCEAN_FLOOR_WG;
-                int baseSize = templateSize.getX() * templateSize.getZ();
+                long baseSize = templateSize.getX() * templateSize.getZ();
                 if (baseSize == 0) {
                     mean = level.getHeight(heightmapType, this.templatePosition.getX(), this.templatePosition.getZ());
                 } else {
                     BlockPos corner = this.templatePosition.offset(templateSize.getX() - 1, 0, templateSize.getZ() - 1);
 
                     for (BlockPos p : BlockPos.betweenClosed(this.templatePosition, corner)) {
-                        int heightmap = level.getHeight(heightmapType, p.getX(), p.getZ());
+                        long heightmap = level.getHeight(heightmapType, p.getX(), p.getZ());
                         mean += heightmap;
                         minY = Math.min(minY, heightmap);
                     }
@@ -191,11 +192,13 @@ public class ShipwreckPieces {
             return size.getX() > 32 || size.getY() > 32;
         }
 
-        public int calculateBeachedPosition(final int minY, final RandomSource random) {
+        // MCRe NoiseFarlands: 世界 Y Long 化
+        public long calculateBeachedPosition(final long minY, final RandomSource random) {
             return minY - this.template.getSize().getY() / 2 - random.nextInt(3);
         }
 
-        public void adjustPositionHeight(final int newHeight) {
+        // MCRe NoiseFarlands: 世界 Y Long 化
+        public void adjustPositionHeight(final long newHeight) {
             this.heightAdjusted = true;
             this.templatePosition = new BlockPos(this.templatePosition.getX(), newHeight, this.templatePosition.getZ());
         }

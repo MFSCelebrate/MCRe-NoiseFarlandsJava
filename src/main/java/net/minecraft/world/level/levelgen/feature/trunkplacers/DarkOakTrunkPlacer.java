@@ -44,12 +44,12 @@ public class DarkOakTrunkPlacer extends TrunkPlacer {
         Direction leanDirection = Direction.Plane.HORIZONTAL.getRandomDirection(random);
         int leanHeight = treeHeight - random.nextInt(4);
         int leanSteps = 2 - random.nextInt(3);
-        int x = origin.getX();
-        int y = origin.getY();
-        int z = origin.getZ();
-        int tx = x;
-        int tz = z;
-        int ey = y + treeHeight - 1;
+        long x = origin.getX();
+        long y = origin.getY();
+        long z = origin.getZ();
+        long tx = x;
+        long tz = z;
+        long ey = y + treeHeight - 1;
 
         for (int dy = 0; dy < treeHeight; dy++) {
             if (dy >= leanHeight && leanSteps > 0) {
@@ -58,7 +58,8 @@ public class DarkOakTrunkPlacer extends TrunkPlacer {
                 leanSteps--;
             }
 
-            int yy = y + dy;
+            // MCRe NoiseFarlands: 世界 Y Long 化
+            long yy = y + dy;
             BlockPos blockPos = new BlockPos(tx, yy, tz);
             if (TreeFeature.isAirOrLeaves(level, blockPos)) {
                 this.placeLog(level, trunkSetter, random, blockPos, config);

@@ -73,7 +73,7 @@ public abstract class Column {
             return Optional.empty();
         }
 
-        int nearestEmptyY = pos.getY();
+        long nearestEmptyY = pos.getY();
         OptionalInt ceiling = scanDirection(level, searchRange, insideColumn, validEdge, mutablePos, nearestEmptyY, Direction.UP);
         OptionalInt floor = scanDirection(level, searchRange, insideColumn, validEdge, mutablePos, nearestEmptyY, Direction.DOWN);
         return Optional.of(create(floor, ceiling));
@@ -85,7 +85,8 @@ public abstract class Column {
         final Predicate<BlockState> insideColumn,
         final Predicate<BlockState> validEdge,
         final BlockPos.MutableBlockPos mutablePos,
-        final int nearestEmptyY,
+        // MCRe NoiseFarlands: 世界 Y Long 化
+        final long nearestEmptyY,
         final Direction direction
     ) {
         mutablePos.setY(nearestEmptyY);
@@ -94,7 +95,8 @@ public abstract class Column {
             mutablePos.move(direction);
         }
 
-        return level.isStateAtPosition(mutablePos, validEdge) ? OptionalInt.of(mutablePos.getY()) : OptionalInt.empty();
+        // MCRe NoiseFarlands: Y 为高度配置域(int)，OptionalInt 容器不变
+        return level.isStateAtPosition(mutablePos, validEdge) ? OptionalInt.of((int) mutablePos.getY()) : OptionalInt.empty();
     }
 
     public static final class Line extends Column {

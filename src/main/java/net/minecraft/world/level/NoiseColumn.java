@@ -14,14 +14,18 @@ public final class NoiseColumn implements BlockColumn {
     }
 
     @Override
-    public BlockState getBlock(final int blockY) {
-        int yIndex = blockY - this.minY;
+    // MCRe NoiseFarlands: 世界 Y Long 化
+    public BlockState getBlock(final long blockY) {
+// MCRe NoiseFarlands: 列缓存相对索引 int 域边界
+        int yIndex = (int) (blockY - this.minY);
         return yIndex >= 0 && yIndex < this.column.length ? this.column[yIndex] : Blocks.AIR.defaultBlockState();
     }
 
     @Override
-    public void setBlock(final int blockY, final BlockState state) {
-        int yIndex = blockY - this.minY;
+    // MCRe NoiseFarlands: 世界 Y Long 化
+    public void setBlock(final long blockY, final BlockState state) {
+// MCRe NoiseFarlands: 列缓存相对索引 int 域边界
+        int yIndex = (int) (blockY - this.minY);
         if (yIndex >= 0 && yIndex < this.column.length) {
             this.column[yIndex] = state;
         } else {

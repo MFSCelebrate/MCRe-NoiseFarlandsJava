@@ -329,9 +329,9 @@ public class EnderDragonFight extends SavedData {
         }
 
         BlockPos endPodiumLocation = EndPodiumFeature.getLocation(this.origin);
-        int maxY = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, endPodiumLocation).getY();
+        long maxY = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, endPodiumLocation).getY();
 
-        for (int y = maxY; y >= this.level.getMinY(); y--) {
+        for (long y = maxY; y >= this.level.getMinY(); y--) {
             BlockPattern.BlockPatternMatch match = this.exitPortalPattern.find(this.level, new BlockPos(endPodiumLocation.getX(), y, endPodiumLocation.getZ()));
             if (match != null) {
                 if (this.exitPortalLocation == null) {

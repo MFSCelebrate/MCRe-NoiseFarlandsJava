@@ -42,10 +42,10 @@ public class BambooFeature extends Feature<ProbabilityFeatureConfiguration> {
                 if (random.nextFloat() < config.probability) {
                     int r = random.nextInt(4) + 1;
 
-                    for (int xx = origin.getX() - r; xx <= origin.getX() + r; xx++) {
-                        for (int zz = origin.getZ() - r; zz <= origin.getZ() + r; zz++) {
-                            int xd = xx - origin.getX();
-                            int zd = zz - origin.getZ();
+                    for (long xx = origin.getX() - r; xx <= origin.getX() + r; xx++) {
+                        for (long zz = origin.getZ() - r; zz <= origin.getZ() + r; zz++) {
+                            long xd = xx - origin.getX();
+                            long zd = zz - origin.getZ();
                             if (xd * xd + zd * zd <= r * r) {
                                 podzolPos.set(xx, level.getHeight(Heightmap.Types.WORLD_SURFACE, xx, zz) - 1, zz);
                                 if (level.getBlockState(podzolPos).is(BlockTags.BENEATH_BAMBOO_PODZOL_REPLACEABLE)) {

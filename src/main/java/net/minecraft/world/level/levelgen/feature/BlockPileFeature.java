@@ -29,8 +29,8 @@ public class BlockPileFeature extends Feature<BlockPileConfiguration> {
         int zr = 2 + random.nextInt(2);
 
         for (BlockPos blockPos : BlockPos.betweenClosed(origin.offset(-xr, 0, -zr), origin.offset(xr, 1, zr))) {
-            int xd = origin.getX() - blockPos.getX();
-            int zd = origin.getZ() - blockPos.getZ();
+            long xd = origin.getX() - blockPos.getX();
+            long zd = origin.getZ() - blockPos.getZ();
             if (xd * xd + zd * zd <= random.nextFloat() * 10.0F - random.nextFloat() * 6.0F) {
                 this.tryPlaceBlock(level, blockPos, random, config);
             } else if (random.nextFloat() < 0.031) {

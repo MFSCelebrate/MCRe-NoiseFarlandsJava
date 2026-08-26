@@ -6,14 +6,15 @@ import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.DynamicOps;
 
 public class JigsawJunction {
-    private final int sourceX;
-    private final int sourceGroundY;
-    private final int sourceZ;
-    private final int deltaY;
+    // MCRe NoiseFarlands: junction 世界坐标 Long 化
+    private final long sourceX;
+    private final long sourceGroundY;
+    private final long sourceZ;
+    private final long deltaY;
     private final StructureTemplatePool.Projection destProjection;
 
     public JigsawJunction(
-        final int sourceX, final int sourceGroundY, final int sourceZ, final int deltaY, final StructureTemplatePool.Projection destProjection
+        final long sourceX, final long sourceGroundY, final long sourceZ, final long deltaY, final StructureTemplatePool.Projection destProjection
     ) {
         this.sourceX = sourceX;
         this.sourceGroundY = sourceGroundY;
@@ -22,19 +23,19 @@ public class JigsawJunction {
         this.destProjection = destProjection;
     }
 
-    public int getSourceX() {
+    public long getSourceX() {
         return this.sourceX;
     }
 
-    public int getSourceGroundY() {
+    public long getSourceGroundY() {
         return this.sourceGroundY;
     }
 
-    public int getSourceZ() {
+    public long getSourceZ() {
         return this.sourceZ;
     }
 
-    public int getDeltaY() {
+    public long getDeltaY() {
         return this.deltaY;
     }
 
@@ -44,10 +45,11 @@ public class JigsawJunction {
 
     public <T> Dynamic<T> serialize(final DynamicOps<T> ops) {
         Builder<T, T> builder = ImmutableMap.builder();
-        builder.put(ops.createString("source_x"), ops.createInt(this.sourceX))
-            .put(ops.createString("source_ground_y"), ops.createInt(this.sourceGroundY))
-            .put(ops.createString("source_z"), ops.createInt(this.sourceZ))
-            .put(ops.createString("delta_y"), ops.createInt(this.deltaY))
+        // MCRe NoiseFarlands: NBT 序列化保持 IntTag（Decision 4 存档兼容）
+        builder.put(ops.createString("source_x"), ops.createInt((int) this.sourceX))
+            .put(ops.createString("source_ground_y"), ops.createInt((int) this.sourceGroundY))
+            .put(ops.createString("source_z"), ops.createInt((int) this.sourceZ))
+            .put(ops.createString("delta_y"), ops.createInt((int) this.deltaY))
             .put(ops.createString("dest_proj"), ops.createString(this.destProjection.getName()));
         return new Dynamic<>(ops, ops.createMap(builder.build()));
     }
@@ -84,10 +86,11 @@ public class JigsawJunction {
 
     @Override
     public int hashCode() {
-        int result = this.sourceX;
-        result = 31 * result + this.sourceGroundY;
-        result = 31 * result + this.sourceZ;
-        result = 31 * result + this.deltaY;
+        // MCRe NoiseFarlands: Long.hashCode 混合防碰撞退化
+        int result = Long.hashCode(this.sourceX);
+        result = 31 * result + Long.hashCode(this.sourceGroundY);
+        result = 31 * result + Long.hashCode(this.sourceZ);
+        result = 31 * result + Long.hashCode(this.deltaY);
         return 31 * result + this.destProjection.hashCode();
     }
 

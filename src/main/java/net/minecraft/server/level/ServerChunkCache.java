@@ -149,7 +149,7 @@ public class ServerChunkCache extends ChunkSource {
     }
 
     @Override
-    public @Nullable ChunkAccess getChunk(final int x, final int z, final ChunkStatus targetStatus, final boolean loadOrGenerate) {
+    public @Nullable ChunkAccess getChunk(final long x, final long z, final ChunkStatus targetStatus, final boolean loadOrGenerate) {
         if (Thread.currentThread() != this.mainThread) {
             return CompletableFuture.<ChunkAccess>supplyAsync(() -> this.getChunk(x, z, targetStatus, loadOrGenerate), this.mainThreadProcessor).join();
         }
@@ -181,7 +181,7 @@ public class ServerChunkCache extends ChunkSource {
     }
 
     @Override
-    public @Nullable LevelChunk getChunkNow(final int x, final int z) {
+    public @Nullable LevelChunk getChunkNow(final long x, final long z) {
         if (Thread.currentThread() != this.mainThread) {
             return null;
         }
@@ -234,7 +234,8 @@ public class ServerChunkCache extends ChunkSource {
     }
 
     private CompletableFuture<ChunkResult<ChunkAccess>> getChunkFutureMainThread(
-        final int x, final int z, final ChunkStatus targetStatus, final boolean loadOrGenerate
+        // MCRe NoiseFarlands: chunk 坐标 Long 化
+        final long x, final long z, final ChunkStatus targetStatus, final boolean loadOrGenerate
     ) {
         ChunkPos pos = new ChunkPos(x, z);
         ChunkPos key = pos;
@@ -264,7 +265,7 @@ public class ServerChunkCache extends ChunkSource {
     }
 
     @Override
-    public boolean hasChunk(final int x, final int z) {
+    public boolean hasChunk(final long x, final long z) {
         ChunkHolder chunkHolder = this.getVisibleChunkIfPresent(new ChunkPos(x, z));
         int targetTicketLevel = ChunkLevel.byStatus(ChunkStatus.FULL);
         return !this.chunkAbsent(chunkHolder, targetTicketLevel);
@@ -467,8 +468,8 @@ public class ServerChunkCache extends ChunkSource {
     }
 
     public void blockChanged(final BlockPos pos) {
-        int xc = SectionPos.blockToSectionCoord(pos.getX());
-        int zc = SectionPos.blockToSectionCoord(pos.getZ());
+        long xc = SectionPos.blockToSectionCoord(pos.getX());
+        long zc = SectionPos.blockToSectionCoord(pos.getZ());
         ChunkHolder chunk = this.getVisibleChunkIfPresent(new ChunkPos(xc, zc));
         if (chunk != null && chunk.blockChanged(pos)) {
             this.chunkHoldersToBroadcast.add(chunk);
@@ -479,7 +480,8 @@ public class ServerChunkCache extends ChunkSource {
     public void onLightUpdate(final LightLayer layer, final SectionPos pos) {
         this.mainThreadProcessor.execute(() -> {
             ChunkHolder chunk = this.getVisibleChunkIfPresent(pos.chunk());
-            if (chunk != null && chunk.sectionLightChanged(layer, pos.y())) {
+            // MCRe NoiseFarlands: section 内相对 Y，int 域边界
+            if (chunk != null && chunk.sectionLightChanged(layer, (int) pos.y())) {
                 this.chunkHoldersToBroadcast.add(chunk);
             }
         });

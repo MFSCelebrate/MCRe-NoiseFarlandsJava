@@ -48,8 +48,8 @@ public class GravityProcessor implements StructureProcessor {
         }
 
         BlockPos pos = processedBlockInfo.pos();
-        int height = level.getHeight(heightmap, pos.getX(), pos.getZ()) + this.offset;
-        int delta = templateRelativePos.getY();
+        long height = level.getHeight(heightmap, pos.getX(), pos.getZ()) + this.offset;
+        long delta = templateRelativePos.getY();
         return new StructureTemplate.StructureBlockInfo(
             new BlockPos(pos.getX(), height + delta, pos.getZ()), processedBlockInfo.state(), processedBlockInfo.nbt()
         );

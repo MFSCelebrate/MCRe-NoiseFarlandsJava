@@ -24,7 +24,7 @@ public class AlterGroundDecorator extends TreeDecorator {
     public void place(final TreeDecorator.Context context) {
         List<BlockPos> blockPositions = TreeFeature.getLowestTrunkOrRootOfTree(context);
         if (!blockPositions.isEmpty()) {
-            int minY = blockPositions.getFirst().getY();
+            long minY = blockPositions.getFirst().getY();
             blockPositions.stream().filter(pos -> pos.getY() == minY).forEach(pos -> {
                 this.placeCircle(context, pos.west().north());
                 this.placeCircle(context, pos.east(2).north());

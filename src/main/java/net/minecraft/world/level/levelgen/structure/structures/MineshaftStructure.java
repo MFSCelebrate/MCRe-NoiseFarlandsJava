@@ -38,11 +38,13 @@ public class MineshaftStructure extends Structure {
         ChunkPos chunkPos = context.chunkPos();
         BlockPos startPos = new BlockPos((int)chunkPos.getMiddleBlockX(), 50, (int)chunkPos.getMinBlockZ());
         StructurePiecesBuilder mineshaftPiecesBuilder = new StructurePiecesBuilder();
-        int yOffset = this.generatePiecesAndAdjust(mineshaftPiecesBuilder, context);
+        // MCRe NoiseFarlands: 世界 Y Long 化
+        long yOffset = this.generatePiecesAndAdjust(mineshaftPiecesBuilder, context);
         return Optional.of(new Structure.GenerationStub(startPos.offset(0, yOffset, 0), Either.right(mineshaftPiecesBuilder)));
     }
 
-    private int generatePiecesAndAdjust(final StructurePiecesBuilder builder, final Structure.GenerationContext context) {
+    // MCRe NoiseFarlands: 世界 Y Long 化
+    private long generatePiecesAndAdjust(final StructurePiecesBuilder builder, final Structure.GenerationContext context) {
         ChunkPos chunkPos = context.chunkPos();
         WorldgenRandom random = context.random();
         ChunkGenerator chunkGenerator = context.chunkGenerator();
@@ -52,11 +54,13 @@ public class MineshaftStructure extends Structure {
         int seaLevel = chunkGenerator.getSeaLevel();
         if (this.type == MineshaftStructure.Type.MESA) {
             BlockPos center = builder.getBoundingBox().getCenter();
-            int surfaceHeight = chunkGenerator.getBaseHeight(
+            // MCRe NoiseFarlands: 世界 Y Long 化（seaLevel 高度域自动提升）
+            long surfaceHeight = chunkGenerator.getBaseHeight(
                 center.getX(), center.getZ(), Heightmap.Types.WORLD_SURFACE_WG, context.heightAccessor(), context.randomState()
             );
-            int targetYForCenter = surfaceHeight <= seaLevel ? seaLevel : Mth.randomBetweenInclusive(random, seaLevel, surfaceHeight);
-            int dy = targetYForCenter - center.getY();
+            // MCRe NoiseFarlands: 随机范围为高度域(int)，边界强转
+            long targetYForCenter = surfaceHeight <= seaLevel ? seaLevel : Mth.randomBetweenInclusive(random, seaLevel, (int) surfaceHeight);
+            long dy = targetYForCenter - center.getY();
             builder.offsetPiecesVertically(dy);
             return dy;
         } else {

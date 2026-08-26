@@ -140,14 +140,15 @@ public class ForceLoadCommand {
 
     private static int changeForceLoad(final CommandSourceStack source, final ColumnPos from, final ColumnPos to, final boolean add)
             throws CommandSyntaxException {
-        int minX = Math.min(from.x(), to.x());
-        int minZ = Math.min(from.z(), to.z());
-        int maxX = Math.max(from.x(), to.x());
-        int maxZ = Math.max(from.z(), to.z());
-        int minChunkX = SectionPos.blockToSectionCoord(minX);
-        int minChunkZ = SectionPos.blockToSectionCoord(minZ);
-        int maxChunkX = SectionPos.blockToSectionCoord(maxX);
-        int maxChunkZ = SectionPos.blockToSectionCoord(maxZ);
+        // MCRe NoiseFarlands: chunk 坐标 Long 化
+        long minX = Math.min(from.x(), to.x());
+        long minZ = Math.min(from.z(), to.z());
+        long maxX = Math.max(from.x(), to.x());
+        long maxZ = Math.max(from.z(), to.z());
+        long minChunkX = SectionPos.blockToSectionCoord(minX);
+        long minChunkZ = SectionPos.blockToSectionCoord(minZ);
+        long maxChunkX = SectionPos.blockToSectionCoord(maxX);
+        long maxChunkZ = SectionPos.blockToSectionCoord(maxZ);
         long chunkCount = (maxChunkX - minChunkX + 1L) * (maxChunkZ - minChunkZ + 1L);
         if (chunkCount > 256L) {
             throw ERROR_TOO_MANY_CHUNKS.create(256, chunkCount);
@@ -158,8 +159,8 @@ public class ForceLoadCommand {
         ChunkPos firstChanged = null;
         int changedCount = 0;
 
-        for (int x = minChunkX; x <= maxChunkX; x++) {
-            for (int z = minChunkZ; z <= maxChunkZ; z++) {
+        for (long x = minChunkX; x <= maxChunkX; x++) {
+            for (long z = minChunkZ; z <= maxChunkZ; z++) {
                 boolean changed = level.setChunkForced(x, z, add);
                 if (changed) {
                     changedCount++;

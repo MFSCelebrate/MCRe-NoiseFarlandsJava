@@ -591,7 +591,8 @@ public class EnderDragon extends Mob implements Enemy {
                     nodeZ = Mth.floor(20.0F * Mth.sin(2.0F * ((float) -Math.PI + (float) (Math.PI / 4) * multiplier)));
                 }
 
-                int nodeY = Math.max(
+                // MCRe NoiseFarlands: 世界 Y Long 化
+        long nodeY = Math.max(
                     73, this.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(nodeX, 0, nodeZ)).getY() + yAdjustment
                 );
                 this.nodes[i] = new Node(nodeX, nodeY, nodeZ);

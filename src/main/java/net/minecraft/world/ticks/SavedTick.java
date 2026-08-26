@@ -28,7 +28,8 @@ public record SavedTick<T>(T type, BlockPos pos, int delay, TickPriority priorit
     public static <T> Codec<SavedTick<T>> codec(final Codec<T> typeCodec) {
         MapCodec<BlockPos> posCodec = RecordCodecBuilder.mapCodec(
             i -> i.group(
-                    Codec.INT.fieldOf("x").forGetter(Vec3i::getX), Codec.INT.fieldOf("y").forGetter(Vec3i::getY), Codec.INT.fieldOf("z").forGetter(Vec3i::getZ)
+                    // MCRe NoiseFarlands: NBT 存档兼容边界——IntTag 截断写法（Decision 4）
+                    Codec.INT.fieldOf("x").forGetter(t -> (int) ((Vec3i) t).getX()), Codec.INT.fieldOf("y").forGetter(t -> (int) ((Vec3i) t).getY()), Codec.INT.fieldOf("z").forGetter(t -> (int) ((Vec3i) t).getZ())
                 )
                 .apply(i, BlockPos::new)
         );

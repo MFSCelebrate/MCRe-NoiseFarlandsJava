@@ -299,8 +299,9 @@ public class SurfaceRules {
         private final Map<ResourceKey<NormalNoise.NoiseParameters>, DoubleSupplier> noiseSamplers2d = new IdentityHashMap<>();
         private final Map<ResourceKey<NormalNoise.NoiseParameters>, DoubleSupplier> noiseSamplers3d = new IdentityHashMap<>();
         private long lastUpdateXZ = -9223372036854775807L;
-        private int blockX;
-        private int blockZ;
+        // MCRe NoiseFarlands: 世界坐标 Long 化
+        private long blockX;
+        private long blockZ;
         private int surfaceDepth;
         private long lastSurfaceDepth2Update = this.lastUpdateXZ - 1L;
         private double surfaceSecondary;
@@ -309,8 +310,8 @@ public class SurfaceRules {
         private long lastUpdateY = -9223372036854775807L;
         private final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         private @Nullable Holder<Biome> biome;
-        private int blockY;
-        private int waterHeight;
+        private long blockY;
+        private long waterHeight;
         private int stoneDepthBelow;
         private int stoneDepthAbove;
 
@@ -332,7 +333,7 @@ public class SurfaceRules {
             this.possibleBiomes = possibleBiomes;
         }
 
-        protected void updateXZ(final int blockX, final int blockZ) {
+        protected void updateXZ(final long blockX, final long blockZ) {
             this.lastUpdateXZ++;
             this.lastUpdateY++;
             this.blockX = blockX;
@@ -340,7 +341,8 @@ public class SurfaceRules {
             this.surfaceDepth = this.system.getSurfaceDepth(blockX, blockZ);
         }
 
-        protected void updateY(final int stoneDepthAbove, final int stoneDepthBelow, final int waterHeight, final int blockY) {
+        // MCRe NoiseFarlands: blockY 世界 Y Long 化；waterHeight 高度域保持 int
+    protected void updateY(final int stoneDepthAbove, final int stoneDepthBelow, final long waterHeight, final long blockY) {
             this.lastUpdateY++;
             this.biome = null;
             this.blockY = blockY;
@@ -370,19 +372,20 @@ public class SurfaceRules {
             return this.system.getSeaLevel();
         }
 
-        private static int blockCoordToSurfaceCell(final int blockCoord) {
+        // MCRe NoiseFarlands: 入参世界坐标 Long 化，返回 cell 相对域 int
+    private static long blockCoordToSurfaceCell(final long blockCoord) {
             return blockCoord >> 4;
         }
 
-        private static int surfaceCellToBlockCoord(final int cellCoord) {
+        private static long surfaceCellToBlockCoord(final long cellCoord) {
             return cellCoord << 4;
         }
 
         protected int getMinSurfaceLevel() {
             if (this.lastMinSurfaceLevelUpdate != this.lastUpdateXZ) {
                 this.lastMinSurfaceLevelUpdate = this.lastUpdateXZ;
-                int cornerCellX = blockCoordToSurfaceCell(this.blockX);
-                int cornerCellZ = blockCoordToSurfaceCell(this.blockZ);
+                long cornerCellX = blockCoordToSurfaceCell(this.blockX);
+                long cornerCellZ = blockCoordToSurfaceCell(this.blockZ);
                 ChunkPos preliminarySurfaceCellOrigin = new ChunkPos(cornerCellX, cornerCellZ);
                 if (!preliminarySurfaceCellOrigin.equals(this.lastPreliminarySurfaceCellOrigin)) {
                     this.lastPreliminarySurfaceCellOrigin = preliminarySurfaceCellOrigin;
@@ -487,8 +490,9 @@ public class SurfaceRules {
 
             @Override
             protected boolean compute() {
-                int chunkBlockX = this.context.blockX & 15;
-                int chunkBlockZ = this.context.blockZ & 15;
+                // MCRe NoiseFarlands: 0-15 局部坐标，int 域边界
+                int chunkBlockX = (int) (this.context.blockX & 15);
+                int chunkBlockZ = (int) (this.context.blockZ & 15);
                 int zNorth = Math.max(chunkBlockZ - 1, 0);
                 int zSouth = Math.min(chunkBlockZ + 1, 15);
                 ChunkAccess chunk = this.context.chunk;
@@ -658,7 +662,7 @@ public class SurfaceRules {
 
     private record SequenceRule(List<SurfaceRules.SurfaceRule> rules) implements SurfaceRules.SurfaceRule {
         @Override
-        public @Nullable BlockState tryApply(final int blockX, final int blockY, final int blockZ) {
+        public @Nullable BlockState tryApply(final long blockX, final long blockY, final long blockZ) {
             for (SurfaceRules.SurfaceRule rule : this.rules) {
                 BlockState state = rule.tryApply(blockX, blockY, blockZ);
                 if (state != null) {
@@ -698,7 +702,7 @@ public class SurfaceRules {
 
     private record StateRule(BlockState state) implements SurfaceRules.SurfaceRule {
         @Override
-        public BlockState tryApply(final int blockX, final int blockY, final int blockZ) {
+        public BlockState tryApply(final long blockX, final long blockY, final long blockZ) {
             return this.state;
         }
     }
@@ -759,7 +763,7 @@ public class SurfaceRules {
     }
 
     protected interface SurfaceRule {
-        @Nullable BlockState tryApply(final int blockX, final int blockY, final int blockZ);
+        @Nullable BlockState tryApply(final long blockX, final long blockY, final long blockZ);
     }
 
     private enum Temperature implements SurfaceRules.ConditionSource {
@@ -779,7 +783,7 @@ public class SurfaceRules {
 
     private record TestRule(SurfaceRules.Condition condition, SurfaceRules.SurfaceRule followup) implements SurfaceRules.SurfaceRule {
         @Override
-        public @Nullable BlockState tryApply(final int blockX, final int blockY, final int blockZ) {
+        public @Nullable BlockState tryApply(final long blockX, final long blockY, final long blockZ) {
             return !this.condition.test() ? null : this.followup.tryApply(blockX, blockY, blockZ);
         }
     }
@@ -831,7 +835,7 @@ public class SurfaceRules {
 
                 @Override
                 protected boolean compute() {
-                    int blockY = this.context.blockY;
+                    long blockY = this.context.blockY;
                     if (blockY <= trueAtAndBelow) {
                         return true;
                     }

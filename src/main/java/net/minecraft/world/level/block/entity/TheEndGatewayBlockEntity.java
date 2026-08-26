@@ -226,9 +226,10 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
 
     private static @Nullable BlockPos findValidSpawnInChunk(final LevelChunk chunk) {
         ChunkPos chunkPos = chunk.getPos();
-        BlockPos start = new BlockPos((int)chunkPos.getMinBlockX(), 30, (int)chunkPos.getMinBlockZ());
-        int maxY = chunk.getHighestSectionPosition() + 16 - 1;
-        BlockPos end = new BlockPos((int)chunkPos.getMaxBlockX(), maxY, (int)chunkPos.getMaxBlockZ());
+        // MCRe NoiseFarlands: 世界坐标 Long 化
+        BlockPos start = new BlockPos(chunkPos.getMinBlockX(), 30, chunkPos.getMinBlockZ());
+        long maxY = chunk.getHighestSectionPosition() + 16 - 1;
+        BlockPos end = new BlockPos(chunkPos.getMaxBlockX(), maxY, chunkPos.getMaxBlockZ());
         BlockPos closest = null;
         double closestDist = 0.0;
 

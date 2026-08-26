@@ -59,7 +59,7 @@ public class SectionCompiler {
         SectionCompiler.Results results = new SectionCompiler.Results();
         // far lands：origin 用 long 计算，BlockPos 取「真实坐标 mod 2^32」的 int 表示
         // （int 溢出不影响 &15 局部坐标；region 内部用 long 恢复 section 索引）
-        BlockPos minPos = new BlockPos((int)sectionPos.minBlockXLong(), (int)sectionPos.minBlockYLong(), (int)sectionPos.minBlockZLong());
+        BlockPos minPos = new BlockPos((int)sectionPos.minBlockX(), (int)sectionPos.minBlockY(), (int)sectionPos.minBlockZ());
         BlockPos maxPos = minPos.offset(15, 15, 15);
         VisGraph visGraph = new VisGraph();
         BlockModelLighter.enableCaching();

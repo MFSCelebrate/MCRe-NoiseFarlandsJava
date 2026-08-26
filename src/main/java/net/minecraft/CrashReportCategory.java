@@ -39,18 +39,18 @@ public class CrashReportCategory {
         result.append(", ");
 
         try {
-            int sectionX = SectionPos.blockToSectionCoord(x);
-            int sectionY = SectionPos.blockToSectionCoord(y);
-            int sectionZ = SectionPos.blockToSectionCoord(z);
+            long sectionX = SectionPos.blockToSectionCoord(x);
+            long sectionY = SectionPos.blockToSectionCoord(y);
+            long sectionZ = SectionPos.blockToSectionCoord(z);
             int relativeX = x & 15;
             int relativeY = y & 15;
             int relativeZ = z & 15;
-            int minBlockX = SectionPos.sectionToBlockCoord(sectionX);
+            long minBlockX = SectionPos.sectionToBlockCoord(sectionX);
             int minBlockY = levelHeightAccessor.getMinY();
-            int minBlockZ = SectionPos.sectionToBlockCoord(sectionZ);
-            int maxBlockX = SectionPos.sectionToBlockCoord(sectionX + 1) - 1;
+            long minBlockZ = SectionPos.sectionToBlockCoord(sectionZ);
+            long maxBlockX = SectionPos.sectionToBlockCoord(sectionX + 1) - 1;
             int maxBlockY = levelHeightAccessor.getMaxY();
-            int maxBlockZ = SectionPos.sectionToBlockCoord(sectionZ + 1) - 1;
+            long maxBlockZ = SectionPos.sectionToBlockCoord(sectionZ + 1) - 1;
             result.append(
                 String.format(
                     Locale.ROOT,

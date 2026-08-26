@@ -46,7 +46,7 @@ public class PaleMossDecorator extends TreeDecorator {
         WorldGenLevel level = context.level();
         List<BlockPos> logs = Util.shuffledCopy(context.logs(), random);
         if (!logs.isEmpty()) {
-            BlockPos origin = Collections.min(logs, Comparator.comparingInt(Vec3i::getY));
+            BlockPos origin = Collections.min(logs, Comparator.comparingLong(Vec3i::getY));
             if (random.nextFloat() < this.groundProbability) {
                 level.registryAccess()
                     .lookup(Registries.CONFIGURED_FEATURE)

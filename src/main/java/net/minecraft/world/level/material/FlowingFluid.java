@@ -533,8 +533,8 @@ public abstract class FlowingFluid extends Fluid {
         }
 
         private short getCacheKey(final BlockPos pos) {
-            int relativeX = pos.getX() - this.origin.getX();
-            int relativeZ = pos.getZ() - this.origin.getZ();
+            long relativeX = pos.getX() - this.origin.getX();
+            long relativeZ = pos.getZ() - this.origin.getZ();
             return (short)((relativeX + 128 & 0xFF) << 8 | relativeZ + 128 & 0xFF);
         }
     }

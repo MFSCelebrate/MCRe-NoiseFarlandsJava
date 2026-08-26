@@ -159,9 +159,9 @@ public class SculkShriekerBlockEntity extends BlockEntity implements GameEventLi
         if (sound != null) {
             BlockPos pos = this.getBlockPos();
             RandomSource random = level.getRandom();
-            int x = pos.getX() + Mth.randomBetweenInclusive(random, -10, 10);
-            int y = pos.getY() + Mth.randomBetweenInclusive(random, -10, 10);
-            int z = pos.getZ() + Mth.randomBetweenInclusive(random, -10, 10);
+            long x = pos.getX() + Mth.randomBetweenInclusive(random, -10, 10);
+            long y = pos.getY() + Mth.randomBetweenInclusive(random, -10, 10);
+            long z = pos.getZ() + Mth.randomBetweenInclusive(random, -10, 10);
             level.playSound(null, x, y, z, sound, SoundSource.HOSTILE, 5.0F, 1.0F);
         }
     }

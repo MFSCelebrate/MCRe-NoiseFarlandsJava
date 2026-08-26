@@ -85,7 +85,8 @@ public class PotentSulfurBlockEntity extends BlockEntity {
             BlockPos sourceBlock = findNoxiousGasSourceBlock(level, pos);
             if (sourceBlock != null) {
                 if (entity.waitingCountdown <= 0) {
-                    int waterBlocks = sourceBlock.getY() - pos.getY() - 1;
+                    // MCRe NoiseFarlands: Y 高度差计数，int 域边界
+                    int waterBlocks = (int) (sourceBlock.getY() - pos.getY() - 1);
                     RandomSource geyserPositional = geyserPositional((ServerLevel)level, pos);
                     if (state.getValue(PotentSulfurBlock.STATE) == PotentSulfurState.DORMANT) {
                         entity.waitingCountdown = 10 * (waterBlocks - 1) + geyserPositional.nextIntBetweenInclusive(15, 30);
@@ -115,7 +116,8 @@ public class PotentSulfurBlockEntity extends BlockEntity {
     public static BlockEntityTicker<PotentSulfurBlockEntity> LAUNCH_ENTITY_TICKER = (level, pos, state, entity) -> {
         BlockPos sourceBlock = findNoxiousGasSourceBlock(level, pos);
         if (sourceBlock != null) {
-            int waterBlocks = sourceBlock.getY() - pos.getY() - 1;
+            // MCRe NoiseFarlands: Y 高度差计数，int 域边界
+                    int waterBlocks = (int) (sourceBlock.getY() - pos.getY() - 1);
             int geyserForceHeight = getUnobstructedBlockCount(level, pos.above(), waterBlocks);
             AABB aabb = new AABB(pos.above()).expandTowards(0.0, geyserForceHeight - 1, 0.0);
 
@@ -176,7 +178,8 @@ public class PotentSulfurBlockEntity extends BlockEntity {
     }
 
     private static void spawnGeyserParticle(final Level level, final BlockPos sulfurPos, final BlockPos sourcePos) {
-        int waterBlocks = sourcePos.getY() - sulfurPos.getY() - 1;
+        // MCRe NoiseFarlands: 方块计数 int 域边界
+        int waterBlocks = (int) (sourcePos.getY() - sulfurPos.getY() - 1);
         level.addParticle(
             new GeyserParticleOptions(ParticleTypes.GEYSER, waterBlocks), sourcePos.getX() + 0.5, sourcePos.getY(), sourcePos.getZ() + 0.5, 0.0, 0.0, 0.0
         );
@@ -206,7 +209,7 @@ public class PotentSulfurBlockEntity extends BlockEntity {
     }
 
     private static @Nullable BlockPos findNoxiousGasSourceBlock(final Level level, final BlockPos origin) {
-        int maxY = origin.getY() + 4 + 1;
+        long maxY = origin.getY() + 4 + 1;
         CollisionContext geyserPositionContext = CollisionContext.positionContext(origin.getY());
         BlockPos.MutableBlockPos pos = origin.above(1).mutable();
 

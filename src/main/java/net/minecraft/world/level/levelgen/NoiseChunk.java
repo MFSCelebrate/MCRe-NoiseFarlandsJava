@@ -28,10 +28,12 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     private final int cellCountXZ;
     private final int cellCountY;
     private final int cellNoiseMinY;
-    private final int firstCellX;
-    private final int firstCellZ;
-    private final int firstNoiseX;
-    private final int firstNoiseZ;
+    // MCRe NoiseFarlands: cell 网格坐标世界域 Long 化
+    private final long firstCellX;
+    private final long firstCellZ;
+    // MCRe NoiseFarlands: chunk 起点 quart 坐标（世界域），Long 化
+    private final long firstNoiseX;
+    private final long firstNoiseZ;
     private final List<NoiseChunk.NoiseInterpolator> interpolators;
     private final List<NoiseChunk.CacheAllInCell> cellCaches;
     private final Map<DensityFunction, DensityFunction> wrapped = new HashMap<>();
@@ -51,9 +53,10 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     private final int cellHeight;
     private boolean interpolating;
     private boolean fillingCell;
-    private int cellStartBlockX;
-    private int cellStartBlockY;
-    private int cellStartBlockZ;
+    // MCRe NoiseFarlands: cell 起点为世界坐标，Long 化；inCell 为 0~cellWidth 相对域 int
+    private long cellStartBlockX;
+    private long cellStartBlockY;
+    private long cellStartBlockZ;
     private int inCellX;
     private int inCellY;
     private int inCellZ;
@@ -103,8 +106,9 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     public NoiseChunk(
         final int cellCountXZ,
         final RandomState randomState,
-        final int chunkMinBlockX,
-        final int chunkMinBlockZ,
+        // MCRe NoiseFarlands: 世界坐标 Long 化
+        final long chunkMinBlockX,
+        final long chunkMinBlockZ,
         final NoiseSettings noiseSettings,
         final DensityFunctions.BeardifierOrMarker beardifier,
         final NoiseGeneratorSettings settings,
@@ -122,7 +126,8 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         this.cellCaches = Lists.newArrayList();
         this.firstNoiseX = QuartPos.fromBlock(chunkMinBlockX);
         this.firstNoiseZ = QuartPos.fromBlock(chunkMinBlockZ);
-        this.noiseSizeXZ = QuartPos.fromBlock(cellCountXZ * this.cellWidth);
+        // MCRe NoiseFarlands: chunk 内噪声网格尺寸，int 域边界
+        this.noiseSizeXZ = (int) QuartPos.fromBlock(cellCountXZ * this.cellWidth);
         this.blender = blender;
         this.beardifier = beardifier;
         if (!blender.isEmpty()) {
@@ -130,12 +135,12 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
             this.blendOffset = new NoiseChunk.FlatCache(new NoiseChunk.BlendOffset(), false);
 
             for (int x = 0; x <= this.noiseSizeXZ; x++) {
-                int quartX = this.firstNoiseX + x;
-                int blockX = QuartPos.toBlock(quartX);
+                long quartX = this.firstNoiseX + x;
+                long blockX = QuartPos.toBlock(quartX);
 
                 for (int z = 0; z <= this.noiseSizeXZ; z++) {
-                    int quartZ = this.firstNoiseZ + z;
-                    int blockZ = QuartPos.toBlock(quartZ);
+                    long quartZ = this.firstNoiseZ + z;
+                    long blockZ = QuartPos.toBlock(quartZ);
                     Blender.BlendingOutput blendingOutput = blender.blendOffsetAndFactor(blockX, blockZ);
                     this.blendAlpha.values[x + z * this.blendAlpha.sizeXZ] = blendingOutput.alpha();
                     this.blendOffset.values[x + z * this.blendOffset.sizeXZ] = blendingOutput.blendingOffset();
@@ -152,8 +157,8 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         if (!settings.isAquifersEnabled()) {
             this.aquifer = Aquifer.createDisabled(globalFluidPicker);
         } else {
-            int chunkX = SectionPos.blockToSectionCoord(chunkMinBlockX);
-            int chunkZ = SectionPos.blockToSectionCoord(chunkMinBlockZ);
+            long chunkX = SectionPos.blockToSectionCoord(chunkMinBlockX);
+            long chunkZ = SectionPos.blockToSectionCoord(chunkMinBlockZ);
             this.aquifer = Aquifer.create(
                 this, new ChunkPos(chunkX, chunkZ), wrappedRouter, randomState.aquiferRandom(), noiseSettings.minY(), noiseSettings.height(), globalFluidPicker
             );
@@ -194,25 +199,27 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     }
 
     @Override
-    public int blockX() {
+    public long blockX() {
         return this.cellStartBlockX + this.inCellX;
     }
 
     @Override
-    public int blockY() {
+    public long blockY() {
         return this.cellStartBlockY + this.inCellY;
     }
 
     @Override
-    public int blockZ() {
+    public long blockZ() {
         return this.cellStartBlockZ + this.inCellZ;
     }
 
-    public int maxPreliminarySurfaceLevel(final int minBlockX, final int minBlockZ, final int maxBlockX, final int maxBlockZ) {
-        int maxY = Integer.MIN_VALUE;
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public long maxPreliminarySurfaceLevel(final long minBlockX, final long minBlockZ, final long maxBlockX, final long maxBlockZ) {
+        // MCRe NoiseFarlands: 世界 Y Long 化
+        long maxY = Long.MIN_VALUE;
 
-        for (int blockZ = minBlockZ; blockZ <= maxBlockZ; blockZ += 4) {
-            for (int blockX = minBlockX; blockX <= maxBlockX; blockX += 4) {
+        for (long blockZ = minBlockZ; blockZ <= maxBlockZ; blockZ += 4) {
+            for (long blockX = minBlockX; blockX <= maxBlockX; blockX += 4) {
                 int surfaceLevel = this.preliminarySurfaceLevel(blockX, blockZ);
                 if (surfaceLevel > maxY) {
                     maxY = surfaceLevel;
@@ -223,15 +230,15 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         return maxY;
     }
 
-    public int preliminarySurfaceLevel(final int sampleX, final int sampleZ) {
-        int quantizedX = QuartPos.toBlock(QuartPos.fromBlock(sampleX));
-        int quantizedZ = QuartPos.toBlock(QuartPos.fromBlock(sampleZ));
+    public int preliminarySurfaceLevel(final long sampleX, final long sampleZ) {
+        long quantizedX = QuartPos.toBlock(QuartPos.fromBlock(sampleX));
+        long quantizedZ = QuartPos.toBlock(QuartPos.fromBlock(sampleZ));
         return this.preliminarySurfaceLevelCache.computeIfAbsent(new ColumnPos(quantizedX, quantizedZ), this::computePreliminarySurfaceLevel);
     }
 
     private int computePreliminarySurfaceLevel(final ColumnPos key) {
-        int blockX = key.x();
-        int blockZ = key.z();
+        long blockX = key.x();
+        long blockZ = key.z();
         return Mth.floor(this.preliminarySurfaceLevel.compute(new DensityFunction.SinglePointContext(blockX, 0, blockZ)));
     }
 
@@ -240,7 +247,8 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         this.inCellX = 0;
 
         for (int cellZIndex = 0; cellZIndex < this.cellCountXZ + 1; cellZIndex++) {
-            int cellZ = this.firstCellZ + cellZIndex;
+            // MCRe NoiseFarlands: cell 世界域 Long 化
+            long cellZ = this.firstCellZ + cellZIndex;
             this.cellStartBlockZ = cellZ * this.cellWidth;
             this.inCellZ = 0;
             this.arrayInterpolationCounter++;
@@ -261,11 +269,11 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
 
         this.interpolating = true;
         this.interpolationCounter = 0L;
-        this.fillSlice(true, this.firstCellX);
+        this.fillSlice(true, (int) this.firstCellX);
     }
 
     public void advanceCellX(final int cellXIndex) {
-        this.fillSlice(false, this.firstCellX + cellXIndex + 1);
+        this.fillSlice(false, (int) (this.firstCellX + cellXIndex + 1));
         this.cellStartBlockX = (this.firstCellX + cellXIndex) * this.cellWidth;
     }
 
@@ -317,24 +325,26 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         this.fillingCell = false;
     }
 
-    public void updateForY(final int posY, final double factorY) {
-        this.inCellY = posY - this.cellStartBlockY;
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public void updateForY(final long posY, final double factorY) {
+        // MCRe NoiseFarlands: inCell 为 0~cellWidth 相对域，int 域边界
+        this.inCellY = (int) (posY - this.cellStartBlockY);
 
         for (NoiseChunk.NoiseInterpolator i : this.interpolators) {
             i.updateForY(factorY);
         }
     }
 
-    public void updateForX(final int posX, final double factorX) {
-        this.inCellX = posX - this.cellStartBlockX;
+    public void updateForX(final long posX, final double factorX) {
+        this.inCellX = (int) (posX - this.cellStartBlockX);
 
         for (NoiseChunk.NoiseInterpolator i : this.interpolators) {
             i.updateForX(factorX);
         }
     }
 
-    public void updateForZ(final int posZ, final double factorZ) {
-        this.inCellZ = posZ - this.cellStartBlockZ;
+    public void updateForZ(final long posZ, final double factorZ) {
+        this.inCellZ = (int) (posZ - this.cellStartBlockZ);
         this.interpolationCounter++;
 
         for (NoiseChunk.NoiseInterpolator i : this.interpolators) {
@@ -366,7 +376,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         return this.cellHeight;
     }
 
-    private Blender.BlendingOutput getOrComputeBlendingOutput(final int blockX, final int blockZ) {
+    private Blender.BlendingOutput getOrComputeBlendingOutput(final long blockX, final long blockZ) {
         BlockPos pos2D = new BlockPos(blockX, 0, blockZ);
         if (pos2D.equals(this.lastBlendingDataPos)) {
             return this.lastBlendingOutput;
@@ -546,8 +556,8 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            int blockX = context.blockX();
-            int blockZ = context.blockZ();
+            long blockX = context.blockX();
+            long blockZ = context.blockZ();
             BlockPos pos2D = new BlockPos(blockX, 0, blockZ);
             if (pos2D.equals(this.lastPos2D)) {
                 return this.lastValue;
@@ -688,12 +698,12 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
             this.values = new double[this.sizeXZ * this.sizeXZ];
             if (fill) {
                 for (int x = 0; x <= NoiseChunk.this.noiseSizeXZ; x++) {
-                    int quartX = NoiseChunk.this.firstNoiseX + x;
-                    int blockX = QuartPos.toBlock(quartX);
+                    long quartX = NoiseChunk.this.firstNoiseX + x;
+                    long blockX = QuartPos.toBlock(quartX);
 
                     for (int z = 0; z <= NoiseChunk.this.noiseSizeXZ; z++) {
-                        int quartZ = NoiseChunk.this.firstNoiseZ + z;
-                        int blockZ = QuartPos.toBlock(quartZ);
+                        long quartZ = NoiseChunk.this.firstNoiseZ + z;
+                        long blockZ = QuartPos.toBlock(quartZ);
                         this.values[x + z * this.sizeXZ] = noiseFiller.compute(new DensityFunction.SinglePointContext(blockX, 0, blockZ));
                     }
                 }
@@ -702,10 +712,11 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            int quartX = QuartPos.fromBlock(context.blockX());
-            int quartZ = QuartPos.fromBlock(context.blockZ());
-            int x = quartX - NoiseChunk.this.firstNoiseX;
-            int z = quartZ - NoiseChunk.this.firstNoiseZ;
+            long quartX = QuartPos.fromBlock(context.blockX());
+            long quartZ = QuartPos.fromBlock(context.blockZ());
+            // MCRe NoiseFarlands: 相对缓存数组偏移，int 域边界
+            int x = (int) (quartX - NoiseChunk.this.firstNoiseX);
+            int z = (int) (quartZ - NoiseChunk.this.firstNoiseZ);
             return x >= 0 && z >= 0 && x < this.sizeXZ && z < this.sizeXZ ? this.values[x + z * this.sizeXZ] : this.noiseFiller.compute(context);
         }
 

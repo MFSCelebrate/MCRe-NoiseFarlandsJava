@@ -192,7 +192,7 @@ public record SerializableChunkData(
         return new SerializableChunkData(
             containerFactory,
             chunkPos,
-            levelHeight.getMinSectionY(),
+            (int) levelHeight.getMinSectionY(),
             lastUpdateTime,
             inhabitedTime,
             status,
@@ -342,7 +342,8 @@ public record SerializableChunkData(
         LevelChunkSection[] chunkSections = chunk.getSections();
         LevelLightEngine lightEngine = level.getChunkSource().getLightEngine();
 
-        for (int sectionY = lightEngine.getMinLightSection(); sectionY < lightEngine.getMaxLightSection(); sectionY++) {
+        // MCRe NoiseFarlands: section Y Long 化
+        for (long sectionY = lightEngine.getMinLightSection(); sectionY < lightEngine.getMaxLightSection(); sectionY++) {
             int sectionIndex = chunk.getSectionIndexFromSectionY(sectionY);
             boolean hasSection = sectionIndex >= 0 && sectionIndex < chunkSections.length;
             DataLayer sourceBlockLight = lightEngine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(pos, sectionY));
@@ -392,7 +393,7 @@ public record SerializableChunkData(
         return new SerializableChunkData(
             level.palettedContainerFactory(),
             pos,
-            chunk.getMinSectionY(),
+            (int) chunk.getMinSectionY(),
             level.getGameTime(),
             chunk.getInhabitedTime(),
             chunk.getPersistedStatus(),
@@ -631,6 +632,7 @@ public record SerializableChunkData(
         }
     }
 
-    public record SectionData(int y, @Nullable LevelChunkSection chunkSection, @Nullable DataLayer blockLight, @Nullable DataLayer skyLight) {
+    public // MCRe NoiseFarlands: section Y Long 化
+    record SectionData(long y, @Nullable LevelChunkSection chunkSection, @Nullable DataLayer blockLight, @Nullable DataLayer skyLight) {
     }
 }

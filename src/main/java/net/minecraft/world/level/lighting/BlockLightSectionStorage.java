@@ -22,9 +22,9 @@ public class BlockLightSectionStorage extends LayerLightSectionStorage<BlockLigh
         return layer == null
             ? 0
             : layer.get(
-                SectionPos.sectionRelative(blockNode.getX()),
-                SectionPos.sectionRelative(blockNode.getY()),
-                SectionPos.sectionRelative(blockNode.getZ())
+                (int) SectionPos.sectionRelative(blockNode.getX()),
+                (int) SectionPos.sectionRelative(blockNode.getY()),
+                (int) SectionPos.sectionRelative(blockNode.getZ())
             );
     }
 

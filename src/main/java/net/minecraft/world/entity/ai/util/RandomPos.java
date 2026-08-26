@@ -76,7 +76,7 @@ public class RandomPos {
             mutablePos.move(Direction.UP);
         }
 
-        int firstNonSolidY = mutablePos.getY();
+        long firstNonSolidY = mutablePos.getY();
 
         while (mutablePos.getY() <= maxY && mutablePos.getY() - firstNonSolidY < aboveSolidAmount) {
             mutablePos.move(Direction.UP);

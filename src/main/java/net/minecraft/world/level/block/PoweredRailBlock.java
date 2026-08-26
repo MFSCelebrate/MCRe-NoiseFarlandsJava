@@ -32,9 +32,9 @@ public class PoweredRailBlock extends BaseRailBlock {
             return false;
         }
 
-        int x = pos.getX();
-        int y = pos.getY();
-        int z = pos.getZ();
+        long x = pos.getX();
+        long y = pos.getY();
+        long z = pos.getZ();
         boolean checkBelow = true;
         RailShape shape = state.getValue(SHAPE);
         switch (shape) {

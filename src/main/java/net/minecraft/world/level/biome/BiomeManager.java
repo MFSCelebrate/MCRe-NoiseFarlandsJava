@@ -8,7 +8,7 @@ import net.minecraft.util.LinearCongruentialGenerator;
 import net.minecraft.util.Mth;
 
 public class BiomeManager {
-    public static final int CHUNK_CENTER_QUART = QuartPos.fromBlock(8);
+    public static final long CHUNK_CENTER_QUART = QuartPos.fromBlock(8);
     private static final int ZOOM_BITS = 2;
     private static final int ZOOM = 4;
     private static final int ZOOM_MASK = 3;
@@ -29,12 +29,12 @@ public class BiomeManager {
     }
 
     public Holder<Biome> getBiome(final BlockPos pos) {
-        int absX = pos.getX() - 2;
-        int absY = pos.getY() - 2;
-        int absZ = pos.getZ() - 2;
-        int parentX = absX >> 2;
-        int parentY = absY >> 2;
-        int parentZ = absZ >> 2;
+        long absX = pos.getX() - 2;
+        long absY = pos.getY() - 2;
+        long absZ = pos.getZ() - 2;
+        long parentX = absX >> 2;
+        long parentY = absY >> 2;
+        long parentZ = absZ >> 2;
         double fractX = (absX & 3) / 4.0;
         double fractY = (absY & 3) / 4.0;
         double fractZ = (absZ & 3) / 4.0;
@@ -45,9 +45,9 @@ public class BiomeManager {
             boolean xEven = (i & 4) == 0;
             boolean yEven = (i & 2) == 0;
             boolean zEven = (i & 1) == 0;
-            int cornerX = xEven ? parentX : parentX + 1;
-            int cornerY = yEven ? parentY : parentY + 1;
-            int cornerZ = zEven ? parentZ : parentZ + 1;
+            long cornerX = xEven ? parentX : parentX + 1;
+            long cornerY = yEven ? parentY : parentY + 1;
+            long cornerZ = zEven ? parentZ : parentZ + 1;
             double distanceX = xEven ? fractX : fractX - 1.0;
             double distanceY = yEven ? fractY : fractY - 1.0;
             double distanceZ = zEven ? fractZ : fractZ - 1.0;
@@ -58,32 +58,32 @@ public class BiomeManager {
             }
         }
 
-        int biomeX = (minI & 4) == 0 ? parentX : parentX + 1;
-        int biomeY = (minI & 2) == 0 ? parentY : parentY + 1;
-        int biomeZ = (minI & 1) == 0 ? parentZ : parentZ + 1;
+        long biomeX = (minI & 4) == 0 ? parentX : parentX + 1;
+        long biomeY = (minI & 2) == 0 ? parentY : parentY + 1;
+        long biomeZ = (minI & 1) == 0 ? parentZ : parentZ + 1;
         return this.noiseBiomeSource.getNoiseBiome(biomeX, biomeY, biomeZ);
     }
 
     public Holder<Biome> getNoiseBiomeAtPosition(final double x, final double y, final double z) {
-        int quartX = QuartPos.fromBlock(Mth.floor(x));
-        int quartY = QuartPos.fromBlock(Mth.floor(y));
-        int quartZ = QuartPos.fromBlock(Mth.floor(z));
+        long quartX = QuartPos.fromBlock(Mth.floor(x));
+        long quartY = QuartPos.fromBlock(Mth.floor(y));
+        long quartZ = QuartPos.fromBlock(Mth.floor(z));
         return this.getNoiseBiomeAtQuart(quartX, quartY, quartZ);
     }
 
     public Holder<Biome> getNoiseBiomeAtPosition(final BlockPos blockPos) {
-        int quartX = QuartPos.fromBlock(blockPos.getX());
-        int quartY = QuartPos.fromBlock(blockPos.getY());
-        int quartZ = QuartPos.fromBlock(blockPos.getZ());
+        long quartX = QuartPos.fromBlock(blockPos.getX());
+        long quartY = QuartPos.fromBlock(blockPos.getY());
+        long quartZ = QuartPos.fromBlock(blockPos.getZ());
         return this.getNoiseBiomeAtQuart(quartX, quartY, quartZ);
     }
 
-    public Holder<Biome> getNoiseBiomeAtQuart(final int quartX, final int quartY, final int quartZ) {
+    public Holder<Biome> getNoiseBiomeAtQuart(final long quartX, final long quartY, final long quartZ) {
         return this.noiseBiomeSource.getNoiseBiome(quartX, quartY, quartZ);
     }
 
     private static double getFiddledDistance(
-        final long seed, final int xRandom, final int yRandom, final int zRandom, final double distanceX, final double distanceY, final double distanceZ
+        final long seed, final long xRandom, final long yRandom, final long zRandom, final double distanceX, final double distanceY, final double distanceZ
     ) {
         long rval = seed;
         rval = LinearCongruentialGenerator.next(rval, xRandom);
@@ -106,6 +106,6 @@ public class BiomeManager {
     }
 
     public interface NoiseBiomeSource {
-        Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ);
+        Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ);
     }
 }

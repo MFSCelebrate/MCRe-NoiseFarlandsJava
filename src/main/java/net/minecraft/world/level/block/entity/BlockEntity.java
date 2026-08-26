@@ -69,8 +69,8 @@ public abstract class BlockEntity implements DebugValueSource, TypedInstance<Blo
         int x = entityTag.getIntOr("x", 0);
         int y = entityTag.getIntOr("y", 0);
         int z = entityTag.getIntOr("z", 0);
-        int sectionX = SectionPos.blockToSectionCoord(x);
-        int sectionZ = SectionPos.blockToSectionCoord(z);
+        long sectionX = SectionPos.blockToSectionCoord(x);
+        long sectionZ = SectionPos.blockToSectionCoord(z);
         if (sectionX != base.x() || sectionZ != base.z()) {
             LOGGER.warn("Block entity {} found in a wrong chunk, expected position from chunk {}", entityTag, base);
             x = (int)base.getBlockX(SectionPos.sectionRelative(x));
@@ -160,9 +160,9 @@ public abstract class BlockEntity implements DebugValueSource, TypedInstance<Blo
 
     private void saveMetadata(final ValueOutput output) {
         this.saveId(output);
-        output.putInt("x", this.worldPosition.getX());
-        output.putInt("y", this.worldPosition.getY());
-        output.putInt("z", this.worldPosition.getZ());
+        output.putInt("x", (int) this.worldPosition.getX());
+        output.putInt("y", (int) this.worldPosition.getY());
+        output.putInt("z", (int) this.worldPosition.getZ());
     }
 
     public static @Nullable BlockEntity loadStatic(final BlockPos pos, final BlockState state, final CompoundTag tag, final HolderLookup.Provider registries) {

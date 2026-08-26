@@ -65,8 +65,8 @@ public class DebugLevelSource extends ChunkGenerator {
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                int worldX = SectionPos.sectionToBlockCoord(chunkX, x);
-                int worldZ = SectionPos.sectionToBlockCoord(chunkZ, z);
+                long worldX = SectionPos.sectionToBlockCoord(chunkX, x);
+                long worldZ = SectionPos.sectionToBlockCoord(chunkZ, z);
                 level.setBlock(blockPos.set(worldX, 60, worldZ), BARRIER, 2);
                 BlockState state = getBlockStateFor(worldX, worldZ);
                 level.setBlock(blockPos.set(worldX, 70, worldZ), state, 2);
@@ -82,12 +82,14 @@ public class DebugLevelSource extends ChunkGenerator {
     }
 
     @Override
-    public int getBaseHeight(final int x, final int z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public long getBaseHeight(final long x, final long z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         return 0;
     }
 
     @Override
-    public NoiseColumn getBaseColumn(final int x, final int z, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public NoiseColumn getBaseColumn(final long x, final long z, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         return new NoiseColumn(0, new BlockState[0]);
     }
 

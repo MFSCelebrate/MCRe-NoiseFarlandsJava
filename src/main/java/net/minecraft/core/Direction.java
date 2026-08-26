@@ -253,15 +253,15 @@ public enum Direction implements StringRepresentable {
     }
 
     public int getStepX() {
-        return this.normal.getX();
+        return (int) this.normal.getX();
     }
 
     public int getStepY() {
-        return this.normal.getY();
+        return (int) this.normal.getY();
     }
 
     public int getStepZ() {
-        return this.normal.getZ();
+        return (int) this.normal.getZ();
     }
 
     public Vector3f step() {
@@ -332,10 +332,11 @@ public enum Direction implements StringRepresentable {
     }
 
     @Contract("_,_,_,!null->!null;_,_,_,_->_")
-    public static @Nullable Direction getNearest(final int x, final int y, final int z, final @Nullable Direction orElse) {
-        int absX = Math.abs(x);
-        int absY = Math.abs(y);
-        int absZ = Math.abs(z);
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public static @Nullable Direction getNearest(final long x, final long y, final long z, final @Nullable Direction orElse) {
+        final long absX = Math.abs(x);
+        final long absY = Math.abs(y);
+        final long absZ = Math.abs(z);
         if (absX > absZ && absX > absY) {
             return x < 0 ? WEST : EAST;
         } else if (absZ > absX && absZ > absY) {
@@ -349,6 +350,7 @@ public enum Direction implements StringRepresentable {
 
     @Contract("_,!null->!null;_,_->_")
     public static @Nullable Direction getNearest(final Vec3i vec, final @Nullable Direction orElse) {
+        // MCRe NoiseFarlands: 世界坐标 Long 化
         return getNearest(vec.getX(), vec.getY(), vec.getZ(), orElse);
     }
 

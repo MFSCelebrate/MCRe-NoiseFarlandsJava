@@ -142,7 +142,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     }
 
     @Deprecated(forRemoval = true)
-    public int getHighestSectionPosition() {
+    public long getHighestSectionPosition() {
         int sectionIndex = this.getHighestFilledSectionIndex();
         return sectionIndex == -1 ? this.getMinY() : SectionPos.sectionToBlockCoord(this.getSectionYFromSectionIndex(sectionIndex));
     }
@@ -240,7 +240,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
         this.markUnsaved();
     }
 
-    public boolean isYSpaceEmpty(int yStartInclusive, int yEndInclusive) {
+    public boolean isYSpaceEmpty(long yStartInclusive, long yEndInclusive) {
         if (yStartInclusive < this.getMinY()) {
             yStartInclusive = this.getMinY();
         }
@@ -249,7 +249,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
             yEndInclusive = this.getMaxY();
         }
 
-        for (int y = yStartInclusive; y <= yEndInclusive; y += 16) {
+        for (long y = yStartInclusive; y <= yEndInclusive; y += 16) {
             if (!this.getSection(this.getSectionIndex(y)).hasOnlyAir()) {
                 return false;
             }
@@ -323,7 +323,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     public void findBlocks(final Predicate<BlockState> predicate, final BiConsumer<BlockPos, BlockState> consumer) {
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
-        for (int sectionY = this.getMinSectionY(); sectionY <= this.getMaxSectionY(); sectionY++) {
+        for (long sectionY = this.getMinSectionY(); sectionY <= this.getMaxSectionY(); sectionY++) {
             LevelChunkSection section = this.getSection(this.getSectionIndexFromSectionY(sectionY));
             if (section.maybeHas(predicate)) {
                 BlockPos origin = SectionPos.of(this.chunkPos, sectionY).origin();
@@ -429,11 +429,12 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+    public Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ) {
         try {
-            int quartMinY = QuartPos.fromBlock(this.getMinY());
-            int quartMaxY = quartMinY + QuartPos.fromBlock(this.getHeight()) - 1;
-            int clampedQuartY = Mth.clamp(quartY, quartMinY, quartMaxY);
+            // MCRe NoiseFarlands: minY/getHeight 为高度配置域(int)，经 QuartPos 提升为 long 参与运算
+            long quartMinY = QuartPos.fromBlock(this.getMinY());
+            long quartMaxY = quartMinY + QuartPos.fromBlock(this.getHeight()) - 1;
+            long clampedQuartY = Mth.clamp(quartY, quartMinY, quartMaxY);
             int sectionIndex = this.getSectionIndex(QuartPos.toBlock(clampedQuartY));
             return this.sections[sectionIndex].getNoiseBiome(quartX & 3, clampedQuartY & 3, quartZ & 3);
         } catch (Throwable t) {
@@ -446,13 +447,13 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
 
     public void fillBiomesFromNoise(final BiomeResolver biomeResolver, final Climate.Sampler sampler) {
         ChunkPos pos = this.getPos();
-        int quartMinX = QuartPos.fromBlock((int)pos.getMinBlockX());
-        int quartMinZ = QuartPos.fromBlock((int)pos.getMinBlockZ());
+        long quartMinX = QuartPos.fromBlock(pos.getMinBlockX());
+        long quartMinZ = QuartPos.fromBlock(pos.getMinBlockZ());
         LevelHeightAccessor heightAccessor = this.getHeightAccessorForGeneration();
 
-        for (int sectionY = heightAccessor.getMinSectionY(); sectionY <= heightAccessor.getMaxSectionY(); sectionY++) {
+        for (long sectionY = heightAccessor.getMinSectionY(); sectionY <= heightAccessor.getMaxSectionY(); sectionY++) {
             LevelChunkSection section = this.getSection(this.getSectionIndexFromSectionY(sectionY));
-            int quartMinY = QuartPos.fromSection(sectionY);
+            long quartMinY = QuartPos.fromSection(sectionY);
             section.fillBiomesFromNoise(biomeResolver, sampler, quartMinX, quartMinY, quartMinZ);
         }
     }

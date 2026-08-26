@@ -49,7 +49,8 @@ public class VisGraph {
     }
 
     private static int getIndex(final BlockPos pos) {
-        return getIndex(pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15);
+        // MCRe NoiseFarlands: 0-15 局部坐标，int 域边界
+        return getIndex((int) (pos.getX() & 15), (int) (pos.getY() & 15), (int) (pos.getZ() & 15));
     }
 
     private static int getIndex(final int x, final int y, final int z) {

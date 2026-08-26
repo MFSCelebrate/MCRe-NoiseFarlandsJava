@@ -81,9 +81,9 @@ public class PaintingRenderer extends EntityRenderer<Painting, PaintingRenderSta
             for (int segmentX = 0; segmentX < width; segmentX++) {
                 float segmentOffsetX = segmentX + offsetX + 0.5F;
                 float segmentOffsetY = segmentY + offsetY + 0.5F;
-                int x = entity.getBlockX();
+                long x = entity.getBlockX();
                 int y = Mth.floor(entity.getY() + segmentOffsetY);
-                int z = entity.getBlockZ();
+                long z = entity.getBlockZ();
                 switch (direction) {
                     case NORTH:
                         x = Mth.floor(entity.getX() + segmentOffsetX);

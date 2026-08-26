@@ -59,24 +59,25 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     public void checkBlock(final BlockPos pos) {
         BlockPos immutable = pos.immutable();
         this.addTask(
-            SectionPos.blockToSectionCoord(pos.getX()),
-            SectionPos.blockToSectionCoord(pos.getZ()),
+            SectionPos.posToSectionCoord(pos.getX()),
+            SectionPos.posToSectionCoord(pos.getZ()),
             ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
             Util.name(() -> super.checkBlock(immutable), () -> "checkBlock " + immutable)
         );
     }
 
     protected void updateChunkStatus(final ChunkPos pos) {
-        this.addTask((int)pos.x(), (int)pos.z(), () -> 0, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+        // MCRe NoiseFarlands: chunk 坐标 Long 化
+        this.addTask(pos.x(), pos.z(), () -> 0, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
             super.retainData(pos, false);
             super.setLightEnabled(pos, false);
 
-            for (int sectionY = this.getMinLightSection(); sectionY < this.getMaxLightSection(); sectionY++) {
+            for (long sectionY = this.getMinLightSection(); sectionY < this.getMaxLightSection(); sectionY++) {
                 super.queueSectionData(LightLayer.BLOCK, SectionPos.of(pos, sectionY), null);
                 super.queueSectionData(LightLayer.SKY, SectionPos.of(pos, sectionY), null);
             }
 
-            for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
+            for (long sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
                 super.updateSectionStatus(SectionPos.of(pos, sectionY), true);
             }
         }, () -> "updateChunkStatus " + pos + " true"));
@@ -121,11 +122,13 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
         );
     }
 
-    private void addTask(final int chunkX, final int chunkZ, final ThreadedLevelLightEngine.TaskType type, final Runnable runnable) {
+    // MCRe NoiseFarlands: chunk 坐标 Long 化
+    private void addTask(final long chunkX, final long chunkZ, final ThreadedLevelLightEngine.TaskType type, final Runnable runnable) {
         this.addTask(chunkX, chunkZ, this.chunkMap.getChunkQueueLevel(new ChunkPos(chunkX, chunkZ)), type, runnable);
     }
 
-    private void addTask(final int chunkX, final int chunkZ, final IntSupplier level, final ThreadedLevelLightEngine.TaskType type, final Runnable runnable) {
+    // MCRe NoiseFarlands: chunk 坐标 Long 化
+    private void addTask(final long chunkX, final long chunkZ, final IntSupplier level, final ThreadedLevelLightEngine.TaskType type, final Runnable runnable) {
         this.taskDispatcher.submit(() -> {
             this.lightTasks.add(Pair.of(type, runnable));
             if (this.lightTasks.size() >= 1000) {
@@ -149,7 +152,8 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
             for (int sectionIndex = 0; sectionIndex < chunk.getSectionsCount(); sectionIndex++) {
                 LevelChunkSection section = sections[sectionIndex];
                 if (!section.hasOnlyAir()) {
-                    int sectionY = this.levelHeightAccessor.getSectionYFromSectionIndex(sectionIndex);
+                    // MCRe NoiseFarlands: section Y Long 化
+        long sectionY = this.levelHeightAccessor.getSectionYFromSectionIndex(sectionIndex);
                     super.updateSectionStatus(SectionPos.of(pos, sectionY), false);
                 }
             }

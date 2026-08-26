@@ -51,7 +51,7 @@ public interface LevelAccessor extends CommonLevelAccessor, ScheduledTickAccess 
     ChunkSource getChunkSource();
 
     @Override
-    default boolean hasChunk(final int chunkX, final int chunkZ) {
+    default boolean hasChunk(final long chunkX, final long chunkZ) {
         return this.getChunkSource().hasChunk(chunkX, chunkZ);
     }
 

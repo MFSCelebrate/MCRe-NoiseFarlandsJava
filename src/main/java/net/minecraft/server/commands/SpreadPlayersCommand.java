@@ -341,7 +341,7 @@ public class SpreadPlayersCommand {
             return changed;
         }
 
-        public int getSpawnY(final BlockGetter level, final int maxHeight) {
+        public long getSpawnY(final BlockGetter level, final int maxHeight) {
             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(this.x, maxHeight + 1, this.z);
             boolean air2Above = level.getBlockState(pos).isAir();
             pos.move(Direction.DOWN);

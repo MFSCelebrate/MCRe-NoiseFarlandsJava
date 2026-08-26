@@ -34,8 +34,8 @@ public class ChunkBorderRenderer implements DebugRenderer.SimpleDebugRenderer {
         float ymin = this.minecraft.level.getMinY();
         float ymax = this.minecraft.level.getMaxY() + 1;
         SectionPos cameraPos = SectionPos.of(cameraEntity.blockPosition());
-        double xstart = cameraPos.minBlockXLong();
-        double zstart = cameraPos.minBlockZLong();
+        double xstart = cameraPos.minBlockX();
+        double zstart = cameraPos.minBlockZ();
 
         for (int x = -16; x <= 32; x += 16) {
             for (int z = -16; z <= 32; z += 16) {
@@ -72,12 +72,12 @@ public class ChunkBorderRenderer implements DebugRenderer.SimpleDebugRenderer {
 
         Gizmos.cuboid(
                 new AABB(
-                    cameraPos.minBlockXLong(),
-                    cameraPos.minBlockYLong(),
-                    cameraPos.minBlockZLong(),
-                    cameraPos.minBlockXLong() + 16,
-                    cameraPos.minBlockYLong() + 16,
-                    cameraPos.minBlockZLong() + 16
+                    cameraPos.minBlockX(),
+                    cameraPos.minBlockY(),
+                    cameraPos.minBlockZ(),
+                    cameraPos.minBlockX() + 16,
+                    cameraPos.minBlockY() + 16,
+                    cameraPos.minBlockZ() + 16
                 ),
                 GizmoStyle.stroke(MAJOR_LINES, 1.0F)
             )

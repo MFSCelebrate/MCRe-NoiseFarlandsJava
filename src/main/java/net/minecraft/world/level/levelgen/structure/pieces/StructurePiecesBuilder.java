@@ -22,7 +22,8 @@ public class StructurePiecesBuilder implements StructurePieceAccessor {
     }
 
     @Deprecated
-    public void offsetPiecesVertically(final int dy) {
+    // MCRe NoiseFarlands: 世界 Y 偏移 Long 化
+    public void offsetPiecesVertically(final long dy) {
         for (StructurePiece piece : this.pieces) {
             piece.move(0, dy, 0);
         }

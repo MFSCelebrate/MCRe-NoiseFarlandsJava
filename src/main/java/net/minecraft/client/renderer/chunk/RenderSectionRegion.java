@@ -18,15 +18,15 @@ import org.jspecify.annotations.Nullable;
 public class RenderSectionRegion implements BlockAndTintGetter {
     public static final int RADIUS = 1;
     public static final int SIZE = 3;
-    private final int minSectionX;
-    private final int minSectionY;
-    private final int minSectionZ;
+    private final long minSectionX;
+    private final long minSectionY;
+    private final long minSectionZ;
     private final SectionCopy[] sections;
     private final ClientLevel level;
     private final CardinalLighting cardinalLighting;
     private final LevelLightEngine lightEngine;
 
-    public RenderSectionRegion(final ClientLevel level, final int minSectionX, final int minSectionY, final int minSectionZ, final SectionCopy[] sections) {
+    public RenderSectionRegion(final ClientLevel level, final long minSectionX, final long minSectionY, final long minSectionZ, final SectionCopy[] sections) {
         this.level = level;
         this.minSectionX = minSectionX;
         this.minSectionY = minSectionY;
@@ -81,15 +81,9 @@ public class RenderSectionRegion implements BlockAndTintGetter {
         return this.sections[relSectionX + relSectionY * 3 + relSectionZ * 9];
     }
 
-    /**
-     * far lands：世界方块坐标（int，真实值 mod 2^32）→ 相对本 region 基准的 section 偏移。
-     * 原版用 blockCoord >> 4（算术右移），但坐标越过 2^31 时 int 溢出为负，
-     * 算术右移得到错误 section。这里用 mod 2^32 无符号恢复：真实差 ∈ [-16, 47]（region 3×3 范围）。
-     */
-    private int relativeSection(final int posCoord, final int minSectionCoord) {
-        long diff = (Integer.toUnsignedLong(posCoord) - ((long)minSectionCoord << 4 & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
-        long signedDiff = diff >= 0x80000000L ? diff - 0x100000000L : diff;
-        return (int)(signedDiff >> 4);
+    // MCRe NoiseFarlands: getX() 已真 Long 化，原 mod 2^32 恢复 hack 不再需要，直接算相对偏移（region 3×3 范围内）
+    private int relativeSection(final long posCoord, final long minSectionCoord) {
+        return (int) ((posCoord >> 4) - minSectionCoord);
     }
 
     @Override
@@ -107,7 +101,8 @@ public class RenderSectionRegion implements BlockAndTintGetter {
         return this.level.getHeight();
     }
 
-    public static int index(final int minSectionX, final int minSectionY, final int minSectionZ, final int sectionX, final int sectionY, final int sectionZ) {
-        return sectionX - minSectionX + (sectionY - minSectionY) * 3 + (sectionZ - minSectionZ) * 3 * 3;
+    public static int index(final long minSectionX, final long minSectionY, final long minSectionZ, final long sectionX, final long sectionY, final long sectionZ) {
+        // MCRe NoiseFarlands: 相对索引 0~26，int 域边界
+        return (int) (sectionX - minSectionX + (sectionY - minSectionY) * 3 + (sectionZ - minSectionZ) * 3 * 3);
     }
 }

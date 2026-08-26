@@ -3778,7 +3778,7 @@ public abstract class Entity
         this.setDeltaMovement(new Vec3(xd, yd, zd));
     }
 
-    public final int getBlockX() {
+    public final long getBlockX() {
         return this.blockPosition.getX();
     }
 
@@ -3794,7 +3794,7 @@ public abstract class Entity
         return this.getX((2.0 * this.random.nextDouble() - 1.0) * spread);
     }
 
-    public final int getBlockY() {
+    public final long getBlockY() {
         return this.blockPosition.getY();
     }
 
@@ -3818,7 +3818,7 @@ public abstract class Entity
         return this.position.y + this.eyeHeight;
     }
 
-    public final int getBlockZ() {
+    public final long getBlockZ() {
         return this.blockPosition.getZ();
     }
 

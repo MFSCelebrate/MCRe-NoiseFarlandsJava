@@ -48,9 +48,9 @@ public class SectionCopy {
     }
 
     public BlockState getBlockState(final BlockPos pos) {
-        int x = pos.getX();
-        int y = pos.getY();
-        int z = pos.getZ();
+        long x = pos.getX();
+        long y = pos.getY();
+        long z = pos.getZ();
         if (this.debug) {
             BlockState blockState = null;
             if (y == 60) {
@@ -68,7 +68,8 @@ public class SectionCopy {
             }
 
             try {
-                return this.section.get(x & 15, y & 15, z & 15);
+                // MCRe NoiseFarlands: 0-15 局部坐标，DataLayer int 域边界
+        return this.section.get((int) (x & 15), (int) (y & 15), (int) (z & 15));
             } catch (Throwable t) {
                 CrashReport report = CrashReport.forThrowable(t, "Getting block state");
                 CrashReportCategory category = report.addCategory("Block being got");

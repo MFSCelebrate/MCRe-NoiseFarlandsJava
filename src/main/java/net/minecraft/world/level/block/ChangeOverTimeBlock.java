@@ -28,7 +28,7 @@ public interface ChangeOverTimeBlock<T extends Enum<T>> {
         int olderCount = 0;
 
         for (BlockPos blockPos : BlockPos.withinManhattan(pos, 4, 4, 4)) {
-            int manhattanDistance = blockPos.distManhattan(pos);
+            long manhattanDistance = blockPos.distManhattan(pos);
             if (manhattanDistance > 4) {
                 break;
             }

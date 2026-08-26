@@ -159,7 +159,8 @@ public class UpgradeData {
             if (upgradeIndex != null && upgradeIndex.length > 0) {
                 Direction[] directions = Direction.values();
                 PalettedContainer<BlockState> states = chunkSection.getStates();
-                int sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
+                // MCRe NoiseFarlands: section Y Long 化
+                long sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
                 long bottomYInSection = SectionPos.sectionToBlockCoord(sectionY);
 
                 for (int coordinate : upgradeIndex) {

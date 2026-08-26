@@ -83,7 +83,7 @@ public class SwimNodeEvaluator extends NodeEvaluator {
         return node != null && node.costMalus >= 0.0F;
     }
 
-    protected @Nullable Node findAcceptedNode(final int x, final int y, final int z) {
+    protected @Nullable Node findAcceptedNode(final long x, final long y, final long z) {
         Node best = null;
         PathType pathType = this.getCachedBlockType(x, y, z);
         if (this.allowBreaching && pathType == PathType.BREACH || pathType == PathType.WATER) {
@@ -101,22 +101,23 @@ public class SwimNodeEvaluator extends NodeEvaluator {
         return best;
     }
 
-    protected PathType getCachedBlockType(final int x, final int y, final int z) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    protected PathType getCachedBlockType(final long x, final long y, final long z) {
         return this.pathTypesByPosCache.computeIfAbsent(new BlockPos(x, y, z), k -> this.getPathType(this.currentContext, x, y, z));
     }
 
     @Override
-    public PathType getPathType(final PathfindingContext context, final int x, final int y, final int z) {
+    public PathType getPathType(final PathfindingContext context, final long x, final long y, final long z) {
         return this.getPathTypeOfMob(context, x, y, z, this.mob);
     }
 
     @Override
-    public PathType getPathTypeOfMob(final PathfindingContext context, final int x, final int y, final int z, final Mob mob) {
+    public PathType getPathTypeOfMob(final PathfindingContext context, final long x, final long y, final long z, final Mob mob) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
-        for (int xx = x; xx < x + this.entityWidth; xx++) {
-            for (int yy = y; yy < y + this.entityHeight; yy++) {
-                for (int zz = z; zz < z + this.entityDepth; zz++) {
+        for (long xx = x; xx < x + this.entityWidth; xx++) {
+            for (long yy = y; yy < y + this.entityHeight; yy++) {
+                for (long zz = z; zz < z + this.entityDepth; zz++) {
                     BlockState blockState = context.getBlockState(pos.set(xx, yy, zz));
                     FluidState fluidState = blockState.getFluidState();
                     BlockState belowState = context.getBlockState(pos.below());

@@ -41,9 +41,9 @@ public class EntityFluidInteraction {
             int z1 = Mth.ceil(box.maxZ) - 1;
             if (hasFluidAndLoaded(entity.level(), x0 - 1, y0, z0 - 1, x1 + 1, y1, z1 + 1)) {
                 double entityY = entity.getBoundingBox().minY;
-                int eyeBlockX = entity.getBlockX();
+                long eyeBlockX = entity.getBlockX();
                 double eyeY = entity.getEyeY();
-                int eyeBlockZ = entity.getBlockZ();
+                long eyeBlockZ = entity.getBlockZ();
                 Fluid lastFluidType = null;
                 EntityFluidInteraction.Tracker tracker = null;
                 BlockGetter level = entity.level();
@@ -89,16 +89,16 @@ public class EntityFluidInteraction {
     }
 
     private static boolean hasFluidAndLoaded(final Level level, final int x0, final int y0, final int z0, final int x1, final int y1, final int z1) {
-        int sectionX0 = SectionPos.blockToSectionCoord(x0);
-        int sectionY0 = SectionPos.blockToSectionCoord(y0);
-        int sectionZ0 = SectionPos.blockToSectionCoord(z0);
-        int sectionX1 = SectionPos.blockToSectionCoord(x1);
-        int sectionY1 = SectionPos.blockToSectionCoord(y1);
-        int sectionZ1 = SectionPos.blockToSectionCoord(z1);
+        long sectionX0 = SectionPos.blockToSectionCoord(x0);
+        long sectionY0 = SectionPos.blockToSectionCoord(y0);
+        long sectionZ0 = SectionPos.blockToSectionCoord(z0);
+        long sectionX1 = SectionPos.blockToSectionCoord(x1);
+        long sectionY1 = SectionPos.blockToSectionCoord(y1);
+        long sectionZ1 = SectionPos.blockToSectionCoord(z1);
         boolean hasFluid = false;
 
-        for (int chunkZ = sectionZ0; chunkZ <= sectionZ1; chunkZ++) {
-            for (int chunkX = sectionX0; chunkX <= sectionX1; chunkX++) {
+        for (long chunkZ = sectionZ0; chunkZ <= sectionZ1; chunkZ++) {
+            for (long chunkX = sectionX0; chunkX <= sectionX1; chunkX++) {
                 ChunkAccess chunk = level.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
                 if (chunk == null) {
                     return false;
@@ -106,7 +106,7 @@ public class EntityFluidInteraction {
 
                 LevelChunkSection[] sections = chunk.getSections();
 
-                for (int sectionY = sectionY0; sectionY <= sectionY1; sectionY++) {
+                for (long sectionY = sectionY0; sectionY <= sectionY1; sectionY++) {
                     int sectionIndex = chunk.getSectionIndexFromSectionY(sectionY);
                     if (sectionIndex >= 0 && sectionIndex < sections.length) {
                         hasFluid |= sections[sectionIndex].hasFluid();

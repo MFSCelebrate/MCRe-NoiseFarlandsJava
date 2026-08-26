@@ -25,8 +25,8 @@ public class SnowAndFreezeFeature extends Feature<NoneFeatureConfiguration> {
 
         for (int dx = 0; dx < 16; dx++) {
             for (int dz = 0; dz < 16; dz++) {
-                int x = origin.getX() + dx;
-                int z = origin.getZ() + dz;
+                long x = origin.getX() + dx;
+                long z = origin.getZ() + dz;
                 long y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
                 topPos.set(x, y, z);
                 belowPos.set(topPos).move(Direction.DOWN, 1);

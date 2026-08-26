@@ -7,9 +7,10 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 public class Node {
-    public final int x;
-    public final int y;
-    public final int z;
+    // MCRe NoiseFarlands: 寻路节点世界坐标 Long 化（远处 mob 寻路保真）
+    public final long x;
+    public final long y;
+    public final long z;
     private final int hash;
     public int heapIdx = -1;
     public float g;
@@ -21,14 +22,14 @@ public class Node {
     public float costMalus;
     public PathType type = PathType.BLOCKED;
 
-    public Node(final int x, final int y, final int z) {
+    public Node(final long x, final long y, final long z) {
         this.x = x;
         this.y = y;
         this.z = z;
         this.hash = createHash(x, y, z);
     }
 
-    public Node cloneAndMove(final int x, final int y, final int z) {
+    public Node cloneAndMove(final long x, final long y, final long z) {
         Node node = new Node(x, y, z);
         node.heapIdx = this.heapIdx;
         node.g = this.g;
@@ -42,8 +43,9 @@ public class Node {
         return node;
     }
 
-    public static int createHash(final int x, final int y, final int z) {
-        return y & 0xFF | (x & 32767) << 8 | (z & 32767) << 24 | (x < 0 ? Integer.MIN_VALUE : 0) | (z < 0 ? 32768 : 0);
+    public static int createHash(final long x, final long y, final long z) {
+        // MCRe NoiseFarlands: hash 保持 int（hashCode 契约），位模式不变
+        return (int) (y & 0xFFL | (x & 32767L) << 8 | (z & 32767L) << 24 | (x < 0 ? Integer.MIN_VALUE : 0) | (z < 0 ? 32768 : 0));
     }
 
     public float distanceTo(final Node to) {
@@ -122,9 +124,9 @@ public class Node {
     }
 
     public void writeToStream(final FriendlyByteBuf buffer) {
-        buffer.writeInt(this.x);
-        buffer.writeInt(this.y);
-        buffer.writeInt(this.z);
+        buffer.writeLong(this.x);
+        buffer.writeLong(this.y);
+        buffer.writeLong(this.z);
         buffer.writeFloat(this.walkedDistance);
         buffer.writeFloat(this.costMalus);
         buffer.writeBoolean(this.closed);
@@ -133,7 +135,7 @@ public class Node {
     }
 
     public static Node createFromStream(final FriendlyByteBuf buffer) {
-        Node node = new Node(buffer.readInt(), buffer.readInt(), buffer.readInt());
+        Node node = new Node(buffer.readLong(), buffer.readLong(), buffer.readLong());
         readContents(buffer, node);
         return node;
     }

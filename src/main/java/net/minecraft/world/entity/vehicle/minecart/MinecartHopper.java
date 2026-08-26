@@ -45,7 +45,8 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper 
     }
 
     @Override
-    public void activateMinecart(final ServerLevel level, final int xt, final int yt, final int zt, final boolean state) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public void activateMinecart(final ServerLevel level, final long xt, final long yt, final long zt, final boolean state) {
         boolean newEnabled = !state;
         if (newEnabled != this.isEnabled()) {
             this.setEnabled(newEnabled);

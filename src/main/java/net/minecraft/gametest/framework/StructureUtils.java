@@ -87,7 +87,8 @@ public class StructureUtils {
         BoundingBox boundingBox = BoundingBox.fromCorners(northWestCorner, farCorner);
         int currentNorthWestCornerX = Math.min(boundingBox.minX(), boundingBox.maxX());
         int currentNorthWestCornerZ = Math.min(boundingBox.minZ(), boundingBox.maxZ());
-        return boundingBox.move(northWestCorner.getX() - currentNorthWestCornerX, 0, northWestCorner.getZ() - currentNorthWestCornerZ);
+        // MCRe NoiseFarlands: Decision 5 BoundingBox int 域边界
+        return boundingBox.move((int) (northWestCorner.getX() - currentNorthWestCornerX), 0, (int) (northWestCorner.getZ() - currentNorthWestCornerZ));
     }
 
     public static Optional<BlockPos> findTestContainingPos(final BlockPos pos, final int searchRadius, final ServerLevel level) {
@@ -95,7 +96,8 @@ public class StructureUtils {
     }
 
     public static Optional<BlockPos> findNearestTest(final BlockPos relativeToPos, final int searchRadius, final ServerLevel level) {
-        Comparator<BlockPos> distanceToPlayer = Comparator.comparingInt(pos -> pos.distManhattan(relativeToPos));
+        Comparator<BlockPos> distanceToPlayer = // MCRe NoiseFarlands: distManhattan 已 Long 化
+                Comparator.comparingLong(pos -> pos.distManhattan(relativeToPos));
         return findTestBlocks(relativeToPos, searchRadius, level).min(distanceToPlayer);
     }
 

@@ -46,8 +46,8 @@ public class GroundPathNavigation extends PathNavigation {
     @Override
     public Path createPath(BlockPos pos, final int reachRange) {
         // 检查坐标是否超出允许范围，超出则返回 null，避免溢出崩溃
-        int x = pos.getX();
-        int z = pos.getZ();
+        long x = pos.getX();
+        long z = pos.getZ();
         if (x < ~MAX_BLOCK || x > MAX_BLOCK || z < ~MAX_BLOCK || z > MAX_BLOCK) {
             return null;
         }
@@ -103,9 +103,10 @@ public class GroundPathNavigation extends PathNavigation {
         return this.createPath(target.blockPosition(), reachRange);
     }
 
-    private int getSurfaceY() {
+    // MCRe NoiseFarlands: 世界 Y Long 化
+    private long getSurfaceY() {
         if (this.mob.isInWater() && this.canFloat()) {
-            int surface = this.mob.getBlockY();
+            long surface = this.mob.getBlockY();
             BlockState state = this.level.getBlockState(BlockPos.containing(this.mob.getX(), surface, this.mob.getZ()));
             int steps = 0;
 

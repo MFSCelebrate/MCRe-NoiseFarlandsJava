@@ -23,7 +23,8 @@ public class SectionUpdateTracker {
         );
     }
 
-    public void setDirty(final int sectionX, final int sectionY, final int sectionZ, final boolean playerChanged) {
+    // MCRe NoiseFarlands: section 坐标 Long 化
+    public void setDirty(final long sectionX, final long sectionY, final long sectionZ, final boolean playerChanged) {
         SectionUpdateTracker.SectionDirtyState section = this.storage.getValue(sectionX, sectionY, sectionZ);
         if (section != null) {
             section.setDirty(playerChanged);

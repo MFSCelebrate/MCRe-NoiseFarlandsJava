@@ -29,11 +29,12 @@ public final class OreVeinifier {
         BlockState defaultState = SharedConstants.DEBUG_ORE_VEINS ? Blocks.AIR.defaultBlockState() : null;
         return context -> {
             double oreVeininessNoiseValue = veinToggle.compute(context);
-            int posY = context.blockY();
+            long posY = context.blockY();
             OreVeinifier.VeinType veinType = oreVeininessNoiseValue > 0.0 ? OreVeinifier.VeinType.COPPER : OreVeinifier.VeinType.IRON;
             double veininessRidged = Math.abs(oreVeininessNoiseValue);
-            int distanceFromTop = veinType.maxY - posY;
-            int distanceFromBottom = posY - veinType.minY;
+            // MCRe NoiseFarlands: 相对差 int 域边界
+            int distanceFromTop = veinType.maxY - (int) posY;
+            int distanceFromBottom = (int) (posY - veinType.minY);
             if (distanceFromBottom >= 0 && distanceFromTop >= 0) {
                 int distanceFromEdge = Math.min(distanceFromTop, distanceFromBottom);
                 double edgeRoundoff = Mth.clampedMap(distanceFromEdge, 0.0, 20.0, -0.2, 0.0);

@@ -37,7 +37,7 @@ import org.jspecify.annotations.Nullable;
 public class Blender {
     private static final Blender EMPTY = new Blender(new HashMap<>(), new HashMap<>()) {
         @Override
-        public Blender.BlendingOutput blendOffsetAndFactor(final int blockX, final int blockZ) {
+        public Blender.BlendingOutput blendOffsetAndFactor(final long blockX, final long blockZ) {
             return new Blender.BlendingOutput(1.0, 0.0);
         }
 
@@ -52,10 +52,11 @@ public class Blender {
         }
     };
     private static final NormalNoise SHIFT_NOISE = NormalNoise.create(new XoroshiroRandomSource(42L), NoiseData.DEFAULT_SHIFT);
-    private static final int HEIGHT_BLENDING_RANGE_CELLS = QuartPos.fromSection(7) - 1;
-    private static final int HEIGHT_BLENDING_RANGE_CHUNKS = QuartPos.toSection(HEIGHT_BLENDING_RANGE_CELLS + 3);
+    // MCRe NoiseFarlands: 混合范围常量为小值域，int 边界强转
+    private static final int HEIGHT_BLENDING_RANGE_CELLS = (int) QuartPos.fromSection(7) - 1;
+    private static final int HEIGHT_BLENDING_RANGE_CHUNKS = (int) QuartPos.toSection(HEIGHT_BLENDING_RANGE_CELLS + 3);
     private static final int DENSITY_BLENDING_RANGE_CELLS = 2;
-    private static final int DENSITY_BLENDING_RANGE_CHUNKS = QuartPos.toSection(5);
+    private static final int DENSITY_BLENDING_RANGE_CHUNKS = (int) QuartPos.toSection(5);
     private static final double OLD_CHUNK_XZ_RADIUS = 8.0;
     private final Map<ChunkPos, BlendingData> heightAndBiomeBlendingData;
     private final Map<ChunkPos, BlendingData> densityBlendingData;
@@ -109,9 +110,10 @@ public class Blender {
         return this.heightAndBiomeBlendingData.isEmpty() && this.densityBlendingData.isEmpty();
     }
 
-    public Blender.BlendingOutput blendOffsetAndFactor(final int blockX, final int blockZ) {
-        int cellX = QuartPos.fromBlock(blockX);
-        int cellZ = QuartPos.fromBlock(blockZ);
+    public Blender.BlendingOutput blendOffsetAndFactor(final long blockX, final long blockZ) {
+        // MCRe NoiseFarlands: cell 为世界 quart 坐标，Long 化
+        long cellX = QuartPos.fromBlock(blockX);
+        long cellZ = QuartPos.fromBlock(blockZ);
         double fixedHeight = this.getBlendingDataValue(cellX, 0, cellZ, BlendingData::getHeight);
         if (fixedHeight != Double.MAX_VALUE) {
             return new Blender.BlendingOutput(0.0, heightToOffset(fixedHeight));
@@ -123,7 +125,7 @@ public class Blender {
         this.heightAndBiomeBlendingData
             .forEach(
                 (chunkPos, blendingData) -> blendingData.iterateHeights(
-                    QuartPos.fromSection((int)chunkPos.x()), QuartPos.fromSection((int)chunkPos.z()), (testCellX, testCellZ, height) -> {
+                    QuartPos.fromSection(chunkPos.x()), QuartPos.fromSection(chunkPos.z()), (testCellX, testCellZ, height) -> {
                         double distance = Mth.length(cellX - testCellX, cellZ - testCellZ);
                         if (!(distance > HEIGHT_BLENDING_RANGE_CELLS)) {
                             if (distance < closestDistance.doubleValue()) {
@@ -155,9 +157,10 @@ public class Blender {
     }
 
     public double blendDensity(final DensityFunction.FunctionContext context, final double noiseValue) {
-        int cellX = QuartPos.fromBlock(context.blockX());
-        int cellY = context.blockY() / 8;
-        int cellZ = QuartPos.fromBlock(context.blockZ());
+        long cellX = QuartPos.fromBlock(context.blockX());
+        // MCRe NoiseFarlands: cellY 为高度域相对值，int 域边界
+        int cellY = (int) (context.blockY() / 8);
+        long cellZ = QuartPos.fromBlock(context.blockZ());
         double fixedDensity = this.getBlendingDataValue(cellX, cellY, cellZ, BlendingData::getDensity);
         if (fixedDensity != Double.MAX_VALUE) {
             return fixedDensity;
@@ -169,8 +172,8 @@ public class Blender {
         this.densityBlendingData
             .forEach(
                 (chunkPos, blendingData) -> blendingData.iterateDensities(
-                    QuartPos.fromSection((int)chunkPos.x()),
-                    QuartPos.fromSection((int)chunkPos.z()),
+                    QuartPos.fromSection(chunkPos.x()),
+                    QuartPos.fromSection(chunkPos.z()),
                     cellY - 1,
                     cellY + 1,
                     (testCellX, testCellY, testCellZ, density) -> {
@@ -196,9 +199,10 @@ public class Blender {
         return Mth.lerp(alpha, averageDensity, noiseValue);
     }
 
-    private double getBlendingDataValue(final int cellX, final int cellY, final int cellZ, final Blender.CellValueGetter cellValueGetter) {
-        int chunkX = QuartPos.toSection(cellX);
-        int chunkZ = QuartPos.toSection(cellZ);
+    private double getBlendingDataValue(final long cellX, final int cellY, final long cellZ, final Blender.CellValueGetter cellValueGetter) {
+        // MCRe NoiseFarlands: cellX/Z 为世界 quart 坐标 Long 化；chunk 坐标同步
+        long chunkX = QuartPos.toSection(cellX);
+        long chunkZ = QuartPos.toSection(cellZ);
         boolean minX = (cellX & 3) == 0;
         boolean minZ = (cellZ & 3) == 0;
         double value = this.getBlendingDataValue(cellValueGetter, chunkX, chunkZ, cellX, cellY, cellZ);
@@ -222,11 +226,12 @@ public class Blender {
     }
 
     private double getBlendingDataValue(
-        final Blender.CellValueGetter cellValueGetter, final int chunkX, final int chunkZ, final int cellX, final int cellY, final int cellZ
+        final Blender.CellValueGetter cellValueGetter, final long chunkX, final long chunkZ, final long cellX, final int cellY, final long cellZ
     ) {
         BlendingData blendingData = this.heightAndBiomeBlendingData.get(new ChunkPos(chunkX, chunkZ));
+        // MCRe NoiseFarlands: 相对 chunk 内偏移为 0~7 小范围，int 域边界
         return blendingData != null
-            ? cellValueGetter.get(blendingData, cellX - QuartPos.fromSection(chunkX), cellY, cellZ - QuartPos.fromSection(chunkZ))
+            ? cellValueGetter.get(blendingData, (int) (cellX - QuartPos.fromSection(chunkX)), cellY, (int) (cellZ - QuartPos.fromSection(chunkZ)))
             : Double.MAX_VALUE;
     }
 
@@ -237,13 +242,13 @@ public class Blender {
         };
     }
 
-    private Holder<Biome> blendBiome(final int quartX, final int quartY, final int quartZ) {
+    private Holder<Biome> blendBiome(final long quartX, final long quartY, final long quartZ) {
         MutableDouble closestDistance = new MutableDouble(Double.POSITIVE_INFINITY);
         MutableObject<Holder<Biome>> closestBiome = new MutableObject<>();
         this.heightAndBiomeBlendingData
             .forEach(
                 (chunkPos, blendingData) -> blendingData.iterateBiomes(
-                    QuartPos.fromSection((int)chunkPos.x()), quartY, QuartPos.fromSection((int)chunkPos.z()), (testCellX, testCellZ, biome) -> {
+                    QuartPos.fromSection(chunkPos.x()), quartY, QuartPos.fromSection(chunkPos.z()), (testCellX, testCellZ, biome) -> {
                         double distance = Mth.length(quartX - testCellX, quartZ - testCellZ);
                         if (!(distance > HEIGHT_BLENDING_RANGE_CELLS)) {
                             if (distance < closestDistance.doubleValue()) {

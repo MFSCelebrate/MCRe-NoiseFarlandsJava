@@ -119,7 +119,7 @@ public class XoroshiroRandomSource implements RandomSource {
         }
 
         @Override
-        public RandomSource at(final int x, final int y, final int z) {
+        public RandomSource at(final long x, final long y, final long z) {
             long positionalSeed = Mth.getSeed(x, y, z);
             long randomSeed = positionalSeed ^ this.seedLo;
             return new XoroshiroRandomSource(randomSeed, this.seedHi);

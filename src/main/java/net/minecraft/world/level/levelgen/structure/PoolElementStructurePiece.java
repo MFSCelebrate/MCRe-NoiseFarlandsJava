@@ -68,9 +68,9 @@ public class PoolElementStructurePiece extends StructurePiece {
 
     @Override
     protected void addAdditionalSaveData(final StructurePieceSerializationContext context, final CompoundTag tag) {
-        tag.putInt("PosX", this.position.getX());
-        tag.putInt("PosY", this.position.getY());
-        tag.putInt("PosZ", this.position.getZ());
+        tag.putInt("PosX", (int) this.position.getX());
+        tag.putInt("PosY", (int) this.position.getY());
+        tag.putInt("PosZ", (int) this.position.getZ());
         tag.putInt("ground_level_delta", this.groundLevelDelta);
         DynamicOps<Tag> ops = context.registryAccess().createSerializationContext(NbtOps.INSTANCE);
         tag.store("pool_element", StructurePoolElement.CODEC, ops, this.element);
@@ -126,7 +126,8 @@ public class PoolElementStructurePiece extends StructurePiece {
     }
 
     @Override
-    public void move(final int dx, final int dy, final int dz) {
+    // MCRe NoiseFarlands: 世界坐标 Long 化
+    public void move(final long dx, final long dy, final long dz) {
         super.move(dx, dy, dz);
         this.position = this.position.offset(dx, dy, dz);
     }

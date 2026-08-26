@@ -332,7 +332,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
 
     @Override
     public Holder<
-                    Biome> getUncachedNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+                    Biome> getUncachedNoiseBiome(final long quartX, final long quartY, final long quartZ) {
         return this.getChunkSource().getGenerator().getBiomeSource().getNoiseBiome(quartX, quartY, quartZ, this.getChunkSource().randomState().sampler());
     }
 
@@ -524,13 +524,16 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
             for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
                 LevelChunkSection section = sections[sectionIndex];
                 if (section.isRandomlyTicking()) {
-                    int sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
-                    int minYInSection = SectionPos.sectionToBlockCoord(sectionY);
+                    // MCRe NoiseFarlands: section Y Long 化
+            long sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
+                    long minYInSection = SectionPos.sectionToBlockCoord(sectionY);
 
                     for (int i = 0; i < tickSpeed; i++) {
-                        BlockPos pos = this.getBlockRandomPos(minX, minYInSection, minZ, 15);
+                        // MCRe NoiseFarlands: chunk 内相对域，int 边界强转
+                        BlockPos pos = this.getBlockRandomPos((int) minX, (int) minYInSection, (int) minZ, 15);
                         profiler.push("randomTick");
-                        BlockState blockState = section.getBlockState(pos.getX() - minX, pos.getY() - minYInSection, pos.getZ() - minZ);
+                        // MCRe NoiseFarlands: section 内 0-15 局部坐标，int 域边界
+                        BlockState blockState = section.getBlockState((int) (pos.getX() - minX), (int) (pos.getY() - minYInSection), (int) (pos.getZ() - minZ));
                         if (blockState.isRandomlyTicking()) {
                             blockState.randomTick(this, pos, this.random);
                         }
@@ -1525,7 +1528,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
         return this.chunkSource.getForceLoadedChunks();
     }
 
-    public boolean setChunkForced(final int chunkX, final int chunkZ, final boolean forced) {
+    // MCRe NoiseFarlands: chunk 坐标 Long 化
+    public boolean setChunkForced(final long chunkX, final long chunkZ, final boolean forced) {
         boolean updated = this.chunkSource.updateChunkForced(new ChunkPos(chunkX, chunkZ), forced);
         if (forced && updated) {
             this.getChunk(chunkX, chunkZ);

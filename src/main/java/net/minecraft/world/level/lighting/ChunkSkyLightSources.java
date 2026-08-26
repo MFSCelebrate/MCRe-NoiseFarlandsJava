@@ -55,7 +55,8 @@ public class ChunkSkyLightSources {
             LevelChunkSection section = chunk.getSection(sectionIndex);
             if (section.hasOnlyAir()) {
                 topState = Blocks.AIR.defaultBlockState();
-                int sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
+                // MCRe NoiseFarlands: section Y Long 化
+        long sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
                 topPos.setY(SectionPos.sectionToBlockCoord(sectionY));
                 bottomPos.setY(topPos.getY() - 1);
             } else {

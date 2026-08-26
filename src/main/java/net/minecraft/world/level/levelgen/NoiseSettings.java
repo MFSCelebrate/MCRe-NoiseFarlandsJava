@@ -44,11 +44,12 @@ public record NoiseSettings(int minY, int height, int noiseSizeHorizontal, int n
     }
 
     public int getCellHeight() {
-        return QuartPos.toBlock(this.noiseSizeVertical());
+        // MCRe NoiseFarlands: cell 尺寸为配置常量小值，int 域边界
+        return (int) QuartPos.toBlock(this.noiseSizeVertical());
     }
 
     public int getCellWidth() {
-        return QuartPos.toBlock(this.noiseSizeHorizontal());
+        return (int) QuartPos.toBlock(this.noiseSizeHorizontal());
     }
 
     public NoiseSettings clampToHeightAccessor(final LevelHeightAccessor heightAccessor) {
