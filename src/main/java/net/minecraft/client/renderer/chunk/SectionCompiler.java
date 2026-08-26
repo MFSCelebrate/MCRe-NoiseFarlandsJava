@@ -57,9 +57,10 @@ public class SectionCompiler {
         final SectionPos sectionPos, final RenderSectionRegion region, final VertexSorting vertexSorting, final SectionBufferBuilderPack builders
     ) {
         SectionCompiler.Results results = new SectionCompiler.Results();
-        // far lands：origin 用 long 计算，BlockPos 取「真实坐标 mod 2^32」的 int 表示
-        // （int 溢出不影响 &15 局部坐标；region 内部用 long 恢复 section 索引）
-        BlockPos minPos = new BlockPos((int)sectionPos.minBlockX(), (int)sectionPos.minBlockY(), (int)sectionPos.minBlockZ());
+        // MCRe NoiseFarlands: 纯 Long 化后不再需要 (int) 截断 hack
+        // （旧 hack 假设 region 用 mod 2^32 恢复索引；现 relativeSection 为真 long 差值，
+        //   截断反而造成坐标系断裂 → 远处 AIOOBE -268435443）
+        BlockPos minPos = new BlockPos(sectionPos.minBlockX(), sectionPos.minBlockY(), sectionPos.minBlockZ());
         BlockPos maxPos = minPos.offset(15, 15, 15);
         VisGraph visGraph = new VisGraph();
         BlockModelLighter.enableCaching();
