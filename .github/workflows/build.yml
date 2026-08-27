@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: 拉取代码
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5   # 升级到 v5（原生 Node.js 24）
 
       - name: 打包当前源代码（含 .github）
         run: |
@@ -34,7 +34,7 @@ jobs:
       - name: 尝试下载上一次构建的源码备份
         id: download_prev
         continue-on-error: true
-        uses: actions/download-artifact@v4.2.0
+        uses: actions/download-artifact@v5   # 升级到 v5
         with:
           name: source-backup
           path: .
@@ -50,7 +50,7 @@ jobs:
           fi
 
       - name: 上传当前源码备份（供下一次构建使用）
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v5   # 升级到 v5
         with:
           name: source-backup
           path: source-current.zip
@@ -58,7 +58,7 @@ jobs:
           retention-days: 7
 
       - name: 上传本次 & 上次源码归档（供人工查阅）
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v5   # 升级到 v5
         with:
           name: SourceBackups-${{ github.run_id }}
           path: |
@@ -75,7 +75,7 @@ jobs:
       enable_nightly: ${{ steps.read_config.outputs.enable_nightly }}
     steps:
       - name: 拉取代码
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5   # 升级到 v5
       
       - name: 读取 DebugBuildConfig.properties（Nightly 开关）
         id: read_config
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: 拉取代码
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5   # 升级到 v5
 
       # Test 1：检测 src/main/java 下所有 .java 文件内是否残留 Patch 的 Diff 格式
       - name: Test for No Residual Patch Diff
@@ -118,10 +118,10 @@ jobs:
       minecraft_version: ${{ steps.read_version.outputs.version }}
     steps:
       - name: 拉取代码
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5   # 升级到 v5
 
       - name: 配置 JDK
-        uses: actions/setup-java@v4.6.0
+        uses: actions/setup-java@v5   # 升级到 v5（原生 Node.js 24）
         with:
           distribution: ${{ env.JAVA_DISTRIBUTION }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -161,7 +161,7 @@ jobs:
         continue-on-error: true
 
       - name: 上传编译错误日志
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v5   # 升级到 v5
         with:
           name: CompileErrors
           path: compile_errors.log
@@ -206,7 +206,7 @@ jobs:
 
       - name: 上传构建产物
         if: success()
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v5   # 升级到 v5
         with:
           name: 26.2-Permanent
           path: 26.2-Permanent.jar
@@ -214,7 +214,7 @@ jobs:
 
       - name: 上传版本 JSON 元数据
         if: success()
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v5   # 升级到 v5
         with:
           name: MinecraftVersionJson
           path: MainProjectCatalogue/MinecraftVersionJson/26.2/26.2-Permanent.json
@@ -265,7 +265,7 @@ jobs:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4.2.0
+        uses: actions/download-artifact@v5   # 升级到 v5
         with:
           path: artifacts
           merge-multiple: true
@@ -347,7 +347,7 @@ jobs:
           echo "- **提交**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Cleanup artifacts (only on success)
-        uses: geekyeggo/delete-artifact@v5
+        uses: geekyeggo/delete-artifact@v5   # 第三方，保留原样（若仍有警告可后续处理）
         if: success()
         with:
           name: 26.2-*
@@ -361,10 +361,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5   # 升级到 v5
 
       - id: wiki_sync
-        uses: Andrew-Chen-Wang/github-wiki-action@v4
+        uses: Andrew-Chen-Wang/github-wiki-action@v4   # 第三方，保留原样
         with:
           path: MainProjectCatalogue/GithubWiki
 
