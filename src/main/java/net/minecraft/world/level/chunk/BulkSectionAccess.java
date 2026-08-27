@@ -27,8 +27,7 @@ public class BulkSectionAccess implements AutoCloseable {
             SectionPos sectionKey = SectionPos.of(pos);
             if (this.lastSection == null || !sectionKey.equals(this.lastSectionKey)) {
                 this.lastSection = this.acquiredSections.computeIfAbsent(sectionKey, key -> {
-                    // MCRe NoiseFarlands: getChunk 尚为 int 域 API（区块管理模块待 Long 化），此处一次性边界强转
-                    ChunkAccess chunk = this.level.getChunk((int) SectionPos.blockToSectionCoord(pos.getX()), (int) SectionPos.blockToSectionCoord(pos.getZ()));
+                    ChunkAccess chunk = this.level.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
                     LevelChunkSection result = chunk.getSection(sectionIndex);
                     result.acquire();
                     return result;
@@ -48,10 +47,9 @@ public class BulkSectionAccess implements AutoCloseable {
             return Blocks.AIR.defaultBlockState();
         }
 
-        // MCRe NoiseFarlands: 0-15 局部坐标保持 int，一次性边界强转
-        int sectionRelativeX = (int) SectionPos.sectionRelative(pos.getX());
-        int sectionRelativeY = (int) SectionPos.sectionRelative(pos.getY());
-        int sectionRelativeZ = (int) SectionPos.sectionRelative(pos.getZ());
+        int sectionRelativeX = SectionPos.sectionRelative(pos.getX());
+        int sectionRelativeY = SectionPos.sectionRelative(pos.getY());
+        int sectionRelativeZ = SectionPos.sectionRelative(pos.getZ());
         return section.getBlockState(sectionRelativeX, sectionRelativeY, sectionRelativeZ);
     }
 

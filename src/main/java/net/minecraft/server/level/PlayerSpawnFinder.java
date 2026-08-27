@@ -73,8 +73,8 @@ public class PlayerSpawnFinder {
             int value = (this.offset + this.coprime * candidateIndex) % this.candidateCount;
             int deltaX = value % (this.radius * 2 + 1);
             int deltaZ = value / (this.radius * 2 + 1);
-            long targetX = this.spawnSuggestion.getX() + deltaX - this.radius;
-            long targetZ = this.spawnSuggestion.getZ() + deltaZ - this.radius;
+            int targetX = this.spawnSuggestion.getX() + deltaX - this.radius;
+            int targetZ = this.spawnSuggestion.getZ() + deltaZ - this.radius;
             this.scheduleCandidate(targetX, targetZ, candidateIndex, () -> {
                 BlockPos spawnPos = getLevelRespawnPos(this.level, targetX, targetZ);
                 return spawnPos != null && noCollisionNoLiquid(this.level, spawnPos) ? Optional.of(Vec3.atBottomCenterOf(spawnPos)) : Optional.empty();
@@ -111,10 +111,10 @@ public class PlayerSpawnFinder {
         return possibleOrigins <= 16 ? possibleOrigins - 1 : 17;
     }
 
-    private void scheduleCandidate(final long candidateX, final long candidateZ, final int candidateIndex, final Supplier<Optional<Vec3>> candidateChecker) {
+    private void scheduleCandidate(final int candidateX, final int candidateZ, final int candidateIndex, final Supplier<Optional<Vec3>> candidateChecker) {
         if (!this.finishedFuture.isDone()) {
-            long chunkX = SectionPos.blockToSectionCoord(candidateX);
-            long chunkZ = SectionPos.blockToSectionCoord(candidateZ);
+            int chunkX = SectionPos.blockToSectionCoord(candidateX);
+            int chunkZ = SectionPos.blockToSectionCoord(candidateZ);
             this.level
                 .getChunkSource()
                 .addTicketAndLoadWithRadius(TicketType.SPAWN_SEARCH, new ChunkPos(chunkX, chunkZ), 0)
@@ -145,23 +145,22 @@ public class PlayerSpawnFinder {
         }
     }
 
-    // MCRe NoiseFarlands: chunk 坐标 Long 化
-    protected static @Nullable BlockPos getLevelRespawnPos(final ServerLevel level, final long x, final long z) {
+    protected static @Nullable BlockPos getLevelRespawnPos(final ServerLevel level, final int x, final int z) {
         boolean caveWorld = level.dimensionType().hasCeiling();
         LevelChunk chunk = level.getChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z));
-        long topY = caveWorld ? level.getChunkSource().getGenerator().getSpawnHeight(level) : chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15);
+        int topY = caveWorld ? level.getChunkSource().getGenerator().getSpawnHeight(level) : chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15);
         if (topY < level.getMinY()) {
             return null;
         }
 
-        long surface = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
+        int surface = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
         if (surface <= topY && surface > chunk.getHeight(Heightmap.Types.OCEAN_FLOOR, x & 15, z & 15)) {
             return null;
         }
 
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
-        for (long y = topY + 1; y >= level.getMinY(); y--) {
+        for (int y = topY + 1; y >= level.getMinY(); y--) {
             pos.set(x, y, z);
             BlockState blockState = level.getBlockState(pos);
             if (!blockState.getFluidState().isEmpty()) {

@@ -47,7 +47,7 @@ public class FancyTrunkPlacer extends TrunkPlacer {
         placeBelowTrunkBlock(level, trunkSetter, random, origin.below(), config);
         double foliageDensity = 1.0;
         int clustersPerY = Math.min(1, Mth.floor(1.382 + Math.pow(1.0 * height / 13.0, 2.0)));
-        long trunkTop = origin.getY() + trunkHeight;
+        int trunkTop = origin.getY() + trunkHeight;
         int relativeY = height - 5;
         List<FancyTrunkPlacer.FoliageCoords> foliageCoords = Lists.newArrayList();
         foliageCoords.add(new FancyTrunkPlacer.FoliageCoords(origin.above(relativeY), trunkTop));
@@ -64,10 +64,10 @@ public class FancyTrunkPlacer extends TrunkPlacer {
                     BlockPos checkStart = origin.offset(Mth.floor(x), relativeY - 1, Mth.floor(z));
                     BlockPos checkEnd = checkStart.above(5);
                     if (this.makeLimb(level, trunkSetter, random, checkStart, checkEnd, false, config)) {
-                        long dx = origin.getX() - checkStart.getX();
-                        long dz = origin.getZ() - checkStart.getZ();
+                        int dx = origin.getX() - checkStart.getX();
+                        int dz = origin.getZ() - checkStart.getZ();
                         double branchHeight = checkStart.getY() - Math.sqrt(dx * dx + dz * dz) * 0.381;
-                        long branchTop = (long) branchHeight > trunkTop ? trunkTop : (long) branchHeight;
+                        int branchTop = branchHeight > trunkTop ? trunkTop : (int)branchHeight;
                         BlockPos checkBranchBase = new BlockPos(origin.getX(), branchTop, origin.getZ());
                         if (this.makeLimb(level, trunkSetter, random, checkBranchBase, checkStart, false, config)) {
                             foliageCoords.add(new FancyTrunkPlacer.FoliageCoords(checkStart, checkBranchBase.getY()));
@@ -82,8 +82,7 @@ public class FancyTrunkPlacer extends TrunkPlacer {
         List<FoliagePlacer.FoliageAttachment> attachments = Lists.newArrayList();
 
         for (FancyTrunkPlacer.FoliageCoords foliageCoord : foliageCoords) {
-            // MCRe NoiseFarlands: 高度差为树高量级（≤32），int 域边界
-                if (this.trimBranches(height, (int) (foliageCoord.getBranchBase() - origin.getY()))) {
+            if (this.trimBranches(height, foliageCoord.getBranchBase() - origin.getY())) {
                 attachments.add(foliageCoord.attachment);
             }
         }
@@ -125,18 +124,17 @@ public class FancyTrunkPlacer extends TrunkPlacer {
     }
 
     private int getSteps(final BlockPos pos) {
-        // MCRe NoiseFarlands: 步数为相对差域（树枝长度），int 域边界
-        long absX = Mth.abs(pos.getX());
-        long absY = Mth.abs(pos.getY());
-        long absZ = Mth.abs(pos.getZ());
-        return (int) Math.max(absX, Math.max(absY, absZ));
+        int absX = Mth.abs(pos.getX());
+        int absY = Mth.abs(pos.getY());
+        int absZ = Mth.abs(pos.getZ());
+        return Math.max(absX, Math.max(absY, absZ));
     }
 
     private Direction.Axis getLogAxis(final BlockPos startPos, final BlockPos blockPos) {
         Direction.Axis axis = Direction.Axis.Y;
-        long xdiff = Math.abs(blockPos.getX() - startPos.getX());
-        long zdiff = Math.abs(blockPos.getZ() - startPos.getZ());
-        long maxdiff = Math.max(xdiff, zdiff);
+        int xdiff = Math.abs(blockPos.getX() - startPos.getX());
+        int zdiff = Math.abs(blockPos.getZ() - startPos.getZ());
+        int maxdiff = Math.max(xdiff, zdiff);
         if (maxdiff > 0) {
             if (xdiff == maxdiff) {
                 axis = Direction.Axis.X;
@@ -162,10 +160,9 @@ public class FancyTrunkPlacer extends TrunkPlacer {
         final TreeConfiguration config
     ) {
         for (FancyTrunkPlacer.FoliageCoords endCoord : foliageCoords) {
-            // MCRe NoiseFarlands: 世界 Y Long 化
-                        long branchBase = endCoord.getBranchBase();
+            int branchBase = endCoord.getBranchBase();
             BlockPos baseCoord = new BlockPos(origin.getX(), branchBase, origin.getZ());
-            if (!baseCoord.equals(endCoord.attachment.pos()) && this.trimBranches(height, (int) (branchBase - origin.getY()))) {
+            if (!baseCoord.equals(endCoord.attachment.pos()) && this.trimBranches(height, branchBase - origin.getY())) {
                 this.makeLimb(level, trunkSetter, random, baseCoord, endCoord.attachment.pos(), true, config);
             }
         }
@@ -190,14 +187,14 @@ public class FancyTrunkPlacer extends TrunkPlacer {
 
     private static class FoliageCoords {
         private final FoliagePlacer.FoliageAttachment attachment;
-        private final long branchBase;
+        private final int branchBase;
 
-        public FoliageCoords(final BlockPos pos, final long branchBase) {
+        public FoliageCoords(final BlockPos pos, final int branchBase) {
             this.attachment = new FoliagePlacer.FoliageAttachment(pos, 0, false);
             this.branchBase = branchBase;
         }
 
-        public long getBranchBase() {
+        public int getBranchBase() {
             return this.branchBase;
         }
     }

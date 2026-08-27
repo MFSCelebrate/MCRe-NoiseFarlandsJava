@@ -41,7 +41,7 @@ public interface WaypointTransmitter extends Waypoint {
     }
 
     interface BlockConnection extends WaypointTransmitter.Connection {
-        long distanceManhattan();
+        int distanceManhattan();
 
         @Override
         default boolean isBroken() {
@@ -143,8 +143,7 @@ public interface WaypointTransmitter extends Waypoint {
         }
 
         @Override
-        // MCRe NoiseFarlands: distManhattan 已 Long 化
-        public long distanceManhattan() {
+        public int distanceManhattan() {
             return this.lastPosition.distManhattan(this.source.blockPosition());
         }
 

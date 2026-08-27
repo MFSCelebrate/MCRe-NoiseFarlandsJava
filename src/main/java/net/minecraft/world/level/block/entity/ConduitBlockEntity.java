@@ -166,9 +166,9 @@ public class ConduitBlockEntity extends BlockEntity {
     private static void applyEffects(final Level level, final BlockPos worldPosition, final List<BlockPos> effectBlocks) {
         int activeSize = effectBlocks.size();
         int effectRange = activeSize / 7 * 16;
-        long x = worldPosition.getX();
-        long y = worldPosition.getY();
-        long z = worldPosition.getZ();
+        int x = worldPosition.getX();
+        int y = worldPosition.getY();
+        int z = worldPosition.getZ();
         AABB bb = new AABB(x, y, z, x + 1, y + 1, z + 1).inflate(effectRange).expandTowards(0.0, level.getHeight(), 0.0);
         List<Player> players = level.getEntitiesOfClass(Player.class, bb);
         if (!players.isEmpty()) {

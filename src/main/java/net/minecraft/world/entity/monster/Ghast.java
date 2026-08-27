@@ -445,7 +445,7 @@ public class Ghast extends Mob implements Enemy {
             }
 
             BlockPos pos = BlockPos.containing(result);
-            long heightY = level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ());
+            int heightY = level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ());
             if (heightY < pos.getY() && heightY > level.getMinY()) {
                 result = new Vec3(result.x(), mob.getY() - Math.abs(mob.getY() - result.y()), result.z());
             }

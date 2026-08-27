@@ -59,7 +59,6 @@ public class LargeDripstoneFeature extends Feature<LargeDripstoneConfiguration> 
         );
         LargeDripstoneFeature.WindOffsetter wind;
         if (stalactite.isSuitableForWind(config) && stalagmite.isSuitableForWind(config)) {
-            // MCRe NoiseFarlands: 种子世界 Y Long 化
             wind = new LargeDripstoneFeature.WindOffsetter(origin.getY(), random, config.windSpeed, 16 - radius);
         } else {
             wind = LargeDripstoneFeature.WindOffsetter.noWind();
@@ -124,12 +123,11 @@ public class LargeDripstoneFeature extends Feature<LargeDripstoneConfiguration> 
             return this.getHeightAtRadius(0.0F);
         }
 
-        private long getMinY() {
-            // MCRe NoiseFarlands: 世界 Y Long 化
+        private int getMinY() {
             return this.pointingUp ? this.root.getY() : this.root.getY() - this.getHeight();
         }
 
-        private long getMaxY() {
+        private int getMaxY() {
             return !this.pointingUp ? this.root.getY() : this.root.getY() + this.getHeight();
         }
 
@@ -174,7 +172,7 @@ public class LargeDripstoneFeature extends Feature<LargeDripstoneConfiguration> 
 
                             BlockPos.MutableBlockPos pos = this.root.offset(dx, 0, dz).mutable();
                             boolean hasBeenOutOfStone = false;
-                            long maxY = this.pointingUp ? level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, pos.getX(), pos.getZ()) : Integer.MAX_VALUE;
+                            int maxY = this.pointingUp ? level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, pos.getX(), pos.getZ()) : Integer.MAX_VALUE;
 
                             for (int i = 0; i < height && pos.getY() < maxY; i++) {
                                 BlockPos windAdjustedPos = wind.offset(pos);
@@ -200,11 +198,11 @@ public class LargeDripstoneFeature extends Feature<LargeDripstoneConfiguration> 
     }
 
     private static final class WindOffsetter {
-        private final long originY;
+        private final int originY;
         private final @Nullable Vec3 windSpeed;
         private final int maxOffset;
 
-        private WindOffsetter(final long originY, final RandomSource random, final FloatProvider windSpeedRange, final int maxOffset) {
+        private WindOffsetter(final int originY, final RandomSource random, final FloatProvider windSpeedRange, final int maxOffset) {
             this.originY = originY;
             this.maxOffset = maxOffset;
             float speed = windSpeedRange.sample(random);
@@ -227,7 +225,7 @@ public class LargeDripstoneFeature extends Feature<LargeDripstoneConfiguration> 
                 return pos;
             }
 
-            long dy = this.originY - pos.getY();
+            int dy = this.originY - pos.getY();
             Vec3 totalWindAdjust = this.windSpeed.scale(dy);
             int dx = Mth.clamp(Mth.floor(totalWindAdjust.x), -this.maxOffset, this.maxOffset);
             int dz = Mth.clamp(Mth.floor(totalWindAdjust.z), -this.maxOffset, this.maxOffset);

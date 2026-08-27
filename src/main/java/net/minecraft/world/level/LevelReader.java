@@ -25,14 +25,14 @@ import org.jspecify.annotations.Nullable;
 
 public interface LevelReader
         extends BlockAndLightGetter, CollisionGetter, SignalGetter, BiomeManager.NoiseBiomeSource {
-    @Nullable ChunkAccess getChunk(final long chunkX, final long chunkZ, final ChunkStatus targetStatus, final boolean loadOrGenerate);
+    @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ, final ChunkStatus targetStatus, final boolean loadOrGenerate);
 
     @Deprecated
-    boolean hasChunk(long chunkX, long chunkZ);
+    boolean hasChunk(int chunkX, int chunkZ);
 
-    long getHeight(Heightmap.Types type, long x, long z);
+    int getHeight(Heightmap.Types type, int x, int z);
 
-    default long getHeight(final Heightmap.Types type, final BlockPos pos) {
+    default int getHeight(final Heightmap.Types type, final BlockPos pos) {
         return this.getHeight(type, pos.getX(), pos.getZ());
     }
 
@@ -55,12 +55,12 @@ public interface LevelReader
     }
 
     @Override
-    default Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ) {
+    default Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
         ChunkAccess chunk = this.getChunk(QuartPos.toSection(quartX), QuartPos.toSection(quartZ), ChunkStatus.BIOMES, false);
         return chunk != null ? chunk.getNoiseBiome(quartX, quartY, quartZ) : this.getUncachedNoiseBiome(quartX, quartY, quartZ);
     }
 
-    Holder<Biome> getUncachedNoiseBiome(long quartX, long quartY, long quartZ);
+    Holder<Biome> getUncachedNoiseBiome(int quartX, int quartY, int quartZ);
 
     boolean isClientSide();
 
@@ -121,16 +121,16 @@ public interface LevelReader
         return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
     }
 
-    default ChunkAccess getChunk(final long chunkX, final long chunkZ) {
+    default ChunkAccess getChunk(final int chunkX, final int chunkZ) {
         return this.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true);
     }
 
-    default ChunkAccess getChunk(final long chunkX, final long chunkZ, final ChunkStatus status) {
+    default ChunkAccess getChunk(final int chunkX, final int chunkZ, final ChunkStatus status) {
         return this.getChunk(chunkX, chunkZ, status, true);
     }
 
     @Override
-    default @Nullable BlockGetter getChunkForCollisions(final long chunkX, final long chunkZ) {
+    default @Nullable BlockGetter getChunkForCollisions(final int chunkX, final int chunkZ) {
         return this.getChunk(chunkX, chunkZ, ChunkStatus.EMPTY, false);
     }
 
@@ -174,7 +174,7 @@ public interface LevelReader
     }
 
     @Deprecated
-    default boolean hasChunkAt(final long blockX, final long blockZ) {
+    default boolean hasChunkAt(final int blockX, final int blockZ) {
         return this.hasChunk(SectionPos.blockToSectionCoord(blockX), SectionPos.blockToSectionCoord(blockZ));
     }
 
@@ -189,19 +189,19 @@ public interface LevelReader
     }
 
     @Deprecated
-    default boolean hasChunksAt(final long x0, final long y0, final long z0, final long x1, final long y1, final long z1) {
+    default boolean hasChunksAt(final int x0, final int y0, final int z0, final int x1, final int y1, final int z1) {
         return y1 >= this.getMinY() && y0 <= this.getMaxY() ? this.hasChunksAt(x0, z0, x1, z1) : false;
     }
 
     @Deprecated
-    default boolean hasChunksAt(final long x0, final long z0, final long x1, final long z1) {
-        long chunkX0 = SectionPos.blockToSectionCoord(x0);
-        long chunkX1 = SectionPos.blockToSectionCoord(x1);
-        long chunkZ0 = SectionPos.blockToSectionCoord(z0);
-        long chunkZ1 = SectionPos.blockToSectionCoord(z1);
+    default boolean hasChunksAt(final int x0, final int z0, final int x1, final int z1) {
+        int chunkX0 = SectionPos.blockToSectionCoord(x0);
+        int chunkX1 = SectionPos.blockToSectionCoord(x1);
+        int chunkZ0 = SectionPos.blockToSectionCoord(z0);
+        int chunkZ1 = SectionPos.blockToSectionCoord(z1);
 
-        for (long chunkX = chunkX0; chunkX <= chunkX1; chunkX++) {
-            for (long chunkZ = chunkZ0; chunkZ <= chunkZ1; chunkZ++) {
+        for (int chunkX = chunkX0; chunkX <= chunkX1; chunkX++) {
+            for (int chunkZ = chunkZ0; chunkZ <= chunkZ1; chunkZ++) {
                 if (!this.hasChunk(chunkX, chunkZ)) {
                     return false;
                 }

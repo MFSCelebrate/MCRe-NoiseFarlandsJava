@@ -183,7 +183,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     }
 
     public static boolean isInSpawnableBounds(final BlockPos pos) {
-        // MCRe NoiseFarlands: 世界 Y Long 化
         return !isOutsideSpawnableHeight(pos.getY()) && isInWorldBoundsHorizontal(pos);
     }
 
@@ -195,8 +194,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         return true;
     }
 
-    // MCRe NoiseFarlands: 世界 Y Long 化
-    public static boolean isOutsideSpawnableHeight(final long y) {
+    private static boolean isOutsideSpawnableHeight(final int y) {
         return false;
     }
 
@@ -204,12 +202,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
     }
 
-    public LevelChunk getChunk(final long chunkX, final long chunkZ) {
+    public LevelChunk getChunk(final int chunkX, final int chunkZ) {
         return (LevelChunk) this.getChunk(chunkX, chunkZ, ChunkStatus.FULL);
     }
 
     @Override
-    public @Nullable ChunkAccess getChunk(final long chunkX, final long chunkZ, final ChunkStatus status, final boolean loadOrGenerate) {
+    public @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ, final ChunkStatus status, final boolean loadOrGenerate) {
         ChunkAccess chunk = this.getChunkSource().getChunk(chunkX, chunkZ, status, loadOrGenerate);
         if (chunk == null && loadOrGenerate) {
             throw new IllegalStateException("Should always be able to create a chunk!");
@@ -219,10 +217,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     }
 
     @Override
-    public boolean hasChunk(final long chunkX, final long chunkZ) {
-        return this.getChunkSource().hasChunk(chunkX, chunkZ);
-    }
-
     public boolean setBlock(final BlockPos pos, final BlockState blockState, final @Block.UpdateFlags int updateFlags) {
         return this.setBlock(pos, blockState, updateFlags, 512);
     }
@@ -347,8 +341,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     }
 
     @Override
-    public long getHeight(final Heightmap.Types type, final long x, final long z) {
-        long y;
+    public int getHeight(final Heightmap.Types type, final int x, final int z) {
+        int y;
 
         if (this.hasChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z))) {
             y = this.getChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z)).getHeight(type, x & 15, z & 15) + 1;
@@ -749,7 +743,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     }
 
     @Override
-    public @Nullable BlockGetter getChunkForCollisions(final long chunkX, final long chunkZ) {
+    public @Nullable BlockGetter getChunkForCollisions(final int chunkX, final int chunkZ) {
         return this.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
     }
 

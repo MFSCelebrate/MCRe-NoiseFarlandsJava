@@ -485,7 +485,7 @@ public class MineshaftPieces {
                 final WorldGenLevel level, final BlockState columnState, final int x, final int startY, final int z, final BoundingBox chunkBB) {
             BlockPos.MutableBlockPos pos = this.getWorldPos(x, startY, z);
             if (chunkBB.isInside(pos)) {
-                long worldY = pos.getY();
+                int worldY = pos.getY();
 
                 while (this.isReplaceableByStructures(level.getBlockState(pos)) && pos.getY() > level.getMinY() + 1) {
                     pos.move(Direction.DOWN);
@@ -504,7 +504,7 @@ public class MineshaftPieces {
                 final WorldGenLevel level, final BlockState pillarState, final int x, final int y, final int z, final BoundingBox chunkBB) {
             BlockPos.MutableBlockPos pos = this.getWorldPos(x, y, z);
             if (chunkBB.isInside(pos)) {
-                long worldY = pos.getY();
+                int worldY = pos.getY();
                 int distanceFromWorldY = 1;
                 boolean checkBelow = true;
 
@@ -537,10 +537,9 @@ public class MineshaftPieces {
             }
         }
 
-        // MCRe NoiseFarlands: 世界 Y Long 化
         private static void fillColumnBetween(
-                final WorldGenLevel level, final BlockState pillarState, final BlockPos.MutableBlockPos pos, final long bottomInclusive, final long topExclusive) {
-            for (long pillarY = bottomInclusive; pillarY < topExclusive; pillarY++) {
+                final WorldGenLevel level, final BlockState pillarState, final BlockPos.MutableBlockPos pos, final int bottomInclusive, final int topExclusive) {
+            for (int pillarY = bottomInclusive; pillarY < topExclusive; pillarY++) {
                 level.setBlock(pos.setY(pillarY), pillarState, 2);
             }
         }
@@ -1313,13 +1312,11 @@ public class MineshaftPieces {
         }
 
         @Override
-        // MCRe NoiseFarlands: 世界坐标 Long 化
-        public void move(final long dx, final long dy, final long dz) {
+        public void move(final int dx, final int dy, final int dz) {
             super.move(dx, dy, dz);
 
             for (BoundingBox bb : this.childEntranceBoxes) {
-                // MCRe NoiseFarlands: Decision 5 边界
-                bb.move((int) dx, (int) dy, (int) dz);
+                bb.move(dx, dy, dz);
             }
         }
 

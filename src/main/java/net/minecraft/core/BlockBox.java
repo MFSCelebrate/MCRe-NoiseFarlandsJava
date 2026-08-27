@@ -57,18 +57,15 @@ public record BlockBox(BlockPos min, BlockPos max) implements Iterable<BlockPos>
         return BlockPos.betweenClosed(this.min, this.max).iterator();
     }
 
-    // MCRe NoiseFarlands: Vec3i Long 化
-    public long sizeX() {
+    public int sizeX() {
         return this.max.getX() - this.min.getX() + 1;
     }
 
-    // MCRe NoiseFarlands: Vec3i Long 化
-    public long sizeY() {
+    public int sizeY() {
         return this.max.getY() - this.min.getY() + 1;
     }
 
-    // MCRe NoiseFarlands: Vec3i Long 化
-    public long sizeZ() {
+    public int sizeZ() {
         return this.max.getZ() - this.min.getZ() + 1;
     }
 

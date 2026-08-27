@@ -246,9 +246,9 @@ public class SectionRenderDispatcher {
         public void setSectionNode(final SectionPos sectionNode) {
             this.reset();
             this.sectionNode = sectionNode;
-            long x = sectionNode.minBlockX();
-            long y = sectionNode.minBlockY();
-            long z = sectionNode.minBlockZ();
+            long x = sectionNode.minBlockXLong();
+            long y = sectionNode.minBlockYLong();
+            long z = sectionNode.minBlockZLong();
             this.renderOrigin[0] = x;
             this.renderOrigin[1] = y;
             this.renderOrigin[2] = z;
@@ -352,7 +352,7 @@ public class SectionRenderDispatcher {
 
         private VertexSorting createVertexSorting(final SectionPos sectionPos, final Vec3 cameraPos) {
             return VertexSorting.byDistance(
-                (float)(cameraPos.x - sectionPos.minBlockX()), (float)(cameraPos.y - sectionPos.minBlockY()), (float)(cameraPos.z - sectionPos.minBlockZ())
+                (float)(cameraPos.x - sectionPos.minBlockXLong()), (float)(cameraPos.y - sectionPos.minBlockYLong()), (float)(cameraPos.z - sectionPos.minBlockZLong())
             );
         }
 

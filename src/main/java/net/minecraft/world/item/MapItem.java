@@ -41,8 +41,7 @@ public class MapItem extends Item {
     }
 
     public static ItemStack create(
-        // MCRe NoiseFarlands: 世界坐标 Long 化
-        final ServerLevel level, final long originX, final long originZ, final byte scale, final boolean trackPosition, final boolean unlimitedTracking
+        final ServerLevel level, final int originX, final int originZ, final byte scale, final boolean trackPosition, final boolean unlimitedTracking
     ) {
         ItemStack map = new ItemStack(Items.FILLED_MAP);
         MapId newId = createNewSavedData(level, originX, originZ, scale, trackPosition, unlimitedTracking, level.dimension());
@@ -59,11 +58,10 @@ public class MapItem extends Item {
         return getSavedData(id, level);
     }
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
     private static MapId createNewSavedData(
         final ServerLevel level,
-        final long xSpawn,
-        final long zSpawn,
+        final int xSpawn,
+        final int zSpawn,
         final int scale,
         final boolean trackingPosition,
         final boolean unlimitedTracking,
@@ -125,7 +123,7 @@ public class MapItem extends Item {
                                     for (int averagingAreaDeltaX = 0; averagingAreaDeltaX < scale; averagingAreaDeltaX++) {
                                         for (int averagingAreaDeltaZ = 0; averagingAreaDeltaZ < scale; averagingAreaDeltaZ++) {
                                             blockPos.set(averagingAreaMinX + averagingAreaDeltaX, 0, averagingAreaMinZ + averagingAreaDeltaZ);
-                                            long columnY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, blockPos.getX(), blockPos.getZ()) + 1;
+                                            int columnY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, blockPos.getX(), blockPos.getZ()) + 1;
                                             BlockState state;
                                             if (columnY <= level.getMinY()) {
                                                 state = Blocks.BEDROCK.defaultBlockState();
@@ -136,8 +134,7 @@ public class MapItem extends Item {
                                                 } while (state.getMapColor(level, blockPos) == MapColor.NONE && columnY > level.getMinY());
 
                                                 if (columnY > level.getMinY() && !state.getFluidState().isEmpty()) {
-                                                    // MCRe NoiseFarlands: 世界 Y Long 化
-        long solidY = columnY - 1;
+                                                    int solidY = columnY - 1;
                                                     belowPos.set(blockPos);
 
                                                     BlockState belowBlock;

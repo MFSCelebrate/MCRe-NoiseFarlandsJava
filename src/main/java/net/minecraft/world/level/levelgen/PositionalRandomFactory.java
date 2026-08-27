@@ -18,7 +18,7 @@ public interface PositionalRandomFactory {
 
     RandomSource fromSeed(final long seed);
 
-    RandomSource at(final long x, final long y, final long z);
+    RandomSource at(final int x, final int y, final int z);
 
     @VisibleForTesting
     void parityConfigString(StringBuilder sb);

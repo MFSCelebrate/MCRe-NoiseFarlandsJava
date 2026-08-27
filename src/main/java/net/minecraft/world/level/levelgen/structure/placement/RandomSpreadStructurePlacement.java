@@ -64,10 +64,9 @@ public class RandomSpreadStructurePlacement extends StructurePlacement {
         return this.spreadType;
     }
 
-    public ChunkPos getPotentialStructureChunk(final long seed, final long sourceX, final long sourceZ) {
-        // MCRe NoiseFarlands: source 坐标 Long 化；floorDiv(long,int) 返回 long，spread 为 spacing 内小值保持 int
-        long spacedGridX = Math.floorDiv(sourceX, this.spacing);
-        long spacedGridZ = Math.floorDiv(sourceZ, this.spacing);
+    public ChunkPos getPotentialStructureChunk(final long seed, final int sourceX, final int sourceZ) {
+        int spacedGridX = Math.floorDiv(sourceX, this.spacing);
+        int spacedGridZ = Math.floorDiv(sourceZ, this.spacing);
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
         random.setLargeFeatureWithSalt(seed, spacedGridX, spacedGridZ, this.salt());
         int limit = this.spacing - this.separation;
@@ -77,9 +76,9 @@ public class RandomSpreadStructurePlacement extends StructurePlacement {
     }
 
     @Override
-    protected boolean isPlacementChunk(final ChunkGeneratorStructureState state, final long sourceX, final long sourceZ) {
+    protected boolean isPlacementChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ) {
         ChunkPos chunkPos = this.getPotentialStructureChunk(state.getLevelSeed(), sourceX, sourceZ);
-        return chunkPos.x() == sourceX && chunkPos.z() == sourceZ;
+        return (int)chunkPos.x() == sourceX && (int)chunkPos.z() == sourceZ;
     }
 
     @Override

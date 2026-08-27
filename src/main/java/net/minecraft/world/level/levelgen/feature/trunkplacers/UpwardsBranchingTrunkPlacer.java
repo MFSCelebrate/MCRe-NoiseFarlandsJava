@@ -72,7 +72,7 @@ public class UpwardsBranchingTrunkPlacer extends TrunkPlacer {
         BlockPos.MutableBlockPos logPos = new BlockPos.MutableBlockPos();
 
         for (int heightPos = 0; heightPos < treeHeight; heightPos++) {
-            long currentHeight = origin.getY() + heightPos;
+            int currentHeight = origin.getY() + heightPos;
             if (this.placeLog(level, trunkSetter, random, logPos.set(origin.getX(), currentHeight, origin.getZ()), config)
                 && heightPos < treeHeight - 1
                 && random.nextFloat() < this.placeBranchPerLogProbability) {
@@ -99,21 +99,19 @@ public class UpwardsBranchingTrunkPlacer extends TrunkPlacer {
         final TreeConfiguration config,
         final List<FoliagePlacer.FoliageAttachment> attachments,
         final BlockPos.MutableBlockPos logPos,
-        final long currentHeight,
+        final int currentHeight,
         final Direction branchDir,
         final int branchPos,
         int branchSteps
     ) {
-        // MCRe NoiseFarlands: 世界 Y Long 化
-        long heightAlongBranch = currentHeight + branchPos;
-        long logX = logPos.getX();
-        long logZ = logPos.getZ();
+        int heightAlongBranch = currentHeight + branchPos;
+        int logX = logPos.getX();
+        int logZ = logPos.getZ();
         int branchPlacementIndex = branchPos;
 
         while (branchPlacementIndex < treeHeight && branchSteps > 0) {
             if (branchPlacementIndex >= 1) {
-                // MCRe NoiseFarlands: 世界 Y Long 化
-                long placementHeight = currentHeight + branchPlacementIndex;
+                int placementHeight = currentHeight + branchPlacementIndex;
                 logX += branchDir.getStepX();
                 logZ += branchDir.getStepZ();
                 heightAlongBranch = placementHeight;

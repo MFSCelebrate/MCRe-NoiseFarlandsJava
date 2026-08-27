@@ -16,10 +16,9 @@ import net.minecraft.world.phys.Vec3;
 public record LocationCheck(Optional<LocationPredicate> predicate, BlockPos offset) implements LootItemCondition {
     private static final MapCodec<BlockPos> OFFSET_CODEC = RecordCodecBuilder.mapCodec(
         i -> i.group(
-                // MCRe NoiseFarlands: offset 为相对偏移，NBT IntTag 域不变（Decision 4）
-                Codec.INT.optionalFieldOf("offsetX", 0).forGetter(v -> (int) v.getX()),
-                Codec.INT.optionalFieldOf("offsetY", 0).forGetter(v -> (int) v.getY()),
-                Codec.INT.optionalFieldOf("offsetZ", 0).forGetter(v -> (int) v.getZ())
+                Codec.INT.optionalFieldOf("offsetX", 0).forGetter(Vec3i::getX),
+                Codec.INT.optionalFieldOf("offsetY", 0).forGetter(Vec3i::getY),
+                Codec.INT.optionalFieldOf("offsetZ", 0).forGetter(Vec3i::getZ)
             )
             .apply(i, BlockPos::new)
     );

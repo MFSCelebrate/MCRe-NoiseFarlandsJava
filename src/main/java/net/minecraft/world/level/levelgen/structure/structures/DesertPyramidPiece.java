@@ -313,10 +313,9 @@ public class DesertPyramidPiece extends ScatteredFeaturePiece {
     }
 
     private void addCellarStairs(final BlockPos roomCenter, final WorldGenLevel level, final BoundingBox chunkBB) {
-        // MCRe NoiseFarlands: roomCenter 为结构局部坐标（int 域），placeBlock 参数即局部坐标
-        int x = (int) roomCenter.getX();
-        int y = (int) roomCenter.getY();
-        int z = (int) roomCenter.getZ();
+        int x = roomCenter.getX();
+        int y = roomCenter.getY();
+        int z = roomCenter.getZ();
         BlockState sandStoneStairs = Blocks.SANDSTONE_STAIRS.defaultBlockState();
         this.placeBlock(level, sandStoneStairs.rotate(Rotation.COUNTERCLOCKWISE_90), 13, -1, 17, chunkBB);
         this.placeBlock(level, sandStoneStairs.rotate(Rotation.COUNTERCLOCKWISE_90), 14, -2, 17, chunkBB);
@@ -338,10 +337,9 @@ public class DesertPyramidPiece extends ScatteredFeaturePiece {
     }
 
     private void addCellarRoom(final BlockPos roomCenter, final WorldGenLevel level, final BoundingBox chunkBB) {
-        // MCRe NoiseFarlands: roomCenter 为结构局部坐标（int 域），placeBlock 参数即局部坐标
-        int x = (int) roomCenter.getX();
-        int y = (int) roomCenter.getY();
-        int z = (int) roomCenter.getZ();
+        int x = roomCenter.getX();
+        int y = roomCenter.getY();
+        int z = roomCenter.getZ();
         BlockState cutSandStone = Blocks.CUT_SANDSTONE.defaultBlockState();
         BlockState hieroglyphsSandStone = Blocks.CHISELED_SANDSTONE.defaultBlockState();
         this.generateBox(level, chunkBB, x - 3, y + 1, z - 3, x - 3, y + 1, z + 2, cutSandStone, cutSandStone, true);

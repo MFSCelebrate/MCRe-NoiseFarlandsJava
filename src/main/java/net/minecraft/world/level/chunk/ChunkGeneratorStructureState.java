@@ -188,11 +188,11 @@ public class ChunkGeneratorStructureState {
         return this.randomState;
     }
 
-    public boolean hasStructureChunkInRange(final Holder<StructureSet> structureSet, final long sourceX, final long sourceZ, final int range) {
+    public boolean hasStructureChunkInRange(final Holder<StructureSet> structureSet, final int sourceX, final int sourceZ, final int range) {
         StructurePlacement placement = structureSet.value().placement();
 
-        for (long testX = sourceX - range; testX <= sourceX + range; testX++) {
-            for (long testZ = sourceZ - range; testZ <= sourceZ + range; testZ++) {
+        for (int testX = sourceX - range; testX <= sourceX + range; testX++) {
+            for (int testZ = sourceZ - range; testZ <= sourceZ + range; testZ++) {
                 if (placement.isStructureChunk(this, testX, testZ)) {
                     return true;
                 }

@@ -52,7 +52,7 @@ public class ClientChunkCache extends ChunkSource {
         return this.lightEngine;
     }
 
-    private static boolean isValidChunk(final @Nullable LevelChunk chunk, final long x, final long z) {
+    private static boolean isValidChunk(final @Nullable LevelChunk chunk, final int x, final int z) {
         if (chunk == null) {
             return false;
         }
@@ -62,16 +62,16 @@ public class ClientChunkCache extends ChunkSource {
     }
 
     public void drop(final ChunkPos pos) {
-        if (this.storage.inRange(pos.x(), pos.z())) {
-            int index = this.storage.getIndex(pos.x(), pos.z());
+        if (this.storage.inRange((int)pos.x(), (int)pos.z())) {
+            int index = this.storage.getIndex((int)pos.x(), (int)pos.z());
             LevelChunk currentChunk = this.storage.getChunk(index);
-            if (isValidChunk(currentChunk, pos.x(), pos.z())) {
+            if (isValidChunk(currentChunk, (int)pos.x(), (int)pos.z())) {
                 this.storage.drop(index, currentChunk);
             }
         }
     }
 
-    public @Nullable LevelChunk getChunk(final long x, final long z, final ChunkStatus targetStatus, final boolean loadOrGenerate) {
+    public @Nullable LevelChunk getChunk(final int x, final int z, final ChunkStatus targetStatus, final boolean loadOrGenerate) {
         if (this.storage.inRange(x, z)) {
             LevelChunk chunk = this.storage.getChunk(this.storage.getIndex(x, z));
             if (isValidChunk(chunk, x, z)) {
@@ -102,9 +102,8 @@ public class ClientChunkCache extends ChunkSource {
     }
 
     public @Nullable LevelChunk replaceWithPacketData(
-        // MCRe NoiseFarlands: chunk 坐标 Long 化
-        final long chunkX,
-        final long chunkZ,
+        final int chunkX,
+        final int chunkZ,
         final FriendlyByteBuf readBuffer,
         final Map<Heightmap.Types, long[]> heightmaps,
         final Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> blockEntities
@@ -134,7 +133,7 @@ public class ClientChunkCache extends ChunkSource {
     public void tick(final BooleanSupplier haveTime, final boolean tickChunks) {
     }
 
-    public void updateViewCenter(final long x, final long z) {
+    public void updateViewCenter(final int x, final int z) {
         this.storage.viewCenterX = x;
         this.storage.viewCenterZ = z;
     }
@@ -151,8 +150,8 @@ public class ClientChunkCache extends ChunkSource {
                 LevelChunk chunk = this.storage.chunks.get(i);
                 if (chunk != null) {
                     ChunkPos pos = chunk.getPos();
-                    if (newStorage.inRange(pos.x(), pos.z())) {
-                        newStorage.replace(newStorage.getIndex(pos.x(), pos.z()), chunk);
+                    if (newStorage.inRange((int)pos.x(), (int)pos.z())) {
+                        newStorage.replace(newStorage.getIndex((int)pos.x(), (int)pos.z()), chunk);
                     }
                 }
             }
@@ -205,7 +204,7 @@ public class ClientChunkCache extends ChunkSource {
     }
 
     @Override
-    public void onSectionEmptinessChanged(final long sectionX, final long sectionY, final long sectionZ, final boolean empty) {
+    public void onSectionEmptinessChanged(final int sectionX, final int sectionY, final int sectionZ, final boolean empty) {
         this.storage.onSectionEmptinessChanged(sectionX, sectionY, sectionZ, empty);
     }
 
@@ -220,8 +219,8 @@ public class ClientChunkCache extends ChunkSource {
         private int updatingSetsIndex;
         private final int chunkRadius;
         private final int viewRange;
-        private volatile long viewCenterX;
-        private volatile long viewCenterZ;
+        private volatile int viewCenterX;
+        private volatile int viewCenterZ;
         private int chunkCount;
 
         private Storage(final int chunkRadius) {
@@ -237,7 +236,7 @@ public class ClientChunkCache extends ChunkSource {
             }
         }
 
-        private int getIndex(final long chunkX, final long chunkZ) {
+        private int getIndex(final int chunkX, final int chunkZ) {
             return Math.floorMod(chunkZ, this.viewRange) * this.viewRange + Math.floorMod(chunkX, this.viewRange);
         }
 
@@ -264,7 +263,7 @@ public class ClientChunkCache extends ChunkSource {
             ClientChunkCache.this.level.unload(oldChunk);
         }
 
-        public void onSectionEmptinessChanged(final long sectionX, final long sectionY, final long sectionZ, final boolean empty) {
+        public void onSectionEmptinessChanged(final int sectionX, final int sectionY, final int sectionZ, final boolean empty) {
             if (this.inRange(sectionX, sectionZ)) {
                 SectionPos sectionNode = SectionPos.of(sectionX, sectionY, sectionZ);
                 if (empty) {
@@ -282,7 +281,7 @@ public class ClientChunkCache extends ChunkSource {
 
             for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
                 this.removedEmptySections[this.updatingSetsIndex]
-                    .add(SectionPos.of(chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), chunkPos.z()));
+                    .add(SectionPos.of((int)chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), (int)chunkPos.z()));
             }
         }
 
@@ -295,7 +294,7 @@ public class ClientChunkCache extends ChunkSource {
                 LevelChunkSection section = sections[sectionIndex];
                 if (section.hasOnlyAir()) {
                     this.addedEmptySections[this.updatingSetsIndex]
-                        .add(SectionPos.of(chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), chunkPos.z()));
+                        .add(SectionPos.of((int)chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), (int)chunkPos.z()));
                 }
             }
         }
@@ -306,7 +305,7 @@ public class ClientChunkCache extends ChunkSource {
 
             for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
                 LevelChunkSection section = sections[sectionIndex];
-                SectionPos sectionNode = SectionPos.of(chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), chunkPos.z());
+                SectionPos sectionNode = SectionPos.of((int)chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), (int)chunkPos.z());
                 if (section.hasOnlyAir()) {
                     this.addedEmptySections[this.updatingSetsIndex].add(sectionNode);
                 } else {
@@ -315,7 +314,7 @@ public class ClientChunkCache extends ChunkSource {
             }
         }
 
-        private boolean inRange(final long chunkX, final long chunkZ) {
+        private boolean inRange(final int chunkX, final int chunkZ) {
             return Math.abs(chunkX - this.viewCenterX) <= this.chunkRadius && Math.abs(chunkZ - this.viewCenterZ) <= this.chunkRadius;
         }
 
@@ -327,8 +326,8 @@ public class ClientChunkCache extends ChunkSource {
             try (FileOutputStream stream = new FileOutputStream(file)) {
                 int chunkRadius = ClientChunkCache.this.storage.chunkRadius;
 
-                for (long z = this.viewCenterZ - chunkRadius; z <= this.viewCenterZ + chunkRadius; z++) {
-                    for (long x = this.viewCenterX - chunkRadius; x <= this.viewCenterX + chunkRadius; x++) {
+                for (int z = this.viewCenterZ - chunkRadius; z <= this.viewCenterZ + chunkRadius; z++) {
+                    for (int x = this.viewCenterX - chunkRadius; x <= this.viewCenterX + chunkRadius; x++) {
                         LevelChunk chunk = ClientChunkCache.this.storage.chunks.get(ClientChunkCache.this.storage.getIndex(x, z));
                         if (chunk != null) {
                             ChunkPos pos = chunk.getPos();

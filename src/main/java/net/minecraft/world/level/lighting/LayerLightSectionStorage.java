@@ -80,9 +80,9 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
             return 0;
         }
         return layer.get(
-            (int) SectionPos.sectionRelative(blockNode.getX()),
-            (int) SectionPos.sectionRelative(blockNode.getY()),
-            (int) SectionPos.sectionRelative(blockNode.getZ())
+            SectionPos.sectionRelative(blockNode.getX()),
+            SectionPos.sectionRelative(blockNode.getY()),
+            SectionPos.sectionRelative(blockNode.getZ())
         );
     }
 
@@ -101,9 +101,9 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
         }
 
         layer.set(
-            (int) SectionPos.sectionRelative(blockNode.getX()),
-            (int) SectionPos.sectionRelative(blockNode.getY()),
-            (int) SectionPos.sectionRelative(blockNode.getZ()),
+            SectionPos.sectionRelative(blockNode.getX()),
+            SectionPos.sectionRelative(blockNode.getY()),
+            SectionPos.sectionRelative(blockNode.getZ()),
             level
         );
         SectionPos.aroundAndAtBlockPos(blockNode, this.sectionsAffectedByLightUpdates::add);

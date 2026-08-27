@@ -72,9 +72,9 @@ public abstract class TemplateStructurePiece extends StructurePiece {
 
     @Override
     protected void addAdditionalSaveData(final StructurePieceSerializationContext context, final CompoundTag tag) {
-        tag.putInt("TPX", (int) this.templatePosition.getX());
-        tag.putInt("TPY", (int) this.templatePosition.getY());
-        tag.putInt("TPZ", (int) this.templatePosition.getZ());
+        tag.putInt("TPX", this.templatePosition.getX());
+        tag.putInt("TPY", this.templatePosition.getY());
+        tag.putInt("TPZ", this.templatePosition.getZ());
         tag.putString("Template", this.templateName);
     }
 
@@ -122,8 +122,7 @@ public abstract class TemplateStructurePiece extends StructurePiece {
 
     @Deprecated
     @Override
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public void move(final long dx, final long dy, final long dz) {
+    public void move(final int dx, final int dy, final int dz) {
         super.move(dx, dy, dz);
         this.templatePosition = this.templatePosition.offset(dx, dy, dz);
     }

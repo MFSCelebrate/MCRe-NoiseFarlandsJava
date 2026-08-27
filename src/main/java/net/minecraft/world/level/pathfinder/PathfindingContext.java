@@ -24,7 +24,7 @@ public class PathfindingContext {
         this.mobPosition = mob.blockPosition();
     }
 
-    public PathType getPathTypeFromState(final long x, final long y, final long z) {
+    public PathType getPathTypeFromState(final int x, final int y, final int z) {
         BlockPos pos = this.mutablePos.set(x, y, z);
         return this.cache == null ? WalkNodeEvaluator.getPathTypeFromState(this.level, pos) : this.cache.getOrCompute(this.level, pos);
     }

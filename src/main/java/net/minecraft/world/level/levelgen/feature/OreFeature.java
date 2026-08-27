@@ -35,14 +35,14 @@ public class OreFeature extends Feature<OreConfiguration> {
         int spreadY = 2;
         double y0 = origin.getY() + random.nextInt(3) - 2;
         double y1 = origin.getY() + random.nextInt(3) - 2;
-        long xStart = origin.getX() - Mth.ceil(spreadXY) - maxRadius;
-        long yStart = origin.getY() - 2 - maxRadius;
-        long zStart = origin.getZ() - Mth.ceil(spreadXY) - maxRadius;
+        int xStart = origin.getX() - Mth.ceil(spreadXY) - maxRadius;
+        int yStart = origin.getY() - 2 - maxRadius;
+        int zStart = origin.getZ() - Mth.ceil(spreadXY) - maxRadius;
         int sizeXZ = 2 * (Mth.ceil(spreadXY) + maxRadius);
         int sizeY = 2 * (2 + maxRadius);
 
-        for (long xprobe = xStart; xprobe <= xStart + sizeXZ; xprobe++) {
-            for (long zprobe = zStart; zprobe <= zStart + sizeXZ; zprobe++) {
+        for (int xprobe = xStart; xprobe <= xStart + sizeXZ; xprobe++) {
+            for (int zprobe = zStart; zprobe <= zStart + sizeXZ; zprobe++) {
                 if (yStart <= level.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, xprobe, zprobe)) {
                     return this.doPlace(level, random, config, x0, x1, z0, z1, y0, y1, xStart, yStart, zStart, sizeXZ, sizeY);
                 }
@@ -62,9 +62,9 @@ public class OreFeature extends Feature<OreConfiguration> {
         final double z1,
         final double y0,
         final double y1,
-        final long xStart,
-        final long yStart,
-        final long zStart,
+        final int xStart,
+        final int yStart,
+        final int zStart,
         final int sizeXZ,
         final int sizeY
     ) {
@@ -114,10 +114,9 @@ public class OreFeature extends Feature<OreConfiguration> {
                     double xx = data[i * 4 + 0];
                     double yy = data[i * 4 + 1];
                     double zz = data[i * 4 + 2];
-                    // MCRe NoiseFarlands: 矿石相对域，int 边界强转
-                    int xMin = (int) Math.max(Mth.floor(xx - r), xStart);
-                    int yMin = (int) Math.max(Mth.floor(yy - r), yStart);
-                    int zMin = (int) Math.max(Mth.floor(zz - r), zStart);
+                    int xMin = Math.max(Mth.floor(xx - r), xStart);
+                    int yMin = Math.max(Mth.floor(yy - r), yStart);
+                    int zMin = Math.max(Mth.floor(zz - r), zStart);
                     int xMax = Math.max(Mth.floor(xx + r), xMin);
                     int yMax = Math.max(Mth.floor(yy + r), yMin);
                     int zMax = Math.max(Mth.floor(zz + r), zMin);
@@ -131,18 +130,16 @@ public class OreFeature extends Feature<OreConfiguration> {
                                     for (int z = zMin; z <= zMax; z++) {
                                         double zd = (z + 0.5 - zz) / r;
                                         if (xd * xd + yd * yd + zd * zd < 1.0 && !level.isOutsideBuildHeight(y)) {
-                                            // MCRe NoiseFarlands: BitSet 相对索引 int 域边界
-                        int bitSetIndex = (int) (x - xStart + (y - yStart) * sizeXZ + (z - zStart) * sizeXZ * sizeY);
+                                            int bitSetIndex = x - xStart + (y - yStart) * sizeXZ + (z - zStart) * sizeXZ * sizeY;
                                             if (!tested.get(bitSetIndex)) {
                                                 tested.set(bitSetIndex);
                                                 orePos.set(x, y, z);
                                                 if (level.ensureCanWrite(orePos)) {
                                                     LevelChunkSection section = sectionGetter.getSection(orePos);
                                                     if (section != null) {
-                                                        // MCRe NoiseFarlands: 0-15 局部坐标，LevelChunkSection int 域边界
-                                                        int sectionRelativeX = (int) SectionPos.sectionRelative(x);
-                                                        int sectionRelativeY = (int) SectionPos.sectionRelative(y);
-                                                        int sectionRelativeZ = (int) SectionPos.sectionRelative(z);
+                                                        int sectionRelativeX = SectionPos.sectionRelative(x);
+                                                        int sectionRelativeY = SectionPos.sectionRelative(y);
+                                                        int sectionRelativeZ = SectionPos.sectionRelative(z);
                                                         BlockState blockState = section.getBlockState(sectionRelativeX, sectionRelativeY, sectionRelativeZ);
 
                                                         for (OreConfiguration.TargetBlockState targetState : config.targetStates) {

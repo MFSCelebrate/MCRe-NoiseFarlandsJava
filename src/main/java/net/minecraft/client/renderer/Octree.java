@@ -23,8 +23,7 @@ public class Octree {
     private final long cameraCenterY;
     private final long cameraCenterZ;
 
-    // MCRe NoiseFarlands: 世界 Y Long 化
-    public Octree(final SectionPos cameraSection, final int renderDistance, final int sectionsPerChunk, final long minBlockY) {
+    public Octree(final SectionPos cameraSection, final int renderDistance, final int sectionsPerChunk, final int minBlockY) {
         int visibleAreaDiameterInSections = renderDistance * 2 + 1;
         int boundingBoxSizeInSections = Mth.smallestEncompassingPowerOfTwo(visibleAreaDiameterInSections);
         int distanceToBBEdgeInBlocks = renderDistance * 16;
@@ -116,9 +115,9 @@ public class Octree {
 
         public boolean add(final SectionRenderDispatcher.RenderSection section) {
             SectionPos sectionNode = section.getSectionNode();
-            boolean sectionXDiffNegative = sectionNode.minBlockX() - this.bbCenterX < 0;
-            boolean sectionYDiffNegative = sectionNode.minBlockY() - this.bbCenterY < 0;
-            boolean sectionZDiffNegative = sectionNode.minBlockZ() - this.bbCenterZ < 0;
+            boolean sectionXDiffNegative = sectionNode.minBlockXLong() - this.bbCenterX < 0;
+            boolean sectionYDiffNegative = sectionNode.minBlockYLong() - this.bbCenterY < 0;
+            boolean sectionZDiffNegative = sectionNode.minBlockZLong() - this.bbCenterZ < 0;
             boolean xDiffsOppositeSides = sectionXDiffNegative != this.cameraXDiffNegative;
             boolean yDiffsOppositeSides = sectionYDiffNegative != this.cameraYDiffNegative;
             boolean zDiffsOppositeSides = sectionZDiffNegative != this.cameraZDiffNegative;

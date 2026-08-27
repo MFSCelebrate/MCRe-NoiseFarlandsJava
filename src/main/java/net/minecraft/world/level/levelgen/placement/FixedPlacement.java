@@ -24,8 +24,8 @@ public class FixedPlacement extends PlacementModifier {
 
     @Override
     public Stream<BlockPos> getPositions(final PlacementContext context, final RandomSource random, final BlockPos origin) {
-        long chunkX = SectionPos.blockToSectionCoord(origin.getX());
-        long chunkZ = SectionPos.blockToSectionCoord(origin.getZ());
+        int chunkX = SectionPos.blockToSectionCoord(origin.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(origin.getZ());
         boolean hasPositions = false;
 
         for (BlockPos position : this.positions) {
@@ -38,8 +38,7 @@ public class FixedPlacement extends PlacementModifier {
         return !hasPositions ? Stream.empty() : this.positions.stream().filter(pos -> isSameChunk(chunkX, chunkZ, pos));
     }
 
-    // MCRe NoiseFarlands: chunk 坐标 Long 化
-    private static boolean isSameChunk(final long chunkX, final long chunkZ, final BlockPos position) {
+    private static boolean isSameChunk(final int chunkX, final int chunkZ, final BlockPos position) {
         return chunkX == SectionPos.blockToSectionCoord(position.getX()) && chunkZ == SectionPos.blockToSectionCoord(position.getZ());
     }
 

@@ -13,11 +13,6 @@ public enum AxisCycle {
         }
 
         @Override
-        public long cycle(final long x, final long y, final long z, final Direction.Axis axis) {
-            return axis.choose(x, y, z);
-        }
-
-        @Override
         public Direction.Axis cycle(final Direction.Axis axis) {
             return axis;
         }
@@ -35,11 +30,6 @@ public enum AxisCycle {
 
         @Override
         public double cycle(final double x, final double y, final double z, final Direction.Axis axis) {
-            return axis.choose(z, x, y);
-        }
-
-        @Override
-        public long cycle(final long x, final long y, final long z, final Direction.Axis axis) {
             return axis.choose(z, x, y);
         }
 
@@ -65,11 +55,6 @@ public enum AxisCycle {
         }
 
         @Override
-        public long cycle(final long x, final long y, final long z, final Direction.Axis axis) {
-            return axis.choose(y, z, x);
-        }
-
-        @Override
         public Direction.Axis cycle(final Direction.Axis axis) {
             return AXIS_VALUES[Math.floorMod(axis.ordinal() - 1, 3)];
         }
@@ -86,8 +71,6 @@ public enum AxisCycle {
     public abstract int cycle(final int x, final int y, final int z, final Direction.Axis axis);
 
     public abstract double cycle(final double x, final double y, final double z, final Direction.Axis axis);
-
-    public abstract long cycle(final long x, final long y, final long z, final Direction.Axis axis);
 
     public abstract Direction.Axis cycle(final Direction.Axis axis);
 

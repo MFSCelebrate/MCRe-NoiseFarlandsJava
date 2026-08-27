@@ -1430,7 +1430,7 @@ public abstract class Entity
     public BlockPos adjustSpawnLocation(final ServerLevel level, final BlockPos spawnSuggestion) {
         BlockPos spawnBlockPos = level.getRespawnData().pos();
         Vec3 spawnPos = Vec3.atCenterOf(spawnBlockPos);
-        long spawnHeight = level.getChunkAt(spawnBlockPos).getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawnBlockPos.getX(), spawnBlockPos.getZ()) + 1;
+        int spawnHeight = level.getChunkAt(spawnBlockPos).getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawnBlockPos.getX(), spawnBlockPos.getZ()) + 1;
         return BlockPos.containing(spawnPos.x, spawnHeight, spawnPos.z);
     }
 
@@ -3778,7 +3778,7 @@ public abstract class Entity
         this.setDeltaMovement(new Vec3(xd, yd, zd));
     }
 
-    public final long getBlockX() {
+    public final int getBlockX() {
         return this.blockPosition.getX();
     }
 
@@ -3794,7 +3794,7 @@ public abstract class Entity
         return this.getX((2.0 * this.random.nextDouble() - 1.0) * spread);
     }
 
-    public final long getBlockY() {
+    public final int getBlockY() {
         return this.blockPosition.getY();
     }
 
@@ -3818,7 +3818,7 @@ public abstract class Entity
         return this.position.y + this.eyeHeight;
     }
 
-    public final long getBlockZ() {
+    public final int getBlockZ() {
         return this.blockPosition.getZ();
     }
 

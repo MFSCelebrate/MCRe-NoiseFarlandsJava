@@ -43,10 +43,9 @@ public interface PieceGeneratorSupplier<C extends FeatureConfiguration> {
         RegistryAccess registryAccess
     ) {
         public boolean validBiomeOnTop(final Heightmap.Types type) {
-            // MCRe NoiseFarlands: 世界坐标 Long 化
-            long blockX = this.chunkPos.getMiddleBlockX();
-            long blockZ = this.chunkPos.getMiddleBlockZ();
-            long blockY = this.chunkGenerator.getFirstOccupiedHeight(blockX, blockZ, type, this.heightAccessor, this.randomState);
+            int blockX = (int)this.chunkPos.getMiddleBlockX();
+            int blockZ = (int)this.chunkPos.getMiddleBlockZ();
+            int blockY = this.chunkGenerator.getFirstOccupiedHeight(blockX, blockZ, type, this.heightAccessor, this.randomState);
             Holder<Biome> biome = this.chunkGenerator
                 .getBiomeSource()
                 .getNoiseBiome(QuartPos.fromBlock(blockX), QuartPos.fromBlock(blockY), QuartPos.fromBlock(blockZ), this.randomState.sampler());

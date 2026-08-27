@@ -196,12 +196,11 @@ public class ExecuteCommand {
                             ServerLevel level = c.getSource().getLevel();
                             double x = position.x();
                             double z = position.z();
-                            // MCRe NoiseFarlands: double 坐标用 posToSectionCoord
-                            if (!level.hasChunk(SectionPos.posToSectionCoord(x), SectionPos.posToSectionCoord(z))) {
+                            if (!level.hasChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z))) {
                                 throw BlockPosArgument.ERROR_NOT_LOADED.create();
                             }
 
-                            long height = level.getHeight(HeightmapTypeArgument.getHeightmap(c, "heightmap"), Mth.floor(x), Mth.floor(z));
+                            int height = level.getHeight(HeightmapTypeArgument.getHeightmap(c, "heightmap"), Mth.floor(x), Mth.floor(z));
                             return c.getSource().withPosition(new Vec3(x, height, z));
                         })))
                 )

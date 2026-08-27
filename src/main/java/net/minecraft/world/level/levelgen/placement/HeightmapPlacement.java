@@ -23,9 +23,9 @@ public class HeightmapPlacement extends PlacementModifier {
 
     @Override
     public Stream<BlockPos> getPositions(final PlacementContext context, final RandomSource random, final BlockPos origin) {
-        long x = origin.getX();
-        long z = origin.getZ();
-        long height = context.getHeight(this.heightmap, x, z);
+        int x = origin.getX();
+        int z = origin.getZ();
+        int height = context.getHeight(this.heightmap, x, z);
         return height > context.getMinY() ? Stream.of(new BlockPos(x, height, z)) : Stream.of();
     }
 

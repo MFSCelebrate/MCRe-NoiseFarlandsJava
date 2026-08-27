@@ -60,7 +60,6 @@ public class MovingBlockRenderState implements BlockAndTintGetter {
 
     @Override
     public int getMinY() {
-        // MCRe NoiseFarlands: LevelHeightAccessor.getMinY() 高度配置域(int) 契约
-        return (int) this.blockPos.getY();
+        return this.blockPos.getY();
     }
 }

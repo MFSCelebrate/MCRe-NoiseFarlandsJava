@@ -45,7 +45,7 @@ public class FossilFeature extends Feature<FossilFeatureConfiguration> {
         StructurePlaceSettings settings = new StructurePlaceSettings().setRotation(rotation).setBoundingBox(boundingBox).setRandom(random);
         Vec3i size = fossilBase.getSize(rotation);
         BlockPos lowCorner = origin.offset(-size.getX() / 2, 0, -size.getZ() / 2);
-        long lowestSurfaceY = origin.getY();
+        int lowestSurfaceY = origin.getY();
 
         for (int xscan = 0; xscan < size.getX(); xscan++) {
             for (int zscan = 0; zscan < size.getZ(); zscan++) {
@@ -53,8 +53,7 @@ public class FossilFeature extends Feature<FossilFeatureConfiguration> {
             }
         }
 
-        // MCRe NoiseFarlands: 世界 Y Long 化
-        long targetY = Math.max(lowestSurfaceY - 15 - random.nextInt(10), level.getMinY() + 10);
+        int targetY = Math.max(lowestSurfaceY - 15 - random.nextInt(10), level.getMinY() + 10);
         BlockPos targetPos = fossilBase.getZeroPositionWithTransform(lowCorner.atY(targetY), Mirror.NONE, rotation);
         if (countEmptyCorners(level, fossilBase.getBoundingBox(settings, targetPos)) > config.maxEmptyCornersAllowed) {
             return false;

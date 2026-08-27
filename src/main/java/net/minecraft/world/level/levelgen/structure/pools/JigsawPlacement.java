@@ -107,20 +107,18 @@ public class JigsawPlacement {
         BoundingBox box = centerPiece.getBoundingBox();
         int centerX = (box.maxX() + box.minX()) / 2;
         int centerZ = (box.maxZ() + box.minZ()) / 2;
-        // MCRe NoiseFarlands: 世界 Y Long 化
-        long bottomY = projectStartToHeightmap.isEmpty()
+        int bottomY = projectStartToHeightmap.isEmpty()
             ? adjustedPosition.getY()
             : position.getY() + chunkGenerator.getFirstFreeHeight(centerX, centerZ, projectStartToHeightmap.get(), heightAccessor, context.randomState());
         int oldAbsoluteGroundY = box.minY() + centerPiece.getGroundLevelDelta();
-        // MCRe NoiseFarlands: 世界 Y Long 化
-            centerPiece.move(0, bottomY - oldAbsoluteGroundY, 0);
+        centerPiece.move(0, bottomY - oldAbsoluteGroundY, 0);
         if (isStartTooCloseToWorldHeightLimits(heightAccessor, dimensionPadding, centerPiece.getBoundingBox())) {
             LOGGER.debug(
                 "Center piece {} with bounding box {} does not fit dimension padding {}", centerElement, centerPiece.getBoundingBox(), dimensionPadding
             );
             return Optional.empty();
         } else {
-            long centerY = bottomY + localAnchorPosition.getY();
+            int centerY = bottomY + localAnchorPosition.getY();
             return Optional.of(
                 new Structure.GenerationStub(
                     new BlockPos(centerX, centerY, centerZ),
@@ -319,9 +317,8 @@ public class JigsawPlacement {
                 Direction sourceDirection = JigsawBlock.getFrontFacing(sourceJigsawInfo.state());
                 BlockPos sourceJigsawPos = sourceJigsawInfo.pos();
                 BlockPos targetJigsawPos = sourceJigsawPos.relative(sourceDirection);
-                long sourceJigsawLocalY = sourceJigsawPos.getY() - sourceBoxY;
-                // MCRe NoiseFarlands: 世界 Y Long 化
-                long sourceJigsawBaseHeight = Long.MIN_VALUE;
+                int sourceJigsawLocalY = sourceJigsawPos.getY() - sourceBoxY;
+                int sourceJigsawBaseHeight = Integer.MIN_VALUE;
                 ResourceKey<StructureTemplatePool> poolName = poolAliasLookup.lookup(sourceJigsaw.pool());
                 Optional<? extends Holder<StructureTemplatePool>> maybeTargetPool = this.pools.get(poolName);
                 if (maybeTargetPool.isEmpty()) {
@@ -408,16 +405,15 @@ public class JigsawPlacement {
                                             int rawTargetY = rawTargetBB.minY();
                                             StructureTemplatePool.Projection targetProjection = targetElement.getProjection();
                                             boolean targetRigid = targetProjection == StructureTemplatePool.Projection.RIGID;
-                                            long targetJigsawLocalY = targetJigsawLocalPos.getY();
-                                            // MCRe NoiseFarlands: 高度差与目标世界 Y，Long 化
-                                            long deltaY = sourceJigsawLocalY
+                                            int targetJigsawLocalY = targetJigsawLocalPos.getY();
+                                            int deltaY = sourceJigsawLocalY
                                                 - targetJigsawLocalY
                                                 + JigsawBlock.getFrontFacing(sourceJigsawInfo.state()).getStepY();
-                                            long targetBoxY;
+                                            int targetBoxY;
                                             if (sourceRigid && targetRigid) {
                                                 targetBoxY = sourceBoxY + deltaY;
                                             } else {
-                                                if (sourceJigsawBaseHeight == Long.MIN_VALUE) {
+                                                if (sourceJigsawBaseHeight == Integer.MIN_VALUE) {
                                                     sourceJigsawBaseHeight = this.chunkGenerator
                                                         .getFirstFreeHeight(
                                                             sourceJigsawPos.getX(),
@@ -431,8 +427,7 @@ public class JigsawPlacement {
                                                 targetBoxY = sourceJigsawBaseHeight - targetJigsawLocalY;
                                             }
 
-                                            // MCRe NoiseFarlands: 相对 BoundingBox 偏移（Decision 5 内部 int 域）
-                                            int yOffset = (int) (targetBoxY - rawTargetY);
+                                            int yOffset = targetBoxY - rawTargetY;
                                             BoundingBox targetBB = rawTargetBB.moved(0, yOffset, 0);
                                             BlockPos targetBoxPosition = rawTargetBoxPos.offset(0, yOffset, 0);
                                             if (expandTo > 0) {
@@ -449,8 +444,7 @@ public class JigsawPlacement {
                                                 int sourceGroundLevelDelta = sourcePiece.getGroundLevelDelta();
                                                 int targetGroundLevelDelta;
                                                 if (targetRigid) {
-                                                    // MCRe NoiseFarlands: deltaY 已 Long 化
-                                                    targetGroundLevelDelta = (int) (sourceGroundLevelDelta - deltaY);
+                                                    targetGroundLevelDelta = sourceGroundLevelDelta - deltaY;
                                                 } else {
                                                     targetGroundLevelDelta = targetElement.getGroundLevelDelta();
                                                 }
@@ -464,13 +458,13 @@ public class JigsawPlacement {
                                                     targetBB,
                                                     liquidSettings
                                                 );
-                                                long junctionY;
+                                                int junctionY;
                                                 if (sourceRigid) {
                                                     junctionY = sourceBoxY + sourceJigsawLocalY;
                                                 } else if (targetRigid) {
                                                     junctionY = targetBoxY + targetJigsawLocalY;
                                                 } else {
-                                                    if (sourceJigsawBaseHeight == Long.MIN_VALUE) {
+                                                    if (sourceJigsawBaseHeight == Integer.MIN_VALUE) {
                                                         sourceJigsawBaseHeight = this.chunkGenerator
                                                             .getFirstFreeHeight(
                                                                 sourceJigsawPos.getX(),

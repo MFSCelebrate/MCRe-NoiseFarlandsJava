@@ -41,7 +41,7 @@ public abstract class NodeEvaluator {
         return this.getNode(pos.getX(), pos.getY(), pos.getZ());
     }
 
-    protected Node getNode(final long x, final long y, final long z) {
+    protected Node getNode(final int x, final int y, final int z) {
         return this.nodes.computeIfAbsent(Node.createHash(x, y, z), k -> new Node(x, y, z));
     }
 
@@ -55,9 +55,9 @@ public abstract class NodeEvaluator {
 
     public abstract int getNeighbors(Node[] neighbors, Node pos);
 
-    public abstract PathType getPathTypeOfMob(PathfindingContext context, long x, long y, long z, Mob mob);
+    public abstract PathType getPathTypeOfMob(PathfindingContext context, int x, int y, int z, Mob mob);
 
-    public abstract PathType getPathType(PathfindingContext context, long x, long y, long z);
+    public abstract PathType getPathType(PathfindingContext context, int x, int y, int z);
 
     public PathType getPathType(final Mob mob, final BlockPos pos) {
         return this.getPathType(new PathfindingContext(mob.level(), mob), pos.getX(), pos.getY(), pos.getZ());

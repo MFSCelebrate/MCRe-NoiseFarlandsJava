@@ -494,10 +494,8 @@ public abstract class StructurePiece {
         }
     }
 
-    // MCRe NoiseFarlands: 世界 Y Long 化
-    public void move(final long dx, final long dy, final long dz) {
-        // MCRe NoiseFarlands: Decision 5 BoundingBox int 域边界
-        this.boundingBox.move((int) dx, (int) dy, (int) dz);
+    public void move(final int dx, final int dy, final int dz) {
+        this.boundingBox.move(dx, dy, dz);
     }
 
     public static BoundingBox createBoundingBox(final Stream<StructurePiece> pieces) {

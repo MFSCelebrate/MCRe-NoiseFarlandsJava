@@ -130,9 +130,9 @@ public class WanderingTraderSpawner implements CustomSpawner {
         SpawnPlacementType wanderingTraderSpawnType = SpawnPlacements.getPlacementType(EntityTypes.WANDERING_TRADER);
 
         for (int i = 0; i < 10; i++) {
-            long xPosition = referencePosition.getX() + this.random.nextInt(radius * 2) - radius;
-            long zPosition = referencePosition.getZ() + this.random.nextInt(radius * 2) - radius;
-            long yPosition = level.getHeight(SpawnPlacements.getHeightmapType(EntityTypes.WANDERING_TRADER), xPosition, zPosition);
+            int xPosition = referencePosition.getX() + this.random.nextInt(radius * 2) - radius;
+            int zPosition = referencePosition.getZ() + this.random.nextInt(radius * 2) - radius;
+            int yPosition = level.getHeight(SpawnPlacements.getHeightmapType(EntityTypes.WANDERING_TRADER), xPosition, zPosition);
             BlockPos spawnPos = new BlockPos(xPosition, yPosition, zPosition);
             if (wanderingTraderSpawnType.isSpawnPositionOk(level, spawnPos, EntityTypes.WANDERING_TRADER)) {
                 spawnPosition = spawnPos;

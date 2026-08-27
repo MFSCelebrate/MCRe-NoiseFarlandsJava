@@ -3,8 +3,7 @@ package net.minecraft.server.level;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.ChunkPos;
 
-// MCRe NoiseFarlands: 世界坐标语义，Long 化
-public record ColumnPos(long x, long z) {
+public record ColumnPos(int x, int z) {
     private static final long COORD_BITS = 32L;
     private static final long COORD_MASK = 4294967295L;
 
@@ -16,7 +15,7 @@ public record ColumnPos(long x, long z) {
         return asLong(this.x, this.z);
     }
 
-    public static long asLong(final long x, final long z) {
+    public static long asLong(final int x, final int z) {
         return x & 4294967295L | (z & 4294967295L) << 32;
     }
 

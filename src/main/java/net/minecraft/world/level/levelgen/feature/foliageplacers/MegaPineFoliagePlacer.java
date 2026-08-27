@@ -41,8 +41,8 @@ public class MegaPineFoliagePlacer extends FoliagePlacer {
         BlockPos foliagePos = foliageAttachment.pos();
         int prevRadius = 0;
 
-        for (long yy = foliagePos.getY() - foliageHeight + offset; yy <= foliagePos.getY() + offset; yy++) {
-            long yo = foliagePos.getY() - yy;
+        for (int yy = foliagePos.getY() - foliageHeight + offset; yy <= foliagePos.getY() + offset; yy++) {
+            int yo = foliagePos.getY() - yy;
             int smoothRadius = leafRadius + foliageAttachment.radiusOffset() + Mth.floor((float)yo / foliageHeight * 3.5F);
             int jaggedRadius;
             if (yo > 0 && smoothRadius == prevRadius && (yy & 1) == 0) {

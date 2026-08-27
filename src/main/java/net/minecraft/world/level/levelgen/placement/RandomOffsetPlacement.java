@@ -44,9 +44,9 @@ public class RandomOffsetPlacement extends PlacementModifier {
 
     @Override
     public Stream<BlockPos> getPositions(final PlacementContext context, final RandomSource random, final BlockPos origin) {
-        long scatterX = origin.getX() + this.xzSpread.sample(random);
-        long scatterY = origin.getY() + this.ySpread.sample(random);
-        long scatterZ = origin.getZ() + this.xzSpread.sample(random);
+        int scatterX = origin.getX() + this.xzSpread.sample(random);
+        int scatterY = origin.getY() + this.ySpread.sample(random);
+        int scatterZ = origin.getZ() + this.xzSpread.sample(random);
         return Stream.of(new BlockPos(scatterX, scatterY, scatterZ));
     }
 

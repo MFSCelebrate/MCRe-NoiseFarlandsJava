@@ -280,10 +280,9 @@ public abstract class TrackedWaypoint implements Waypoint {
 
         @Override
         public void writeContents(final ByteBuf buf) {
-            // MCRe NoiseFarlands: waypoint 协议 VarInt 域不变，边界强转
-        VarInt.write(buf, (int) this.vector.getX());
-            VarInt.write(buf, (int) this.vector.getY());
-            VarInt.write(buf, (int) this.vector.getZ());
+            VarInt.write(buf, this.vector.getX());
+            VarInt.write(buf, this.vector.getY());
+            VarInt.write(buf, this.vector.getZ());
         }
 
         private Vec3 position(final Level level, final PartialTickSupplier partialTick) {

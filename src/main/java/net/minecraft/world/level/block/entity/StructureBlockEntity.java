@@ -81,12 +81,12 @@ public class StructureBlockEntity extends BlockEntity implements BoundingBoxRend
         output.putString("name", this.getStructureName());
         output.putString("author", this.author);
         output.putString("metadata", this.metaData);
-        output.putInt("posX", (int) this.structurePos.getX());
-        output.putInt("posY", (int) this.structurePos.getY());
-        output.putInt("posZ", (int) this.structurePos.getZ());
-        output.putInt("sizeX", (int) this.structureSize.getX());
-        output.putInt("sizeY", (int) this.structureSize.getY());
-        output.putInt("sizeZ", (int) this.structureSize.getZ());
+        output.putInt("posX", this.structurePos.getX());
+        output.putInt("posY", this.structurePos.getY());
+        output.putInt("posZ", this.structurePos.getZ());
+        output.putInt("sizeX", this.structureSize.getX());
+        output.putInt("sizeY", this.structureSize.getY());
+        output.putInt("sizeZ", this.structureSize.getZ());
         output.store("rotation", Rotation.LEGACY_CODEC, this.rotation);
         output.store("mirror", Mirror.LEGACY_CODEC, this.mirror);
         output.store("mode", StructureMode.LEGACY_CODEC, this.mode);
@@ -105,13 +105,13 @@ public class StructureBlockEntity extends BlockEntity implements BoundingBoxRend
         this.setStructureName(input.getStringOr("name", ""));
         this.author = input.getStringOr("author", "");
         this.metaData = input.getStringOr("metadata", "");
-        int xOffset = Mth.clamp(input.getIntOr("posX", (int) DEFAULT_POS.getX()), -48, 48);
-        int yOffset = Mth.clamp(input.getIntOr("posY", (int) DEFAULT_POS.getY()), -48, 48);
-        int zOffset = Mth.clamp(input.getIntOr("posZ", (int) DEFAULT_POS.getZ()), -48, 48);
+        int xOffset = Mth.clamp(input.getIntOr("posX", DEFAULT_POS.getX()), -48, 48);
+        int yOffset = Mth.clamp(input.getIntOr("posY", DEFAULT_POS.getY()), -48, 48);
+        int zOffset = Mth.clamp(input.getIntOr("posZ", DEFAULT_POS.getZ()), -48, 48);
         this.structurePos = new BlockPos(xOffset, yOffset, zOffset);
-        int width = Mth.clamp(input.getIntOr("sizeX", (int) DEFAULT_SIZE.getX()), 0, 48);
-        int height = Mth.clamp(input.getIntOr("sizeY", (int) DEFAULT_SIZE.getY()), 0, 48);
-        int depth = Mth.clamp(input.getIntOr("sizeZ", (int) DEFAULT_SIZE.getZ()), 0, 48);
+        int width = Mth.clamp(input.getIntOr("sizeX", DEFAULT_SIZE.getX()), 0, 48);
+        int height = Mth.clamp(input.getIntOr("sizeY", DEFAULT_SIZE.getY()), 0, 48);
+        int depth = Mth.clamp(input.getIntOr("sizeZ", DEFAULT_SIZE.getZ()), 0, 48);
         this.structureSize = new Vec3i(width, height, depth);
         this.rotation = input.read("rotation", Rotation.LEGACY_CODEC).orElse(DEFAULT_ROTATION);
         this.mirror = input.read("mirror", Mirror.LEGACY_CODEC).orElse(DEFAULT_MIRROR);
@@ -491,12 +491,12 @@ public class StructureBlockEntity extends BlockEntity implements BoundingBoxRend
     public BoundingBoxRenderable.RenderableBox getRenderableBox() {
         BlockPos pos = this.getStructurePos();
         Vec3i size = this.getStructureSize();
-        long xOrigin = pos.getX();
-        long zOrigin = pos.getZ();
-        long y0 = pos.getY();
-        long y1 = y0 + size.getY();
-        long xDiff;
-        long zDiff;
+        int xOrigin = pos.getX();
+        int zOrigin = pos.getZ();
+        int y0 = pos.getY();
+        int y1 = y0 + size.getY();
+        int xDiff;
+        int zDiff;
         switch (this.mirror) {
             case LEFT_RIGHT:
                 xDiff = size.getX();
@@ -511,10 +511,10 @@ public class StructureBlockEntity extends BlockEntity implements BoundingBoxRend
                 zDiff = size.getZ();
         }
 
-        long x0;
-        long z0;
-        long x1;
-        long z1;
+        int x0;
+        int z0;
+        int x1;
+        int z1;
         switch (this.rotation) {
             case CLOCKWISE_90:
                 x0 = zDiff < 0 ? xOrigin : xOrigin + 1;

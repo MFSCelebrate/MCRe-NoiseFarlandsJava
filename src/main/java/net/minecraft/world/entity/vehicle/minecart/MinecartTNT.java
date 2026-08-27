@@ -129,8 +129,7 @@ public class MinecartTNT extends AbstractMinecart {
     }
 
     @Override
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public void activateMinecart(final ServerLevel level, final long xt, final long yt, final long zt, final boolean state) {
+    public void activateMinecart(final ServerLevel level, final int xt, final int yt, final int zt, final boolean state) {
         if (state && this.fuse < 0) {
             this.primeFuse(null);
         }

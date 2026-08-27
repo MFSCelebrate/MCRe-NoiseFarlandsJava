@@ -253,15 +253,15 @@ public enum Direction implements StringRepresentable {
     }
 
     public int getStepX() {
-        return (int) this.normal.getX();
+        return this.normal.getX();
     }
 
     public int getStepY() {
-        return (int) this.normal.getY();
+        return this.normal.getY();
     }
 
     public int getStepZ() {
-        return (int) this.normal.getZ();
+        return this.normal.getZ();
     }
 
     public Vector3f step() {
@@ -332,11 +332,10 @@ public enum Direction implements StringRepresentable {
     }
 
     @Contract("_,_,_,!null->!null;_,_,_,_->_")
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public static @Nullable Direction getNearest(final long x, final long y, final long z, final @Nullable Direction orElse) {
-        final long absX = Math.abs(x);
-        final long absY = Math.abs(y);
-        final long absZ = Math.abs(z);
+    public static @Nullable Direction getNearest(final int x, final int y, final int z, final @Nullable Direction orElse) {
+        int absX = Math.abs(x);
+        int absY = Math.abs(y);
+        int absZ = Math.abs(z);
         if (absX > absZ && absX > absY) {
             return x < 0 ? WEST : EAST;
         } else if (absZ > absX && absZ > absY) {
@@ -350,7 +349,6 @@ public enum Direction implements StringRepresentable {
 
     @Contract("_,!null->!null;_,_->_")
     public static @Nullable Direction getNearest(final Vec3i vec, final @Nullable Direction orElse) {
-        // MCRe NoiseFarlands: 世界坐标 Long 化
         return getNearest(vec.getX(), vec.getY(), vec.getZ(), orElse);
     }
 
@@ -419,11 +417,6 @@ public enum Direction implements StringRepresentable {
             }
 
             @Override
-            public long choose(final long x, final long y, final long z) {
-                return x;
-            }
-
-            @Override
             public Direction getPositive() {
                 return Direction.EAST;
             }
@@ -450,11 +443,6 @@ public enum Direction implements StringRepresentable {
             }
 
             @Override
-            public long choose(final long x, final long y, final long z) {
-                return y;
-            }
-
-            @Override
             public Direction getPositive() {
                 return Direction.UP;
             }
@@ -477,11 +465,6 @@ public enum Direction implements StringRepresentable {
 
             @Override
             public boolean choose(final boolean x, final boolean y, final boolean z) {
-                return z;
-            }
-
-            @Override
-            public long choose(final long x, final long y, final long z) {
                 return z;
             }
 
@@ -558,8 +541,6 @@ public enum Direction implements StringRepresentable {
         public abstract double choose(final double x, final double y, final double z);
 
         public abstract boolean choose(final boolean x, final boolean y, final boolean z);
-
-        public abstract long choose(final long x, final long y, final long z);
     }
 
     public enum AxisDirection {

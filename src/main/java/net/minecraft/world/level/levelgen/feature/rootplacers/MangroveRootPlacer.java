@@ -105,7 +105,7 @@ public class MangroveRootPlacer extends RootPlacer {
     protected List<BlockPos> potentialRootPositions(final BlockPos pos, final Direction prevDir, final RandomSource random, final BlockPos rootOrigin) {
         BlockPos below = pos.below();
         BlockPos nextTo = pos.relative(prevDir);
-        long width = pos.distManhattan(rootOrigin);
+        int width = pos.distManhattan(rootOrigin);
         int maxRootWidth = this.mangroveRootPlacement.maxRootWidth();
         float randomSkewChance = this.mangroveRootPlacement.randomSkewChance();
         if (width > maxRootWidth - 3 && width <= maxRootWidth) {

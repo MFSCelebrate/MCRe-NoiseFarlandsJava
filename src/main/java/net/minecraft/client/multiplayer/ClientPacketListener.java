@@ -880,7 +880,7 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
         for (ClientboundChunksBiomesPacket.ChunkBiomeData data : packet.chunkBiomeData()) {
             for (int xOffset = -1; xOffset <= 1; xOffset++) {
                 for (int zOffset = -1; zOffset <= 1; zOffset++) {
-                    for (long y = this.level.getMinSectionY(); y <= this.level.getMaxSectionY(); y++) {
+                    for (int y = this.level.getMinSectionY(); y <= this.level.getMaxSectionY(); y++) {
                         this.minecraft.levelExtractor.setSectionDirty((int)data.pos().x() + xOffset, y, (int)data.pos().z() + zOffset);
                     }
                 }
@@ -888,23 +888,20 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
         }
     }
 
-    // MCRe NoiseFarlands: chunk 坐标 Long 化
-    private void updateLevelChunk(final long x, final long z, final ClientboundLevelChunkPacketData chunkData) {
+    private void updateLevelChunk(final int x, final int z, final ClientboundLevelChunkPacketData chunkData) {
         this.level
             .getChunkSource()
             .replaceWithPacketData(x, z, chunkData.getReadBuffer(), chunkData.getHeightmaps(), chunkData.getBlockEntitiesTagsConsumer(x, z));
     }
 
-    // MCRe NoiseFarlands: chunk 坐标 Long 化
-    private void enableChunkLight(final LevelChunk chunk, final long x, final long z) {
+    private void enableChunkLight(final LevelChunk chunk, final int x, final int z) {
         LevelLightEngine lightEngine = this.level.getChunkSource().getLightEngine();
         LevelChunkSection[] sections = chunk.getSections();
         ChunkPos chunkPos = chunk.getPos();
 
         for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
             LevelChunkSection section = sections[sectionIndex];
-            // MCRe NoiseFarlands: section Y Long 化
-        long sectionY = this.level.getSectionYFromSectionIndex(sectionIndex);
+            int sectionY = this.level.getSectionYFromSectionIndex(sectionIndex);
             lightEngine.updateSectionStatus(SectionPos.of(chunkPos, sectionY), section.hasOnlyAir());
         }
 
@@ -925,14 +922,13 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
             LevelLightEngine lightEngine = this.level.getLightEngine();
             lightEngine.setLightEnabled(chunkPos, false);
 
-            // MCRe NoiseFarlands: section Y Long 化
-            for (long sectionY = lightEngine.getMinLightSection(); sectionY < lightEngine.getMaxLightSection(); sectionY++) {
+            for (int sectionY = lightEngine.getMinLightSection(); sectionY < lightEngine.getMaxLightSection(); sectionY++) {
                 SectionPos sectionPos = SectionPos.of(chunkPos, sectionY);
                 lightEngine.queueSectionData(LightLayer.BLOCK, sectionPos, null);
                 lightEngine.queueSectionData(LightLayer.SKY, sectionPos, null);
             }
 
-            for (long sectionY = this.level.getMinSectionY(); sectionY <= this.level.getMaxSectionY(); sectionY++) {
+            for (int sectionY = this.level.getMinSectionY(); sectionY <= this.level.getMaxSectionY(); sectionY++) {
                 lightEngine.updateSectionStatus(SectionPos.of(chunkPos, sectionY), true);
             }
         });
@@ -2398,8 +2394,7 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
         this.level.queueLightUpdate(() -> this.applyLightData(x, z, lightData, true));
     }
 
-    // MCRe NoiseFarlands: chunk 坐标 Long 化
-    private void applyLightData(final long x, final long z, final ClientboundLightUpdatePacketData lightData, final boolean scheduleRebuild) {
+    private void applyLightData(final int x, final int z, final ClientboundLightUpdatePacketData lightData, final boolean scheduleRebuild) {
         LevelLightEngine lightEngine = this.level.getChunkSource().getLightEngine();
         BitSet skyYMask = lightData.getSkyYMask();
         BitSet emptySkyYMask = lightData.getEmptySkyYMask();
@@ -2542,10 +2537,9 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
         this.minecraft.sendLowDiskSpaceWarning();
     }
 
-    // MCRe NoiseFarlands: chunk 坐标 Long 化
     private void readSectionList(
-        final long chunkX,
-        final long chunkZ,
+        final int chunkX,
+        final int chunkZ,
         final LevelLightEngine lightEngine,
         final LightLayer layer,
         final BitSet yMask,
@@ -2554,8 +2548,7 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
         final boolean scheduleRebuild
     ) {
         for (int sectionIndex = 0; sectionIndex < lightEngine.getLightSectionCount(); sectionIndex++) {
-            // MCRe NoiseFarlands: section Y Long 化
-            long sectionY = lightEngine.getMinLightSection() + sectionIndex;
+            int sectionY = lightEngine.getMinLightSection() + sectionIndex;
             boolean haveData = yMask.get(sectionIndex);
             boolean haveEmpty = emptyYMask.get(sectionIndex);
             if (haveData || haveEmpty) {

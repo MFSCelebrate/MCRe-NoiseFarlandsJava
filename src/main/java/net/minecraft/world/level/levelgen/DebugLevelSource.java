@@ -65,8 +65,8 @@ public class DebugLevelSource extends ChunkGenerator {
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                long worldX = SectionPos.sectionToBlockCoord(chunkX, x);
-                long worldZ = SectionPos.sectionToBlockCoord(chunkZ, z);
+                int worldX = SectionPos.sectionToBlockCoord(chunkX, x);
+                int worldZ = SectionPos.sectionToBlockCoord(chunkZ, z);
                 level.setBlock(blockPos.set(worldX, 60, worldZ), BARRIER, 2);
                 BlockState state = getBlockStateFor(worldX, worldZ);
                 level.setBlock(blockPos.set(worldX, 70, worldZ), state, 2);
@@ -82,14 +82,12 @@ public class DebugLevelSource extends ChunkGenerator {
     }
 
     @Override
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public long getBaseHeight(final long x, final long z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    public int getBaseHeight(final int x, final int z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         return 0;
     }
 
     @Override
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public NoiseColumn getBaseColumn(final long x, final long z, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    public NoiseColumn getBaseColumn(final int x, final int z, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         return new NoiseColumn(0, new BlockState[0]);
     }
 
@@ -97,14 +95,13 @@ public class DebugLevelSource extends ChunkGenerator {
     public void addDebugScreenInfo(final List<String> result, final RandomState randomState, final BlockPos feetPos) {
     }
 
-    public static BlockState getBlockStateFor(final long worldX, final long worldZ) {
+    public static BlockState getBlockStateFor(int worldX, int worldZ) {
         BlockState state = AIR;
         if (worldX > 0 && worldZ > 0 && worldX % 2 != 0 && worldZ % 2 != 0) {
-            long wx = worldX / 2;
-            long wz = worldZ / 2;
-            if (wx <= GRID_WIDTH && wz <= GRID_HEIGHT) {
-                // ALL_BLOCKS 数组索引，int 域边界
-                int index = Math.toIntExact(Mth.abs(wx * GRID_WIDTH + wz));
+            worldX /= 2;
+            worldZ /= 2;
+            if (worldX <= GRID_WIDTH && worldZ <= GRID_HEIGHT) {
+                int index = Mth.abs(worldX * GRID_WIDTH + worldZ);
                 if (index < ALL_BLOCKS.size()) {
                     state = ALL_BLOCKS.get(index);
                 }

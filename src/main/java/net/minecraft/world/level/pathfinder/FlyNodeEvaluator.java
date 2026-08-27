@@ -36,7 +36,7 @@ public class FlyNodeEvaluator extends WalkNodeEvaluator {
 
     @Override
     public Node getStart() {
-        long startY;
+        int startY;
         if (this.canFloat() && this.mob.isInWater()) {
             startY = this.mob.getBlockY();
             BlockPos.MutableBlockPos reusableBlockPos = new BlockPos.MutableBlockPos(this.mob.getX(), startY, this.mob.getZ());
@@ -266,7 +266,7 @@ public class FlyNodeEvaluator extends WalkNodeEvaluator {
         return node != null && !node.closed;
     }
 
-    protected @Nullable Node findAcceptedNode(final long x, final long y, final long z) {
+    protected @Nullable Node findAcceptedNode(final int x, final int y, final int z) {
         Node best = null;
         PathType pathType = this.getCachedPathType(x, y, z);
         float pathCost = this.mob.getPathfindingMalus(pathType);
@@ -283,12 +283,12 @@ public class FlyNodeEvaluator extends WalkNodeEvaluator {
     }
 
     @Override
-    protected PathType getCachedPathType(final long x, final long y, final long z) {
+    protected PathType getCachedPathType(final int x, final int y, final int z) {
         return this.pathTypeByPosCache.computeIfAbsent(new BlockPos(x, y, z), key -> this.getPathTypeOfMob(this.currentContext, x, y, z, this.mob));
     }
 
     @Override
-    public PathType getPathType(final PathfindingContext context, final long x, final long y, final long z) {
+    public PathType getPathType(final PathfindingContext context, final int x, final int y, final int z) {
         PathType blockPathType = context.getPathTypeFromState(x, y, z);
         if (blockPathType == PathType.OPEN && y >= context.level().getMinY() + 1) {
             BlockPos belowPos = new BlockPos(x, y - 1, z);

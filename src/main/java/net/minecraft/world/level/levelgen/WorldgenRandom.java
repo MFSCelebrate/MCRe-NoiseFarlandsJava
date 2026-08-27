@@ -41,7 +41,7 @@ public class WorldgenRandom extends LegacyRandomSource {
         }
     }
 
-    public long setDecorationSeed(final long seed, final long chunkX, final long chunkZ) {
+    public long setDecorationSeed(final long seed, final int chunkX, final int chunkZ) {
         this.setSeed(seed);
         long xScale = this.nextLong() | 1L;
         long zScale = this.nextLong() | 1L;
@@ -55,7 +55,7 @@ public class WorldgenRandom extends LegacyRandomSource {
         this.setSeed(result);
     }
 
-    public void setLargeFeatureSeed(final long seed, final long chunkX, final long chunkZ) {
+    public void setLargeFeatureSeed(final long seed, final int chunkX, final int chunkZ) {
         this.setSeed(seed);
         long xScale = this.nextLong();
         long zScale = this.nextLong();
@@ -63,8 +63,7 @@ public class WorldgenRandom extends LegacyRandomSource {
         this.setSeed(result);
     }
 
-    // MCRe NoiseFarlands: 四参均为 hash 参与值（调用方可能以 salt/x/z 任意顺序传入），全 Long 化
-    public void setLargeFeatureWithSalt(final long seed, final long x, final long z, final long blend) {
+    public void setLargeFeatureWithSalt(final long seed, final int x, final int z, final int blend) {
         long result = x * 341873128712L + z * 132897987541L + seed + blend;
         this.setSeed(result);
     }

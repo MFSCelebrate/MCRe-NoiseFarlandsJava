@@ -110,12 +110,12 @@ public class WorldGenRegion implements WorldGenLevel {
     }
 
     @Override
-    public ChunkAccess getChunk(final long chunkX, final long chunkZ) {
+    public ChunkAccess getChunk(final int chunkX, final int chunkZ) {
         return this.getChunk(chunkX, chunkZ, ChunkStatus.EMPTY);
     }
 
     @Override
-    public @Nullable ChunkAccess getChunk(final long chunkX, final long chunkZ,
+    public @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ,
             final ChunkStatus targetStatus, final boolean loadOrGenerate) {
         // 使用 long 接收距离，避免精度损失
         long distance = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
@@ -127,8 +127,7 @@ public class WorldGenRegion implements WorldGenLevel {
             return this.center;
         }
 
-        // MCRe NoiseFarlands: StaticCache2D 尚为 int 域（世界生成模块待 Long 化），一次性边界强转
-        GenerationChunkHolder holder = this.cache.get((int) chunkX, (int) chunkZ);
+        GenerationChunkHolder holder = this.cache.get(chunkX, chunkZ);
         if (holder != null && targetStatus.isOrBefore(maxAllowedStatus)) {
             ChunkAccess chunk = holder.getChunkIfPresentUnchecked(maxAllowedStatus);
             if (chunk != null) {
@@ -140,24 +139,24 @@ public class WorldGenRegion implements WorldGenLevel {
     }
 
     @Override
-    public boolean hasChunk(final long chunkX, final long chunkZ) {
+    public boolean hasChunk(final int chunkX, final int chunkZ) {
         long distance = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
         return distance < this.generatingStep.directDependencies().size();
     }
 
     @Override
     public BlockState getBlockState(final BlockPos pos) {
-        long chunkX = SectionPos.blockToSectionCoord(pos.getX());
-        long chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
-        this.warnIfReadOutsideWriteZone((int) chunkX, (int) chunkZ);
+        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
+        this.warnIfReadOutsideWriteZone(chunkX, chunkZ);
         return this.getChunk(chunkX, chunkZ).getBlockState(pos);
     }
 
     @Override
     public FluidState getFluidState(final BlockPos pos) {
-        long chunkX = SectionPos.blockToSectionCoord(pos.getX());
-        long chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
-        this.warnIfReadOutsideWriteZone((int) chunkX, (int) chunkZ);
+        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
+        this.warnIfReadOutsideWriteZone(chunkX, chunkZ);
         return this.getChunk(chunkX, chunkZ).getFluidState(pos);
     }
 
@@ -177,7 +176,7 @@ public class WorldGenRegion implements WorldGenLevel {
     }
 
     @Override
-    public Holder<Biome> getUncachedNoiseBiome(final long quartX, final long quartY, final long quartZ) {
+    public Holder<Biome> getUncachedNoiseBiome(final int quartX, final int quartY, final int quartZ) {
         return this.level.getUncachedNoiseBiome(quartX, quartY, quartZ);
     }
 
@@ -239,9 +238,9 @@ public class WorldGenRegion implements WorldGenLevel {
     }
 
     public boolean isWithinWriteZone(final BlockPos pos) {
-        long chunkX = SectionPos.blockToSectionCoord(pos.getX());
-        long chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
-        return this.isWithinWriteZone((int) chunkX, (int) chunkZ);
+        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
+        return this.isWithinWriteZone(chunkX, chunkZ);
     }
 
     private boolean isWithinWriteZone(final int chunkX, final int chunkZ) {
@@ -251,8 +250,8 @@ public class WorldGenRegion implements WorldGenLevel {
     @Override
     public boolean ensureCanWrite(final BlockPos pos) {
         if (!this.isWithinWriteZone(pos)) {
-            long chunkX = SectionPos.blockToSectionCoord(pos.getX());
-            long chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
+            int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+            int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
             Util.logAndPauseIfInIde(
                     "Detected setBlock in a far chunk [" + chunkX + ", " + chunkZ + "], pos: " + pos
                             + ", status: " + this.generatingStep.targetStatus()
@@ -288,9 +287,9 @@ public class WorldGenRegion implements WorldGenLevel {
                 }
             } else {
                 CompoundTag tag = new CompoundTag();
-                tag.putInt("x", (int) pos.getX());
-                tag.putInt("y", (int) pos.getY());
-                tag.putInt("z", (int) pos.getZ());
+                tag.putInt("x", pos.getX());
+                tag.putInt("y", pos.getY());
+                tag.putInt("z", pos.getZ());
                 tag.putString("id", "DUMMY");
                 chunk.setBlockEntityNbt(tag);
             }
@@ -313,8 +312,8 @@ public class WorldGenRegion implements WorldGenLevel {
 
     @Override
     public boolean addFreshEntity(final Entity entity) {
-        long xc = SectionPos.blockToSectionCoord(entity.getBlockX());
-        long zc = SectionPos.blockToSectionCoord(entity.getBlockZ());
+        int xc = SectionPos.blockToSectionCoord(entity.getBlockX());
+        int zc = SectionPos.blockToSectionCoord(entity.getBlockZ());
         this.getChunk(xc, zc).addEntity(entity);
         return true;
     }
@@ -402,11 +401,11 @@ public class WorldGenRegion implements WorldGenLevel {
     }
 
     @Override
-    public long getHeight(final Heightmap.Types type, final long x, final long z) {
-        long chunkX = SectionPos.blockToSectionCoord(x);
-        long chunkZ = SectionPos.blockToSectionCoord(z);
-        this.warnIfReadOutsideWriteZone((int) chunkX, (int) chunkZ);
-        return this.getChunk((int) chunkX, (int) chunkZ).getHeight(type, x & 15, z & 15) + 1;
+    public int getHeight(final Heightmap.Types type, final int x, final int z) {
+        int chunkX = SectionPos.blockToSectionCoord(x);
+        int chunkZ = SectionPos.blockToSectionCoord(z);
+        this.warnIfReadOutsideWriteZone(chunkX, chunkZ);
+        return this.getChunk(chunkX, chunkZ).getHeight(type, x & 15, z & 15) + 1;
     }
 
     @Override

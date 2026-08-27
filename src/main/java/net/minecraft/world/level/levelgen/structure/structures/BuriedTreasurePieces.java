@@ -41,7 +41,7 @@ public class BuriedTreasurePieces {
             final ChunkPos chunkPos,
             final BlockPos referencePos
         ) {
-            long y = level.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, this.boundingBox.minX(), this.boundingBox.minZ());
+            int y = level.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, this.boundingBox.minX(), this.boundingBox.minZ());
             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(this.boundingBox.minX(), y, this.boundingBox.minZ());
 
             while (pos.getY() > level.getMinY()) {

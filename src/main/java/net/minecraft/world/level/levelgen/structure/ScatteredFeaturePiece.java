@@ -80,15 +80,13 @@ public abstract class ScatteredFeaturePiece extends StructurePiece {
             return true;
         }
 
-        // MCRe NoiseFarlands: 世界 Y
-        long lowestGroundHeight = level.getMaxY() + 1;
+        int lowestGroundHeight = level.getMaxY() + 1;
         boolean foundPositionWithinBoundingBox = false;
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
         for (int z = this.boundingBox.minZ(); z <= this.boundingBox.maxZ(); z++) {
             for (int x = this.boundingBox.minX(); x <= this.boundingBox.maxX(); x++) {
                 pos.set(x, 0, z);
-                // MCRe NoiseFarlands: 世界 Y Long 化
                 lowestGroundHeight = Math.min(lowestGroundHeight, level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos).getY());
                 foundPositionWithinBoundingBox = true;
             }
@@ -98,8 +96,7 @@ public abstract class ScatteredFeaturePiece extends StructurePiece {
             return false;
         }
 
-        // MCRe NoiseFarlands: 世界 Y Long 化
-        this.heightPosition = (int) lowestGroundHeight;
+        this.heightPosition = lowestGroundHeight;
         this.boundingBox.move(0, this.heightPosition - this.boundingBox.minY() + offset, 0);
         return true;
     }

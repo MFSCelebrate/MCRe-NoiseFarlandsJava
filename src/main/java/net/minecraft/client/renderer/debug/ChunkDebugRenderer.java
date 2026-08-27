@@ -87,13 +87,13 @@ public class ChunkDebugRenderer implements DebugRenderer.SimpleDebugRenderer {
         private ChunkData(final IntegratedServer server, final double camX, final double camZ) {
             ClientLevel clientLevel = ChunkDebugRenderer.this.minecraft.level;
             ResourceKey<Level> dimension = clientLevel.dimension();
-            long cx = SectionPos.posToSectionCoord(camX);
-            long cz = SectionPos.posToSectionCoord(camZ);
+            int cx = SectionPos.posToSectionCoord(camX);
+            int cz = SectionPos.posToSectionCoord(camZ);
             Builder<ChunkPos, String> builder = ImmutableMap.builder();
             ClientChunkCache clientChunkSource = clientLevel.getChunkSource();
 
-            for (long x = cx - 12; x <= cx + 12; x++) {
-                for (long z = cz - 12; z <= cz + 12; z++) {
+            for (int x = cx - 12; x <= cx + 12; x++) {
+                for (int z = cz - 12; z <= cz + 12; z++) {
                     ChunkPos pos = new ChunkPos(x, z);
                     String result = "";
                     LevelChunk clientChunk = clientChunkSource.getChunk(x, z, false);
@@ -119,8 +119,8 @@ public class ChunkDebugRenderer implements DebugRenderer.SimpleDebugRenderer {
                 Builder<ChunkPos, String> serverBuilder = ImmutableMap.builder();
                 ServerChunkCache serverChunkSource = serverLevel.getChunkSource();
 
-                for (long xx = cx - 12; xx <= cx + 12; xx++) {
-                    for (long zx = cz - 12; zx <= cz + 12; zx++) {
+                for (int xx = cx - 12; xx <= cx + 12; xx++) {
+                    for (int zx = cz - 12; zx <= cz + 12; zx++) {
                         ChunkPos posx = new ChunkPos(xx, zx);
                         serverBuilder.put(posx, "Server: " + serverChunkSource.getChunkDebugData(posx));
                     }

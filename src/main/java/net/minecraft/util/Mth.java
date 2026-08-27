@@ -79,10 +79,6 @@ public class Mth {
         return Math.abs(v);
     }
 
-    public static long abs(final long v) {
-        return Math.abs(v);
-    }
-
     public static int ceil(final float v) {
         return (int)Math.ceil(v);
     }
@@ -333,8 +329,7 @@ public class Mth {
     }
 
     @Deprecated
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public static long getSeed(final long x, final long y, final long z) {
+    public static long getSeed(final int x, final int y, final int z) {
         long seed = x * 3129871 ^ z * 116129781L ^ y;
         seed = seed * seed * 42317861L + seed * 11L;
         return seed >> 16;
@@ -730,14 +725,6 @@ public class Mth {
 
     public static int quantize(final double value, final int quantizeResolution) {
         return floor(value / quantizeResolution) * quantizeResolution;
-    }
-
-    /**
-     * MCRe：原版 {@code quantize} 返回 int（{@code floor} 饱和截断）。本版返回 long，
-     * 用 {@link #lfloor(double)} 防 |result| ≥ 2^31 时坍塌到 {@link Integer#MAX_VALUE}。
-     */
-    public static long quantize(final double value, final long quantizeResolution) {
-        return lfloor(value / quantizeResolution) * quantizeResolution;
     }
 
     public static IntStream outFromOrigin(final int origin, final int lowerBound, final int upperBound) {

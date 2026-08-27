@@ -15,8 +15,8 @@ public class InSquarePlacement extends PlacementModifier {
 
     @Override
     public Stream<BlockPos> getPositions(final PlacementContext context, final RandomSource random, final BlockPos origin) {
-        long x = random.nextInt(16) + origin.getX();
-        long z = random.nextInt(16) + origin.getZ();
+        int x = random.nextInt(16) + origin.getX();
+        int z = random.nextInt(16) + origin.getZ();
         return Stream.of(new BlockPos(x, origin.getY(), z));
     }
 

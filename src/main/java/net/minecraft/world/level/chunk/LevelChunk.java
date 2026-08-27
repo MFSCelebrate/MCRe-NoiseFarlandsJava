@@ -3,10 +3,11 @@ package net.minecraft.world.level.chunk;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.mojang.logging.LogUtils;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -89,8 +90,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
     private final Level level;
     private @Nullable Supplier<FullChunkStatus> fullStatus;
     private LevelChunk.@Nullable PostLoadProcessor postLoad;
-    // MCRe NoiseFarlands: 对象化——section Y 坐标 Long 化，统一 java.util 容器
-    private final Map<Long, GameEventListenerRegistry> gameEventListenerRegistrySections;
+    private final Int2ObjectMap<GameEventListenerRegistry> gameEventListenerRegistrySections;
     private final LevelChunkTicks<Block> blockTicks;
     private final LevelChunkTicks<Fluid> fluidTicks;
     private LevelChunk.UnsavedListener unsavedListener = chunkPos -> {};
@@ -112,7 +112,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
     ) {
         super(pos, upgradeData, level, level.palettedContainerFactory(), inhabitedTime, sections, blendingData);
         this.level = level;
-        this.gameEventListenerRegistrySections = new HashMap<>();
+        this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
 
         for (Heightmap.Types type : Heightmap.Types.values()) {
             if (ChunkStatus.FULL.heightmapsAfter().contains(type)) {
@@ -197,7 +197,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
     }
 
     @Override
-    public GameEventListenerRegistry getListenerRegistry(final long section) {
+    public GameEventListenerRegistry getListenerRegistry(final int section) {
         return this.level instanceof ServerLevel serverLevel
             ? this.gameEventListenerRegistrySections
                 .computeIfAbsent(section, key -> new EuclideanGameEventListenerRegistry(serverLevel, section, this::removeGameEventListenerRegistry))
@@ -206,9 +206,9 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
 
     @Override
     public BlockState getBlockState(final BlockPos pos) {
-        long x = pos.getX();
-        long y = pos.getY();
-        long z = pos.getZ();
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
         if (this.level.isDebug()) {
             BlockState blockState = null;
             if (y == 60) {
@@ -226,8 +226,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
                 if (sectionIndex >= 0 && sectionIndex < this.sections.length) {
                     LevelChunkSection currentSection = this.sections[sectionIndex];
                     if (!currentSection.hasOnlyAir()) {
-                        // MCRe NoiseFarlands: LevelChunkSection 只支持 int，0-15 局部坐标一次性边界强转
-                        return currentSection.getBlockState((int) (x & 15), (int) (y & 15), (int) (z & 15));
+                        return currentSection.getBlockState(x & 15, y & 15, z & 15);
                     }
                 }
 
@@ -246,14 +245,13 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
         return this.getFluidState(pos.getX(), pos.getY(), pos.getZ());
     }
 
-    public FluidState getFluidState(final long x, final long y, final long z) {
+    public FluidState getFluidState(final int x, final int y, final int z) {
         try {
             int sectionIndex = this.getSectionIndex(y);
             if (sectionIndex >= 0 && sectionIndex < this.sections.length) {
                 LevelChunkSection currentSection = this.sections[sectionIndex];
                 if (!currentSection.hasOnlyAir()) {
-                    // MCRe NoiseFarlands: 0-15 局部坐标一次性边界强转
-                    return currentSection.getFluidState((int) (x & 15), (int) (y & 15), (int) (z & 15));
+                    return currentSection.getFluidState(x & 15, y & 15, z & 15);
                 }
             }
 
@@ -268,17 +266,16 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
 
     @Override
     public @Nullable BlockState setBlockState(final BlockPos pos, final BlockState state, final @Block.UpdateFlags int flags) {
-        long y = pos.getY();
+        int y = pos.getY();
         LevelChunkSection section = this.getSection(this.getSectionIndex(y));
         boolean wasEmpty = section.hasOnlyAir();
         if (wasEmpty && state.isAir()) {
             return null;
         }
 
-        // MCRe NoiseFarlands: 0-15 局部坐标保持 int，一次性边界强转
-        int localX = (int) pos.getX() & 15;
-        int localY = (int) y & 15;
-        int localZ = (int) pos.getZ() & 15;
+        int localX = pos.getX() & 15;
+        int localY = y & 15;
+        int localZ = pos.getZ() & 15;
         BlockState oldState = section.setBlockState(localX, localY, localZ, state);
         if (oldState == state) {
             return null;
@@ -292,7 +289,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
         boolean isEmpty = section.hasOnlyAir();
         if (wasEmpty != isEmpty) {
             this.level.getChunkSource().getLightEngine().updateSectionStatus(pos, isEmpty);
-            this.level.getChunkSource().onSectionEmptinessChanged(this.chunkPos.x(), SectionPos.blockToSectionCoord(y), this.chunkPos.z(), isEmpty);
+            this.level.getChunkSource().onSectionEmptinessChanged((int)this.chunkPos.x(), SectionPos.blockToSectionCoord(y), (int)this.chunkPos.z(), isEmpty);
         }
 
         if (LightEngine.hasDifferentLightProperties(oldState, state)) {
@@ -490,14 +487,14 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
         if (blockEntity.getBlockState().getBlock() instanceof EntityBlock entityBlock) {
             GameEventListener listener = entityBlock.getListener(level, blockEntity);
             if (listener != null) {
-                long section = SectionPos.blockToSectionCoord(blockEntity.getBlockPos().getY());
+                int section = SectionPos.blockToSectionCoord(blockEntity.getBlockPos().getY());
                 GameEventListenerRegistry listenerRegistry = this.getListenerRegistry(section);
                 listenerRegistry.unregister(listener);
             }
         }
     }
 
-    private void removeGameEventListenerRegistry(final long sectionY) {
+    private void removeGameEventListenerRegistry(final int sectionY) {
         this.gameEventListenerRegistrySections.remove(sectionY);
     }
 

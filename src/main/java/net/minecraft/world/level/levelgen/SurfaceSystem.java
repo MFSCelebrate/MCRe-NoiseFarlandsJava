@@ -75,17 +75,16 @@ public class SurfaceSystem {
     ) {
         final BlockPos.MutableBlockPos columnPos = new BlockPos.MutableBlockPos();
         final ChunkPos chunkPos = protoChunk.getPos();
-// MCRe NoiseFarlands: 世界坐标 Long 化
-        long minBlockX = chunkPos.getMinBlockX();
-        long minBlockZ = chunkPos.getMinBlockZ();
+        int minBlockX = (int)chunkPos.getMinBlockX();
+        int minBlockZ = (int)chunkPos.getMinBlockZ();
         BlockColumn column = new BlockColumn() {
             @Override
-            public BlockState getBlock(final long blockY) {
+            public BlockState getBlock(final int blockY) {
                 return protoChunk.getBlockState(columnPos.setY(blockY));
             }
 
             @Override
-            public void setBlock(final long blockY, final BlockState state) {
+            public void setBlock(final int blockY, final BlockState state) {
                 LevelHeightAccessor heightAccessor = protoChunk.getHeightAccessorForGeneration();
                 if (heightAccessor.isInsideBuildHeight(blockY)) {
                     protoChunk.setBlockState(columnPos.setY(blockY), state);
@@ -108,37 +107,36 @@ public class SurfaceSystem {
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                long blockX = minBlockX + x;
-                long blockZ = minBlockZ + z;
-                long startingHeight = protoChunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) + 1;
+                int blockX = minBlockX + x;
+                int blockZ = minBlockZ + z;
+                int startingHeight = protoChunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) + 1;
                 columnPos.setX(blockX).setZ(blockZ);
                 Holder<Biome> surfaceBiome = biomeManager.getBiome(blockPos.set(blockX, useLegacyRandom ? 0 : startingHeight, blockZ));
                 if (surfaceBiome.is(Biomes.ERODED_BADLANDS)) {
                     this.erodedBadlandsExtension(column, blockX, blockZ, startingHeight, protoChunk);
                 }
 
-                long height = protoChunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) + 1;
+                int height = protoChunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) + 1;
                 context.updateXZ(blockX, blockZ);
                 int stoneAboveDepth = 0;
-                // MCRe NoiseFarlands: waterHeight/nextCeilingStoneY/y 为世界 Y，Long 化（哨兵同步升级）
-                long waterHeight = Long.MIN_VALUE;
-                long nextCeilingStoneY = Long.MAX_VALUE;
+                int waterHeight = Integer.MIN_VALUE;
+                int nextCeilingStoneY = Integer.MAX_VALUE;
                 int endY = protoChunk.getMinY();
 
-                for (long y = height; y >= endY; y--) {
+                for (int y = height; y >= endY; y--) {
                     BlockState old = column.getBlock(y);
                     if (old.isAir()) {
                         stoneAboveDepth = 0;
-                        waterHeight = Long.MIN_VALUE;
+                        waterHeight = Integer.MIN_VALUE;
                     } else if (!old.getFluidState().isEmpty()) {
-                        if (waterHeight == Long.MIN_VALUE) {
+                        if (waterHeight == Integer.MIN_VALUE) {
                             waterHeight = y + 1;
                         }
                     } else {
                         if (nextCeilingStoneY >= y) {
                             nextCeilingStoneY = DimensionType.WAY_BELOW_MIN_Y;
 
-                            for (long lookaheadY = y - 1; lookaheadY >= endY - 1; lookaheadY--) {
+                            for (int lookaheadY = y - 1; lookaheadY >= endY - 1; lookaheadY--) {
                                 BlockState nextState = column.getBlock(lookaheadY);
                                 if (!this.isStone(nextState)) {
                                     nextCeilingStoneY = lookaheadY + 1;
@@ -148,8 +146,7 @@ public class SurfaceSystem {
                         }
 
                         stoneAboveDepth++;
-                        // MCRe NoiseFarlands: 石层相对深度差，int 域边界
-                        int stoneBelowDepth = (int) (y - nextCeilingStoneY + 1);
+                        int stoneBelowDepth = y - nextCeilingStoneY + 1;
                         context.updateY(stoneAboveDepth, stoneBelowDepth, waterHeight, y);
                         if (old == this.defaultBlock) {
                             BlockState state = rule.tryApply(blockX, y, blockZ);
@@ -167,12 +164,12 @@ public class SurfaceSystem {
         }
     }
 
-    protected int getSurfaceDepth(final long blockX, final long blockZ) {
+    protected int getSurfaceDepth(final int blockX, final int blockZ) {
         double noiseValue = this.surfaceNoise.getValue(blockX, 0.0, blockZ);
         return (int)(noiseValue * 2.75 + 3.0 + this.noiseRandom.at(blockX, 0, blockZ).nextDouble() * 0.25);
     }
 
-    protected double getSurfaceSecondary(final long blockX, final long blockZ) {
+    protected double getSurfaceSecondary(final int blockX, final int blockZ) {
         return this.surfaceSecondaryNoise.getValue(blockX, 0.0, blockZ);
     }
 
@@ -196,17 +193,16 @@ public class SurfaceSystem {
     ) {
         SurfaceRules.Context context = new SurfaceRules.Context(this, carvingContext.randomState(), chunk, noiseChunk, biomeGetter, carvingContext, null);
         SurfaceRules.SurfaceRule rule = ruleSource.apply(context);
-        long blockX = pos.getX();
-        long blockY = pos.getY();
-        long blockZ = pos.getZ();
+        int blockX = pos.getX();
+        int blockY = pos.getY();
+        int blockZ = pos.getZ();
         context.updateXZ(blockX, blockZ);
-        context.updateY(1, 1, underFluid ? blockY + 1 : Long.MIN_VALUE, blockY);
+        context.updateY(1, 1, underFluid ? blockY + 1 : Integer.MIN_VALUE, blockY);
         BlockState state = rule.tryApply(blockX, blockY, blockZ);
         return Optional.ofNullable(state);
     }
 
-    // MCRe NoiseFarlands: blockX/Z/height 世界坐标 Long 化
-    private void erodedBadlandsExtension(final BlockColumn column, final long blockX, final long blockZ, final long height, final LevelHeightAccessor protoChunk) {
+    private void erodedBadlandsExtension(final BlockColumn column, final int blockX, final int blockZ, final int height, final LevelHeightAccessor protoChunk) {
         double pillarNoiseScale = 0.2;
         double pillarBuffer = Math.min(
             Math.abs(this.badlandsSurfaceNoise.getValue(blockX, 0.0, blockZ) * 8.25), this.badlandsPillarNoise.getValue(blockX * 0.2, 0.0, blockZ * 0.2) * 15.0
@@ -241,9 +237,9 @@ public class SurfaceSystem {
         final Biome surfaceBiome,
         final BlockColumn column,
         final BlockPos.MutableBlockPos blockPos,
-        final long blockX,
-        final long blockZ,
-        final long height
+        final int blockX,
+        final int blockZ,
+        final int height
     ) {
         double pillarScale = 1.28;
         double iceberg = Math.min(
@@ -273,8 +269,7 @@ public class SurfaceSystem {
             int minSnowHeight = this.seaLevel + 18 + random.nextInt(10);
             int snowDepth = 0;
 
-            // MCRe NoiseFarlands: 世界 Y Long 化
-            for (long y = Math.max(height, (long)extensionTop + 1); y >= minSurfaceLevel; y--) {
+            for (int y = Math.max(height, (int)extensionTop + 1); y >= minSurfaceLevel; y--) {
                 if (column.getBlock(y).isAir() && y < (int)extensionTop && random.nextDouble() > 0.01
                     || column.getBlock(y).is(Blocks.WATER)
                         && y > (int)extensionBottom
@@ -338,10 +333,8 @@ public class SurfaceSystem {
         }
     }
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化，返回 band 高度层 int 域
-    protected BlockState getBand(final long worldX, final long y, final long worldZ) {
+    protected BlockState getBand(final int worldX, final int y, final int worldZ) {
         int offset = (int)Math.round(this.clayBandsOffsetNoise.getValue(worldX, 0.0, worldZ) * 4.0);
-        // MCRe NoiseFarlands: band 层索引为 clayBands.length 量级，int 域边界
-        return this.clayBands[(int) ((y + offset + this.clayBands.length) % this.clayBands.length)];
+        return this.clayBands[(y + offset + this.clayBands.length) % this.clayBands.length];
     }
 }

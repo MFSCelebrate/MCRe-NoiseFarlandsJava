@@ -24,7 +24,7 @@ public class NetherForestVegetationFeature extends Feature<NetherForestVegetatio
             return false;
         }
 
-        long y = origin.getY();
+        int y = origin.getY();
         if (y >= level.getMinY() + 1 && y + 1 <= level.getMaxY()) {
             int placed = 0;
 

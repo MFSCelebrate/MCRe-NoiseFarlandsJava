@@ -136,15 +136,14 @@ public class SeaPickleBlock extends VegetationBlock implements SimpleWaterlogged
         int zSpan = 1;
         int height = 2;
         int count = 0;
-        long xStart = pos.getX() - 2;
+        int xStart = pos.getX() - 2;
         int zOffSet = 0;
 
         for (int x = 0; x < 5; x++) {
             for (int z = 0; z < zSpan; z++) {
-                long endY = 2 + pos.getY() - 1;
+                int endY = 2 + pos.getY() - 1;
 
-                // MCRe NoiseFarlands: 世界 Y Long 化
-                    for (long startY = endY - 2; startY < endY; startY++) {
+                for (int startY = endY - 2; startY < endY; startY++) {
                     BlockPos position = new BlockPos(xStart + x, startY, pos.getZ() - zOffSet + z);
                     if (!position.equals(pos) && random.nextInt(6) == 0 && level.getBlockState(position).is(Blocks.WATER)) {
                         BlockState belowState = level.getBlockState(position.below());

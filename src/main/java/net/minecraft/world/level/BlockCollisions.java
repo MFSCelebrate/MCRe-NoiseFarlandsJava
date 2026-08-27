@@ -62,10 +62,9 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
         this.cursor = new Cursor3D(x0, y0, z0, x1, y1, z1);
     }
 
-    // MCRe NoiseFarlands: chunk 坐标 Long 化
-    private @Nullable BlockGetter getChunk(final long x, final long z) {
-        long chunkX = SectionPos.blockToSectionCoord(x);
-        long chunkZ = SectionPos.blockToSectionCoord(z);
+    private @Nullable BlockGetter getChunk(final int x, final int z) {
+        int chunkX = SectionPos.blockToSectionCoord(x);
+        int chunkZ = SectionPos.blockToSectionCoord(z);
         ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
         if (this.cachedBlockGetter != null && chunkPos.equals(this.cachedBlockGetterPos)) {
             return this.cachedBlockGetter;
@@ -80,10 +79,9 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
     @Override
     protected T computeNext() {
         while (this.cursor.advance()) {
-            // MCRe NoiseFarlands: 世界坐标 Long 化
-            long x = this.cursor.nextX();
-            long y = this.cursor.nextY();
-            long z = this.cursor.nextZ();
+            int x = this.cursor.nextX();
+            int y = this.cursor.nextY();
+            int z = this.cursor.nextZ();
             int cursorFaceType = this.cursor.getNextType();
             if (cursorFaceType != 3) {
                 BlockGetter chunk = this.getChunk(x, z);

@@ -4,57 +4,29 @@ import com.google.common.base.MoreObjects;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import io.netty.buffer.ByteBuf;
-import java.util.stream.LongStream;
+import java.util.stream.IntStream;
 import javax.annotation.concurrent.Immutable;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
-import org.joml.Vector3L;
+import org.joml.Vector3i;
 
-/**
- * Vec3i — 三维整数坐标（MCRe NoiseFarlands 全面 Long 化版）
- *
- * <p>原版字段为 int（±2^31 限制），far lands 探索在 2^31 后溢出。本版：x/y/z 全部升级为
- * long，突破 2^31 边界；序列化（CODEC/STREAM_CODEC）改用 LONG_STREAM + VAR_LONG；
- * 距离/比较/hash 适配 long（用 {@link Long#hashCode} / {@link Long#compare} 防溢出）；
- * joml 互转从 {@code Vector3i}（int）切到 {@code Vector3L}（long）。
- *
- * <p><b>API 破坏性变更</b>（相对 vanilla）：
- * <ul>
- *   <li>{@link #getX()}/{@link #getY()}/{@link #getZ()} 返回 <b>long</b>（不是 int）</li>
- *   <li>{@link #offset}/{@link #multiply}/{@link #relative}/{@link #above}/... 等所有步长参数为 <b>long</b</li>
- *   <li>{@link #distManhattan}/{@link #distChessboard} 返回 <b>long</b</li>
- *   <li>{@link #get(Direction.Axis)} 返回 <b>long</b</li>
- *   <li>{@link #toMutable()} 返回 {@link Vector3L}（不再是 {@code Vector3i}）</li>
- *</ul>
- */
 @Immutable
 public class Vec3i implements Comparable<Vec3i> {
-    public static final Codec<Vec3i> CODEC = Codec.LONG_STREAM
+    public static final Codec<Vec3i> CODEC = Codec.INT_STREAM
         .comapFlatMap(
-            input -> Util.fixedSize(input, 3).map(longs -> new Vec3i(longs[0], longs[1], longs[2])),
-            pos -> LongStream.of(pos.getX(), pos.getY(), pos.getZ())
+            input -> Util.fixedSize(input, 3).map(ints -> new Vec3i(ints[0], ints[1], ints[2])), pos -> IntStream.of(pos.getX(), pos.getY(), pos.getZ())
         );
     public static final StreamCodec<ByteBuf, Vec3i> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.VAR_LONG,
-        Vec3i::getX,
-        ByteBufCodecs.VAR_LONG,
-        Vec3i::getY,
-        ByteBufCodecs.VAR_LONG,
-        Vec3i::getZ,
-        Vec3i::new
+        ByteBufCodecs.VAR_INT, Vec3i::getX, ByteBufCodecs.VAR_INT, Vec3i::getY, ByteBufCodecs.VAR_INT, Vec3i::getZ, Vec3i::new
     );
-    public static final Vec3i ZERO = new Vec3i(0L, 0L, 0L);
-    private long x;
-    private long y;
-    private long z;
+    public static final Vec3i ZERO = new Vec3i(0, 0, 0);
+    private int x;
+    private int y;
+    private int z;
 
-    /**
-     * MCRe：原 {@code offsetCodec(int maxOffsetPerAxis)} 已升级为 long。 调用方传入 int 字面量
-     * 会自动提升，但需注意远距离（≥ 2^31）偏移现在可正确序列化/校验。
-     */
-    public static Codec<Vec3i> offsetCodec(final long maxOffsetPerAxis) {
+    public static Codec<Vec3i> offsetCodec(final int maxOffsetPerAxis) {
         return CODEC.validate(
             value -> Math.abs(value.getX()) < maxOffsetPerAxis && Math.abs(value.getY()) < maxOffsetPerAxis && Math.abs(value.getZ()) < maxOffsetPerAxis
                 ? DataResult.success(value)
@@ -62,7 +34,7 @@ public class Vec3i implements Comparable<Vec3i> {
         );
     }
 
-    public Vec3i(final long x, final long y, final long z) {
+    public Vec3i(final int x, final int y, final int z) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -73,70 +45,52 @@ public class Vec3i implements Comparable<Vec3i> {
         if (this == o) {
             return true;
         } else {
-            return !(o instanceof Vec3i vec3i)
-                ? false
-                : this.getX() == vec3i.getX() && this.getY() == vec3i.getY() && this.getZ() == vec3i.getZ();
+            return !(o instanceof Vec3i vec3i) ? false : this.getX() == vec3i.getX() && this.getY() == vec3i.getY() && this.getZ() == vec3i.getZ();
         }
     }
 
-    /**
-     * MCRe：long 化后的混合哈希 —— 用 {@link Long#hashCode} 保证 |x| ≥ 2^31 时仍能均匀散列，
-     * 避免 int hashCode 在大坐标空间退化（碰撞集中在低 32 位）。
-     */
     @Override
     public int hashCode() {
-        long h = this.getX();
-        h = h * 31L + this.getY();
-        h = h * 31L + this.getZ();
-        return Long.hashCode(h);
+        return (this.getY() + this.getZ() * 31) * 31 + this.getX();
     }
 
-    /**
-     * MCRe：用 {@link Long#compare} 防减法溢出（{@code int - int} 在 ±2^31 处会绕回）。
-     * 顺序：先 Y，再 Z，最后 X（与原版语义一致）。
-     */
-    @Override
     public int compareTo(final Vec3i pos) {
-        int cmpY = Long.compare(this.getY(), pos.getY());
-        if (cmpY != 0) {
-            return cmpY;
+        if (this.getY() == pos.getY()) {
+            return this.getZ() == pos.getZ() ? this.getX() - pos.getX() : this.getZ() - pos.getZ();
+        } else {
+            return this.getY() - pos.getY();
         }
-        int cmpZ = Long.compare(this.getZ(), pos.getZ());
-        if (cmpZ != 0) {
-            return cmpZ;
-        }
-        return Long.compare(this.getX(), pos.getX());
     }
 
-    public long getX() {
+    public int getX() {
         return this.x;
     }
 
-    public long getY() {
+    public int getY() {
         return this.y;
     }
 
-    public long getZ() {
+    public int getZ() {
         return this.z;
     }
 
-    protected Vec3i setX(final long x) {
+    protected Vec3i setX(final int x) {
         this.x = x;
         return this;
     }
 
-    protected Vec3i setY(final long y) {
+    protected Vec3i setY(final int y) {
         this.y = y;
         return this;
     }
 
-    protected Vec3i setZ(final long z) {
+    protected Vec3i setZ(final int z) {
         this.z = z;
         return this;
     }
 
-    public Vec3i offset(final long x, final long y, final long z) {
-        return x == 0L && y == 0L && z == 0L ? this : new Vec3i(this.getX() + x, this.getY() + y, this.getZ() + z);
+    public Vec3i offset(final int x, final int y, final int z) {
+        return x == 0 && y == 0 && z == 0 ? this : new Vec3i(this.getX() + x, this.getY() + y, this.getZ() + z);
     }
 
     public Vec3i offset(final Vec3i vec) {
@@ -147,88 +101,84 @@ public class Vec3i implements Comparable<Vec3i> {
         return this.offset(-vec.getX(), -vec.getY(), -vec.getZ());
     }
 
-    public Vec3i multiply(final long scale) {
-        if (scale == 1L) {
+    public Vec3i multiply(final int scale) {
+        if (scale == 1) {
             return this;
         } else {
-            return scale == 0L ? ZERO : new Vec3i(this.getX() * scale, this.getY() * scale, this.getZ() * scale);
+            return scale == 0 ? ZERO : new Vec3i(this.getX() * scale, this.getY() * scale, this.getZ() * scale);
         }
     }
 
-    public Vec3i multiply(final long xScale, final long yScale, final long zScale) {
+    public Vec3i multiply(final int xScale, final int yScale, final int zScale) {
         return new Vec3i(this.getX() * xScale, this.getY() * yScale, this.getZ() * zScale);
     }
 
     public Vec3i above() {
-        return this.above(1L);
+        return this.above(1);
     }
 
-    public Vec3i above(final long steps) {
+    public Vec3i above(final int steps) {
         return this.relative(Direction.UP, steps);
     }
 
     public Vec3i below() {
-        return this.below(1L);
+        return this.below(1);
     }
 
-    public Vec3i below(final long steps) {
+    public Vec3i below(final int steps) {
         return this.relative(Direction.DOWN, steps);
     }
 
     public Vec3i north() {
-        return this.north(1L);
+        return this.north(1);
     }
 
-    public Vec3i north(final long steps) {
+    public Vec3i north(final int steps) {
         return this.relative(Direction.NORTH, steps);
     }
 
     public Vec3i south() {
-        return this.south(1L);
+        return this.south(1);
     }
 
-    public Vec3i south(final long steps) {
+    public Vec3i south(final int steps) {
         return this.relative(Direction.SOUTH, steps);
     }
 
     public Vec3i west() {
-        return this.west(1L);
+        return this.west(1);
     }
 
-    public Vec3i west(final long steps) {
+    public Vec3i west(final int steps) {
         return this.relative(Direction.WEST, steps);
     }
 
     public Vec3i east() {
-        return this.east(1L);
+        return this.east(1);
     }
 
-    public Vec3i east(final long steps) {
+    public Vec3i east(final int steps) {
         return this.relative(Direction.EAST, steps);
     }
 
     public Vec3i relative(final Direction direction) {
-        return this.relative(direction, 1L);
+        return this.relative(direction, 1);
     }
 
-    public Vec3i relative(final Direction direction, final long steps) {
-        return steps == 0L
+    public Vec3i relative(final Direction direction, final int steps) {
+        return steps == 0
             ? this
-            : new Vec3i(
-                this.getX() + (long) direction.getStepX() * steps,
-                this.getY() + (long) direction.getStepY() * steps,
-                this.getZ() + (long) direction.getStepZ() * steps
-            );
+            : new Vec3i(this.getX() + direction.getStepX() * steps, this.getY() + direction.getStepY() * steps, this.getZ() + direction.getStepZ() * steps);
     }
 
-    public Vec3i relative(final Direction.Axis axis, final long steps) {
-        if (steps == 0L) {
+    public Vec3i relative(final Direction.Axis axis, final int steps) {
+        if (steps == 0) {
             return this;
         }
 
-        long xStep = axis == Direction.Axis.X ? steps : 0L;
-        long yStep = axis == Direction.Axis.Y ? steps : 0L;
-        long zStep = axis == Direction.Axis.Z ? steps : 0L;
+        int xStep = axis == Direction.Axis.X ? steps : 0;
+        int yStep = axis == Direction.Axis.Y ? steps : 0;
+        int zStep = axis == Direction.Axis.Z ? steps : 0;
         return new Vec3i(this.getX() + xStep, this.getY() + yStep, this.getZ() + zStep);
     }
 
@@ -248,11 +198,6 @@ public class Vec3i implements Comparable<Vec3i> {
         return this.distToCenterSqr(pos) < Mth.square(distance);
     }
 
-    /**
-     * MCRe：距离平方仍为 double —— 横跨 2^31 时 double 精度足以容纳。
-     * 长坐标下 {@code (longA - longB)} 转 double 可能损失最低位（约 ±1），但平方后取比较阈值
-     * 仍合理（玩家坐标比较是近似匹配）。
-     */
     public double distSqr(final Vec3i pos) {
         return this.distToLowCornerSqr(pos.getX(), pos.getY(), pos.getZ());
     }
@@ -275,42 +220,26 @@ public class Vec3i implements Comparable<Vec3i> {
         return dx * dx + dy * dy + dz * dz;
     }
 
-    /**
-     * MCRe：原版返回 int，超大坐标（≥ 2^31）下曼哈顿距离会溢出。本版返回 long。
-     */
-    public long distManhattan(final Vec3i pos) {
-        long xd = Math.abs(pos.getX() - this.getX());
-        long yd = Math.abs(pos.getY() - this.getY());
-        long zd = Math.abs(pos.getZ() - this.getZ());
-        return xd + yd + zd;
+    public int distManhattan(final Vec3i pos) {
+        float xd = Math.abs(pos.getX() - this.getX());
+        float yd = Math.abs(pos.getY() - this.getY());
+        float zd = Math.abs(pos.getZ() - this.getZ());
+        return (int)(xd + yd + zd);
     }
 
-    /**
-     * MCRe：原版返回 int，超大坐标下溢出。本版返回 long。
-     */
-    public long distChessboard(final Vec3i pos) {
-        long xd = Math.abs(this.getX() - pos.getX());
-        long yd = Math.abs(this.getY() - pos.getY());
-        long zd = Math.abs(this.getZ() - pos.getZ());
+    public int distChessboard(final Vec3i pos) {
+        int xd = Math.abs(this.getX() - pos.getX());
+        int yd = Math.abs(this.getY() - pos.getY());
+        int zd = Math.abs(this.getZ() - pos.getZ());
         return Math.max(Math.max(xd, yd), zd);
     }
 
-    /**
-     * MCRe：原版返回 int。long 化后需调用 {@link Direction.Axis#choose(long, long, long)}。
-     */
-    public long get(final Direction.Axis axis) {
+    public int get(final Direction.Axis axis) {
         return axis.choose(this.x, this.y, this.z);
     }
 
-    /**
-     * MCRe：joml 适配从 {@code Vector3i}（int）切到 {@code Vector3L}（long），保留 64 位精度。
-     * 注意：joml 的 {@link Vector3L} 构造函数只接受 int，没有 long 版构造；
-     * 必须用 {@code new Vector3L().set(this.x, this.y, this.z)}。
-     * {@link Vector3L} 的 API 与 {@code Vector3i} 不完全兼容（如 {@code Vector3L} 没有
-     * {@code mul} 等向量运算方法直接对应），调用方需自行适配。
-     */
-    public Vector3L toMutable() {
-        return new Vector3L().set(this.x, this.y, this.z);
+    public Vector3i toMutable() {
+        return new Vector3i(this.x, this.y, this.z);
     }
 
     @Override

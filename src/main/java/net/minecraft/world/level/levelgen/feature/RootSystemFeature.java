@@ -82,7 +82,7 @@ public class RootSystemFeature extends Feature<RootSystemConfiguration> {
         final BlockPos.MutableBlockPos workingPos,
         final BlockPos pos
     ) {
-        for (long y = 0; y < config.rootColumnMaxHeight(); y++) {
+        for (int y = 0; y < config.rootColumnMaxHeight(); y++) {
             workingPos.move(Direction.UP);
             if (level.getHeight(Heightmap.Types.WORLD_SURFACE, workingPos) < workingPos.getY()) {
                 return false;
@@ -105,26 +105,23 @@ public class RootSystemFeature extends Feature<RootSystemConfiguration> {
     }
 
     private static void placeDirt(
-        final BlockPos origin,
-        // MCRe NoiseFarlands: 世界 Y Long 化
-        final long targetHeight, final WorldGenLevel level, final RootSystemConfiguration config, final RandomSource random
+        final BlockPos origin, final int targetHeight, final WorldGenLevel level, final RootSystemConfiguration config, final RandomSource random
     ) {
-        long originX = origin.getX();
-        long originZ = origin.getZ();
+        int originX = origin.getX();
+        int originZ = origin.getZ();
         BlockPos.MutableBlockPos workingPos = origin.mutable();
 
-        for (long y = origin.getY(); y < targetHeight; y++) {
+        for (int y = origin.getY(); y < targetHeight; y++) {
             placeRootedDirt(level, config, random, originX, originZ, workingPos.set(originX, y, originZ));
         }
     }
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
     private static void placeRootedDirt(
         final WorldGenLevel level,
         final RootSystemConfiguration config,
         final RandomSource random,
-        final long originX,
-        final long originZ,
+        final int originX,
+        final int originZ,
         final BlockPos.MutableBlockPos workingPos
     ) {
         int rootRadius = config.rootRadius();

@@ -5,20 +5,19 @@ public class Cursor3D {
     public static final int TYPE_FACE = 1;
     public static final int TYPE_EDGE = 2;
     public static final int TYPE_CORNER = 3;
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    private final long originX;
-    private final long originY;
-    private final long originZ;
-    private final long width;
-    private final long height;
-    private final long depth;
-    private final long end;
-    private long index;
-    private long x;
-    private long y;
-    private long z;
+    private final int originX;
+    private final int originY;
+    private final int originZ;
+    private final int width;
+    private final int height;
+    private final int depth;
+    private final int end;
+    private int index;
+    private int x;
+    private int y;
+    private int z;
 
-    public Cursor3D(final long minX, final long minY, final long minZ, final long maxX, final long maxY, final long maxZ) {
+    public Cursor3D(final int minX, final int minY, final int minZ, final int maxX, final int maxY, final int maxZ) {
         this.originX = minX;
         this.originY = minY;
         this.originZ = minZ;
@@ -34,22 +33,22 @@ public class Cursor3D {
         }
 
         this.x = this.index % this.width;
-        long slice = this.index / this.width;
+        int slice = this.index / this.width;
         this.y = slice % this.height;
         this.z = slice / this.height;
         this.index++;
         return true;
     }
 
-    public long nextX() {
+    public int nextX() {
         return this.originX + this.x;
     }
 
-    public long nextY() {
+    public int nextY() {
         return this.originY + this.y;
     }
 
-    public long nextZ() {
+    public int nextZ() {
         return this.originZ + this.z;
     }
 

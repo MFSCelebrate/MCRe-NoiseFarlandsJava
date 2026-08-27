@@ -31,12 +31,10 @@ public enum Direction8 {
     }
 
     public int getStepX() {
-        // MCRe NoiseFarlands: step 为 -1/0/1 小值域，int 边界强转
-        return (int) this.step.getX();
+        return this.step.getX();
     }
 
     public int getStepZ() {
-        // MCRe NoiseFarlands: step 为 -1/0/1 小值域，int 边界强转
-        return (int) this.step.getZ();
+        return this.step.getZ();
     }
 }

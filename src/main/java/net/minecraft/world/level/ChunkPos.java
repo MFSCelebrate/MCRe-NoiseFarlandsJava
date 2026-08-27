@@ -115,11 +115,11 @@ public record ChunkPos(long x, long z) {
     }
 
     public long getMinBlockX() {
-        return SectionPos.sectionToBlockCoord(this.x);
+        return SectionPos.sectionToBlockCoordLong(this.x);
     }
 
     public long getMinBlockZ() {
-        return SectionPos.sectionToBlockCoord(this.z);
+        return SectionPos.sectionToBlockCoordLong(this.z);
     }
 
     public long getMaxBlockX() {
@@ -147,20 +147,19 @@ public record ChunkPos(long x, long z) {
     }
 
     public BlockPos getBlockAt(final int x, final int y, final int z) {
-        return new BlockPos(this.getBlockX(x), y, this.getBlockZ(z));
+        return new BlockPos((int) this.getBlockX(x), y, (int) this.getBlockZ(z));
     }
 
     public long getBlockX(final long offset) {
-        return SectionPos.sectionToBlockCoord(this.x, offset);
+        return SectionPos.sectionToBlockCoordLong(this.x, offset);
     }
 
     public long getBlockZ(final long offset) {
-        return SectionPos.sectionToBlockCoord(this.z, offset);
+        return SectionPos.sectionToBlockCoordLong(this.z, offset);
     }
 
-    // MCRe NoiseFarlands: 世界 Y Long 化
-    public BlockPos getMiddleBlockPosition(final long y) {
-        return new BlockPos(this.getMiddleBlockX(), y, this.getMiddleBlockZ());
+    public BlockPos getMiddleBlockPosition(final int y) {
+        return new BlockPos((int) this.getMiddleBlockX(), y, (int) this.getMiddleBlockZ());
     }
 
     public boolean contains(final BlockPos pos) {
@@ -176,7 +175,7 @@ public record ChunkPos(long x, long z) {
     }
 
     public BlockPos getWorldPosition() {
-        return new BlockPos(this.getMinBlockX(), 0L, this.getMinBlockZ());
+        return new BlockPos((int) this.getMinBlockX(), 0, (int) this.getMinBlockZ());
     }
 
     public long getChessboardDistance(final ChunkPos pos) {

@@ -28,7 +28,7 @@ public class CocoaDecorator extends TreeDecorator {
         if (!(random.nextFloat() >= this.probability)) {
             List<BlockPos> logs = context.logs();
             if (!logs.isEmpty()) {
-                long treeY = logs.getFirst().getY();
+                int treeY = logs.getFirst().getY();
                 logs.stream()
                     .filter(pos -> pos.getY() - treeY <= 2)
                     .forEach(

@@ -20,9 +20,8 @@ public class ViewArea {
         final SectionRenderDispatcher sectionRenderDispatcher,
         final int minY,
         final int maxY,
-        // MCRe NoiseFarlands: section Y 坐标 Long 化
-        final long minSectionY,
-        final long maxSectionY,
+        final int minSectionY,
+        final int maxSectionY,
         final int renderDistance,
         final SectionOcclusionGraph sectionOcclusionGraph
     ) {
@@ -48,21 +47,19 @@ public class ViewArea {
         return this.sections.size();
     }
 
-    // MCRe NoiseFarlands: section Y Long 化
-    public long minY() {
+    public int minY() {
+        return this.minY;
+    }
+
+    public int maxY() {
+        return this.maxY;
+    }
+
+    public int minSectionY() {
         return this.sections.minY();
     }
 
-    public long maxY() {
-        return this.sections.maxY();
-    }
-
-    // MCRe NoiseFarlands: section Y Long 化
-    public long minSectionY() {
-        return this.sections.minY();
-    }
-
-    public long maxSectionY() {
+    public int maxSectionY() {
         return this.sections.maxY();
     }
 

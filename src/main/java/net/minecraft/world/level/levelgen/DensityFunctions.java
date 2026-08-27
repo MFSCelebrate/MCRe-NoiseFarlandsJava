@@ -564,13 +564,11 @@ public final class DensityFunctions {
             this.islandNoise = new SimplexNoise(islandRandom);
         }
 
-        // MCRe NoiseFarlands: section 采样坐标 Long 化
-        private static float getHeightValue(final SimplexNoise islandNoise, final long sectionX, final long sectionZ) {
-            // MCRe NoiseFarlands: section 缩放坐标 Long 化
-            long chunkX = sectionX / 2;
-            long chunkZ = sectionZ / 2;
-            int subSectionX = (int) (sectionX % 2);
-            int subSectionZ = (int) (sectionZ % 2);
+        private static float getHeightValue(final SimplexNoise islandNoise, final int sectionX, final int sectionZ) {
+            int chunkX = sectionX / 2;
+            int chunkZ = sectionZ / 2;
+            int subSectionX = sectionX % 2;
+            int subSectionZ = sectionZ % 2;
             float doffs;
             if (fixEndRingMode()) {
                 doffs = 100.0F - Mth.sqrt((float) sectionX * (float) sectionX + (float) sectionZ * (float) sectionZ) * 8.0F;

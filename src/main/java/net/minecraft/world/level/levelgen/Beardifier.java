@@ -60,9 +60,8 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
                         }
 
                         for (JigsawJunction junction : poolPiece.getJunctions()) {
-// MCRe NoiseFarlands: junction 世界坐标 Long 化
-                            long junctionX = junction.getSourceX();
-                            long junctionZ = junction.getSourceZ();
+                            int junctionX = junction.getSourceX();
+                            int junctionZ = junction.getSourceZ();
                             if (junctionX > chunkStartBlockX - 12
                                 && junctionZ > chunkStartBlockZ - 12
                                 && junctionX < chunkStartBlockX + 15 + 12
@@ -114,12 +113,10 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
             return 0.0;
         }
 
-        // MCRe NoiseFarlands: 世界坐标 Long 化
-        long blockX = context.blockX();
-        long blockY = context.blockY();
-        long blockZ = context.blockZ();
-        // MCRe NoiseFarlands: Decision 5 BoundingBox 内部 int 域，入口一次性强转
-        if (!this.affectedBox.isInside((int) blockX, (int) blockY, (int) blockZ)) {
+        int blockX = context.blockX();
+        int blockY = context.blockY();
+        int blockZ = context.blockZ();
+        if (!this.affectedBox.isInside(blockX, blockY, blockZ)) {
             return 0.0;
         }
 
@@ -128,17 +125,16 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
         for (Beardifier.Rigid rigid : this.pieces) {
             BoundingBox box = rigid.box();
             int groundLevelDelta = rigid.groundLevelDelta();
-            // MCRe NoiseFarlands: isInside 已过滤远处，相对差为结构量级，int 域边界
-            int dx = Math.max(0, Math.max((int) (box.minX() - blockX), (int) (blockX - box.maxX())));
-            int dz = Math.max(0, Math.max((int) (box.minZ() - blockZ), (int) (blockZ - box.maxZ())));
-            long groundY = box.minY() + groundLevelDelta;
-            int dyToGround = (int) (blockY - groundY);
+            int dx = Math.max(0, Math.max(box.minX() - blockX, blockX - box.maxX()));
+            int dz = Math.max(0, Math.max(box.minZ() - blockZ, blockZ - box.maxZ()));
+            int groundY = box.minY() + groundLevelDelta;
+            int dyToGround = blockY - groundY;
 
             int dy = switch (rigid.terrainAdjustment()) {
                 case NONE -> 0;
                 case BURY, BEARD_THIN -> dyToGround;
-                case BEARD_BOX -> (int) Math.max(0, Math.max(groundY - blockY, blockY - box.maxY()));
-                case ENCAPSULATE -> (int) Math.max(0, Math.max(box.minY() - blockY, blockY - box.maxY()));
+                case BEARD_BOX -> Math.max(0, Math.max(groundY - blockY, blockY - box.maxY()));
+                case ENCAPSULATE -> Math.max(0, Math.max(box.minY() - blockY, blockY - box.maxY()));
             };
 
             noiseValue += switch (rigid.terrainAdjustment()) {
@@ -150,11 +146,10 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
         }
 
         for (JigsawJunction junction : this.junctions) {
-            // MCRe NoiseFarlands: beard 衰减为局部距离计算，int 域边界
-            int jx = (int) (blockX - junction.getSourceX());
-            int jy = (int) (blockY - junction.getSourceGroundY());
-            int jz = (int) (blockZ - junction.getSourceZ());
-            noiseValue += getBeardContribution(jx, jy, jz, jy) * 0.4;
+            int dx = blockX - junction.getSourceX();
+            int dy = blockY - junction.getSourceGroundY();
+            int dz = blockZ - junction.getSourceZ();
+            noiseValue += getBeardContribution(dx, dy, dz, dy) * 0.4;
         }
 
         return noiseValue;
@@ -175,7 +170,7 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
         return Mth.clampedMap(distance, 0.0, 6.0, 1.0, 0.0);
     }
 
-        private static double getBeardContribution(final int dx, final int dy, final int dz, final int yToGround) {
+    private static double getBeardContribution(final int dx, final int dy, final int dz, final int yToGround) {
         int xi = dx + 12;
         int yi = dy + 12;
         int zi = dz + 12;

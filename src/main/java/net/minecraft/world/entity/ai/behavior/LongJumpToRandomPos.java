@@ -123,9 +123,9 @@ public class LongJumpToRandomPos<E extends Mob> extends Behavior<E> {
         this.findJumpTries = 20;
         this.initialPosition = Optional.of(body.position());
         BlockPos mobPos = body.blockPosition();
-        long mobX = mobPos.getX();
-        long mobY = mobPos.getY();
-        long mobZ = mobPos.getZ();
+        int mobX = mobPos.getX();
+        int mobY = mobPos.getY();
+        int mobZ = mobPos.getZ();
         this.jumpCandidates = BlockPos.betweenClosedStream(
                 mobX - this.maxLongJumpWidth,
                 mobY - this.maxLongJumpHeight,
@@ -190,8 +190,8 @@ public class LongJumpToRandomPos<E extends Mob> extends Behavior<E> {
 
     private boolean isAcceptableLandingPosition(final ServerLevel level, final E body, final BlockPos targetPos) {
         BlockPos bodyPos = body.blockPosition();
-        long mobX = bodyPos.getX();
-        long mobZ = bodyPos.getZ();
+        int mobX = bodyPos.getX();
+        int mobZ = bodyPos.getZ();
         return mobX == targetPos.getX() && mobZ == targetPos.getZ() ? false : this.acceptableLandingSpot.test(body, targetPos);
     }
 

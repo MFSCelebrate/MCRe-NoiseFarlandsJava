@@ -367,8 +367,7 @@ public class Frog extends Animal {
         }
 
         @Override
-        // MCRe NoiseFarlands: 世界坐标 Long 化
-        public PathType getPathType(final PathfindingContext context, final long x, final long y, final long z) {
+        public PathType getPathType(final PathfindingContext context, final int x, final int y, final int z) {
             this.belowPos.set(x, y - 1, z);
             BlockState belowState = context.getBlockState(this.belowPos);
             return belowState.is(BlockTags.FROG_PREFER_JUMP_TO) ? PathType.OPEN : super.getPathType(context, x, y, z);

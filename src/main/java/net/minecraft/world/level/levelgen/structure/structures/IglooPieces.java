@@ -134,7 +134,7 @@ public class IglooPieces {
             BlockPos offset = IglooPieces.OFFSETS.get(templateLocation);
             BlockPos entrancePos = this.templatePosition
                 .offset(StructureTemplate.calculateRelativePosition(settings, new BlockPos(3 - offset.getX(), 0, -offset.getZ())));
-            long height = level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, entrancePos.getX(), entrancePos.getZ());
+            int height = level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, entrancePos.getX(), entrancePos.getZ());
             BlockPos oldTemplatePos = this.templatePosition;
             this.templatePosition = this.templatePosition.offset(0, height - 90 - 1, 0);
             super.postProcess(level, structureManager, generator, random, chunkBB, chunkPos, referencePos);

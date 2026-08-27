@@ -47,9 +47,9 @@ public abstract class TreeDecorator {
             this.roots = new ObjectArrayList<>(rootSet);
             this.logs = new ObjectArrayList<>(trunkSet);
             this.leaves = new ObjectArrayList<>(foliageSet);
-            this.logs.sort(Comparator.comparingLong(Vec3i::getY));
-            this.leaves.sort(Comparator.comparingLong(Vec3i::getY));
-            this.roots.sort(Comparator.comparingLong(Vec3i::getY));
+            this.logs.sort(Comparator.comparingInt(Vec3i::getY));
+            this.leaves.sort(Comparator.comparingInt(Vec3i::getY));
+            this.roots.sort(Comparator.comparingInt(Vec3i::getY));
         }
 
         public void placeVine(final BlockPos pos, final BooleanProperty direction) {

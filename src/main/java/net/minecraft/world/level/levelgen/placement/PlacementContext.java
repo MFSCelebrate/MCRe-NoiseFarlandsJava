@@ -23,8 +23,7 @@ public class PlacementContext extends WorldGenerationContext {
         this.topFeature = topFeature;
     }
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public long getHeight(final Heightmap.Types type, final long x, final long z) {
+    public int getHeight(final Heightmap.Types type, final int x, final int z) {
         return this.level.getHeight(type, x, z);
     }
 

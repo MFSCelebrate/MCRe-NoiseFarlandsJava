@@ -54,22 +54,21 @@ public class BlockEntityWithBoundingBoxRenderer<T extends BlockEntity & Bounding
         BlockPos entityPos = state.blockPos;
         BlockPos startingPos = entityPos.offset(pos);
         if (state.isVisible && blockEntity.getLevel() != null && state.mode == BoundingBoxRenderable.Mode.BOX_AND_INVISIBLE_BLOCKS) {
-            // MCRe NoiseFarlands: 结构 ≤48³ 数组尺寸，int 域边界
-            state.invisibleBlocks = new BlockEntityWithBoundingBoxRenderState.InvisibleBlockType[(int) (size.getX() * (long) size.getY() * size.getZ())];
+            state.invisibleBlocks = new BlockEntityWithBoundingBoxRenderState.InvisibleBlockType[size.getX() * size.getY() * size.getZ()];
 
             for (int x = 0; x < size.getX(); x++) {
                 for (int y = 0; y < size.getY(); y++) {
                     for (int z = 0; z < size.getZ(); z++) {
-                        long index = z * size.getX() * size.getY() + y * size.getX() + x;
+                        int index = z * size.getX() * size.getY() + y * size.getX() + x;
                         BlockState blockState = blockEntity.getLevel().getBlockState(startingPos.offset(x, y, z));
                         if (blockState.isAir()) {
-                            state.invisibleBlocks[(int) index] = BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.AIR;
+                            state.invisibleBlocks[index] = BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.AIR;
                         } else if (blockState.is(Blocks.STRUCTURE_VOID)) {
-                            state.invisibleBlocks[(int) index] = BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.STRUCTURE_VOID;
+                            state.invisibleBlocks[index] = BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.STRUCTURE_VOID;
                         } else if (blockState.is(Blocks.BARRIER)) {
-                            state.invisibleBlocks[(int) index] = BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.BARRIER;
+                            state.invisibleBlocks[index] = BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.BARRIER;
                         } else if (blockState.is(Blocks.LIGHT)) {
-                            state.invisibleBlocks[(int) index] = BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.LIGHT;
+                            state.invisibleBlocks[index] = BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.LIGHT;
                         }
                     }
                 }
@@ -119,8 +118,8 @@ public class BlockEntityWithBoundingBoxRenderer<T extends BlockEntity & Bounding
             for (int x = 0; x < size.getX(); x++) {
                 for (int y = 0; y < size.getY(); y++) {
                     for (int z = 0; z < size.getZ(); z++) {
-                        long index = z * size.getX() * size.getY() + y * size.getX() + x;
-                        BlockEntityWithBoundingBoxRenderState.InvisibleBlockType invisibleBlockType = state.invisibleBlocks[(int) index];
+                        int index = z * size.getX() * size.getY() + y * size.getX() + x;
+                        BlockEntityWithBoundingBoxRenderState.InvisibleBlockType invisibleBlockType = state.invisibleBlocks[index];
                         if (invisibleBlockType != null) {
                             float scale = invisibleBlockType == BlockEntityWithBoundingBoxRenderState.InvisibleBlockType.AIR ? 0.05F : 0.0F;
                             double renderX0 = startingPos.getX() + x + 0.45F - scale;
@@ -148,14 +147,13 @@ public class BlockEntityWithBoundingBoxRenderer<T extends BlockEntity & Bounding
 
     private void renderStructureVoids(final BlockEntityWithBoundingBoxRenderState state, final BlockPos startingPosition, final Vec3i size) {
         if (state.structureVoids != null) {
-            // MCRe NoiseFarlands: shape 为 int 域网格，结构 ≤48³ 边界安全
-            DiscreteVoxelShape shape = new BitSetDiscreteVoxelShape((int) size.getX(), (int) size.getY(), (int) size.getZ());
+            DiscreteVoxelShape shape = new BitSetDiscreteVoxelShape(size.getX(), size.getY(), size.getZ());
 
             for (int x = 0; x < size.getX(); x++) {
                 for (int y = 0; y < size.getY(); y++) {
                     for (int z = 0; z < size.getZ(); z++) {
-                        long index = z * size.getX() * size.getY() + y * size.getX() + x;
-                        if (state.structureVoids[(int) index]) {
+                        int index = z * size.getX() * size.getY() + y * size.getX() + x;
+                        if (state.structureVoids[index]) {
                             shape.fill(x, y, z);
                         }
                     }

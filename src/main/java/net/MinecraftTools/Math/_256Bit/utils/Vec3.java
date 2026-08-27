@@ -1,4 +1,4 @@
-package net.MinecraftTools.Math._256Bit.util;
+package net.MinecraftTools.Math._256Bit.utils;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;

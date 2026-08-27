@@ -427,20 +427,19 @@ public class LevelExtractor implements ResourceManagerReloadListener {
     }
 
     private void setBlockDirty(final BlockPos pos, final boolean playerChanged) {
-        for (long z = pos.getZ() - 1; z <= pos.getZ() + 1; z++) {
-            for (long x = pos.getX() - 1; x <= pos.getX() + 1; x++) {
-                for (long y = pos.getY() - 1; y <= pos.getY() + 1; y++) {
+        for (int z = pos.getZ() - 1; z <= pos.getZ() + 1; z++) {
+            for (int x = pos.getX() - 1; x <= pos.getX() + 1; x++) {
+                for (int y = pos.getY() - 1; y <= pos.getY() + 1; y++) {
                     this.setSectionDirty(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(y), SectionPos.blockToSectionCoord(z), playerChanged);
                 }
             }
         }
     }
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public void setBlocksDirty(final long x0, final long y0, final long z0, final long x1, final long y1, final long z1) {
-        for (long z = z0 - 1; z <= z1 + 1; z++) {
-            for (long x = x0 - 1; x <= x1 + 1; x++) {
-                for (long y = y0 - 1; y <= y1 + 1; y++) {
+    public void setBlocksDirty(final int x0, final int y0, final int z0, final int x1, final int y1, final int z1) {
+        for (int z = z0 - 1; z <= z1 + 1; z++) {
+            for (int x = x0 - 1; x <= x1 + 1; x++) {
+                for (int y = y0 - 1; y <= y1 + 1; y++) {
                     this.setSectionDirty(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(y), SectionPos.blockToSectionCoord(z));
                 }
             }
@@ -453,28 +452,27 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         }
     }
 
-    public void setSectionDirtyWithNeighbors(final long sectionX, final long sectionY, final long sectionZ) {
+    public void setSectionDirtyWithNeighbors(final int sectionX, final int sectionY, final int sectionZ) {
         this.setSectionRangeDirty(sectionX - 1, sectionY - 1, sectionZ - 1, sectionX + 1, sectionY + 1, sectionZ + 1);
     }
 
-    // MCRe NoiseFarlands: section 世界坐标 Long 化
     public void setSectionRangeDirty(
-        final long minSectionX, final long minSectionY, final long minSectionZ, final long maxSectionX, final long maxSectionY, final long maxSectionZ
+        final int minSectionX, final int minSectionY, final int minSectionZ, final int maxSectionX, final int maxSectionY, final int maxSectionZ
     ) {
-        for (long z = minSectionZ; z <= maxSectionZ; z++) {
-            for (long x = minSectionX; x <= maxSectionX; x++) {
-                for (long y = minSectionY; y <= maxSectionY; y++) {
+        for (int z = minSectionZ; z <= maxSectionZ; z++) {
+            for (int x = minSectionX; x <= maxSectionX; x++) {
+                for (int y = minSectionY; y <= maxSectionY; y++) {
                     this.setSectionDirty(x, y, z);
                 }
             }
         }
     }
 
-    public void setSectionDirty(final long sectionX, final long sectionY, final long sectionZ) {
+    public void setSectionDirty(final int sectionX, final int sectionY, final int sectionZ) {
         this.setSectionDirty(sectionX, sectionY, sectionZ, false);
     }
 
-    private void setSectionDirty(final long sectionX, final long sectionY, final long sectionZ, final boolean playerChanged) {
+    private void setSectionDirty(final int sectionX, final int sectionY, final int sectionZ, final boolean playerChanged) {
         this.sectionUpdateTracker.setDirty(sectionX, sectionY, sectionZ, playerChanged);
     }
 

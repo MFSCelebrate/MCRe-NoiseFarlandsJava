@@ -20,10 +20,10 @@ public class EuclideanGameEventListenerRegistry implements GameEventListenerRegi
     private final List<GameEventListener> listenersToAdd = Lists.newArrayList();
     private boolean processing;
     private final ServerLevel level;
-    private final long sectionY;
+    private final int sectionY;
     private final EuclideanGameEventListenerRegistry.OnEmptyAction onEmptyAction;
 
-    public EuclideanGameEventListenerRegistry(final ServerLevel level, final long sectionY, final EuclideanGameEventListenerRegistry.OnEmptyAction onEmptyAction) {
+    public EuclideanGameEventListenerRegistry(final ServerLevel level, final int sectionY, final EuclideanGameEventListenerRegistry.OnEmptyAction onEmptyAction) {
         this.level = level;
         this.sectionY = sectionY;
         this.onEmptyAction = onEmptyAction;
@@ -125,6 +125,6 @@ public class EuclideanGameEventListenerRegistry implements GameEventListenerRegi
 
     @FunctionalInterface
     public interface OnEmptyAction {
-        void apply(final long sectionY);
+        void apply(final int sectionY);
     }
 }

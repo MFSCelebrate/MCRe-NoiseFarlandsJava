@@ -122,11 +122,9 @@ public abstract class Structure {
         final Structure.GenerationContext context, final Heightmap.Types heightmap, final Consumer<StructurePiecesBuilder> generator
     ) {
         ChunkPos chunkPos = context.chunkPos();
-        // MCRe NoiseFarlands: 世界坐标 Long 化
-        long blockX = chunkPos.getMiddleBlockX();
-        long blockZ = chunkPos.getMiddleBlockZ();
-        // MCRe NoiseFarlands: 世界 Y Long 化
-        long blockY = context.chunkGenerator().getFirstOccupiedHeight(blockX, blockZ, heightmap, context.heightAccessor(), context.randomState());
+        int blockX = (int)chunkPos.getMiddleBlockX();
+        int blockZ = (int)chunkPos.getMiddleBlockZ();
+        int blockY = context.chunkGenerator().getFirstOccupiedHeight(blockX, blockZ, heightmap, context.heightAccessor(), context.randomState());
         return Optional.of(new Structure.GenerationStub(new BlockPos(blockX, blockY, blockZ), generator));
     }
 
@@ -156,12 +154,11 @@ public abstract class Structure {
     ) {
     }
 
-    // MCRe NoiseFarlands: 角点世界坐标 Long 化；size 为结构尺寸 int 域
-    private static long[] getCornerHeights(final Structure.GenerationContext context, final long minX, final int sizeX, final long minZ, final int sizeZ) {
+    private static int[] getCornerHeights(final Structure.GenerationContext context, final int minX, final int sizeX, final int minZ, final int sizeZ) {
         ChunkGenerator chunkGenerator = context.chunkGenerator();
         LevelHeightAccessor heightAccessor = context.heightAccessor();
         RandomState randomState = context.randomState();
-        return new long[]{
+        return new int[]{
             chunkGenerator.getFirstOccupiedHeight(minX, minZ, Heightmap.Types.WORLD_SURFACE_WG, heightAccessor, randomState),
             chunkGenerator.getFirstOccupiedHeight(minX, minZ + sizeZ, Heightmap.Types.WORLD_SURFACE_WG, heightAccessor, randomState),
             chunkGenerator.getFirstOccupiedHeight(minX + sizeX, minZ, Heightmap.Types.WORLD_SURFACE_WG, heightAccessor, randomState),
@@ -169,21 +166,20 @@ public abstract class Structure {
         };
     }
 
-    public static long getMeanFirstOccupiedHeight(final Structure.GenerationContext context, final int minX, final int sizeX, final int minZ, final int sizeZ) {
-        long[] cornerHeights = getCornerHeights(context, minX, sizeX, minZ, sizeZ);
+    public static int getMeanFirstOccupiedHeight(final Structure.GenerationContext context, final int minX, final int sizeX, final int minZ, final int sizeZ) {
+        int[] cornerHeights = getCornerHeights(context, minX, sizeX, minZ, sizeZ);
         return (cornerHeights[0] + cornerHeights[1] + cornerHeights[2] + cornerHeights[3]) / 4;
     }
 
-    // MCRe NoiseFarlands: 结构最低角世界 Y Long 化
-    protected static long getLowestY(final Structure.GenerationContext context, final int sizeX, final int sizeZ) {
+    protected static int getLowestY(final Structure.GenerationContext context, final int sizeX, final int sizeZ) {
         ChunkPos chunkPos = context.chunkPos();
-        long minX = chunkPos.getMinBlockX();
-        long minZ = chunkPos.getMinBlockZ();
+        int minX = (int)chunkPos.getMinBlockX();
+        int minZ = (int)chunkPos.getMinBlockZ();
         return getLowestY(context, minX, minZ, sizeX, sizeZ);
     }
 
-    protected static long getLowestY(final Structure.GenerationContext context, final long minX, final long minZ, final int sizeX, final int sizeZ) {
-        long[] cornerHeights = getCornerHeights(context, minX, sizeX, minZ, sizeZ);
+    protected static int getLowestY(final Structure.GenerationContext context, final int minX, final int minZ, final int sizeX, final int sizeZ) {
+        int[] cornerHeights = getCornerHeights(context, minX, sizeX, minZ, sizeZ);
         return Math.min(Math.min(cornerHeights[0], cornerHeights[1]), Math.min(cornerHeights[2], cornerHeights[3]));
     }
 
@@ -253,7 +249,7 @@ public abstract class Structure {
 
         private static WorldgenRandom makeRandom(final long seed, final ChunkPos chunkPos) {
             WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
-            random.setLargeFeatureSeed(seed, chunkPos.x(), chunkPos.z());
+            random.setLargeFeatureSeed(seed, (int)chunkPos.x(), (int)chunkPos.z());
             return random;
         }
     }

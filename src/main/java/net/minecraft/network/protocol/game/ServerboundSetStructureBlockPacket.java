@@ -96,13 +96,12 @@ public class ServerboundSetStructureBlockPacket implements Packet<ServerGamePack
         output.writeEnum(this.updateType);
         output.writeEnum(this.mode);
         output.writeUtf(this.name);
-        // MCRe NoiseFarlands: 结构相对偏移 -48~48，协议 writeByte 域不变
-        output.writeByte((int) this.offset.getX());
-        output.writeByte((int) this.offset.getY());
-        output.writeByte((int) this.offset.getZ());
-        output.writeByte((int) this.size.getX());
-        output.writeByte((int) this.size.getY());
-        output.writeByte((int) this.size.getZ());
+        output.writeByte(this.offset.getX());
+        output.writeByte(this.offset.getY());
+        output.writeByte(this.offset.getZ());
+        output.writeByte(this.size.getX());
+        output.writeByte(this.size.getY());
+        output.writeByte(this.size.getZ());
         output.writeEnum(this.mirror);
         output.writeEnum(this.rotation);
         output.writeUtf(this.data);

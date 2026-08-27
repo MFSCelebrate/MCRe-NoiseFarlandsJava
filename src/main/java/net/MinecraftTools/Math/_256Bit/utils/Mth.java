@@ -1,4 +1,4 @@
-package net.MinecraftTools.Math._256Bit.util;
+package net.MinecraftTools.Math._256Bit.utils;
 
 import java.util.Locale;
 import java.util.UUID;
@@ -337,11 +337,6 @@ public class Mth {
     }
 
     @Deprecated
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public static long getSeed(final long x, final long y, final long z) {
-        return getSeed((int) x, (int) y, (int) z);
-    }
-
     public static long getSeed(final int x, final int y, final int z) {
         long seed = x * 3129871 ^ z * 116129781L ^ y;
         seed = seed * seed * 42317861L + seed * 11L;

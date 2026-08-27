@@ -66,10 +66,31 @@ jobs:
             source-previous.zip
           if-no-files-found: warn
           retention-days: 3
+  
+  # ===== 测试组：必须在 Build Minecraft 26.2 之前通过 =====
+  CheckConfig:
+    name: Check Build Config
+    runs-on: ubuntu-24.04
+    # [FIX] 定义该任务的输出，供 build 和 release 引用
+    outputs:
+      enable_nightly: ${{ steps.read_config.outputs.enable_nightly }}
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+      
+      - name: 读取 DebugBuildConfig.properties（Nightly 开关）
+        id: read_config
+        run: |
+          ENABLE=$(grep '^EnableTestNightlyRelease=' DebugBuildConfig.properties | cut -d'=' -f2 || echo "false")
+          ENABLE=$(echo "$ENABLE" | tr '[:upper:]' '[:lower:]')
+          echo "enable_nightly=$ENABLE" >> $GITHUB_OUTPUT
+          echo "ENABLE_NIGHTLY=$ENABLE" >> $GITHUB_ENV
+          echo "✅ Nightly Release 开关: $ENABLE"
 
   # ===== 测试组：必须在 Build Minecraft 26.2 之前通过 =====
   Tests:
-    name: Tests
+    name: BuildTests
+    needs: CheckConfig
     runs-on: ubuntu-24.04
     steps:
       - name: 拉取代码
@@ -92,11 +113,12 @@ jobs:
           echo "✅ 未检测到残留 Patch Diff，检查通过"
 
   build:
-    needs: Tests
+    needs: [Tests, CheckConfig]
     name: Build Minecraft 26.2
     runs-on: ubuntu-24.04
+    # [FIX] 正确引用 CheckConfig 的输出，并保留自己的 version 输出
     outputs:
-      enable_nightly: ${{ steps.read_config.outputs.enable_nightly }}
+      enable_nightly: ${{ needs.CheckConfig.outputs.enable_nightly }}
       minecraft_version: ${{ steps.read_version.outputs.version }}
     steps:
       - name: 拉取代码
@@ -120,15 +142,6 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "✅ 读取到 Minecraft 版本: $VERSION"
 
-      - name: 读取 DebugBuildConfig.properties（Nightly 开关）
-        id: read_config
-        run: |
-          ENABLE=$(grep '^EnableTestNightlyRelease=' DebugBuildConfig.properties | cut -d'=' -f2 || echo "false")
-          ENABLE=$(echo "$ENABLE" | tr '[:upper:]' '[:lower:]')
-          echo "enable_nightly=$ENABLE" >> $GITHUB_OUTPUT
-          echo "ENABLE_NIGHTLY=$ENABLE" >> $GITHUB_ENV
-          echo "✅ Nightly Release 开关: $ENABLE"
-
       - name: 下载原版 Minecraft ${{ env.MINECRAFT_VERSION }} client jar
         run: |
           curl -s -o version_manifest.json https://launchermeta.mojang.com/mc/game/version_manifest.json
@@ -149,7 +162,7 @@ jobs:
           ./gradlew clean build --no-daemon 2>&1 | tee full.log
           grep -B 2 -A 5 "error:" full.log > compile_errors.log || true
           rm -f full.log
-        continue-on-error: true
+        continue-on-error: true   # 允许失败，后续步骤通过条件判断是否继续
 
       - name: 上传编译错误日志
         uses: actions/upload-artifact@v4
@@ -158,12 +171,15 @@ jobs:
           path: compile_errors.log
           if-no-files-found: warn
 
+      # [FIX] 以下所有依赖 modified.jar 的步骤都添加 if: success() 条件
       - name: 查看 modified.jar 内容
+        if: success()
         run: |
           echo "===== modified.jar 中的类（已去混淆） ====="
           jar tf build/libs/modified.jar | grep -E "\.class$" | head -30
 
       - name: 解压原版 jar
+        if: success()
         run: |
           rm -rf extracted
           mkdir -p extracted
@@ -172,6 +188,7 @@ jobs:
           cd ..
 
       - name: 用 modified.jar 覆盖原版
+        if: success()
         run: |
           cd extracted
           jar xf ../build/libs/modified.jar
@@ -179,18 +196,21 @@ jobs:
           cd ..
 
       - name: 重新打包完整 jar
+        if: success()
         run: |
           cd extracted
           jar cfm ../26.2-Permanent.jar META-INF/MANIFEST.MF .
           cd ..
 
       - name: 验证关键类
+        if: success()
         run: |
           jar tf 26.2-Permanent.jar | grep -E "Minecraft\.class$" || echo "⚠️ 未找到 Minecraft.class，可能类名不同。"
           echo "===== 列出前 20 个类 ====="
           jar tf 26.2-Permanent.jar | grep -E "\.class$" | head -20
 
       - name: 上传构建产物
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: 26.2-Permanent
@@ -199,6 +219,7 @@ jobs:
 
       # ===== 新增：上传版本 JSON 元数据 =====
       - name: 上传版本 JSON 元数据
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: MinecraftVersionJson
@@ -244,13 +265,15 @@ jobs:
   release:
     needs: build
     name: Release the Beta Version
+    # [FIX] 使用正确的输出变量（从 build 引用）
     if: needs.build.outputs.enable_nightly == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        # [FIX] 版本改为 v4
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
@@ -309,8 +332,9 @@ jobs:
           echo "### 🏷️ Release 信息" >> $GITHUB_STEP_SUMMARY
           echo "- **标签**: nightly" >> $GITHUB_STEP_SUMMARY
           echo "- **名称**: 🛠 每日构建 Nightly Release" >> $GITHUB_STEP_SUMMARY
-          echo "- **构建版本**: ${{ needs.build-Minecraft.outputs.minecraft_version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Nightly 开关**: ${{ needs.build-Minecraft.outputs.enable_nightly }}" >> $GITHUB_STEP_SUMMARY
+          # [FIX] 正确引用 build 的输出
+          echo "- **构建版本**: ${{ needs.build.outputs.minecraft_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Nightly 开关**: ${{ needs.build.outputs.enable_nightly }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -f "artifacts/26.2-Permanent.jar" ]; then
             JAR_SIZE=$(du -h artifacts/26.2-Permanent.jar | cut -f1)
@@ -333,10 +357,13 @@ jobs:
 
       - name: Cleanup artifacts (only on success)
         uses: geekyeggo/delete-artifact@v5
+        if: success()
         with:
-          name: build-*
+          name: 26.2-*
+          
   # 同步 Wiki 的任务
   sync-wiki:
+    continue-on-error: true
     needs: build
     name: Upload Wiki File
     runs-on: ubuntu-latest
@@ -345,7 +372,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4  # 检出主仓库代码
 
-      - uses: Andrew-Chen-Wang/github-wiki-action@v4  # 同步到 Wiki
+      # [FIX] 增加 id 以便后续步骤判断状态
+      - id: wiki_sync
+        uses: Andrew-Chen-Wang/github-wiki-action@v4  # 同步到 Wiki
         with:
           path: MainProjectCatalogue/GithubWiki
 
@@ -357,7 +386,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
         
           echo "### ✅ 同步状态" >> $GITHUB_STEP_SUMMARY
-          if [ $? -eq 0 ]; then
+          # [FIX] 使用 steps.wiki_sync.outcome 判断实际执行结果
+          if [ "${{ steps.wiki_sync.outcome }}" == "success" ]; then
             echo "- **状态**: 成功 🎉" >> $GITHUB_STEP_SUMMARY
           else
             echo "- **状态**: 失败 ❌" >> $GITHUB_STEP_SUMMARY

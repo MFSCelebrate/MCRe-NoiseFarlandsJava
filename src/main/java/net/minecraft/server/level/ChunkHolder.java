@@ -151,13 +151,11 @@ public class ChunkHolder extends GenerationChunkHolder {
             return false;
         }
 
-        // MCRe NoiseFarlands: section Y Long 化
-        long minLightSection = this.lightEngine.getMinLightSection();
-        long maxLightSection = this.lightEngine.getMaxLightSection();
+        int minLightSection = this.lightEngine.getMinLightSection();
+        int maxLightSection = this.lightEngine.getMaxLightSection();
         if (chunkY >= minLightSection && chunkY <= maxLightSection) {
             BitSet filter = layer == LightLayer.SKY ? this.skyChangedLightSectionFilter : this.blockChangedLightSectionFilter;
-            // MCRe NoiseFarlands: BitSet 相对索引 int 域边界
-            int index = (int) (chunkY - minLightSection);
+            int index = chunkY - minLightSection;
             if (!filter.get(index)) {
                 filter.set(index);
                 return true;
@@ -197,8 +195,7 @@ public class ChunkHolder extends GenerationChunkHolder {
                     if (changedBlocks != null) {
                         this.changedBlocksPerSection[sectionIndex] = null;
                         if (!players.isEmpty()) {
-                            // MCRe NoiseFarlands: section Y Long 化
-        long sectionY = this.levelHeightAccessor.getSectionYFromSectionIndex(sectionIndex);
+                            int sectionY = this.levelHeightAccessor.getSectionYFromSectionIndex(sectionIndex);
                             SectionPos sectionPos = SectionPos.of(chunk.getPos(), sectionY);
                             if (changedBlocks.size() == 1) {
                                 BlockPos pos = sectionPos.relativeToBlockPos(changedBlocks.iterator().nextShort());

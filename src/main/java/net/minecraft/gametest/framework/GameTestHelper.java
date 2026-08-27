@@ -987,8 +987,7 @@ public class GameTestHelper {
         }
     }
 
-    // MCRe NoiseFarlands: 世界 Y Long 化
-    public long getHeight(final Heightmap.Types heightmap, final long x, final long z) {
+    public int getHeight(final Heightmap.Types heightmap, final int x, final int z) {
         BlockPos absolutePos = this.absolutePos(new BlockPos(x, 0, z));
         return this.relativePos(this.getLevel().getHeightmapPos(heightmap, absolutePos)).getY();
     }

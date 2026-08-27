@@ -32,7 +32,7 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
         final ChunkPos sourceChunkPos,
         final CarvingMask mask
     ) {
-        long maxDistance = SectionPos.sectionToBlockCoord(this.getRange() * 2 - 1);
+        int maxDistance = SectionPos.sectionToBlockCoord(this.getRange() * 2 - 1);
         int caveCount = random.nextInt(random.nextInt(random.nextInt(this.getCaveBound()) + 1) + 1);
 
         for (int cave = 0; cave < caveCount; cave++) {
@@ -55,8 +55,7 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
                 float horizontalRotation = random.nextFloat() * (float) (Math.PI * 2);
                 float verticalRotation = (random.nextFloat() - 0.5F) / 4.0F;
                 float thickness = this.getThickness(random);
-                // MCRe NoiseFarlands: 相对距离 int 域边界
-                int distance = (int) maxDistance - random.nextInt((int) maxDistance / 4);
+                int distance = maxDistance - random.nextInt(maxDistance / 4);
                 int initialStep = 0;
                 this.createTunnel(
                     context,

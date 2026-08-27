@@ -118,8 +118,8 @@ public class PointedDripstoneBlock extends SpeleothemBlock {
                                 BlockPos cauldronPos = findFillableCauldronBelowStalactiteTip(level, stalactiteTipPos, fluid);
                                 if (cauldronPos != null) {
                                     level.levelEvent(1504, stalactiteTipPos, 0);
-                                    long fallDistance = stalactiteTipPos.getY() - cauldronPos.getY();
-                                    int delay = 50 + (int) fallDistance;
+                                    int fallDistance = stalactiteTipPos.getY() - cauldronPos.getY();
+                                    int delay = 50 + fallDistance;
                                     BlockState cauldronState = level.getBlockState(cauldronPos);
                                     level.scheduleTick(cauldronPos, cauldronState.getBlock(), delay);
                                 }

@@ -130,8 +130,8 @@ public abstract class TargetGoal extends Goal {
             return false;
         }
 
-        long xx = last.x - target.getBlockX();
-        long zz = last.z - target.getBlockZ();
+        int xx = last.x - target.getBlockX();
+        int zz = last.z - target.getBlockZ();
         return xx * xx + zz * zz <= 2.25;
     }
 

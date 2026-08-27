@@ -189,8 +189,8 @@ public abstract class ChunkGenerator {
         }
 
         if (!randomSpreadEntries.isEmpty()) {
-            long chunkOriginX = SectionPos.blockToSectionCoord(pos.getX());
-            long chunkOriginZ = SectionPos.blockToSectionCoord(pos.getZ());
+            int chunkOriginX = SectionPos.blockToSectionCoord(pos.getX());
+            int chunkOriginZ = SectionPos.blockToSectionCoord(pos.getZ());
 
             for (int radius = 0; radius <= maxSearchRadius; radius++) {
                 boolean foundSomething = false;
@@ -268,8 +268,8 @@ public abstract class ChunkGenerator {
             final Set<Holder<Structure>> structures,
             final LevelReader level,
             final StructureManager structureManager,
-            final long chunkOriginX,
-            final long chunkOriginZ,
+            final int chunkOriginX,
+            final int chunkOriginZ,
             final int radius,
             final boolean createReference,
             final long seed,
@@ -282,8 +282,8 @@ public abstract class ChunkGenerator {
             for (int z = -radius; z <= radius; z++) {
                 boolean zEdge = z == -radius || z == radius;
                 if (xEdge || zEdge) {
-                    long sectorX = chunkOriginX + (long) spacing * x;
-                    long sectorZ = chunkOriginZ + (long) spacing * z;
+                    int sectorX = chunkOriginX + spacing * x;
+                    int sectorZ = chunkOriginZ + spacing * z;
                     ChunkPos chunkTarget = config.getPotentialStructureChunk(seed, sectorX, sectorZ);
                     Pair<BlockPos, Holder<Structure>> generating = getStructureGeneratingAt(
                     structures, level, structureManager, createReference, config, chunkTarget
@@ -524,7 +524,7 @@ public abstract class ChunkGenerator {
                                     }
                                 }
 
-                                if (featurePlacement.isStructureChunk(state, sourceChunkPos.x(), sourceChunkPos.z())) {
+                                if (featurePlacement.isStructureChunk(state, (int) sourceChunkPos.x(), (int) sourceChunkPos.z())) {
                                     if (structures.size() == 1) {
                                         this.tryGenerateStructure(
                                                 structures.get(0),
@@ -543,7 +543,7 @@ public abstract class ChunkGenerator {
                                                 StructureSet.StructureSelectionEntry> options = new ArrayList<>(structures.size());
                                         options.addAll(structures);
                                         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
-                                        random.setLargeFeatureSeed(state.getLevelSeed(), sourceChunkPos.x(), sourceChunkPos.z());
+                                        random.setLargeFeatureSeed(state.getLevelSeed(), (int) sourceChunkPos.x(), (int) sourceChunkPos.z());
                                         int total = 0;
 
                                         for (StructureSet.StructureSelectionEntry option : options) {
@@ -677,19 +677,16 @@ public abstract class ChunkGenerator {
 
     public abstract int getMinY();
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public abstract long getBaseHeight(long x, long z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState);
+    public abstract int getBaseHeight(int x, int z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState);
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public abstract NoiseColumn getBaseColumn(final long x, final long z, final LevelHeightAccessor heightAccessor, final RandomState randomState);
+    public abstract NoiseColumn getBaseColumn(final int x, final int z, final LevelHeightAccessor heightAccessor, final RandomState randomState);
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public long getFirstFreeHeight(final long x, final long z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    public int getFirstFreeHeight(final int x, final int z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         return this.getBaseHeight(x, z, type, heightAccessor, randomState);
     }
 
-    public long getFirstOccupiedHeight(
-        final long x, final long z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    public int getFirstOccupiedHeight(
+            final int x, final int z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         return this.getBaseHeight(x, z, type, heightAccessor, randomState) - 1;
     }
 

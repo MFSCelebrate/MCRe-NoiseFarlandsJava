@@ -121,9 +121,9 @@ public class BucketItem extends Item implements DispensibleContainerItem {
             }
 
             if (level.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, pos) && this.content.is(FluidTags.WATER)) {
-                long x = pos.getX();
-                long y = pos.getY();
-                long z = pos.getZ();
+                int x = pos.getX();
+                int y = pos.getY();
+                int z = pos.getZ();
                 RandomSource random = level.getRandom();
                 level.playSound(user, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.5F, 2.6F + (random.nextFloat() - random.nextFloat()) * 0.8F);
 

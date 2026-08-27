@@ -192,7 +192,7 @@ public record SerializableChunkData(
         return new SerializableChunkData(
             containerFactory,
             chunkPos,
-            (int) levelHeight.getMinSectionY(),
+            levelHeight.getMinSectionY(),
             lastUpdateTime,
             inhabitedTime,
             status,
@@ -342,8 +342,7 @@ public record SerializableChunkData(
         LevelChunkSection[] chunkSections = chunk.getSections();
         LevelLightEngine lightEngine = level.getChunkSource().getLightEngine();
 
-        // MCRe NoiseFarlands: section Y Long 化
-        for (long sectionY = lightEngine.getMinLightSection(); sectionY < lightEngine.getMaxLightSection(); sectionY++) {
+        for (int sectionY = lightEngine.getMinLightSection(); sectionY < lightEngine.getMaxLightSection(); sectionY++) {
             int sectionIndex = chunk.getSectionIndexFromSectionY(sectionY);
             boolean hasSection = sectionIndex >= 0 && sectionIndex < chunkSections.length;
             DataLayer sourceBlockLight = lightEngine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(pos, sectionY));
@@ -393,7 +392,7 @@ public record SerializableChunkData(
         return new SerializableChunkData(
             level.palettedContainerFactory(),
             pos,
-            (int) chunk.getMinSectionY(),
+            chunk.getMinSectionY(),
             level.getGameTime(),
             chunk.getInhabitedTime(),
             chunk.getPersistedStatus(),
@@ -414,7 +413,6 @@ public record SerializableChunkData(
 
     public CompoundTag write() {
         CompoundTag tag = NbtUtils.addCurrentDataVersion(new CompoundTag());
-        // MCRe NoiseFarlands: NBT 存档兼容边界——保持 IntTag 截断写法（Decision 4），读取端同步
         tag.putInt("xPos", (int)this.chunkPos.x());
         tag.putInt("yPos", this.minSectionY);
         tag.putInt("zPos", (int)this.chunkPos.z());
@@ -632,7 +630,6 @@ public record SerializableChunkData(
         }
     }
 
-    public // MCRe NoiseFarlands: section Y Long 化
-    record SectionData(long y, @Nullable LevelChunkSection chunkSection, @Nullable DataLayer blockLight, @Nullable DataLayer skyLight) {
+    public record SectionData(int y, @Nullable LevelChunkSection chunkSection, @Nullable DataLayer blockLight, @Nullable DataLayer skyLight) {
     }
 }

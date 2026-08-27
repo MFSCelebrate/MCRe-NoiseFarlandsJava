@@ -27,10 +27,9 @@ public class VillageSiege implements CustomSpawner {
     private VillageSiege.State siegeState = VillageSiege.State.SIEGE_DONE;
     private int zombiesToSpawn;
     private int nextSpawnTime;
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    private long spawnX;
-    private long spawnY;
-    private long spawnZ;
+    private int spawnX;
+    private int spawnY;
+    private int spawnZ;
 
     @Override
     public void tick(final ServerLevel level, final boolean spawnEnemies) {
@@ -115,9 +114,9 @@ public class VillageSiege implements CustomSpawner {
         RandomSource random = level.getRandom();
 
         for (int i = 0; i < 10; i++) {
-            long x = pos.getX() + random.nextInt(16) - 8;
-            long z = pos.getZ() + random.nextInt(16) - 8;
-            long y = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+            int x = pos.getX() + random.nextInt(16) - 8;
+            int z = pos.getZ() + random.nextInt(16) - 8;
+            int y = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
             BlockPos offset = new BlockPos(x, y, z);
             if (level.isVillage(offset) && Monster.checkMonsterSpawnRules(EntityTypes.ZOMBIE, level, EntitySpawnReason.EVENT, offset, random)) {
                 return Vec3.atBottomCenterOf(offset);

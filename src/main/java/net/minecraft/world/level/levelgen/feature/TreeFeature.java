@@ -67,8 +67,8 @@ public class TreeFeature extends Feature<TreeConfiguration> {
         int trunkHeight = treeHeight - foliageHeight;
         int leafRadius = config.foliagePlacer.foliageRadius(random, trunkHeight);
         BlockPos trunkOrigin = config.rootPlacer.<BlockPos>map(rootPlacer -> rootPlacer.getTrunkOrigin(origin, random)).orElse(origin);
-        long minY = Math.min(origin.getY(), trunkOrigin.getY());
-        long maxY = Math.max(origin.getY(), trunkOrigin.getY()) + treeHeight + 1;
+        int minY = Math.min(origin.getY(), trunkOrigin.getY());
+        int maxY = Math.max(origin.getY(), trunkOrigin.getY()) + treeHeight + 1;
         if (minY >= level.getMinY() + 1 && maxY <= level.getMaxY() + 1) {
             OptionalInt minClippedHeight = config.minimumSize.minClippedHeight();
             int clippedTreeHeight = this.getMaxFreeTreeHeight(level, treeHeight, trunkOrigin, config);
@@ -180,8 +180,7 @@ public class TreeFeature extends Feature<TreeConfiguration> {
 
         for (BlockPos pos : Lists.newArrayList(Sets.union(decorationSet, rootPositions))) {
             if (bounds.isInside(pos)) {
-                // MCRe NoiseFarlands: shape 为 int 域网格，树冠 ≤48³ 边界安全
-                shape.fill((int) (pos.getX() - bounds.minX()), (int) (pos.getY() - bounds.minY()), (int) (pos.getZ() - bounds.minZ()));
+                shape.fill(pos.getX() - bounds.minX(), pos.getY() - bounds.minY(), pos.getZ() - bounds.minZ());
             }
         }
 
@@ -204,17 +203,15 @@ public class TreeFeature extends Feature<TreeConfiguration> {
                         setBlockKnownShape(level, pos, state.setValue(BlockStateProperties.DISTANCE, smallestDistance));
                     }
 
-                    // MCRe NoiseFarlands: shape 为 int 域网格，树冠 ≤48³ 边界安全
-                shape.fill((int) (pos.getX() - bounds.minX()), (int) (pos.getY() - bounds.minY()), (int) (pos.getZ() - bounds.minZ()));
+                    shape.fill(pos.getX() - bounds.minX(), pos.getY() - bounds.minY(), pos.getZ() - bounds.minZ());
 
                     for (Direction direction : Direction.values()) {
                         neighborPos.setWithOffset(pos, direction);
                         if (bounds.isInside(neighborPos)) {
-                            long xInShape = neighborPos.getX() - bounds.minX();
-                            long yInShape = neighborPos.getY() - bounds.minY();
-                            long zinShape = neighborPos.getZ() - bounds.minZ();
-                            // MCRe NoiseFarlands: shape int 域边界
-                            if (!shape.isFull((int) xInShape, (int) yInShape, (int) zinShape)) {
+                            int xInShape = neighborPos.getX() - bounds.minX();
+                            int yInShape = neighborPos.getY() - bounds.minY();
+                            int zinShape = neighborPos.getZ() - bounds.minZ();
+                            if (!shape.isFull(xInShape, yInShape, zinShape)) {
                                 BlockState currentState = level.getBlockState(neighborPos);
                                 OptionalInt distance = LeavesBlock.getOptionalDistanceAt(currentState);
                                 if (!distance.isEmpty()) {

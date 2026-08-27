@@ -115,14 +115,12 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
     }
 
     @Override
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public long getBaseHeight(final long x, final long z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    public int getBaseHeight(final int x, final int z, final Heightmap.Types type, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         return this.iterateNoiseColumn(heightAccessor, randomState, x, z, null, type.isOpaque()).orElse(heightAccessor.getMinY());
     }
 
     @Override
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public NoiseColumn getBaseColumn(final long x, final long z, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
+    public NoiseColumn getBaseColumn(final int x, final int z, final LevelHeightAccessor heightAccessor, final RandomState randomState) {
         MutableObject<NoiseColumn> result = new MutableObject<>();
         this.iterateNoiseColumn(heightAccessor, randomState, x, z, result, null);
         return result.get();
@@ -134,10 +132,9 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         int cellWidth = noiseSettings.getCellWidth();
         int cellHeight = noiseSettings.getCellHeight();
         int minY = noiseSettings.minY();
-        // MCRe NoiseFarlands: 世界坐标 Long 化
-        long blockX = context.blockX();
-        long blockY = context.blockY();
-        long blockZ = context.blockZ();
+        int blockX = context.blockX();
+        int blockY = context.blockY();
+        int blockZ = context.blockZ();
         if (blockY >= minY && blockY < minY + noiseSettings.height()) {
             NoiseChunk noiseChunk = new NoiseChunk(
                 1,
@@ -152,8 +149,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
             );
             noiseChunk.initializeForFirstCellX();
             noiseChunk.advanceCellX(0);
-            // MCRe NoiseFarlands: selectCellYZ 为 cell 相对域 int 边界
-            noiseChunk.selectCellYZ((int) Math.floorDiv(blockY - minY, cellHeight), 0);
+            noiseChunk.selectCellYZ(Math.floorDiv(blockY - minY, cellHeight), 0);
             noiseChunk.updateForY(blockY, (double)Math.floorMod(blockY - minY, cellHeight) / cellHeight);
             noiseChunk.updateForX(blockX, (double)Math.floorMod(blockX, cellWidth) / cellWidth);
             noiseChunk.updateForZ(blockZ, (double)Math.floorMod(blockZ, cellWidth) / cellWidth);
@@ -191,12 +187,11 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         );
     }
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
     private OptionalInt iterateNoiseColumn(
         final LevelHeightAccessor heightAccessor,
         final RandomState randomState,
-        final long blockX,
-        final long blockZ,
+        final int blockX,
+        final int blockZ,
         final @Nullable MutableObject<NoiseColumn> columnReference,
         final @Nullable Predicate<BlockState> tester
     ) {
@@ -218,13 +213,12 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         }
 
         int cellWidth = noiseSettings.getCellWidth();
-        // MCRe NoiseFarlands: cell 网格坐标世界域 Long 化；inCell 相对域 int 边界
-        long noiseChunkX = Math.floorDiv(blockX, cellWidth);
-        long noiseChunkZ = Math.floorDiv(blockZ, cellWidth);
-        int xInCell = (int) Math.floorMod(blockX, cellWidth);
-        int zInCell = (int) Math.floorMod(blockZ, cellWidth);
-        long firstBlockX = noiseChunkX * cellWidth;
-        long firstBlockZ = noiseChunkZ * cellWidth;
+        int noiseChunkX = Math.floorDiv(blockX, cellWidth);
+        int noiseChunkZ = Math.floorDiv(blockZ, cellWidth);
+        int xInCell = Math.floorMod(blockX, cellWidth);
+        int zInCell = Math.floorMod(blockZ, cellWidth);
+        int firstBlockX = noiseChunkX * cellWidth;
+        int firstBlockZ = noiseChunkZ * cellWidth;
         double factorX = (double)xInCell / cellWidth;
         double factorZ = (double)zInCell / cellWidth;
         NoiseChunk noiseChunk = new NoiseChunk(
@@ -346,7 +340,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
 
                     for (Holder<ConfiguredWorldCarver<?>> carverHolder : carvers) {
                         ConfiguredWorldCarver<?> carver = carverHolder.value();
-                        random.setLargeFeatureSeed(seed + index, sourcePos.x(), sourcePos.z());
+                        random.setLargeFeatureSeed(seed + index, (int)sourcePos.x(), (int)sourcePos.z());
                         if (carver.isStartChunk(random)) {
                             carver.carve(context, chunk, correctBiomeManager::getBiome, random, aquifer, sourcePos, mask);
                         }
@@ -503,7 +497,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
             ChunkPos center = worldGenRegion.getCenter();
             Holder<Biome> biome = worldGenRegion.getBiome(center.getWorldPosition().atY(worldGenRegion.getMaxY()));
             WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(RandomSupport.generateUniqueSeed()));
-            random.setDecorationSeed(worldGenRegion.getSeed(), center.getMinBlockX(), center.getMinBlockZ());
+            random.setDecorationSeed(worldGenRegion.getSeed(), (int)center.getMinBlockX(), (int)center.getMinBlockZ());
             NaturalSpawner.spawnMobsForChunkGeneration(worldGenRegion, biome, center, random);
         }
     }

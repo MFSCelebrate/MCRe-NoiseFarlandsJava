@@ -92,8 +92,7 @@ public class AmphibiousNodeEvaluator extends WalkNodeEvaluator {
     }
 
     @Override
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public PathType getPathType(final PathfindingContext context, final long x, final long y, final long z) {
+    public PathType getPathType(final PathfindingContext context, final int x, final int y, final int z) {
         PathType blockPathType = context.getPathTypeFromState(x, y, z);
         if (blockPathType == PathType.WATER) {
             BlockPos.MutableBlockPos reusablePos = new BlockPos.MutableBlockPos();

@@ -80,16 +80,15 @@ public class WeatherEffectRenderer implements AutoCloseable {
                 long xEnd = (long) cameraBlockX + renderState.radius;
                 for (long xL = xStart; xL <= xEnd; xL++) {
                     int x = (int) xL;
-                    long terrainHeight = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
-                    // MCRe NoiseFarlands: 世界 Y Long 化
-                    long y0 = Math.max(cameraBlockY - renderState.radius, terrainHeight);
-                    long y1 = Math.max(cameraBlockY + renderState.radius, terrainHeight);
+                    int terrainHeight = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
+                    int y0 = Math.max(cameraBlockY - renderState.radius, terrainHeight);
+                    int y1 = Math.max(cameraBlockY + renderState.radius, terrainHeight);
                     if (y1 - y0 != 0) {
                         Biome.Precipitation precipitation = level.getPrecipitationAt(mutablePos.set(x, cameraBlockY, z));
                         if (precipitation != Biome.Precipitation.NONE) {
                             int seed = x * x * 3121 + x * 45238971 ^ z * z * 418711 + z * 13761;
                             random.setSeed(seed);
-                            long lightSampleY = Math.max(cameraBlockY, terrainHeight);
+                            int lightSampleY = Math.max(cameraBlockY, terrainHeight);
                             int lightCoords = LightCoordsUtil.getLightCoords(level, mutablePos.set(x, lightSampleY, z));
                             if (precipitation == Biome.Precipitation.RAIN) {
                                 renderState.rainColumns
@@ -172,33 +171,30 @@ public class WeatherEffectRenderer implements AutoCloseable {
         }
     }
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
     private WeatherEffectRenderer.ColumnInstance createRainColumnInstance(
             final RandomSource random,
             final long ticks,
-            final long x,
-            final long bottomY,
-            final long topY,
-            final long z,
+            final int x,
+            final int bottomY,
+            final int topY,
+            final int z,
             final int lightCoords,
             final float partialTicks) {
         int wrappedTicks = (int) (ticks & 131071L);
-        // MCRe NoiseFarlands: hash 结果 int 域边界
-        int tickOffset = (int) (x * x * 3121 + x * 45238971 + z * z * 418711 + z * 13761 & 0xFF);
+        int tickOffset = x * x * 3121 + x * 45238971 + z * z * 418711 + z * 13761 & 0xFF;
         float blockPosRainSpeed = 3.0F + random.nextFloat();
         float textureOffset = -(wrappedTicks + tickOffset + partialTicks) / 32.0F * blockPosRainSpeed;
         float wrappedTextureOffset = textureOffset % 32.0F;
-        // MCRe NoiseFarlands: 世界坐标 Long 化
-        return new WeatherEffectRenderer.ColumnInstance((int) x, (int) z, (int) bottomY, (int) topY, 0.0F, wrappedTextureOffset, lightCoords);
+        return new WeatherEffectRenderer.ColumnInstance(x, z, bottomY, topY, 0.0F, wrappedTextureOffset, lightCoords);
     }
 
     private WeatherEffectRenderer.ColumnInstance createSnowColumnInstance(
             final RandomSource random,
             final long ticks,
-            final long x,
-            final long bottomY,
-            final long topY,
-            final long z,
+            final int x,
+            final int bottomY,
+            final int topY,
+            final int z,
             final int lightCoords,
             final float partialTicks) {
         int wrappedTicks = (int) (ticks & 131071L);
@@ -207,8 +203,7 @@ public class WeatherEffectRenderer implements AutoCloseable {
         float v = (float) (random.nextDouble() + time * (float) random.nextGaussian() * 0.001F);
         float vOffset = -((float) (ticks & 511L) + partialTicks) / 512.0F;
         int brightenedLightCoords = LightCoordsUtil.pack((LightCoordsUtil.block(lightCoords) * 3 + 15) / 4, (LightCoordsUtil.sky(lightCoords) * 3 + 15) / 4);
-        // MCRe NoiseFarlands: 世界坐标 Long 化
-        return new WeatherEffectRenderer.ColumnInstance((int) x, (int) z, (int) bottomY, (int) topY, u, vOffset + v, brightenedLightCoords);
+        return new WeatherEffectRenderer.ColumnInstance(x, z, bottomY, topY, u, vOffset + v, brightenedLightCoords);
     }
 
     private void renderInstances(

@@ -162,8 +162,8 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
     @Override
     public void tick() {
         if (this.level() instanceof ServerLevel serverLevel) {
-            long var7 = SectionPos.posToSectionCoord(this.position().x());
-            long previousChunkZ = SectionPos.posToSectionCoord(this.position().z());
+            int var7 = SectionPos.blockToSectionCoord(this.position().x());
+            int previousChunkZ = SectionPos.blockToSectionCoord(this.position().z());
             Entity owner = this.owner != null ? findOwnerIncludingDeadPlayer(serverLevel, this.owner.getUUID()) : null;
             if (owner instanceof ServerPlayer serverPlayer
                 && !owner.isAlive()

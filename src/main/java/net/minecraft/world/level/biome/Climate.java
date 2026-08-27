@@ -488,10 +488,10 @@ public class Climate {
         DensityFunction weirdness,
         List<Climate.ParameterPoint> spawnTarget
     ) {
-        public Climate.TargetPoint sample(final long quartX, final long quartY, final long quartZ) {
-            long blockX = QuartPos.toBlock(quartX);
-            long blockY = QuartPos.toBlock(quartY);
-            long blockZ = QuartPos.toBlock(quartZ);
+        public Climate.TargetPoint sample(final int quartX, final int quartY, final int quartZ) {
+            int blockX = QuartPos.toBlock(quartX);
+            int blockY = QuartPos.toBlock(quartY);
+            int blockZ = QuartPos.toBlock(quartZ);
             DensityFunction.SinglePointContext context = new DensityFunction.SinglePointContext(blockX, blockY, blockZ);
             return Climate.target(
                 (float)this.temperature.compute(context),
@@ -526,8 +526,8 @@ public class Climate {
             BlockPos searchOrigin = this.result.location();
 
             while (radius <= maxRadius) {
-                long x = searchOrigin.getX() + (int)(Math.sin(angle) * radius);
-                long z = searchOrigin.getZ() + (int)(Math.cos(angle) * radius);
+                int x = searchOrigin.getX() + (int)(Math.sin(angle) * radius);
+                int z = searchOrigin.getZ() + (int)(Math.cos(angle) * radius);
                 Climate.SpawnFinder.Result candidate = getSpawnPositionAndFitness(targetClimates, sampler, x, z);
                 if (candidate.fitness() < this.result.fitness()) {
                     this.result = candidate;
@@ -542,7 +542,7 @@ public class Climate {
         }
 
         private static Climate.SpawnFinder.Result getSpawnPositionAndFitness(
-            final List<Climate.ParameterPoint> targetClimates, final Climate.Sampler sampler, final long blockX, final long blockZ
+            final List<Climate.ParameterPoint> targetClimates, final Climate.Sampler sampler, final int blockX, final int blockZ
         ) {
             Climate.TargetPoint targetPoint = sampler.sample(QuartPos.fromBlock(blockX), 0, QuartPos.fromBlock(blockZ));
             Climate.TargetPoint zeroDepthTargetPoint = new Climate.TargetPoint(

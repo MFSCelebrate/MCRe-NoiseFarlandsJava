@@ -61,7 +61,7 @@ public class LegacyRandomSource implements BitRandomSource {
         }
 
         @Override
-        public RandomSource at(final long x, final long y, final long z) {
+        public RandomSource at(final int x, final int y, final int z) {
             long positionalSeed = Mth.getSeed(x, y, z);
             long randomSeed = positionalSeed ^ this.seed;
             return new LegacyRandomSource(randomSeed);

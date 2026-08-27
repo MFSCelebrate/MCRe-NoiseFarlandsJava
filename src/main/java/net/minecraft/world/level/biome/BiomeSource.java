@@ -41,25 +41,24 @@ public abstract class BiomeSource implements BiomeResolver {
         return this.possibleBiomes.get();
     }
 
-    public Set<Holder<Biome>> getBiomesWithin(final long x, final long y, final long z, final int r, final Climate.Sampler sampler) {
-        long x0 = QuartPos.fromBlock(x - r);
-        long y0 = QuartPos.fromBlock(y - r);
-        long z0 = QuartPos.fromBlock(z - r);
-        long x1 = QuartPos.fromBlock(x + r);
-        long y1 = QuartPos.fromBlock(y + r);
-        long z1 = QuartPos.fromBlock(z + r);
-        // MCRe NoiseFarlands: w/d/h 为采样网格尺寸（r 半径量级），int 域边界
-        int w = (int) (x1 - x0 + 1);
-        int d = (int) (y1 - y0 + 1);
-        int h = (int) (z1 - z0 + 1);
+    public Set<Holder<Biome>> getBiomesWithin(final int x, final int y, final int z, final int r, final Climate.Sampler sampler) {
+        int x0 = QuartPos.fromBlock(x - r);
+        int y0 = QuartPos.fromBlock(y - r);
+        int z0 = QuartPos.fromBlock(z - r);
+        int x1 = QuartPos.fromBlock(x + r);
+        int y1 = QuartPos.fromBlock(y + r);
+        int z1 = QuartPos.fromBlock(z + r);
+        int w = x1 - x0 + 1;
+        int d = y1 - y0 + 1;
+        int h = z1 - z0 + 1;
         Set<Holder<Biome>> biomeSet = Sets.newHashSet();
 
         for (int row = 0; row < h; row++) {
             for (int column = 0; column < w; column++) {
                 for (int depth = 0; depth < d; depth++) {
-                    long noiseX = x0 + column;
-                    long noiseY = y0 + depth;
-                    long noiseZ = z0 + row;
+                    int noiseX = x0 + column;
+                    int noiseY = y0 + depth;
+                    int noiseZ = z0 + row;
                     biomeSet.add(this.getNoiseBiome(noiseX, noiseY, noiseZ, sampler));
                 }
             }
@@ -68,11 +67,10 @@ public abstract class BiomeSource implements BiomeResolver {
         return biomeSet;
     }
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
     public @Nullable Pair<BlockPos, Holder<Biome>> findBiomeHorizontal(
-        final long x,
-        final long y,
-        final long z,
+        final int x,
+        final int y,
+        final int z,
         final int searchRadius,
         final Predicate<Holder<Biome>> allowed,
         final RandomSource random,
@@ -96,17 +94,16 @@ public abstract class BiomeSource implements BiomeResolver {
         }
 
         int sampleRadius = Math.floorDiv(searchRadius, sampleResolutionHorizontal);
-        // MCRe NoiseFarlands: Y 为高度配置域（int），入口边界强转
-        int[] sampleYs = Mth.outFromOrigin((int) origin.getY(), level.getMinY() + 1, level.getMaxY() + 1, sampleResolutionVertical).toArray();
+        int[] sampleYs = Mth.outFromOrigin(origin.getY(), level.getMinY() + 1, level.getMaxY() + 1, sampleResolutionVertical).toArray();
 
         for (BlockPos.MutableBlockPos sampleColumn : BlockPos.spiralAround(BlockPos.ZERO, sampleRadius, Direction.EAST, Direction.SOUTH)) {
-            long blockX = origin.getX() + (long) sampleColumn.getX() * sampleResolutionHorizontal;
-            long blockZ = origin.getZ() + (long) sampleColumn.getZ() * sampleResolutionHorizontal;
-            long noiseX = QuartPos.fromBlock(blockX);
-            long noiseZ = QuartPos.fromBlock(blockZ);
+            int blockX = origin.getX() + sampleColumn.getX() * sampleResolutionHorizontal;
+            int blockZ = origin.getZ() + sampleColumn.getZ() * sampleResolutionHorizontal;
+            int noiseX = QuartPos.fromBlock(blockX);
+            int noiseZ = QuartPos.fromBlock(blockZ);
 
             for (int blockY : sampleYs) {
-                long noiseY = QuartPos.fromBlock(blockY);
+                int noiseY = QuartPos.fromBlock(blockY);
                 Holder<Biome> biome = this.getNoiseBiome(noiseX, noiseY, noiseZ, sampler);
                 if (candidateBiomes.contains(biome)) {
                     return Pair.of(new BlockPos(blockX, blockY, blockZ), biome);
@@ -118,9 +115,9 @@ public abstract class BiomeSource implements BiomeResolver {
     }
 
     public @Nullable Pair<BlockPos, Holder<Biome>> findBiomeHorizontal(
-        final long originX,
-        final long originY,
-        final long originZ,
+        final int originX,
+        final int originY,
+        final int originZ,
         final int searchRadius,
         final int skipSteps,
         final Predicate<Holder<Biome>> allowed,
@@ -128,10 +125,10 @@ public abstract class BiomeSource implements BiomeResolver {
         final boolean findClosest,
         final Climate.Sampler sampler
     ) {
-        long noiseCenterX = QuartPos.fromBlock(originX);
-        long noiseCenterZ = QuartPos.fromBlock(originZ);
-        int noiseRadius = (int) QuartPos.fromBlock(searchRadius);
-        long noiseY = QuartPos.fromBlock(originY);
+        int noiseCenterX = QuartPos.fromBlock(originX);
+        int noiseCenterZ = QuartPos.fromBlock(originZ);
+        int noiseRadius = QuartPos.fromBlock(searchRadius);
+        int noiseY = QuartPos.fromBlock(originY);
         Pair<BlockPos, Holder<Biome>> result = null;
         int found = 0;
         int startRadius = findClosest ? 0 : noiseRadius;
@@ -152,8 +149,8 @@ public abstract class BiomeSource implements BiomeResolver {
                         }
                     }
 
-                    long noiseX = noiseCenterX + x;
-                    long noiseZ = noiseCenterZ + z;
+                    int noiseX = noiseCenterX + x;
+                    int noiseZ = noiseCenterZ + z;
                     Holder<Biome> biome = this.getNoiseBiome(noiseX, noiseY, noiseZ, sampler);
                     if (allowed.test(biome)) {
                         if (result == null || random.nextInt(found + 1) == 0) {
@@ -177,7 +174,7 @@ public abstract class BiomeSource implements BiomeResolver {
     }
 
     @Override
-    public abstract Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ, final Climate.Sampler sampler);
+    public abstract Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ, final Climate.Sampler sampler);
 
     public void addDebugInfo(final List<String> result, final BlockPos feetPos, final Climate.Sampler sampler) {
     }

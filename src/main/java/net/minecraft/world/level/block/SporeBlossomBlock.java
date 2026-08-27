@@ -54,9 +54,9 @@ public class SporeBlossomBlock extends Block {
 
     @Override
     public void animateTick(final BlockState state, final Level level, final BlockPos pos, final RandomSource random) {
-        long plantX = pos.getX();
-        long plantY = pos.getY();
-        long plantZ = pos.getZ();
+        int plantX = pos.getX();
+        int plantY = pos.getY();
+        int plantZ = pos.getZ();
         double xFalling = plantX + random.nextDouble();
         double yFalling = plantY + 0.7;
         double zFalling = plantZ + random.nextDouble();

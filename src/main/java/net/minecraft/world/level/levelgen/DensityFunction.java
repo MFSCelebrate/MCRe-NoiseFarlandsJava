@@ -88,13 +88,12 @@ public interface DensityFunction {
         void fillAllDirectly(double[] output, DensityFunction function);
     }
 
-    // MCRe NoiseFarlands: 采样上下文世界坐标 Long 化
     interface FunctionContext {
-        long blockX();
+        int blockX();
 
-        long blockY();
+        int blockY();
 
-        long blockZ();
+        int blockZ();
     }
 
     record NoiseHolder(Holder<NormalNoise.NoiseParameters> noiseData, @Nullable NormalNoise noise) {
@@ -126,7 +125,7 @@ public interface DensityFunction {
         }
     }
 
-    record SinglePointContext(long blockX, long blockY, long blockZ) implements DensityFunction.FunctionContext {
+    record SinglePointContext(int blockX, int blockY, int blockZ) implements DensityFunction.FunctionContext {
     }
 
     interface Visitor {

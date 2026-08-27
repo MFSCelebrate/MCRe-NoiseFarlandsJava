@@ -355,7 +355,7 @@ public class OceanRuinPieces {
             final ChunkPos chunkPos,
             final BlockPos referencePos
         ) {
-            long height = level.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, this.templatePosition.getX(), this.templatePosition.getZ());
+            int height = level.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, this.templatePosition.getX(), this.templatePosition.getZ());
             this.templatePosition = new BlockPos(this.templatePosition.getX(), height, this.templatePosition.getZ());
             BlockPos corner = StructureTemplate.transform(
                     new BlockPos(this.template.getSize().getX() - 1, 0, this.template.getSize().getZ() - 1),
@@ -370,17 +370,16 @@ public class OceanRuinPieces {
             super.postProcess(level, structureManager, generator, random, chunkBB, chunkPos, referencePos);
         }
 
-        // MCRe NoiseFarlands: 海底高度探测为世界 Y，Long 化
-        private long getHeight(final BlockPos pos, final BlockGetter level, final BlockPos corner) {
-            long newY = pos.getY();
-            long minY = 512;
-            long topY = newY - 1;
+        private int getHeight(final BlockPos pos, final BlockGetter level, final BlockPos corner) {
+            int newY = pos.getY();
+            int minY = 512;
+            int topY = newY - 1;
             int area = 0;
 
             for (BlockPos p : BlockPos.betweenClosed(pos, corner)) {
-                long x = p.getX();
-                long z = p.getZ();
-                long floorY = pos.getY() - 1;
+                int x = p.getX();
+                int z = p.getZ();
+                int floorY = pos.getY() - 1;
                 BlockPos.MutableBlockPos tempPos = new BlockPos.MutableBlockPos(x, floorY, z);
                 BlockState tempState = level.getBlockState(tempPos);
 
@@ -398,7 +397,7 @@ public class OceanRuinPieces {
                 }
             }
 
-            long width = Math.abs(pos.getX() - corner.getX());
+            int width = Math.abs(pos.getX() - corner.getX());
             if (topY - minY > 2 && area > width - 2) {
                 newY = minY + 1;
             }

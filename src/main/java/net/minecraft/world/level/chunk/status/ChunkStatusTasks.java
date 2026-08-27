@@ -182,7 +182,6 @@ public class ChunkStatusTasks {
         final WorldGenContext context, final ChunkStep step, final StaticCache2D<GenerationChunkHolder> chunks, final ChunkAccess chunk
     ) {
         ChunkPos pos = chunk.getPos();
-        // MCRe NoiseFarlands: StaticCache2D.get 尚为 int 域（WorldGenRegion 模块待 Long 化），一次性边界强转
         GenerationChunkHolder holder = chunks.get((int)pos.x(), (int)pos.z());
         return CompletableFuture.supplyAsync(() -> {
             ProtoChunk protoChunk = (ProtoChunk)chunk;

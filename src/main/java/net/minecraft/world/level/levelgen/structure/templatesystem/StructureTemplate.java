@@ -159,10 +159,9 @@ public class StructureTemplate {
         final List<StructureTemplate.StructureBlockInfo> blockEntitiesList,
         final List<StructureTemplate.StructureBlockInfo> otherBlocksList
     ) {
-        // MCRe NoiseFarlands: Vec3i 坐标已 Long 化，comparingLong
-        Comparator<StructureTemplate.StructureBlockInfo> comparator = Comparator.<StructureTemplate.StructureBlockInfo>comparingLong(o -> o.pos.getY())
-            .thenComparingLong(o -> o.pos.getX())
-            .thenComparingLong(o -> o.pos.getZ());
+        Comparator<StructureTemplate.StructureBlockInfo> comparator = Comparator.<StructureTemplate.StructureBlockInfo>comparingInt(o -> o.pos.getY())
+            .thenComparingInt(o -> o.pos.getX())
+            .thenComparingInt(o -> o.pos.getZ());
         fullBlockList.sort(comparator);
         otherBlocksList.sort(comparator);
         blockEntitiesList.sort(comparator);
@@ -271,12 +270,12 @@ public class StructureTemplate {
             List<BlockPos> toFill = Lists.newArrayListWithCapacity(settings.shouldApplyWaterlogging() ? blockInfoList.size() : 0);
             List<BlockPos> lockedFluids = Lists.newArrayListWithCapacity(settings.shouldApplyWaterlogging() ? blockInfoList.size() : 0);
             List<Pair<BlockPos, CompoundTag>> placed = Lists.newArrayListWithCapacity(blockInfoList.size());
-            long minX = Long.MAX_VALUE;
-            long minY = Long.MAX_VALUE;
-            long minZ = Long.MAX_VALUE;
-            long maxX = Long.MIN_VALUE;
-            long maxY = Long.MIN_VALUE;
-            long maxZ = Long.MIN_VALUE;
+            int minX = Integer.MAX_VALUE;
+            int minY = Integer.MAX_VALUE;
+            int minZ = Integer.MAX_VALUE;
+            int maxX = Integer.MIN_VALUE;
+            int maxY = Integer.MIN_VALUE;
+            int maxZ = Integer.MIN_VALUE;
             List<StructureTemplate.StructureBlockInfo> processedBlockInfoList = processBlockInfos(level, position, referencePos, settings, blockInfoList);
 
             try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(LOGGER)) {
@@ -356,16 +355,14 @@ public class StructureTemplate {
 
                 if (minX <= maxX) {
                     if (!settings.getKnownShape()) {
-                        // MCRe NoiseFarlands: shape 为 int 域网格，尺寸为结构大小量级，一次性边界强转
-                        DiscreteVoxelShape shape = new BitSetDiscreteVoxelShape((int) (maxX - minX + 1), (int) (maxY - minY + 1), (int) (maxZ - minZ + 1));
-                        long startX = minX;
-                        long startY = minY;
-                        long startZ = minZ;
+                        DiscreteVoxelShape shape = new BitSetDiscreteVoxelShape(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
+                        int startX = minX;
+                        int startY = minY;
+                        int startZ = minZ;
 
                         for (Pair<BlockPos, CompoundTag> blockInfo : placed) {
                             BlockPos blockPos = blockInfo.getFirst();
-                            // 相对 shape 原点的偏移，int 域边界
-                            shape.fill((int) (blockPos.getX() - startX), (int) (blockPos.getY() - startY), (int) (blockPos.getZ() - startZ));
+                            shape.fill(blockPos.getX() - startX, blockPos.getY() - startY, blockPos.getZ() - startZ);
                         }
 
                         updateShapeAtEdge(level, updateMode, shape, startX, startY, startZ);
@@ -420,9 +417,9 @@ public class StructureTemplate {
         final LevelAccessor level,
         final @Block.UpdateFlags int updateMode,
         final DiscreteVoxelShape shape,
-        final long startX,
-        final long startY,
-        final long startZ
+        final int startX,
+        final int startY,
+        final int startZ
     ) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         BlockPos.MutableBlockPos neighborPos = new BlockPos.MutableBlockPos();
@@ -545,9 +542,9 @@ public class StructureTemplate {
     }
 
     public static BlockPos transform(final BlockPos pos, final Mirror mirror, final Rotation rotation, final BlockPos pivot) {
-        long x = pos.getX();
-        long y = pos.getY();
-        long z = pos.getZ();
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
         boolean wasMirrored = true;
         switch (mirror) {
             case LEFT_RIGHT:
@@ -560,8 +557,8 @@ public class StructureTemplate {
                 wasMirrored = false;
         }
 
-        long pivotX = pivot.getX();
-        long pivotZ = pivot.getZ();
+        int pivotX = pivot.getX();
+        int pivotZ = pivot.getZ();
 
         return switch (rotation) {
             case COUNTERCLOCKWISE_90 -> new BlockPos(pivotX - pivotZ + z, y, pivotX + pivotZ - x);
@@ -587,8 +584,8 @@ public class StructureTemplate {
                 wasMirrored = false;
         }
 
-        long pivotX = pivot.getX();
-        long pivotZ = pivot.getZ();
+        int pivotX = pivot.getX();
+        int pivotZ = pivot.getZ();
 
         return switch (rotation) {
             case COUNTERCLOCKWISE_90 -> new Vec3(pivotX - pivotZ + z, y, pivotX + pivotZ + 1 - x);
@@ -599,7 +596,7 @@ public class StructureTemplate {
     }
 
     public BlockPos getZeroPositionWithTransform(final BlockPos zeroPos, final Mirror mirror, final Rotation rotation) {
-        return getZeroPositionWithTransform(zeroPos, mirror, rotation, (int) this.getSize().getX(), (int) this.getSize().getZ());
+        return getZeroPositionWithTransform(zeroPos, mirror, rotation, this.getSize().getX(), this.getSize().getZ());
     }
 
     public static BlockPos getZeroPositionWithTransform(final BlockPos zeroPos, final Mirror mirror, final Rotation rotation, int sizeX, int sizeZ) {
@@ -651,7 +648,7 @@ public class StructureTemplate {
             for (int i = 0; i < mainPaletteBlocks.size(); i++) {
                 StructureTemplate.StructureBlockInfo blockInfo = mainPaletteBlocks.get(i);
                 CompoundTag blockTag = new CompoundTag();
-                blockTag.put("pos", this.newLongList(blockInfo.pos.getX(), blockInfo.pos.getY(), blockInfo.pos.getZ()));
+                blockTag.put("pos", this.newIntegerList(blockInfo.pos.getX(), blockInfo.pos.getY(), blockInfo.pos.getZ()));
                 int id = mainPalette.idFor(blockInfo.state);
                 blockTag.putInt("state", id);
                 if (blockInfo.nbt != null) {
@@ -697,7 +694,7 @@ public class StructureTemplate {
         for (StructureTemplate.StructureEntityInfo entityInfo : this.entityInfoList) {
             CompoundTag entityTag = new CompoundTag();
             entityTag.put("pos", this.newDoubleList(entityInfo.pos.x, entityInfo.pos.y, entityInfo.pos.z));
-            entityTag.put("blockPos", this.newLongList(entityInfo.blockPos.getX(), entityInfo.blockPos.getY(), entityInfo.blockPos.getZ()));
+            entityTag.put("blockPos", this.newIntegerList(entityInfo.blockPos.getX(), entityInfo.blockPos.getY(), entityInfo.blockPos.getZ()));
             if (entityInfo.nbt != null) {
                 entityTag.put("nbt", entityInfo.nbt);
             }
@@ -706,7 +703,7 @@ public class StructureTemplate {
         }
 
         tag.put("entities", entityList);
-        tag.put("size", this.newIntegerList((int) this.size.getX(), (int) this.size.getY(), (int) this.size.getZ()));
+        tag.put("size", this.newIntegerList(this.size.getX(), this.size.getY(), this.size.getZ()));
         return NbtUtils.addCurrentDataVersion(tag);
     }
 
@@ -761,22 +758,6 @@ public class StructureTemplate {
 
         for (int value : values) {
             res.add(IntTag.valueOf(value));
-        }
-
-        return res;
-    }
-
-    /**
-     * MCRe：原版用 {@code newIntegerList} 写 int 坐标，BlockPos long 化后签名不匹配。
-     * 本版加 long 版重载（NBT tag 仍用 IntTag 但每次 (int) 截断），保持 NBT 存档兼容性。
-     * 远距离（≥ 2^31）结构导出坐标会坍塌到 {@link Integer#MAX_VALUE}，但结构生成
-     * 通常在世界原点附近，不会触发该问题。
-     */
-    private ListTag newLongList(final long... values) {
-        ListTag res = new ListTag();
-
-        for (long value : values) {
-            res.add(IntTag.valueOf((int) value));
         }
 
         return res;

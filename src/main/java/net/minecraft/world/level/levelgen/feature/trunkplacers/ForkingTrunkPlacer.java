@@ -41,12 +41,12 @@ public class ForkingTrunkPlacer extends TrunkPlacer {
         int leanHeight = treeHeight - random.nextInt(4) - 1;
         int leanSteps = 3 - random.nextInt(3);
         BlockPos.MutableBlockPos logPos = new BlockPos.MutableBlockPos();
-        long tx = origin.getX();
-        long tz = origin.getZ();
+        int tx = origin.getX();
+        int tz = origin.getZ();
         OptionalInt ey = OptionalInt.empty();
 
         for (int yo = 0; yo < treeHeight; yo++) {
-            long yy = origin.getY() + yo;
+            int yy = origin.getY() + yo;
             if (yo >= leanHeight && leanSteps > 0) {
                 tx += leanDirection.getStepX();
                 tz += leanDirection.getStepZ();
@@ -54,8 +54,7 @@ public class ForkingTrunkPlacer extends TrunkPlacer {
             }
 
             if (this.placeLog(level, trunkSetter, random, logPos.set(tx, yy, tz), config)) {
-                // MCRe NoiseFarlands: 高度域(int) 边界
-                    ey = OptionalInt.of((int) (yy + 1));
+                ey = OptionalInt.of(yy + 1);
             }
         }
 
@@ -73,12 +72,11 @@ public class ForkingTrunkPlacer extends TrunkPlacer {
 
             for (int yo = branchPos; yo < treeHeight && branchSteps > 0; branchSteps--) {
                 if (yo >= 1) {
-                    long yy = origin.getY() + yo;
+                    int yy = origin.getY() + yo;
                     tx += branchDirection.getStepX();
                     tz += branchDirection.getStepZ();
                     if (this.placeLog(level, trunkSetter, random, logPos.set(tx, yy, tz), config)) {
-                        // MCRe NoiseFarlands: 高度域(int) 边界
-                    ey = OptionalInt.of((int) (yy + 1));
+                        ey = OptionalInt.of(yy + 1);
                     }
                 }
 

@@ -92,33 +92,31 @@ public class ProtoChunk extends ChunkAccess {
 
     @Override
     public BlockState getBlockState(final BlockPos pos) {
-        long y = pos.getY();
+        int y = pos.getY();
         if (this.isOutsideBuildHeight(y)) {
             return Blocks.VOID_AIR.defaultBlockState();
         }
 
         LevelChunkSection section = this.getSection(this.getSectionIndex(y));
-        // MCRe NoiseFarlands: LevelChunkSection 只支持 int，0-15 局部坐标一次性边界强转
-        return section.hasOnlyAir() ? Blocks.AIR.defaultBlockState() : section.getBlockState((int) (pos.getX() & 15), (int) (y & 15), (int) (pos.getZ() & 15));
+        return section.hasOnlyAir() ? Blocks.AIR.defaultBlockState() : section.getBlockState(pos.getX() & 15, y & 15, pos.getZ() & 15);
     }
 
     @Override
     public FluidState getFluidState(final BlockPos pos) {
-        long y = pos.getY();
+        int y = pos.getY();
         if (this.isOutsideBuildHeight(y)) {
             return Fluids.EMPTY.defaultFluidState();
         }
 
         LevelChunkSection section = this.getSection(this.getSectionIndex(y));
-        // MCRe NoiseFarlands: 0-15 局部坐标一次性边界强转
-        return section.hasOnlyAir() ? Fluids.EMPTY.defaultFluidState() : section.getFluidState((int) (pos.getX() & 15), (int) (y & 15), (int) (pos.getZ() & 15));
+        return section.hasOnlyAir() ? Fluids.EMPTY.defaultFluidState() : section.getFluidState(pos.getX() & 15, y & 15, pos.getZ() & 15);
     }
 
     @Override
     public @Nullable BlockState setBlockState(final BlockPos pos, final BlockState state, final @Block.UpdateFlags int flags) {
-        long x = pos.getX();
-        long y = pos.getY();
-        long z = pos.getZ();
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
         if (this.isOutsideBuildHeight(y)) {
             return Blocks.VOID_AIR.defaultBlockState();
         }
@@ -130,10 +128,9 @@ public class ProtoChunk extends ChunkAccess {
             return state;
         }
 
-        // MCRe NoiseFarlands: 0-15 局部坐标保持 int，一次性边界强转
-        int localX = (int) SectionPos.sectionRelative(x);
-        int localY = (int) SectionPos.sectionRelative(y);
-        int localZ = (int) SectionPos.sectionRelative(z);
+        int localX = SectionPos.sectionRelative(x);
+        int localY = SectionPos.sectionRelative(y);
+        int localZ = SectionPos.sectionRelative(z);
         BlockState oldState = section.setBlockState(localX, localY, localZ, state);
         if (this.status.isOrAfter(ChunkStatus.INITIALIZE_LIGHT)) {
             boolean isEmpty = section.hasOnlyAir();
@@ -235,7 +232,7 @@ public class ProtoChunk extends ChunkAccess {
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(final long quartX, final long quartY, final long quartZ) {
+    public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
         if (this.getHighestGeneratedStatus().isOrAfter(ChunkStatus.BIOMES)) {
             return super.getNoiseBiome(quartX, quartY, quartZ);
         } else {
@@ -244,17 +241,19 @@ public class ProtoChunk extends ChunkAccess {
     }
 
     public static short packOffsetCoordinates(final BlockPos pos) {
-        // MCRe NoiseFarlands: 0-15 位域打包，一次性边界强转
-        int dx = (int) pos.getX() & 15;
-        int dy = (int) pos.getY() & 15;
-        int dz = (int) pos.getZ() & 15;
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
+        int dx = x & 15;
+        int dy = y & 15;
+        int dz = z & 15;
         return (short)(dx | dy << 4 | dz << 8);
     }
 
-    public static BlockPos unpackOffsetCoordinates(final short packedData, final long sectionY, final ChunkPos chunkPos) {
-        long posX = SectionPos.sectionToBlockCoord(chunkPos.x(), packedData & 15);
-        long posY = SectionPos.sectionToBlockCoord(sectionY, packedData >>> 4 & 15);
-        long posZ = SectionPos.sectionToBlockCoord(chunkPos.z(), packedData >>> 8 & 15);
+    public static BlockPos unpackOffsetCoordinates(final short packedData, final int sectionY, final ChunkPos chunkPos) {
+        int posX = SectionPos.sectionToBlockCoord((int)chunkPos.x(), packedData & 15);
+        int posY = SectionPos.sectionToBlockCoord(sectionY, packedData >>> 4 & 15);
+        int posZ = SectionPos.sectionToBlockCoord((int)chunkPos.z(), packedData >>> 8 & 15);
         return new BlockPos(posX, posY, posZ);
     }
 

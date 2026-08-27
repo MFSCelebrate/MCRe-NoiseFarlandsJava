@@ -42,10 +42,9 @@ public class ListPoolElement extends StructurePoolElement {
 
         for (StructurePoolElement element : this.elements) {
             Vec3i size = element.getSize(structureTemplateManager, rotation);
-            // MCRe NoiseFarlands: 模板尺寸 ≤48³，int 域边界
-            sizeX = (int) Math.max(sizeX, size.getX());
-            sizeY = (int) Math.max(sizeY, size.getY());
-            sizeZ = (int) Math.max(sizeZ, size.getZ());
+            sizeX = Math.max(sizeX, size.getX());
+            sizeY = Math.max(sizeY, size.getY());
+            sizeZ = Math.max(sizeZ, size.getZ());
         }
 
         return new Vec3i(sizeX, sizeY, sizeZ);

@@ -56,27 +56,26 @@ public class LightSectionDebugRenderer implements DebugRenderer.SimpleDebugRende
 
     private static void renderFaces(final DiscreteVoxelShape shape, final SectionPos minSection, final int color) {
         shape.forAllFaces((direction, x, y, z) -> {
-            long sectionX = x + minSection.getX();
-            long sectionY = y + minSection.getY();
-            long sectionZ = z + minSection.getZ();
+            int sectionX = x + minSection.getX();
+            int sectionY = y + minSection.getY();
+            int sectionZ = z + minSection.getZ();
             renderFace(direction, sectionX, sectionY, sectionZ, color);
         });
     }
 
     private static void renderEdges(final DiscreteVoxelShape shape, final SectionPos minSection, final int color) {
         shape.forAllEdges((x0, y0, z0, x1, y1, z1) -> {
-            long sectionX0 = x0 + minSection.getX();
-            long sectionY0 = y0 + minSection.getY();
-            long sectionZ0 = z0 + minSection.getZ();
-            long sectionX1 = x1 + minSection.getX();
-            long sectionY1 = y1 + minSection.getY();
-            long sectionZ1 = z1 + minSection.getZ();
+            int sectionX0 = x0 + minSection.getX();
+            int sectionY0 = y0 + minSection.getY();
+            int sectionZ0 = z0 + minSection.getZ();
+            int sectionX1 = x1 + minSection.getX();
+            int sectionY1 = y1 + minSection.getY();
+            int sectionZ1 = z1 + minSection.getZ();
             renderEdge(sectionX0, sectionY0, sectionZ0, sectionX1, sectionY1, sectionZ1, color);
         }, true);
     }
 
-    // MCRe NoiseFarlands: section 世界坐标 Long 化
-    private static void renderFace(final Direction direction, final long sectionX, final long sectionY, final long sectionZ, final int color) {
+    private static void renderFace(final Direction direction, final int sectionX, final int sectionY, final int sectionZ, final int color) {
         Vec3 cuboidCornerA = new Vec3(
             SectionPos.sectionToBlockCoord(sectionX), SectionPos.sectionToBlockCoord(sectionY), SectionPos.sectionToBlockCoord(sectionZ)
         );
@@ -84,9 +83,8 @@ public class LightSectionDebugRenderer implements DebugRenderer.SimpleDebugRende
         Gizmos.rect(cuboidCornerA, cuboidCornerB, direction, GizmoStyle.fill(color));
     }
 
-    // MCRe NoiseFarlands: section 世界坐标 Long 化
     private static void renderEdge(
-        final long sectionX0, final long sectionY0, final long sectionZ0, final long sectionX1, final long sectionY1, final long sectionZ1, final int color
+        final int sectionX0, final int sectionY0, final int sectionZ0, final int sectionX1, final int sectionY1, final int sectionZ1, final int color
     ) {
         double x0 = SectionPos.sectionToBlockCoord(sectionX0);
         double y0 = SectionPos.sectionToBlockCoord(sectionY0);

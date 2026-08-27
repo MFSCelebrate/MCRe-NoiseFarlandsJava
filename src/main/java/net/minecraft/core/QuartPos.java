@@ -9,24 +9,23 @@ public final class QuartPos {
     private QuartPos() {
     }
 
-    // MCRe NoiseFarlands: 全签名 Long 化（int 实参自动无损提升）
-    public static long fromBlock(final long blockCoord) {
+    public static int fromBlock(final int blockCoord) {
         return blockCoord >> 2;
     }
 
-    public static int quartLocal(final long blockCoord) {
-        return (int) (blockCoord & 3);
+    public static int quartLocal(final int blockCoord) {
+        return blockCoord & 3;
     }
 
-    public static long toBlock(final long quart) {
+    public static int toBlock(final int quart) {
         return quart << 2;
     }
 
-    public static long fromSection(final long section) {
+    public static int fromSection(final int section) {
         return section << 2;
     }
 
-    public static long toSection(final long quart) {
+    public static int toSection(final int quart) {
         return quart >> 2;
     }
 }

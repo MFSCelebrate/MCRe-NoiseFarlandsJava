@@ -92,21 +92,18 @@ public class ClientboundLevelChunkPacketData {
         }
     }
 
-    // MCRe NoiseFarlands: chunk 坐标 Long 化
-    public Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> getBlockEntitiesTagsConsumer(final long x, final long z) {
+    public Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> getBlockEntitiesTagsConsumer(final int x, final int z) {
         return output -> this.getBlockEntitiesTags(output, x, z);
     }
 
-    // MCRe NoiseFarlands: chunk 坐标 Long 化
-    private void getBlockEntitiesTags(final ClientboundLevelChunkPacketData.BlockEntityTagOutput output, final long x, final long z) {
-        // MCRe NoiseFarlands: chunk 内方块基准坐标 Long 化
-        long baseX = 16 * x;
-        long baseZ = 16 * z;
+    private void getBlockEntitiesTags(final ClientboundLevelChunkPacketData.BlockEntityTagOutput output, final int x, final int z) {
+        int baseX = 16 * x;
+        int baseZ = 16 * z;
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
         for (ClientboundLevelChunkPacketData.BlockEntityInfo data : this.blockEntitiesData) {
-            long unpackedX = baseX + SectionPos.sectionRelative(data.packedXZ >> 4);
-            long unpackedZ = baseZ + SectionPos.sectionRelative(data.packedXZ);
+            int unpackedX = baseX + SectionPos.sectionRelative(data.packedXZ >> 4);
+            int unpackedZ = baseZ + SectionPos.sectionRelative(data.packedXZ);
             pos.set(unpackedX, data.y, unpackedZ);
             output.accept(pos, data.type, data.tag);
         }
@@ -156,9 +153,8 @@ public class ClientboundLevelChunkPacketData {
         private static ClientboundLevelChunkPacketData.BlockEntityInfo create(final BlockEntity blockEntity) {
             CompoundTag tag = blockEntity.getUpdateTag(blockEntity.getLevel().registryAccess());
             BlockPos pos = blockEntity.getBlockPos();
-            // MCRe NoiseFarlands: xz 打包域 + Y 高度域，int 边界强转
-            int xz = (int) (SectionPos.sectionRelative(pos.getX()) << 4 | SectionPos.sectionRelative(pos.getZ()));
-            return new ClientboundLevelChunkPacketData.BlockEntityInfo(xz, (int) pos.getY(), blockEntity.getType(), tag.isEmpty() ? null : tag);
+            int xz = SectionPos.sectionRelative(pos.getX()) << 4 | SectionPos.sectionRelative(pos.getZ());
+            return new ClientboundLevelChunkPacketData.BlockEntityInfo(xz, pos.getY(), blockEntity.getType(), tag.isEmpty() ? null : tag);
         }
     }
 

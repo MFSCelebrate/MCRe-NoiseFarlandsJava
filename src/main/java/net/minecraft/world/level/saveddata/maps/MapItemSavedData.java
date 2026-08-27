@@ -427,8 +427,7 @@ public class MapItemSavedData extends SavedData {
         return false;
     }
 
-    // MCRe NoiseFarlands: 世界坐标 Long 化
-    public void checkBanners(final BlockGetter level, final long x, final long z) {
+    public void checkBanners(final BlockGetter level, final int x, final int z) {
         Iterator<MapBanner> iterator = this.bannerMarkers.values().iterator();
 
         while (iterator.hasNext()) {

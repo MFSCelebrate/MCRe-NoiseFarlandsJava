@@ -52,13 +52,11 @@ public interface Aquifer {
     boolean shouldScheduleFluidUpdate();
 
     interface FluidPicker {
-        // MCRe NoiseFarlands: 世界坐标 Long 化
-        Aquifer.FluidStatus computeFluid(final long blockX, final long blockY, final long blockZ);
+        Aquifer.FluidStatus computeFluid(final int blockX, final int blockY, final int blockZ);
     }
 
-    // MCRe NoiseFarlands: fluidLevel 为世界 Y，Long 化
-    record FluidStatus(long fluidLevel, BlockState fluidType) {
-        public BlockState at(final long blockY) {
+    record FluidStatus(int fluidLevel, BlockState fluidType) {
+        public BlockState at(final int blockY) {
             return blockY < this.fluidLevel ? this.fluidType : Blocks.AIR.defaultBlockState();
         }
     }
@@ -98,12 +96,10 @@ public interface Aquifer {
         private final DensityFunction erosion;
         private final DensityFunction depth;
         private boolean shouldScheduleFluidUpdate;
-        // MCRe NoiseFarlands: 世界 Y Long 化
-        private final long skipSamplingAboveY;
-        // MCRe NoiseFarlands: grid 坐标为世界缩放域，Long 化
-        private final long minGridX;
-        private final long minGridY;
-        private final long minGridZ;
+        private final int skipSamplingAboveY;
+        private final int minGridX;
+        private final int minGridY;
+        private final int minGridZ;
         private final int gridSizeX;
         private final int gridSizeZ;
         private static final int[][] SURFACE_SAMPLING_OFFSETS_IN_CHUNKS = new int[][]{
@@ -152,24 +148,23 @@ public interface Aquifer {
             this.erosion = router.erosion();
             this.depth = router.depth();
             this.positionalRandomFactory = positionalRandomFactory;
-            this.minGridX = gridX(pos.getMinBlockX() + -5) + 0;
+            this.minGridX = gridX((int) pos.getMinBlockX() + -5) + 0;
             this.globalFluidPicker = globalFluidPicker;
-            long maxGridX = gridX(pos.getMaxBlockX() + -5) + 1;
-            this.gridSizeX = (int) (maxGridX - this.minGridX + 1);
+            int maxGridX = gridX((int) pos.getMaxBlockX() + -5) + 1;
+            this.gridSizeX = maxGridX - this.minGridX + 1;
             this.minGridY = gridY(minBlockY + 1) + -1;
-            long maxGridY = gridY(minBlockY + yBlockSize + 1) + 1;
-            int gridSizeY = (int) (maxGridY - this.minGridY + 1);
-            this.minGridZ = gridZ(pos.getMinBlockZ() + -5) + 0;
-            long maxGridZ = gridZ(pos.getMaxBlockZ() + -5) + 1;
-            this.gridSizeZ = (int) (maxGridZ - this.minGridZ + 1);
-            // MCRe NoiseFarlands: 缓存数组尺寸 int 域边界
+            int maxGridY = gridY(minBlockY + yBlockSize + 1) + 1;
+            int gridSizeY = maxGridY - this.minGridY + 1;
+            this.minGridZ = gridZ((int) pos.getMinBlockZ() + -5) + 0;
+            int maxGridZ = gridZ((int) pos.getMaxBlockZ() + -5) + 1;
+            this.gridSizeZ = maxGridZ - this.minGridZ + 1;
             int totalGridSize = this.gridSizeX * gridSizeY * this.gridSizeZ;
             this.aquiferCache = new Aquifer.FluidStatus[totalGridSize];
             this.aquiferLocationCache = new BlockPos[totalGridSize];
-            long maxAdjustedSurfaceLevel = this.adjustSurfaceLevel(
+            int maxAdjustedSurfaceLevel = this.adjustSurfaceLevel(
                     noiseChunk.maxPreliminarySurfaceLevel(fromGridX(this.minGridX, 0), fromGridZ(this.minGridZ, 0), fromGridX(maxGridX, 9), fromGridZ(maxGridZ, 9))
             );
-            long skipSamplingAboveGridY = gridY(maxAdjustedSurfaceLevel + 12) - -1;
+            int skipSamplingAboveGridY = gridY(maxAdjustedSurfaceLevel + 12) - -1;
             this.skipSamplingAboveY = fromGridY(skipSamplingAboveGridY, 11) - 1;
         }
 
@@ -177,12 +172,11 @@ public interface Aquifer {
             return this.aquiferCache.length == 0;
         }
 
-        private int getIndex(final long gridX, final long gridY, final long gridZ) {
+        private int getIndex(final int gridX, final int gridY, final int gridZ) {
             if (this.isDisabled()) return -1;
-            // MCRe NoiseFarlands: 相对网格偏移为小范围索引，int 域边界
-            int x = (int) (gridX - this.minGridX);
-            int y = (int) (gridY - this.minGridY);
-            int z = (int) (gridZ - this.minGridZ);
+            int x = gridX - this.minGridX;
+            int y = gridY - this.minGridY;
+            int z = gridZ - this.minGridZ;
             return (y * this.gridSizeZ + z) * this.gridSizeX + x;
         }
 
@@ -198,9 +192,9 @@ public interface Aquifer {
                 return null;
             }
 
-            long posX = context.blockX();
-            long posY = context.blockY();
-            long posZ = context.blockZ();
+            int posX = context.blockX();
+            int posY = context.blockY();
+            int posZ = context.blockZ();
             Aquifer.FluidStatus globalFluid = this.globalFluidPicker.computeFluid(posX, posY, posZ);
             if (posY > this.skipSamplingAboveY) {
                 this.shouldScheduleFluidUpdate = false;
@@ -212,14 +206,13 @@ public interface Aquifer {
                 return SharedConstants.DEBUG_DISABLE_FLUID_GENERATION ? Blocks.AIR.defaultBlockState() : Blocks.LAVA.defaultBlockState();
             }
 
-            long xAnchor = gridX(posX + -5);
-            long yAnchor = gridY(posY + 1);
-            long zAnchor = gridZ(posZ + -5);
-            // MCRe NoiseFarlands: 距离平方和 long 域
-            long distanceSqr1 = Long.MAX_VALUE;
-            long distanceSqr2 = Long.MAX_VALUE;
-            long distanceSqr3 = Long.MAX_VALUE;
-            long distanceSqr4 = Long.MAX_VALUE;
+            int xAnchor = gridX(posX + -5);
+            int yAnchor = gridY(posY + 1);
+            int zAnchor = gridZ(posZ + -5);
+            int distanceSqr1 = Integer.MAX_VALUE;
+            int distanceSqr2 = Integer.MAX_VALUE;
+            int distanceSqr3 = Integer.MAX_VALUE;
+            int distanceSqr4 = Integer.MAX_VALUE;
             int closestIndex1 = 0;
             int closestIndex2 = 0;
             int closestIndex3 = 0;
@@ -228,9 +221,9 @@ public interface Aquifer {
             for (int x1 = 0; x1 <= 1; x1++) {
                 for (int y1 = -1; y1 <= 1; y1++) {
                     for (int z1 = 0; z1 <= 1; z1++) {
-                        long spacedGridX = xAnchor + x1;
-                        long spacedGridY = yAnchor + y1;
-                        long spacedGridZ = zAnchor + z1;
+                        int spacedGridX = xAnchor + x1;
+                        int spacedGridY = yAnchor + y1;
+                        int spacedGridZ = zAnchor + z1;
                         int index = this.getIndex(spacedGridX, spacedGridY, spacedGridZ);
                         if (index < 0) continue;
                         BlockPos existingLocation = this.aquiferLocationCache[index];
@@ -247,11 +240,10 @@ public interface Aquifer {
                             this.aquiferLocationCache[index] = location;
                         }
 
-                        // MCRe NoiseFarlands: 距离平方和 long 域（防 2^31 溢出）
-                        long dx = location.getX() - posX;
-                        long dy = location.getY() - posY;
-                        long dz = location.getZ() - posZ;
-                        long newDistance = dx * dx + dy * dy + dz * dz;
+                        int dx = location.getX() - posX;
+                        int dy = location.getY() - posY;
+                        int dz = location.getZ() - posZ;
+                        int newDistance = dx * dx + dy * dy + dz * dz;
                         if (distanceSqr1 >= newDistance) {
                             closestIndex4 = closestIndex3;
                             closestIndex3 = closestIndex2;
@@ -351,8 +343,7 @@ public interface Aquifer {
             return this.shouldScheduleFluidUpdate;
         }
 
-        // MCRe NoiseFarlands: 距离平方和 long 域
-    private static double similarity(final long distanceSqr1, final long distanceSqr2) {
+        private static double similarity(final int distanceSqr1, final int distanceSqr2) {
             return 1.0 - (distanceSqr2 - distanceSqr1) / 25.0;
         }
 
@@ -361,12 +352,11 @@ public interface Aquifer {
                 final MutableDouble barrierNoiseValue,
                 final Aquifer.FluidStatus statusClosest1,
                 final Aquifer.FluidStatus statusClosest2) {
-            long posY = context.blockY();
+            int posY = context.blockY();
             BlockState type1 = statusClosest1.at(posY);
             BlockState type2 = statusClosest2.at(posY);
             if ((!type1.is(Blocks.LAVA) || !type2.is(Blocks.WATER)) && (!type1.is(Blocks.WATER) || !type2.is(Blocks.LAVA))) {
-                // MCRe NoiseFarlands: 相对差 int 域边界
-                int fluidYDiff = (int) Math.abs(statusClosest1.fluidLevel - statusClosest2.fluidLevel);
+                int fluidYDiff = Math.abs(statusClosest1.fluidLevel - statusClosest2.fluidLevel);
                 if (fluidYDiff == 0) return 0.0;
                 double averageFluidY = 0.5 * (statusClosest1.fluidLevel + statusClosest2.fluidLevel);
                 double howFarAboveAverageFluidPoint = posY + 0.5 - averageFluidY;
@@ -398,27 +388,27 @@ public interface Aquifer {
             }
         }
 
-        private static long gridX(final long blockCoord) {
+        private static int gridX(final int blockCoord) {
             return blockCoord >> 4;
         }
 
-        private static long fromGridX(final long gridCoord, final int blockOffset) {
+        private static int fromGridX(final int gridCoord, final int blockOffset) {
             return (gridCoord << 4) + blockOffset;
         }
 
-        private static long gridY(final long blockCoord) {
+        private static int gridY(final int blockCoord) {
             return Math.floorDiv(blockCoord, 12);
         }
 
-        private static long fromGridY(final long gridCoord, final int blockOffset) {
+        private static int fromGridY(final int gridCoord, final int blockOffset) {
             return gridCoord * 12 + blockOffset;
         }
 
-        private static long gridZ(final long blockCoord) {
+        private static int gridZ(final int blockCoord) {
             return blockCoord >> 4;
         }
 
-        private static long fromGridZ(final long gridCoord, final int blockOffset) {
+        private static int fromGridZ(final int gridCoord, final int blockOffset) {
             return (gridCoord << 4) + blockOffset;
         }
 
@@ -435,21 +425,18 @@ public interface Aquifer {
             return status;
         }
 
-        private Aquifer.FluidStatus computeFluid(final long x, final long y, final long z) {
+        private Aquifer.FluidStatus computeFluid(final int x, final int y, final int z) {
             Aquifer.FluidStatus globalFluid = this.globalFluidPicker.computeFluid(x, y, z);
-            // MCRe NoiseFarlands: 世界 Y Long 化（哨兵保持 int 语义由比较自动提升）
-            // MCRe NoiseFarlands: 水位世界 Y，哨兵 Long 化
-            long lowestPreliminarySurface = Long.MAX_VALUE;
-            long topOfAquiferCell = y + 12;
-            long bottomOfAquiferCell = y - 12;
+            int lowestPreliminarySurface = Integer.MAX_VALUE;
+            int topOfAquiferCell = y + 12;
+            int bottomOfAquiferCell = y - 12;
             boolean surfaceAtCenterIsUnderGlobalFluidLevel = false;
 
             for (int[] offset : SURFACE_SAMPLING_OFFSETS_IN_CHUNKS) {
-                long sampleX = x + SectionPos.sectionToBlockCoord(offset[0]);
-                long sampleZ = z + SectionPos.sectionToBlockCoord(offset[1]);
+                int sampleX = x + SectionPos.sectionToBlockCoord(offset[0]);
+                int sampleZ = z + SectionPos.sectionToBlockCoord(offset[1]);
                 int preliminarySurfaceLevel = this.noiseChunk.preliminarySurfaceLevel(sampleX, sampleZ);
-                // MCRe NoiseFarlands: 世界 Y Long 化
-                long adjustedSurfaceLevel = this.adjustSurfaceLevel(preliminarySurfaceLevel);
+                int adjustedSurfaceLevel = this.adjustSurfaceLevel(preliminarySurfaceLevel);
                 boolean start = offset[0] == 0 && offset[1] == 0;
                 if (start && bottomOfAquiferCell > adjustedSurfaceLevel) {
                     return globalFluid;
@@ -465,21 +452,20 @@ public interface Aquifer {
                 lowestPreliminarySurface = Math.min(lowestPreliminarySurface, preliminarySurfaceLevel);
             }
 
-            // MCRe NoiseFarlands: 水位世界 Y Long 化
-            long fluidSurfaceLevel = this.computeSurfaceLevel(x, y, z, globalFluid, lowestPreliminarySurface, surfaceAtCenterIsUnderGlobalFluidLevel);
+            int fluidSurfaceLevel = this.computeSurfaceLevel(x, y, z, globalFluid, lowestPreliminarySurface, surfaceAtCenterIsUnderGlobalFluidLevel);
             return new Aquifer.FluidStatus(fluidSurfaceLevel, this.computeFluidType(x, y, z, globalFluid, fluidSurfaceLevel));
         }
 
-        private long adjustSurfaceLevel(final long preliminarySurfaceLevel) {
+        private int adjustSurfaceLevel(final int preliminarySurfaceLevel) {
             return preliminarySurfaceLevel + 8;
         }
 
-        private long computeSurfaceLevel(
-                final long x,
-                final long y,
-                final long z,
+        private int computeSurfaceLevel(
+                final int x,
+                final int y,
+                final int z,
                 final Aquifer.FluidStatus globalFluid,
-                final long lowestPreliminarySurface,
+                final int lowestPreliminarySurface,
                 final boolean surfaceAtCenterIsUnderGlobalFluidLevel) {
             DensityFunction.SinglePointContext context = new DensityFunction.SinglePointContext(x, y, z);
             double partiallyFloodedness;
@@ -488,8 +474,7 @@ public interface Aquifer {
                 partiallyFloodedness = -1.0;
                 fullyFloodidness = -1.0;
             } else {
-                // MCRe NoiseFarlands: 相对深度差 int 域边界
-                int distanceBelowSurface = (int) (lowestPreliminarySurface + 8 - y);
+                int distanceBelowSurface = lowestPreliminarySurface + 8 - y;
                 double floodednessFactor = surfaceAtCenterIsUnderGlobalFluidLevel ? Mth.clampedMap(distanceBelowSurface, 0.0, 64.0, 1.0, 0.0) : 0.0;
                 double floodednessNoiseValue = Mth.clamp(this.fluidLevelFloodednessNoise.compute(context), -1.0, 1.0);
                 double fullyFloodedThreshold = Mth.map(floodednessFactor, 1.0, 0.0, -0.3, 0.8);
@@ -498,8 +483,7 @@ public interface Aquifer {
                 fullyFloodidness = floodednessNoiseValue - fullyFloodedThreshold;
             }
 
-// MCRe NoiseFarlands: 水位世界 Y Long 化
-            long fluidSurfaceLevel;
+            int fluidSurfaceLevel;
             if (fullyFloodidness > 0.0) {
                 fluidSurfaceLevel = globalFluid.fluidLevel;
             } else if (partiallyFloodedness > 0.0) {
@@ -510,30 +494,25 @@ public interface Aquifer {
             return fluidSurfaceLevel;
         }
 
-        // MCRe NoiseFarlands: 世界坐标与水位 Long 化
-        private long computeRandomizedFluidSurfaceLevel(final long x, final long y, final long z, final long lowestPreliminarySurface) {
-            // MCRe NoiseFarlands: cell 键为世界缩放域，Long 化
-            long fluidLevelCellX = Math.floorDiv(x, 16);
-            long fluidLevelCellY = Math.floorDiv(y, 40);
-            long fluidLevelCellZ = Math.floorDiv(z, 16);
-            // MCRe NoiseFarlands: 世界 Y Long 化
-            long fluidCellMiddleY = fluidLevelCellY * 40 + 20;
+        private int computeRandomizedFluidSurfaceLevel(final int x, final int y, final int z, final int lowestPreliminarySurface) {
+            int fluidLevelCellX = Math.floorDiv(x, 16);
+            int fluidLevelCellY = Math.floorDiv(y, 40);
+            int fluidLevelCellZ = Math.floorDiv(z, 16);
+            int fluidCellMiddleY = fluidLevelCellY * 40 + 20;
             double fluidLevelSpread = this.fluidLevelSpreadNoise
                             .compute(new DensityFunction.SinglePointContext(fluidLevelCellX, fluidLevelCellY, fluidLevelCellZ))
                     * 10.0;
             int fluidLevelSpreadQuantized = Mth.quantize(fluidLevelSpread, 3);
-            // MCRe NoiseFarlands: 世界 Y Long 化
-            long targetFluidSurfaceLevel = fluidCellMiddleY + fluidLevelSpreadQuantized;
+            int targetFluidSurfaceLevel = fluidCellMiddleY + fluidLevelSpreadQuantized;
             return Math.min(lowestPreliminarySurface, targetFluidSurfaceLevel);
         }
 
-        private BlockState computeFluidType(final long x, final long y, final long z, final Aquifer.FluidStatus globalFluid, final long fluidSurfaceLevel) {
+        private BlockState computeFluidType(final int x, final int y, final int z, final Aquifer.FluidStatus globalFluid, final int fluidSurfaceLevel) {
             BlockState fluidType = globalFluid.fluidType;
             if (fluidSurfaceLevel <= -10 && fluidSurfaceLevel != DimensionType.WAY_BELOW_MIN_Y && globalFluid.fluidType != Blocks.LAVA.defaultBlockState()) {
-                // MCRe NoiseFarlands: cell 键为世界缩放域，Long 化
-                long fluidTypeCellX = Math.floorDiv(x, 64);
-                long fluidTypeCellY = Math.floorDiv(y, 40);
-                long fluidTypeCellZ = Math.floorDiv(z, 64);
+                int fluidTypeCellX = Math.floorDiv(x, 64);
+                int fluidTypeCellY = Math.floorDiv(y, 40);
+                int fluidTypeCellZ = Math.floorDiv(z, 64);
                 double lavaNoiseValue = this.lavaNoise.compute(new DensityFunction.SinglePointContext(fluidTypeCellX, fluidTypeCellY, fluidTypeCellZ));
                 if (Math.abs(lavaNoiseValue) > 0.3) {
                     fluidType = Blocks.LAVA.defaultBlockState();

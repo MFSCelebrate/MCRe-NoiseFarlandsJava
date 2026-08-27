@@ -40,8 +40,7 @@ public class BlendingData {
     private static final double SOLID_DENSITY = 1.0;
     private static final double AIR_DENSITY = -1.0;
     private static final int CELLS_PER_SECTION_Y = 2;
-    // MCRe NoiseFarlands: 常量为固定小值，int 边界强转
-    private static final int QUARTS_PER_SECTION = (int) QuartPos.fromBlock(16);
+    private static final int QUARTS_PER_SECTION = QuartPos.fromBlock(16);
     private static final int CELL_HORIZONTAL_MAX_INDEX_INSIDE = QUARTS_PER_SECTION - 1;
     private static final int CELL_HORIZONTAL_MAX_INDEX_OUTSIDE = QUARTS_PER_SECTION;
     private static final int CELL_COLUMN_INSIDE_COUNT = 2 * CELL_HORIZONTAL_MAX_INDEX_INSIDE + 1;
@@ -73,10 +72,9 @@ public class BlendingData {
         ObjectArrayList<List<Holder<Biome>>> biomes = new ObjectArrayList<>(CELL_COLUMN_COUNT);
         biomes.size(CELL_COLUMN_COUNT);
         this.biomes = biomes;
-        // MCRe NoiseFarlands: Y 为高度配置域(int)（Decision: BigWorldCoordinate 阶段再动），边界强转
-        long minY = SectionPos.sectionToBlockCoord(minSection);
-        long height = SectionPos.sectionToBlockCoord(maxSection) - minY;
-        this.areaWithOldGeneration = LevelHeightAccessor.create((int) minY, (int) height);
+        int minY = SectionPos.sectionToBlockCoord(minSection);
+        int height = SectionPos.sectionToBlockCoord(maxSection) - minY;
+        this.areaWithOldGeneration = LevelHeightAccessor.create(minY, height);
     }
 
     public static @Nullable BlendingData unpack(final BlendingData.@Nullable Packed packed) {
@@ -94,9 +92,8 @@ public class BlendingData {
         }
 
         return new BlendingData.Packed(
-            (int) this.areaWithOldGeneration.getMinSectionY(),
-            // MCRe NoiseFarlands: Packed 为 NBT 序列化域，IntTag 边界（Decision 4）
-            (int) this.areaWithOldGeneration.getMaxSectionY() + 1,
+            this.areaWithOldGeneration.getMinSectionY(),
+            this.areaWithOldGeneration.getMaxSectionY() + 1,
             hasHeight ? Optional.of(DoubleArrays.copy(this.heights)) : Optional.empty()
         );
     }
@@ -177,9 +174,8 @@ public class BlendingData {
         this.biomes.set(index, this.getBiomeColumn(chunk, blockX, blockZ));
     }
 
-    private long getHeightAtXZ(final ChunkAccess chunk, final long blockX, final long blockZ) {
-        // MCRe NoiseFarlands: height 为世界 Y，Long 化；maxY 为高度配置域自动提升
-        long height;
+    private int getHeightAtXZ(final ChunkAccess chunk, final int blockX, final int blockZ) {
+        int height;
         if (chunk.hasPrimedHeightmap(Heightmap.Types.WORLD_SURFACE_WG)) {
             height = Math.min(chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, blockX, blockZ), this.areaWithOldGeneration.getMaxY());
         } else {
@@ -214,8 +210,7 @@ public class BlendingData {
         return sum;
     }
 
-    // MCRe NoiseFarlands: x/z 世界坐标、height 世界 Y，Long 化
-    private double[] getDensityColumn(final ChunkAccess chunk, final long x, final long z, final long height) {
+    private double[] getDensityColumn(final ChunkAccess chunk, final int x, final int z, final int height) {
         double[] densities = new double[this.cellCountPerColumn()];
         Arrays.fill(densities, -1.0);
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, this.areaWithOldGeneration.getMaxY() + 1, z);
@@ -228,8 +223,7 @@ public class BlendingData {
             last7 = current7;
         }
 
-        // MCRe NoiseFarlands: cell 数组索引 int 域边界
-        int highestCellWithSurfaceIndex = this.getCellYIndex((int) Math.floorDiv(height, 8));
+        int highestCellWithSurfaceIndex = this.getCellYIndex(Mth.floorDiv(height, 8));
         if (highestCellWithSurfaceIndex >= 0 && highestCellWithSurfaceIndex < densities.length - 1) {
             double inCellIndex = (height + 0.5) % 8.0 / 8.0;
             double amplitudeAboveToMakeSurfaceBeAtHeight = (1.0 - inCellIndex) / inCellIndex;
@@ -241,12 +235,12 @@ public class BlendingData {
         return densities;
     }
 
-    private List<Holder<Biome>> getBiomeColumn(final ChunkAccess chunk, final long blockX, final long blockZ) {
+    private List<Holder<Biome>> getBiomeColumn(final ChunkAccess chunk, final int blockX, final int blockZ) {
         ObjectArrayList<Holder<Biome>> biomes = new ObjectArrayList<>(this.quartCountPerColumn());
         biomes.size(this.quartCountPerColumn());
 
         for (int quartIndex = 0; quartIndex < biomes.size(); quartIndex++) {
-            long quartY = quartIndex + QuartPos.fromBlock(this.areaWithOldGeneration.getMinY());
+            int quartY = quartIndex + QuartPos.fromBlock(this.areaWithOldGeneration.getMinY());
             biomes.set(quartIndex, chunk.getNoiseBiome(QuartPos.fromBlock(blockX), quartY, QuartPos.fromBlock(blockZ)));
         }
 
@@ -293,11 +287,9 @@ public class BlendingData {
         }
     }
 
-    // MCRe NoiseFarlands: minCell 为世界 quart 坐标 Long 化；testCell 回调为 chunk 内相对域 int
-    protected void iterateBiomes(final long minCellX, final long quartY, final long minCellZ, final BlendingData.BiomeConsumer biomeConsumer) {
+    protected void iterateBiomes(final int minCellX, final int quartY, final int minCellZ, final BlendingData.BiomeConsumer biomeConsumer) {
         if (quartY >= QuartPos.fromBlock(this.areaWithOldGeneration.getMinY()) && quartY <= QuartPos.fromBlock(this.areaWithOldGeneration.getMaxY())) {
-            // 相对 section 内索引，int 域边界
-        int quartIndex = (int) (quartY - QuartPos.fromBlock(this.areaWithOldGeneration.getMinY()));
+            int quartIndex = quartY - QuartPos.fromBlock(this.areaWithOldGeneration.getMinY());
 
             for (int i = 0; i < this.biomes.size(); i++) {
                 List<Holder<Biome>> biomeCell = this.biomes.get(i);
@@ -311,7 +303,7 @@ public class BlendingData {
         }
     }
 
-    protected void iterateHeights(final long minCellX, final long minCellZ, final BlendingData.HeightConsumer heightConsumer) {
+    protected void iterateHeights(final int minCellX, final int minCellZ, final BlendingData.HeightConsumer heightConsumer) {
         for (int i = 0; i < this.heights.length; i++) {
             double value = this.heights[i];
             if (value != Double.MAX_VALUE) {
@@ -321,20 +313,17 @@ public class BlendingData {
     }
 
     protected void iterateDensities(
-        final long minCellX, final long minCellZ, final int fromCellY, final int toCellY, final BlendingData.DensityConsumer densityConsumer
+        final int minCellX, final int minCellZ, final int fromCellY, final int toCellY, final BlendingData.DensityConsumer densityConsumer
     ) {
-        // MCRe NoiseFarlands: 世界 Y Long 化
-        long minCellY = this.getColumnMinY();
-        // MCRe NoiseFarlands: 相对索引 int 域边界
-        int minYIndex = (int) Math.max(0, fromCellY - minCellY);
-        int maxYIndex = (int) Math.min(this.cellCountPerColumn(), toCellY - minCellY);
+        int minCellY = this.getColumnMinY();
+        int minYIndex = Math.max(0, fromCellY - minCellY);
+        int maxYIndex = Math.min(this.cellCountPerColumn(), toCellY - minCellY);
 
         for (int i = 0; i < this.densities.length; i++) {
             double[] densityColumn = this.densities[i];
             if (densityColumn != null) {
-                // MCRe NoiseFarlands: 世界 quart 坐标 Long 化
-                long testCellX = minCellX + getX(i);
-                long testCellZ = minCellZ + getZ(i);
+                int testCellX = minCellX + getX(i);
+                int testCellZ = minCellZ + getZ(i);
 
                 for (int yIndex = minYIndex; yIndex < maxYIndex; yIndex++) {
                     densityConsumer.consume(testCellX, yIndex + minCellY, testCellZ, densityColumn[yIndex] * 0.1);
@@ -348,23 +337,19 @@ public class BlendingData {
     }
 
     private int quartCountPerColumn() {
-        // MCRe NoiseFarlands: section 数量级尺寸
-        return (int) QuartPos.fromSection(this.areaWithOldGeneration.getSectionsCount());
+        return QuartPos.fromSection(this.areaWithOldGeneration.getSectionsCount());
     }
 
-    // MCRe NoiseFarlands: 世界 Y Long 化
-    private long getColumnMinY() {
+    private int getColumnMinY() {
         return this.getMinY() + 1;
     }
 
-    // MCRe NoiseFarlands: section Y 坐标 Long 化
-    private long getMinY() {
+    private int getMinY() {
         return this.areaWithOldGeneration.getMinSectionY() * 2;
     }
 
-    // MCRe NoiseFarlands: 入参世界 Y Long 化，返回数组索引 int 域
-    private int getCellYIndex(final long cellY) {
-        return (int) (cellY - this.getColumnMinY());
+    private int getCellYIndex(final int cellY) {
+        return cellY - this.getColumnMinY();
     }
 
     private static int getInsideIndex(final int x, final int z) {
@@ -402,15 +387,15 @@ public class BlendingData {
     }
 
     protected interface BiomeConsumer {
-        void consume(final long cellX, final long cellZ, final Holder<Biome> biome);
+        void consume(final int cellX, final int cellZ, final Holder<Biome> biome);
     }
 
     protected interface DensityConsumer {
-        void consume(final long cellX, final long cellY, final long cellZ, final double density);
+        void consume(final int cellX, final int cellY, final int cellZ, final double density);
     }
 
     protected interface HeightConsumer {
-        void consume(final long cellX, final long cellZ, final double height);
+        void consume(final int cellX, final int cellZ, final double height);
     }
 
     public record Packed(int minSection, int maxSection, Optional<double[]> heights) {

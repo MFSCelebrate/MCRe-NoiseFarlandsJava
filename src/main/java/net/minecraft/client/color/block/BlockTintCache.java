@@ -28,8 +28,8 @@ public class BlockTintCache {
     }
 
     public int getColor(final BlockPos pos) {
-        long chunkX = SectionPos.blockToSectionCoord(pos.getX());
-        long chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
+        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
         BlockTintCache.LatestCacheInfo chunkInfo = this.latestChunkOnThread.get();
         if (chunkInfo.x != chunkX || chunkInfo.z != chunkZ || chunkInfo.cache == null || chunkInfo.cache.isInvalidated()) {
             chunkInfo.x = chunkX;
@@ -37,11 +37,9 @@ public class BlockTintCache {
             chunkInfo.cache = this.findOrCreateChunkCache(chunkX, chunkZ);
         }
 
-        // MCRe NoiseFarlands: Y 高度域(int)，缓存键不变
-        int[] layer = chunkInfo.cache.getLayer((int) pos.getY());
-        // MCRe NoiseFarlands: 0-15 局部坐标，int 域边界
-        int x = (int) (pos.getX() & 15);
-        int z = (int) (pos.getZ() & 15);
+        int[] layer = chunkInfo.cache.getLayer(pos.getY());
+        int x = pos.getX() & 15;
+        int z = pos.getZ() & 15;
         int index = z << 4 | x;
         int cached = layer[index];
         if (cached != -1) {
@@ -81,7 +79,7 @@ public class BlockTintCache {
         }
     }
 
-    private BlockTintCache.CacheData findOrCreateChunkCache(final long x, final long z) {
+    private BlockTintCache.CacheData findOrCreateChunkCache(final int x, final int z) {
         ChunkPos key = new ChunkPos(x, z);
         this.lock.readLock().lock();
 
@@ -162,9 +160,8 @@ public class BlockTintCache {
 
     @OnlyIn(Dist.CLIENT)
     private static class LatestCacheInfo {
-        // MCRe NoiseFarlands: chunk 坐标 Long 化
-        private long x = Long.MIN_VALUE;
-        private long z = Long.MIN_VALUE;
+        private int x = Integer.MIN_VALUE;
+        private int z = Integer.MIN_VALUE;
         private BlockTintCache.@Nullable CacheData cache;
     }
 }

@@ -83,7 +83,7 @@ public class PortalShape {
     }
 
     private static @Nullable BlockPos calculateBottomLeft(final BlockGetter level, final Direction rightDir, BlockPos pos) {
-        long minY = Math.max(level.getMinY(), pos.getY() - 21);
+        int minY = Math.max(level.getMinY(), pos.getY() - 21);
 
         while (pos.getY() > minY && isEmpty(level.getBlockState(pos.below()))) {
             pos = pos.below();

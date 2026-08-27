@@ -45,11 +45,11 @@ public class PlaceOnGroundDecorator extends TreeDecorator {
         List<BlockPos> blockPositions = TreeFeature.getLowestTrunkOrRootOfTree(context);
         if (!blockPositions.isEmpty()) {
             BlockPos origin = blockPositions.getFirst();
-            long minY = origin.getY();
-            long minX = origin.getX();
-            long maxX = origin.getX();
-            long minZ = origin.getZ();
-            long maxZ = origin.getZ();
+            int minY = origin.getY();
+            int minX = origin.getX();
+            int maxX = origin.getX();
+            int minZ = origin.getZ();
+            int maxZ = origin.getZ();
 
             for (BlockPos position : blockPositions) {
                 if (position.getY() == minY) {

@@ -30,12 +30,10 @@ public class EntitySectionStorage<T extends EntityAccess> {
 
     /** 与原版 SectionPos.asLong 打包排序一致：x（高位）→ z → y */
     private static int compareSections(final SectionPos a, final SectionPos b) {
-        // MCRe NoiseFarlands: SectionPos 坐标已 Long 化，用 Long.compare
-        int cx = Long.compare(a.x(), b.x());
+        int cx = Integer.compare(a.x(), b.x());
         if (cx != 0) return cx;
-        int cz = Long.compare(a.z(), b.z());
-        // MCRe NoiseFarlands: SectionPos.y() 已 Long 化
-        return cz != 0 ? cz : Long.compare(a.y(), b.y());
+        int cz = Integer.compare(a.z(), b.z());
+        return cz != 0 ? cz : Integer.compare(a.y(), b.y());
     }
 
     public EntitySectionStorage(final Class<T> entityClass, final Function<ChunkPos, Visibility> intialSectionVisibility) {
@@ -44,19 +42,19 @@ public class EntitySectionStorage<T extends EntityAccess> {
     }
 
     public void forEachAccessibleNonEmptySection(final AABB bb, final AbortableIterationConsumer<EntitySection<T>> output) {
-        long xMin = SectionPos.posToSectionCoord(bb.minX - 2.0);
-        long yMin = SectionPos.posToSectionCoord(bb.minY - 4.0);
-        long zMin = SectionPos.posToSectionCoord(bb.minZ - 2.0);
-        long xMax = SectionPos.posToSectionCoord(bb.maxX + 2.0);
-        long yMax = SectionPos.posToSectionCoord(bb.maxY + 0.0);
-        long zMax = SectionPos.posToSectionCoord(bb.maxZ + 2.0);
+        int xMin = SectionPos.posToSectionCoord(bb.minX - 2.0);
+        int yMin = SectionPos.posToSectionCoord(bb.minY - 4.0);
+        int zMin = SectionPos.posToSectionCoord(bb.minZ - 2.0);
+        int xMax = SectionPos.posToSectionCoord(bb.maxX + 2.0);
+        int yMax = SectionPos.posToSectionCoord(bb.maxY + 0.0);
+        int zMax = SectionPos.posToSectionCoord(bb.maxZ + 2.0);
 
-        for (long x = xMin; x <= xMax; x++) {
+        for (int x = xMin; x <= xMax; x++) {
             SectionPos lowestAbsoluteSectionKey = SectionPos.of(x, 0, 0);
             SectionPos highestAbsoluteSectionKey = SectionPos.of(x, Integer.MAX_VALUE, Integer.MAX_VALUE);
             for (SectionPos sectionKey : this.sectionIds.subSet(lowestAbsoluteSectionKey, true, highestAbsoluteSectionKey, true)) {
-                long y = sectionKey.y();
-                long z = sectionKey.z();
+                int y = sectionKey.y();
+                int z = sectionKey.z();
                 if (y >= yMin && y <= yMax && z >= zMin && z <= zMax) {
                     EntitySection<T> entitySection = this.sections.get(sectionKey);
                     if (entitySection != null

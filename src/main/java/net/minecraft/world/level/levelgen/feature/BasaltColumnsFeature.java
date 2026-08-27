@@ -55,8 +55,7 @@ public class BasaltColumnsFeature extends Feature<ColumnFeatureConfiguration> {
         for (BlockPos pos : BlockPos.randomBetweenClosed(
             random, count, origin.getX() - reach, origin.getY(), origin.getZ() - reach, origin.getX() + reach, origin.getY(), origin.getZ() + reach
         )) {
-            // MCRe NoiseFarlands: 相对距离结构量级，int 域边界
-            int blocksToPlaceY = columnHeight - (int) pos.distManhattan(origin);
+            int blocksToPlaceY = columnHeight - pos.distManhattan(origin);
             if (blocksToPlaceY >= 0) {
                 placed |= this.placeColumn(level, lavaSeaLevel, pos, blocksToPlaceY, config.reach().sample(random));
             }
@@ -71,7 +70,7 @@ public class BasaltColumnsFeature extends Feature<ColumnFeatureConfiguration> {
         for (BlockPos pos : BlockPos.betweenClosed(
             origin.getX() - reach, origin.getY(), origin.getZ() - reach, origin.getX() + reach, origin.getY(), origin.getZ() + reach
         )) {
-            int stepLimit = (int) pos.distManhattan(origin);
+            int stepLimit = pos.distManhattan(origin);
             BlockPos columnPos = isAirOrLavaOcean(level, lavaSeaLevel, pos)
                 ? findSurface(level, lavaSeaLevel, pos.mutable(), stepLimit)
                 : findAir(level, pos.mutable(), stepLimit);

@@ -70,8 +70,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
     private List<BeaconBeamOwner.Section> beamSections = new ArrayList<>();
     private List<BeaconBeamOwner.Section> checkingBeamSections = new ArrayList<>();
     private int levels;
-    private // MCRe NoiseFarlands: 世界 Y Long 化
-        long lastCheckY;
+    private int lastCheckY;
     private @Nullable Holder<MobEffect> primaryPower;
     private @Nullable Holder<MobEffect> secondaryPower;
     private @Nullable Component name;
@@ -120,9 +119,9 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
     }
 
     public static void tick(final Level level, final BlockPos pos, final BlockState selfState, final BeaconBlockEntity entity) {
-        long x = pos.getX();
-        long y = pos.getY();
-        long z = pos.getZ();
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
         BlockPos checkPos;
         if (entity.lastCheckY < y) {
             checkPos = pos;
@@ -135,7 +134,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
         BeaconBeamOwner.Section lastBeamSection = entity.checkingBeamSections.isEmpty()
             ? null
             : entity.checkingBeamSections.get(entity.checkingBeamSections.size() - 1);
-        long lastSetBlock = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+        int lastSetBlock = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
 
         for (int i = 0; i < 10 && checkPos.getY() <= lastSetBlock; i++) {
             BlockState state = level.getBlockState(checkPos);
@@ -197,21 +196,19 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
         }
     }
 
-    private static int updateBase(final Level level, final long x, final long y, final long z) {
+    private static int updateBase(final Level level, final int x, final int y, final int z) {
         int levels = 0;
 
         for (int step = 1; step <= 4; levels = step++) {
-            // MCRe NoiseFarlands: 世界 Y Long 化
-            long ly = y - step;
+            int ly = y - step;
             if (ly < level.getMinY()) {
                 break;
             }
 
             boolean isOk = true;
 
-            // MCRe NoiseFarlands: 世界坐标 Long 化
-            for (long lx = x - step; lx <= x + step && isOk; lx++) {
-                for (long lz = z - step; lz <= z + step; lz++) {
+            for (int lx = x - step; lx <= x + step && isOk; lx++) {
+                for (int lz = z - step; lz <= z + step; lz++) {
                     if (!level.getBlockState(new BlockPos(lx, ly, lz)).is(BlockTags.BEACON_BASE_BLOCKS)) {
                         isOk = false;
                         break;

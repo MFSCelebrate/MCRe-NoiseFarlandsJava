@@ -8,7 +8,8 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.OptionalDynamic;
-
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -139,7 +140,7 @@ public class SectionStorage<R, P> implements AutoCloseable {
     }
 
     protected boolean outsideStoredRange(final SectionPos sectionPos) {
-        long y = SectionPos.sectionToBlockCoord(sectionPos.y());
+        int y = SectionPos.sectionToBlockCoord(sectionPos.y());
         return this.levelHeightAccessor.isOutsideBuildHeight(y);
     }
 
@@ -207,13 +208,13 @@ public class SectionStorage<R, P> implements AutoCloseable {
 
     private void unpackChunk(final ChunkPos pos, final SectionStorage.@Nullable PackedChunk<P> packedChunk) {
         if (packedChunk == null) {
-            for (long sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
+            for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
                 this.storage.put(getKey(pos, sectionY), Optional.empty());
             }
         } else {
             boolean versionChanged = packedChunk.versionChanged();
 
-            for (long sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
+            for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
                 SectionPos key = getKey(pos, sectionY);
                 Optional<R> section = Optional.ofNullable(packedChunk.sectionsByY.get(sectionY))
                     .map(packed -> this.unpacker.apply((P)packed, () -> this.setDirty(key)));
@@ -245,12 +246,12 @@ public class SectionStorage<R, P> implements AutoCloseable {
     private <T> Dynamic<T> writeChunk(final ChunkPos chunkPos, final DynamicOps<T> ops) {
         Map<T, T> sections = Maps.newHashMap();
 
-        for (long sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
+        for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); sectionY++) {
             SectionPos key = getKey(chunkPos, sectionY);
             Optional<R> r = this.storage.get(key);
             if (r != null && !r.isEmpty()) {
                 DataResult<T> serializedSection = this.codec.encodeStart(ops, this.packer.apply(r.get()));
-                String yName = String.valueOf(sectionY);
+                String yName = Integer.toString(sectionY);
                 serializedSection.resultOrPartial(LOGGER::error).ifPresent(s -> sections.put(ops.createString(yName), (T)s));
             }
         }
@@ -268,8 +269,8 @@ public class SectionStorage<R, P> implements AutoCloseable {
         );
     }
 
-    private static SectionPos getKey(final ChunkPos chunkPos, final long sectionY) {
-        return SectionPos.of(chunkPos.x(), sectionY, chunkPos.z());
+    private static SectionPos getKey(final ChunkPos chunkPos, final int sectionY) {
+        return SectionPos.of((int)(int)chunkPos.x(), sectionY, (int)(int)chunkPos.z());
     }
 
     protected void onSectionLoad(final SectionPos sectionPos) {
@@ -295,8 +296,7 @@ public class SectionStorage<R, P> implements AutoCloseable {
         this.simpleRegionStorage.close();
     }
 
-    // MCRe NoiseFarlands: 对象化——section Y 坐标 Long 化，统一 java.util 容器
-    private record PackedChunk<T>(Map<Long, T> sectionsByY, boolean versionChanged) {
+    private record PackedChunk<T>(Int2ObjectMap<T> sectionsByY, boolean versionChanged) {
         public static <T> SectionStorage.PackedChunk<T> parse(
             final Codec<T> codec,
             final DynamicOps<Tag> ops,
@@ -308,11 +308,10 @@ public class SectionStorage<R, P> implements AutoCloseable {
             Dynamic<Tag> fixedTag = simpleRegionStorage.upgradeChunkTag(originalTag, 1945);
             boolean versionChanged = originalTag != fixedTag;
             OptionalDynamic<Tag> sections = fixedTag.get("Sections");
-            // MCRe NoiseFarlands: 对象化——section Y Long 装箱
-            Map<Long, T> sectionsByY = new HashMap<>();
+            Int2ObjectMap<T> sectionsByY = new Int2ObjectOpenHashMap<>();
 
-            for (long sectionY = levelHeightAccessor.getMinSectionY(); sectionY <= levelHeightAccessor.getMaxSectionY(); sectionY++) {
-                Optional<T> section = sections.get(String.valueOf(sectionY))
+            for (int sectionY = levelHeightAccessor.getMinSectionY(); sectionY <= levelHeightAccessor.getMaxSectionY(); sectionY++) {
+                Optional<T> section = sections.get(Integer.toString(sectionY))
                     .result()
                     .flatMap(sectionData -> codec.parse((Dynamic<Tag>)sectionData).resultOrPartial(SectionStorage.LOGGER::error));
                 if (section.isPresent()) {
