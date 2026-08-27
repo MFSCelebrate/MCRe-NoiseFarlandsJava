@@ -155,7 +155,7 @@ jobs:
 
       - name: 编译并 remap（生成 modified.jar）
         run: |
-          ./gradlew clean build --no-daemon 2>&1 | tee full.log
+          ./gradlew build --no-daemon 2>&1 | tee full.log
           grep -B 2 -A 5 "error:" full.log > compile_errors.log || true
           rm -f full.log
         continue-on-error: true
