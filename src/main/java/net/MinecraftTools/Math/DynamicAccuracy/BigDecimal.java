@@ -1917,8 +1917,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return BigInteger.ZERO;
         if (n < BIG_TEN_POWERS_TABLE.length)
             return BIG_TEN_POWERS_TABLE[n];
-        // 使用 BigInteger.TEN.pow(n) 直接计算，避免同步块
-        return BigInteger.TEN.pow(n);
+        // 🔧 MCRe 优化：接线缓存扩展（原来直接 TEN.pow(n) 每轮重算）
+        return expandBigIntegerTenPowers(n);
     }
 
     private static BigInteger expandBigIntegerTenPowers(int n) {

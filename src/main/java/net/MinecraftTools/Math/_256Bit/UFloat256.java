@@ -316,9 +316,112 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
 
         UInt256 M1 = mantissaWithImplied();
         UInt256 M2 = o.mantissaWithImplied();
-        UInt256 product = M1.multiply(M2); // 193×193 → 386 bit
+        // 🔧 修复：193×193-bit 乘积需要 386 bit，超 UInt256 256-bit 容量。
+        // 用 long[7]（448 bit）小端累加器 + 专用 roundAndPackUF（GRS 舍入）
+        long[] x = {M1.d, M1.c, M1.b, M1.a};   // 小端 4 limb（隐含位在 a bit0）
+        long[] y = {M2.d, M2.c, M2.b, M2.a};
+        long[] r = new long[8];                 // 4×4 → 最大 idx+1=7，需 8 limb（512 bit）
+        for (int i = 0; i < 4; i++) {
+            long xi = x[i];
+            if (xi == 0L) continue;
+            for (int j = 0; j < 4; j++) {
+                long yj = y[j];
+                if (yj == 0L) continue;
+                addTo7(r, i + j, xi * yj, Math.unsignedMultiplyHigh(xi, yj));
+            }
+        }
+        return roundAndPackUF(r, exp);
+    }
 
-        return roundAndPack(exp, product);
+    // ═══════════ 448-bit 乘法累加（零 GC） ═══════════
+
+    private static void addTo7(long[] r, int idx, long lo, long hi) {
+        long carry = addToLimb7(r, idx, lo);
+        long h = hi + carry;
+        long extra = (Long.compareUnsigned(h, hi) < 0) ? 1L : 0L;
+        long total = addToLimb7(r, idx + 1, h) + extra;
+        for (int k = idx + 2; total != 0 && k < r.length; k++) {
+            total = addToLimb7(r, k, total);
+        }
+    }
+
+    private static long addToLimb7(long[] r, int k, long add) {
+        long old = r[k];
+        long s = old + add;
+        r[k] = s;
+        return (Long.compareUnsigned(s, old) < 0) ? 1L : 0L;
+    }
+
+    private static long bitAt7(long[] r, int bit) {
+        if (bit < 0) return 0L;
+        return (r[bit >> 6] >>> (bit & 63)) & 1L;
+    }
+
+    private static boolean hasBitsBelow7(long[] r, int limit) {
+        if (limit <= 0) return false;
+        int w = limit >> 6;
+        int b = limit & 63;
+        for (int i = 0; i < w && i < r.length; i++) {
+            if (r[i] != 0L) return true;
+        }
+        if (w < r.length && b > 0) {
+            long mask = (1L << b) - 1;
+            if ((r[w] & mask) != 0L) return true;
+        }
+        return false;
+    }
+
+    /** 448-bit 右移 shift 位，取低 4 limb（小端，隐含位在 limb3 bit0） */
+    private static long[] shr4(long[] r, int shift) {
+        long[] out = new long[4];
+        int w = shift >> 6, b = shift & 63;
+        for (int i = 0; i < 4; i++) {
+            int hi = i + w;
+            long high = hi < r.length ? r[hi] : 0L;
+            long low = (hi + 1 < r.length) ? r[hi + 1] : 0L;
+            out[i] = (b == 0) ? high : (high >>> b) | (low << (64 - b));
+        }
+        return out;
+    }
+
+    /** 乘积舍入打包：r（小端 448-bit）→ UFloat256，RN 向偶。
+     *  🔧 exp' = E_in + shift - MANT_BITS（乘积是 384/385 bit 隐含位基数，需减 192 补偿） */
+    private static UFloat256 roundAndPackUF(long[] r, long exp) {
+        int bitLen = 0;
+        for (int i = 6; i >= 0; i--) {
+            if (r[i] != 0L) {
+                bitLen = (i << 6) + (64 - Long.numberOfLeadingZeros(r[i]));
+                break;
+            }
+        }
+        if (bitLen == 0) return ZERO;
+        int shift = bitLen - MANT_IMPLIED; // 归一化：通常 192 或 193
+        long G = bitAt7(r, shift - 1);
+        long R = (shift >= 2) ? bitAt7(r, shift - 2) : 0L;
+        long S = (shift >= 2 && hasBitsBelow7(r, shift - 2)) ? 1L : 0L;
+        long[] m = shr4(r, shift);
+        // exp 补偿：E_in + shift - MANT_BITS
+        exp += shift - MANT_BITS;
+        if (Long.compareUnsigned(exp, EXPONENT_ALL_ONES) >= 0) return INF;
+        boolean increment = G == 1 && (R == 1 || S == 1 || (m[0] & 1L) == 1);
+        if (increment) {
+            m[0] += 1;
+            boolean carry = m[0] == 0;
+            if (carry) { m[1] += 1; carry = m[1] == 0; }
+            if (carry) { m[2] += 1; carry = m[2] == 0; }
+            if (carry) { m[3] += 1; }
+            // 舍入进位使 mantissa 变 2^193 → 右移 1 位，指数 +1
+            if ((m[3] & 0x2L) != 0L) { // bit193 set（limb3 bit1）
+                m[3] = (m[3] >>> 1) | (m[2] << 63);
+                m[2] = (m[2] >>> 1) | (m[1] << 63);
+                m[1] = (m[1] >>> 1) | (m[0] << 63);
+                m[0] >>>= 1;
+                exp++;
+                if (Long.compareUnsigned(exp, EXPONENT_ALL_ONES) >= 0) return INF;
+            }
+        }
+        if (Long.compareUnsigned(exp, EXPONENT_ALL_ONES) >= 0) return INF;
+        return make(exp, m[2], m[1], m[0]);
     }
 
     // ═══════════ 除法 ═══════════
@@ -348,8 +451,11 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
 
         UInt256 M1 = mantissaWithImplied();
         UInt256 M2 = o.mantissaWithImplied();
-        M1 = M1.shiftLeft(MANT_IMPLIED); // 商精度 193 bit
-        UInt256 quot = M1.divide(M2);
+        // 🔧 修复：商 = (M1 << 193) / M2 需 386-bit 中间值，UInt256 只有 256-bit 会截断。
+        // 用 BigInteger 精确除法，商 ≤ 194 bit 可装回 UInt256
+        BigInteger num = M1.toBigInteger().shiftLeft(MANT_IMPLIED);
+        BigInteger den = M2.toBigInteger();
+        UInt256 quot = UInt256.of(num.divide(den));
 
         return roundAndPack(exp, quot);
     }
@@ -409,14 +515,15 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
     public UInt256 toUInt256() {
         if (isZero()) return UInt256.ZERO;
         if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
+        // 🔧 修复：值 = mant × 2^(realExp - 192)，需按基数 192 修正移位
         UInt256 mant = mantissaWithImplied();
         long realExp = realExponent();
-        if (realExp >= 0) {
-            if (realExp > 255) throw new ArithmeticException("UFloat256 out of UInt256 range");
-            return mant.shiftLeft((int) realExp);
+        if (realExp >= MANT_BITS) {
+            if (realExp >= 255) throw new ArithmeticException("UFloat256 out of UInt256 range");
+            return mant.shiftLeft((int) (realExp - MANT_BITS));
         }
-        if (realExp < -256) return UInt256.ZERO; // 右移超范围 → 0
-        return mant.shiftRight((int) -realExp);
+        if (realExp < 0) return UInt256.ZERO;
+        return mant.shiftRight((int) (MANT_BITS - realExp));
     }
 
     public BigDecimal toBigDecimal() {
@@ -444,17 +551,18 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
     // ═══════════ 精确取整（返回 UInt256，零损失） ═══════════
 
     /** 向零截断（无符号下即向下取整） */
+    // 🔧 修复：移位基数 192 修正
     public UInt256 truncate() {
         if (isZero()) return UInt256.ZERO;
         if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
         UInt256 mant = mantissaWithImplied();
         long realExp = realExponent();
-        if (realExp >= 0) {
-            if (realExp > 255) throw new ArithmeticException("UFloat256 too large for UInt256");
-            return mant.shiftLeft((int) realExp);
+        if (realExp >= MANT_BITS) {
+            if (realExp >= 255) throw new ArithmeticException("UFloat256 too large for UInt256");
+            return mant.shiftLeft((int) (realExp - MANT_BITS));
         }
-        if (realExp < -256) return UInt256.ZERO; // 极小值 → 0
-        return mant.shiftRight((int) -realExp);
+        if (realExp < 0) return UInt256.ZERO; // 极小值 → 0
+        return mant.shiftRight((int) (MANT_BITS - realExp));
     }
 
     /** 向下取整（无符号下即截断） */
@@ -463,18 +571,19 @@ public final class UFloat256 extends Number implements Comparable<UFloat256> {
     }
 
     /** 向上取整（+∞ 方向） */
+    // 🔧 修复：移位基数 192 修正；realExp<0 时 0<值<1 → ceil=1
     public UInt256 ceil() {
         if (isZero()) return UInt256.ZERO;
         if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
         UInt256 mant = mantissaWithImplied();
         long realExp = realExponent();
-        if (realExp >= 0) {
-            if (realExp > 255) throw new ArithmeticException("UFloat256 too large for UInt256");
-            return mant.shiftLeft((int) realExp);
+        if (realExp >= MANT_BITS) {
+            if (realExp >= 255) throw new ArithmeticException("UFloat256 too large for UInt256");
+            return mant.shiftLeft((int) (realExp - MANT_BITS));
         }
-        if (realExp < -256) return UInt256.ZERO; // 极小值 → 0
-        UInt256 abs = mant.shiftRight((int) -realExp);
-        boolean dropped = !mant.and(mant.maskBelow((int) -realExp)).isZero();
+        if (realExp < 0) return UInt256.ONE; // 0 < 值 < 1 → ceil = 1
+        UInt256 abs = mant.shiftRight((int) (MANT_BITS - realExp));
+        boolean dropped = !mant.and(mant.maskBelow((int) (MANT_BITS - realExp))).isZero();
         return dropped ? abs.add(UInt256.ONE) : abs;
     }
 

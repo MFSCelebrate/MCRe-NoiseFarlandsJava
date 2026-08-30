@@ -29,6 +29,11 @@ public class PerlinNoise {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
         return config != null && ("1.18-exp-32bit".equals(config.precisionMode) || "1.18-exp-64bit".equals(config.precisionMode));
     }
+    
+    private static boolean limitReturnValueMode() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.limitReturnValue;
+    }
 
     private static final int ROUND_OFF = 33554432;
     private final @Nullable ImprovedNoise[] noiseLevels;
@@ -297,22 +302,35 @@ public class PerlinNoise {
 
     public static double wrap(final double x) {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-      //  int distance = (config != null) ? config.farLandsDistance : 12550824;  // 回退默认值
         if (config == null) {
             return x;
         }
+        int limitNoiseValue = config.limitReturnValueValue;
         String mode = config.precisionMode;
+        double folded;
         switch (mode) {
             case "64bit":
             case "1.18-exp-64bit":
-                return x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7;
+                folded = x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7;
+                break;
             case "Release":
-                return computeReleaseValue(x);
-            case "1.18-exp-32bit":
-                return x;
+                folded = computeReleaseValue(x);
+                break;
             default:
-                return x;
+                folded = x;
+                break;
         }
+        // 🔧 修复：限制逻辑移到 switch 之后（原来在 switch 后的不可达位置），
+        // 通过局部变量 folded 赋值（x 是 final 参数不可改）
+        if (limitReturnValueMode()) {
+            double abs = Math.abs(folded);
+            // 避免 log10(0) = -Infinity 与负数 log10 的边界问题
+            if (abs != 0.0 && Math.log10(abs) > limitNoiseValue) {
+                double logAbs = Math.log10(abs);
+                folded = Math.pow(10, logAbs - Math.floor(logAbs - limitNoiseValue)) * Math.signum(folded);
+            }
+        }
+        return folded;
     }
 
     protected int firstOctave() {

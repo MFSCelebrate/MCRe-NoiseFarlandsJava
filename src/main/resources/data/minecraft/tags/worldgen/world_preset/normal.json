@@ -5,8 +5,9 @@
     "minecraft:flat_all_dimensions",
     "minecraft:large_biomes",
     "minecraft:amplified",
+    "minecraft:single_biome_surface",
     "minecraft:caves",
     "minecraft:floating_islands",
-    "minecraft:single_biome_surface"
+    "minecraft:1_18_1_overworld"
   ]
 }

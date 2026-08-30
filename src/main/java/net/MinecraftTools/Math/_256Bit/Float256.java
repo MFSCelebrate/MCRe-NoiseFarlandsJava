@@ -367,15 +367,14 @@ public final class Float256 extends Number implements Comparable<Float256> {
     }
 
     /** |exp1 - exp2|，截断为 int（>300 时调用方按 0 处理） */
+    // 🔧 修复：hi 跨 2^16 边界进位（如 BIAS=0x3FFF:FFFF → BIAS+1=0x4000:0000）时 hi 不同但差很小，
+    // 不能直接 return 301，必须算完整 79-bit 差
     private static int expDiff(long hi1, long lo1, long hi2, long lo2) {
-        if (hi1 != hi2) {
-            // 高位差已远超 300
-            return 301;
-        }
         long dLo = lo1 - lo2;
         long borrow = (dLo < 0) ? 1L : 0L;
-        long dHi = hi1 - hi2 - borrow;
-        long diff = (dHi << 16) | (dLo & 0xFFFF); // 无符号 79-bit 差
+        long dHi = hi1 - hi2 - borrow; // 无符号 63-bit 差
+        if (dHi != 0) return 301;      // ≥ 2^16 > 300
+        long diff = dLo & 0xFFFF;
         return diff > 300 ? 301 : (int) diff;
     }
 
@@ -411,11 +410,122 @@ public final class Float256 extends Number implements Comparable<Float256> {
 
         int resultSign = signum() * o.signum();
 
+        // 🔧 修复：177×177-bit 乘积需要 354 bit，超 Int256 256-bit 容量。
+        // 用 long[6]（384 bit）小端累加器 + 专用 roundAndPackMul（GRS 舍入）
         Int256 M1 = mantissaWithImplied();
         Int256 M2 = o.mantissaWithImplied();
-        Int256 product = M1.multiply(M2); // 176×176+隐含 → 352 bit
+        long[] x = {M1.d, M1.c, M1.b};   // 小端 3 limb（隐含位在 M1.b bit48）
+        long[] y = {M2.d, M2.c, M2.b};
+        long[] r = new long[6];
+        for (int i = 0; i < 3; i++) {
+            long xi = x[i];
+            if (xi == 0L) continue;
+            for (int j = 0; j < 3; j++) {
+                long yj = y[j];
+                if (yj == 0L) continue;
+                addTo6(r, i + j, xi * yj, Math.unsignedMultiplyHigh(xi, yj));
+            }
+        }
+        return roundAndPackMul(r, eHi, eLo, resultSign);
+    }
 
-        return roundAndPack(eHi, eLo, product, resultSign);
+    // ═══════════ 384-bit 乘法累加（零 GC） ═══════════
+
+    /** 384-bit 累加器：r[idx..idx+1] += (hi << 64 | lo)，进位向高位传播 */
+    private static void addTo6(long[] r, int idx, long lo, long hi) {
+        long carry = addToLimb6(r, idx, lo);
+        long h = hi + carry;
+        long extra = (Long.compareUnsigned(h, hi) < 0) ? 1L : 0L; // hi+carry 溢出 → 额外进位
+        long total = addToLimb6(r, idx + 1, h) + extra;
+        for (int k = idx + 2; total != 0 && k < r.length; k++) {
+            total = addToLimb6(r, k, total);
+        }
+    }
+
+    private static long addToLimb6(long[] r, int k, long add) {
+        long old = r[k];
+        long s = old + add;
+        r[k] = s;
+        return (Long.compareUnsigned(s, old) < 0) ? 1L : 0L;
+    }
+
+    /** 取 384-bit 累加器的第 bit 位（bit < 0 → 0） */
+    private static long bitAt(long[] r, int bit) {
+        if (bit < 0) return 0L;
+        return (r[bit >> 6] >>> (bit & 63)) & 1L;
+    }
+
+    /** 检查 r 的 bit < limit 是否存在非零位 */
+    private static boolean hasBitsBelow(long[] r, int limit) {
+        if (limit <= 0) return false;
+        int w = limit >> 6;
+        int b = limit & 63;
+        for (int i = 0; i < w && i < r.length; i++) {
+            if (r[i] != 0L) return true;
+        }
+        if (w < r.length && b > 0) {
+            long mask = (1L << b) - 1;
+            if ((r[w] & mask) != 0L) return true;
+        }
+        return false;
+    }
+
+    /** 384-bit 右移 shift 位，取低 3 limb（小端） */
+    private static long[] shr3(long[] r, int shift) {
+        long[] out = new long[3];
+        int w = shift >> 6, b = shift & 63;
+        for (int i = 0; i < 3; i++) {
+            int hi = i + w;
+            long high = hi < r.length ? r[hi] : 0L;
+            long low = (hi + 1 < r.length) ? r[hi + 1] : 0L;
+            out[i] = (b == 0) ? high : (high >>> b) | (low << (64 - b));
+        }
+        return out;
+    }
+
+    /** 乘积舍入打包：r（小端 384-bit）→ Float256，RN 向偶。
+     *  🔧 exp' = E_in + shift - MANT_BITS（乘积是 352/353 bit 隐含位基数，需减 176 补偿） */
+    private static Float256 roundAndPackMul(long[] r, long expHi, long expLo, int sign) {
+        int bitLen = 0;
+        for (int i = 5; i >= 0; i--) {
+            if (r[i] != 0L) {
+                bitLen = (i << 6) + (64 - Long.numberOfLeadingZeros(r[i]));
+                break;
+            }
+        }
+        if (bitLen == 0) return ZERO;
+        int shift = bitLen - MANT_IMPLIED; // 归一化：通常 176 或 177
+        // GRS
+        long G = bitAt(r, shift - 1);
+        long R = (shift >= 2) ? bitAt(r, shift - 2) : 0L;
+        long S = (shift >= 2 && hasBitsBelow(r, shift - 2)) ? 1L : 0L;
+        // 右移 shift 位 → 177-bit（小端 3 limb，隐含位在 limb2 bit48）
+        long[] m = shr3(r, shift);
+        // exp 补偿：E_in + shift - MANT_BITS
+        expLo += shift - MANT_BITS;
+        expHi += expLo >>> 16;
+        expLo &= 0xFFFF;
+        // RN 向偶
+        boolean increment = G == 1 && (R == 1 || S == 1 || (m[0] & 1L) == 1);
+        if (increment) {
+            m[0] += 1;
+            boolean carry = m[0] == 0;
+            if (carry) { m[1] += 1; carry = m[1] == 0; }
+            if (carry) { m[2] += 1; }
+            // 舍入进位使 mantissa 变 2^177 → 右移 1 位，指数 +1
+            if ((m[2] & 0x0002_0000_0000_0000L) != 0L) { // bit177 set
+                m[2] = (m[2] >>> 1) | (m[1] << 63);
+                m[1] = (m[1] >>> 1) | (m[0] << 63);
+                m[0] >>>= 1;
+                expLo++;
+                if (expLo > 0xFFFF) { expLo = 0; expHi++; }
+            }
+        }
+        // exp 上溢 → Inf
+        if (expHi > EXP_ALL_HI || (expHi == EXP_ALL_HI && expLo >= EXP_ALL_LO)) {
+            return sign < 0 ? NEG_INF : POS_INF;
+        }
+        return make(expHi, expLo, m[2] & MANT_HI_MASK, m[1], m[0], sign);
     }
 
     // ═════════ 除法 ═════════
@@ -461,9 +571,11 @@ public final class Float256 extends Number implements Comparable<Float256> {
 
         Int256 M1 = mantissaWithImplied();
         Int256 M2 = o.mantissaWithImplied();
-        // 商精度：M1 左移 177 位保证商有 176+1 bit 精度
-        M1 = M1.shiftLeft(MANT_IMPLIED);
-        Int256 quot = M1.divide(M2);
+        // 🔧 修复：商 = (M1 << 177) / M2 需 354-bit 中间值，Int256 只有 256-bit 会截断。
+        // 用 BigInteger 精确除法，商 ≤ 178 bit 可装回 Int256
+        BigInteger num = M1.toBigInteger().shiftLeft(MANT_IMPLIED);
+        BigInteger den = M2.toBigInteger();
+        Int256 quot = Int256.of(num.divide(den));
 
         return roundAndPack(eHi, eLo, quot, resultSign);
     }
@@ -542,11 +654,11 @@ public final class Float256 extends Number implements Comparable<Float256> {
     public long longValue() {
         if (isZero()) return 0;
         if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
+        // 🔧 修复：值 = mant × 2^(realExp - 176)，需右移 (176 - realExp) 位（原实现漏减 MANT_BITS）
         long realExp = realExponent();
         if (realExp < 0) return 0;
-        if (realExp > 64) throw new ArithmeticException("Float256 out of long range");
-        Int256 mant = mantissaWithImplied();
-        Int256 shifted = mant.shiftLeft((int) realExp);
+        if (realExp >= MANT_BITS) throw new ArithmeticException("Float256 out of long range");
+        Int256 shifted = mantissaWithImplied().shiftRight((int) (MANT_BITS - realExp));
         long result = shifted.longValue();
         return signum() < 0 ? -result : result;
     }
@@ -565,7 +677,8 @@ public final class Float256 extends Number implements Comparable<Float256> {
         if (isZero()) return BigDecimal.ZERO;
         if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
         BigInteger mant = mantissaWithImplied().toBigInteger();
-        long realExp = realExponent();
+        // 🔧 修复：realExp 需减 MANT_BITS（mant 含 2^176 基数，值 = mant × 2^(realExp-176)）
+        long realExp = realExponent() - MANT_BITS;
         BigDecimal dec = new BigDecimal(mant, 0);
         if (realExp > 0) {
             if (realExp < 1024) {
@@ -594,29 +707,37 @@ public final class Float256 extends Number implements Comparable<Float256> {
     }
 
     /** 向下取整（-∞ 方向） */
+    // 🔧 修复：移位基数 MANT_BITS=176；realExp<0 时 |值|<1 直接返回 0/-1
     public Int256 floor() {
         if (isZero()) return Int256.ZERO;
         if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
         long realExp = realExponent();
-        if (realExp >= 0) return truncate();
-        Int256 mant = mantissaWithImplied();
-        Int256 abs = mant.shiftRight((int) -realExp);
-        boolean dropped = !mant.and(mant.maskBelow((int) -realExp)).isZero();
-        if (dropped && signum() < 0) abs = abs.add(Int256.ONE);
-        return signum() < 0 ? abs.negate() : abs;
+        if (realExp >= MANT_BITS) return truncate();
+        if (realExp >= 0) {
+            Int256 mant = mantissaWithImplied();
+            Int256 abs = mant.shiftRight((int) (MANT_BITS - realExp));
+            boolean dropped = !mant.and(mant.maskBelow((int) (MANT_BITS - realExp))).isZero();
+            if (dropped && signum() < 0) abs = abs.add(Int256.ONE);
+            return signum() < 0 ? abs.negate() : abs;
+        }
+        return signum() < 0 ? Int256.MINUS_ONE : Int256.ZERO;
     }
 
     /** 向上取整（+∞ 方向） */
+    // 🔧 修复：同 floor；realExp<0 时 ceil 正=1，负=0
     public Int256 ceil() {
         if (isZero()) return Int256.ZERO;
         if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
         long realExp = realExponent();
-        if (realExp >= 0) return truncate();
-        Int256 mant = mantissaWithImplied();
-        Int256 abs = mant.shiftRight((int) -realExp);
-        boolean dropped = !mant.and(mant.maskBelow((int) -realExp)).isZero();
-        if (dropped && signum() > 0) abs = abs.add(Int256.ONE);
-        return signum() < 0 ? abs.negate() : abs;
+        if (realExp >= MANT_BITS) return truncate();
+        if (realExp >= 0) {
+            Int256 mant = mantissaWithImplied();
+            Int256 abs = mant.shiftRight((int) (MANT_BITS - realExp));
+            boolean dropped = !mant.and(mant.maskBelow((int) (MANT_BITS - realExp))).isZero();
+            if (dropped && signum() > 0) abs = abs.add(Int256.ONE);
+            return signum() < 0 ? abs.negate() : abs;
+        }
+        return signum() > 0 ? Int256.ONE : Int256.ZERO;
     }
 
     /** 四舍五入（half-up，与 Math.round 一致） */
@@ -625,15 +746,16 @@ public final class Float256 extends Number implements Comparable<Float256> {
     }
 
     /** 绝对值截断（内部用） */
+    // 🔧 修复：值 = mant × 2^(realExp - 176)。realExp ≥ 176 左移(realExp-176)，0≤realExp<176 右移(176-realExp)，<0 归 0
     private Int256 truncateAbs() {
         long realExp = realExponent();
         Int256 mant = mantissaWithImplied();
-        if (realExp >= 0) {
-            if (realExp > 255) throw new ArithmeticException("Float256 too large for Int256");
-            return mant.shiftLeft((int) realExp);
+        if (realExp >= MANT_BITS) {
+            if (realExp >= 255) throw new ArithmeticException("Float256 too large for Int256");
+            return mant.shiftLeft((int) (realExp - MANT_BITS));
         }
-        if (realExp < -255) return Int256.ZERO; // 极小值 → 0
-        return mant.shiftRight((int) -realExp);
+        if (realExp < 0) return Int256.ZERO;
+        return mant.shiftRight((int) (MANT_BITS - realExp));
     }
 
     /**

@@ -136,26 +136,28 @@ public final class Int256 extends Number implements Comparable<Int256> {
     // ──────── 核心运算 ────────
 
     /* ==================== 加法 ==================== */
+    // 🔧 修复：进位方向 d→c→b→a（从最低 limb 向最高传播）
     public Int256 add(Int256 o) {
-        long s0 = a + o.a;
-        long c0 = (unsignedLessThan(s0, a) ? 1L : 0L);
-        long s1 = b + o.b + c0;
-        long c1 = (c0 != 0 && unsignedLessOrEqual(s1, b)) || (c0 == 0 && unsignedLessThan(s1, b)) ? 1L : 0L;
-        long s2 = c + o.c + c1;
-        long c2 = (c1 != 0 && unsignedLessOrEqual(s2, c)) || (c1 == 0 && unsignedLessThan(s2, c)) ? 1L : 0L;
-        long s3 = d + o.d + c2;
+        long s3 = d + o.d;
+        long c3 = (unsignedLessThan(s3, d) ? 1L : 0L);
+        long s2 = c + o.c + c3;
+        long c2 = (c3 != 0 && unsignedLessOrEqual(s2, c)) || (c3 == 0 && unsignedLessThan(s2, c)) ? 1L : 0L;
+        long s1 = b + o.b + c2;
+        long c1 = (c2 != 0 && unsignedLessOrEqual(s1, b)) || (c2 == 0 && unsignedLessThan(s1, b)) ? 1L : 0L;
+        long s0 = a + o.a + c1;
         return new Int256(s0, s1, s2, s3);
     }
 
     /* ==================== 减法 ==================== */
+    // 🔧 修复：借位方向 d→c→b→a（从最低 limb 向最高传播）
     public Int256 subtract(Int256 o) {
-        long s0 = a - o.a;
-        long b0 = unsignedGreaterThan(s0, a) ? 1L : 0L;
-        long s1 = b - o.b - b0;
-        long b1 = (b0 != 0 && unsignedGreaterOrEqual(s1, b)) || (b0 == 0 && unsignedGreaterThan(s1, b)) ? 1L : 0L;
-        long s2 = c - o.c - b1;
-        long b2 = (b1 != 0 && unsignedGreaterOrEqual(s2, c)) || (b1 == 0 && unsignedGreaterThan(s2, c)) ? 1L : 0L;
-        long s3 = d - o.d - b2;
+        long s3 = d - o.d;
+        long b3 = unsignedGreaterThan(s3, d) ? 1L : 0L;
+        long s2 = c - o.c - b3;
+        long b2 = (b3 != 0 && unsignedGreaterOrEqual(s2, c)) || (b3 == 0 && unsignedGreaterThan(s2, c)) ? 1L : 0L;
+        long s1 = b - o.b - b2;
+        long b1 = (b2 != 0 && unsignedGreaterOrEqual(s1, b)) || (b2 == 0 && unsignedGreaterThan(s1, b)) ? 1L : 0L;
+        long s0 = a - o.a - b1;
         return new Int256(s0, s1, s2, s3);
     }
 
@@ -177,59 +179,43 @@ public final class Int256 extends Number implements Comparable<Int256> {
                 addTo(r, i + j, lo, hi);
             }
         }
-        return new Int256(r[7], r[6], r[5], r[4]);
+        // 🔧 修复：补码乘法取低 256 bit（512-bit 累加器的 r[3..0]），不是高 256
+        return new Int256(r[3], r[2], r[1], r[0]);
     }
 
     /** 512-bit 累加器：r[idx..idx+1] += (hi << 64 | lo)，进位向高位传播 */
+    // 🔧 修复：低位进位必须加到 r[idx+1]，不能折叠传播到 r[idx+2]；hi+carry 溢出单独处理
     private static void addTo(long[] r, int idx, long lo, long hi) {
-        long carry = 0;
-        long s = r[idx] + lo;
-        if (Long.compareUnsigned(s, r[idx]) < 0) carry++;
-        r[idx] = s;
-        s = r[idx + 1] + hi;
-        if (Long.compareUnsigned(s, r[idx + 1]) < 0) carry++;
-        r[idx + 1] = s;
-        for (int k = idx + 2; carry != 0 && k < r.length; k++) {
-            s = r[k] + carry;
-            carry = Long.compareUnsigned(s, r[k]) < 0 ? 1 : 0;
-            r[k] = s;
+        long carry = addToLimb(r, idx, lo);
+        long h = hi + carry;
+        long extra = (Long.compareUnsigned(h, hi) < 0) ? 1L : 0L; // hi+carry 溢出 → 额外进位
+        long total = addToLimb(r, idx + 1, h) + extra;
+        for (int k = idx + 2; total != 0 && k < r.length; k++) {
+            total = addToLimb(r, k, total);
         }
     }
 
+    /** 单 limb 加：r[k] += add，返回进位（0/1） */
+    private static long addToLimb(long[] r, int k, long add) {
+        long old = r[k];
+        long s = old + add;
+        r[k] = s;
+        return (Long.compareUnsigned(s, old) < 0) ? 1L : 0L;
+    }
+
     /* ==================== 除法 ==================== */
+    // 🔧 重写：用 BigInteger 除法避免二分搜索的乘法溢出问题（mid×den ≥ 2^256 时模运算导致比较误判）
     public Int256 divide(Int256 divisor) {
         if (divisor.isZero()) throw new ArithmeticException("/ by zero");
         if (this.isZero()) return ZERO;
         if (divisor.equals(ONE)) return this;
         if (divisor.equals(MINUS_ONE)) return this.negate();
-
-        boolean neg = (signum() < 0) ^ (divisor.signum() < 0);
-        Int256 num = this.abs();
-        Int256 den = divisor.abs();
-
-        if (num.compareTo(den) < 0) return ZERO;
-
-        // 二分搜索商（256 次迭代封顶）
-        Int256 low = ZERO;
-        Int256 high = num;
-        while (low.compareTo(high) <= 0) {
-            Int256 mid = low.add(high).shiftRight(1);
-            Int256 prod = mid.multiply(den);
-            int cmp = prod.compareTo(num);
-            if (cmp == 0) {
-                return neg ? mid.negate() : mid;
-            } else if (cmp < 0) {
-                low = mid.add(ONE);
-            } else {
-                high = mid.subtract(ONE);
-            }
-        }
-        return neg ? high.negate() : high;
+        return Int256.of(this.toBigInteger().divide(divisor.toBigInteger()));
     }
 
     public Int256 remainder(Int256 divisor) {
-        Int256 q = this.divide(divisor);
-        return this.subtract(q.multiply(divisor));
+        if (divisor.isZero()) throw new ArithmeticException("/ by zero");
+        return Int256.of(this.toBigInteger().remainder(divisor.toBigInteger()));
     }
 
     /* ==================== 取负数 ==================== */
@@ -246,32 +232,34 @@ public final class Int256 extends Number implements Comparable<Int256> {
     }
 
     /* ==================== 移位 ==================== */
+    // 🔧 修复：局部变量 int b → int bits 避免遮蔽字段 b
     public Int256 shiftLeft(int n) {
         if (n == 0) return this;
         if (n < 0) return shiftRight(-n);
         if (n >= 256) return ZERO;
 
         int w = n / 64;
-        int b = n % 64;
-        if (b == 0) {
+        int bits = n % 64;
+        if (bits == 0) {
             return switch (w) {
                 case 0 -> this;
-                case 1 -> new Int256(b, c, d, 0L);
+                case 1 -> new Int256(this.b, c, d, 0L);
                 case 2 -> new Int256(c, d, 0L, 0L);
                 case 3 -> new Int256(d, 0L, 0L, 0L);
                 default -> ZERO;
             };
         }
-        int r = 64 - b;
+        int r = 64 - bits;
         long[] arr = {0L, 0L, 0L, 0L};
-        long[] src = {a, b, c, d};
+        long[] src = {a, this.b, c, d};
         for (int i = 0; i < 4 - w; i++) {
-            arr[i] = src[i + w] << b;
+            arr[i] = src[i + w] << bits;
             if (i + w + 1 < 4) arr[i] |= src[i + w + 1] >>> r;
         }
         return new Int256(arr[0], arr[1], arr[2], arr[3]);
     }
 
+    // 🔧 修复：bits 改名 + 方向 src[i+w] + 越界防护
     public Int256 shiftRight(int n) {
         if (n == 0) return this;
         if (n < 0) return shiftLeft(-n);
@@ -279,23 +267,32 @@ public final class Int256 extends Number implements Comparable<Int256> {
 
         long fill = isNegative() ? -1L : 0L;
         int w = n / 64;
-        int b = n % 64;
-        if (b == 0) {
+        int bits = n % 64;
+        if (bits == 0) {
             return switch (w) {
                 case 0 -> this;
-                case 1 -> new Int256(fill, a, b, c);
-                case 2 -> new Int256(fill, fill, a, b);
+                case 1 -> new Int256(fill, a, this.b, c);
+                case 2 -> new Int256(fill, fill, a, this.b);
                 case 3 -> new Int256(fill, fill, fill, a);
                 default -> new Int256(fill, fill, fill, fill);
             };
         }
-        int l = 64 - b;
-        long[] src = {a, b, c, d};
+        int l = 64 - bits;
+        long[] src = {a, this.b, c, d};
         long[] arr = new long[4];
         for (int i = 0; i < 4; i++) {
-            long high = (i < w) ? fill : src[i - w];
-            long low = (i + 1 - w) < 4 ? src[i + 1 - w] : fill;
-            arr[i] = (high >>> b) | (low << l);
+            // 🔧 大端 src[0]=最高。右移 w 个整 limb + bits 位：
+            //   主部分 = src[i-w]，移入部分 = src[i-w-1]（最高低位进位）
+            int hiIdx = i - w;
+            int loIdx = hiIdx - 1;
+            long high = hiIdx >= 0 ? src[hiIdx] : fill;
+            long low = loIdx >= 0 ? src[loIdx] : fill;
+            // 🔧 高 limb 用无符号 >>>（b/c/d 是无符号位模式），a（符号位）用 >> 算术
+            if (hiIdx == 0) {
+                arr[i] = (high >> bits) | (low << l);
+            } else {
+                arr[i] = (high >>> bits) | (low << l);
+            }
         }
         return new Int256(arr[0], arr[1], arr[2], arr[3]);
     }
@@ -417,9 +414,10 @@ public final class Int256 extends Number implements Comparable<Int256> {
     }
 
     /* ==================== 转换 ==================== */
+    // 🔧 修复：高 192 位全 1 且 d≥0 时值超出 long 范围（负值位模式），必须抛异常
     public long longValue() {
         if (a == 0L && b == 0L && c == 0L && d >= 0) return d;
-        if (a == -1L && b == -1L && c == -1L) return d;
+        if (a == -1L && b == -1L && c == -1L && d < 0) return d;
         throw new ArithmeticException("Int256 out of long range");
     }
 

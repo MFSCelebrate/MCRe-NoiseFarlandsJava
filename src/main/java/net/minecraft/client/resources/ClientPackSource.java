@@ -73,8 +73,11 @@ public class ClientPackSource extends BuiltInPackSource {
             .setMetadata(BUILT_IN_METADATA)
             .exposeNamespace("minecraft", "realms")
             .applyDevelopmentConfig()
-            .pushJarResources()
+            // 🔧 MCRe：调换顺序 → jar 内资源优先，散列资源（assets/objects）兜底。
+            // 原版 build() 里 copyAndReverse() 会让"后压入"的路径排最前，所以散列源先压入、
+            // jar 后压入，反转后 jar 优先命中。保证自定义 UI 资源（改 jar 即可生效）不再被散列缓存覆盖。
             .pushAssetPath(PackType.CLIENT_RESOURCES, externalAssetRoot)
+            .pushJarResources()
             .build(VANILLA_PACK_INFO);
     }
 

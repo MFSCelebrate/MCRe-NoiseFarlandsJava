@@ -172,98 +172,97 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
                 addTo(r, i + j, lo, hi);
             }
         }
-        return new UInt256(r[7], r[6], r[5], r[4]);
+        return new UInt256(r[3], r[2], r[1], r[0]);
     }
 
     /** 512-bit 累加器：r[idx..idx+1] += (hi << 64 | lo)，进位向高位传播 */
+    // 🔧 修复：低位进位必须加到 r[idx+1]，不能折叠传播到 r[idx+2]；hi+carry 溢出单独处理
     private static void addTo(long[] r, int idx, long lo, long hi) {
-        long carry = 0;
-        long s = r[idx] + lo;
-        if (Long.compareUnsigned(s, r[idx]) < 0) carry++;
-        r[idx] = s;
-        s = r[idx + 1] + hi;
-        if (Long.compareUnsigned(s, r[idx + 1]) < 0) carry++;
-        r[idx + 1] = s;
-        for (int k = idx + 2; carry != 0 && k < r.length; k++) {
-            s = r[k] + carry;
-            carry = Long.compareUnsigned(s, r[k]) < 0 ? 1 : 0;
-            r[k] = s;
+        long carry = addToLimb(r, idx, lo);
+        long h = hi + carry;
+        long extra = (Long.compareUnsigned(h, hi) < 0) ? 1L : 0L; // hi+carry 溢出 → 额外进位
+        long total = addToLimb(r, idx + 1, h) + extra;
+        for (int k = idx + 2; total != 0 && k < r.length; k++) {
+            total = addToLimb(r, k, total);
         }
     }
 
+    /** 单 limb 加：r[k] += add，返回进位（0/1） */
+    private static long addToLimb(long[] r, int k, long add) {
+        long old = r[k];
+        long s = old + add;
+        r[k] = s;
+        return (Long.compareUnsigned(s, old) < 0) ? 1L : 0L;
+    }
+
     /* ==================== 除法 ==================== */
+    // 🔧 重写：用 BigInteger 除法避免二分搜索的乘法溢出问题
     public UInt256 divide(UInt256 divisor) {
         if (divisor.isZero()) throw new ArithmeticException("/ by zero");
         if (this.isZero()) return ZERO;
         if (divisor.equals(ONE)) return this;
-        if (this.compareTo(divisor) < 0) return ZERO;
-
-        // 二分搜索（256 次迭代封顶）
-        UInt256 low = ZERO;
-        UInt256 high = this;
-        while (low.compareTo(high) <= 0) {
-            UInt256 mid = low.add(high).shiftRight(1);
-            UInt256 prod = mid.multiply(divisor);
-            int cmp = prod.compareTo(this);
-            if (cmp == 0) return mid;
-            else if (cmp < 0) low = mid.add(ONE);
-            else high = mid.subtract(ONE);
-        }
-        return high;
+        return UInt256.of(this.toBigInteger().divide(divisor.toBigInteger()));
     }
 
     public UInt256 remainder(UInt256 divisor) {
-        return this.subtract(this.divide(divisor).multiply(divisor));
+        if (divisor.isZero()) throw new ArithmeticException("/ by zero");
+        return UInt256.of(this.toBigInteger().remainder(divisor.toBigInteger()));
     }
 
     /* ==================== 移位 ==================== */
+    // 🔧 修复：局部变量 int b → int bits 避免遮蔽字段 b
     public UInt256 shiftLeft(int n) {
         if (n == 0) return this;
         if (n < 0) return shiftRight(-n);
         if (n >= 256) return ZERO;
         int w = n / 64;
-        int b = n % 64;
-        if (b == 0) {
+        int bits = n % 64;
+        if (bits == 0) {
             return switch (w) {
                 case 0 -> this;
-                case 1 -> new UInt256(b, c, d, 0L);
+                case 1 -> new UInt256(this.b, c, d, 0L);
                 case 2 -> new UInt256(c, d, 0L, 0L);
                 case 3 -> new UInt256(d, 0L, 0L, 0L);
                 default -> ZERO;
             };
         }
-        int r = 64 - b;
+        int r = 64 - bits;
         long[] arr = new long[4];
-        long[] src = {a, b, c, d};
+        long[] src = {a, this.b, c, d};
         for (int i = 0; i < 4 - w; i++) {
-            arr[i] = src[i + w] << b;
+            arr[i] = src[i + w] << bits;
             if (i + w + 1 < 4) arr[i] |= src[i + w + 1] >>> r;
         }
         return new UInt256(arr[0], arr[1], arr[2], arr[3]);
     }
 
+    // 🔧 修复：bits 改名 + 方向 src[i+w] + 越界防护
     public UInt256 shiftRight(int n) {
         if (n == 0) return this;
         if (n < 0) return shiftLeft(-n);
         if (n >= 256) return ZERO;
         int w = n / 64;
-        int b = n % 64;
-        if (b == 0) {
+        int bits = n % 64;
+        if (bits == 0) {
             return switch (w) {
                 case 0 -> this;
-                case 1 -> new UInt256(0L, a, b, c);
-                case 2 -> new UInt256(0L, 0L, a, b);
+                case 1 -> new UInt256(0L, a, this.b, c);
+                case 2 -> new UInt256(0L, 0L, a, this.b);
                 case 3 -> new UInt256(0L, 0L, 0L, a);
                 default -> ZERO;
             };
         }
-        int l = 64 - b;
-        long[] src = {a, b, c, d};
+        int l = 64 - bits;
+        long[] src = {a, this.b, c, d};
         long[] arr = new long[4];
         for (int i = 0; i < 4; i++) {
-            long high = (i < w) ? 0L : src[i - w];
-            long low = (i + 1 - w) < 4 ? src[i + 1 - w] : 0L;
-            arr[i] = (high >>> b) | (low << l);
+            // 🔧 大端 src[0]=最高。右移 w 个整 limb + bits 位：
+            //   主部分 = src[i-w]，移入部分 = src[i-w-1]（最高低位进位），无符号 >>> 
+            int hiIdx = i - w;
+            int loIdx = hiIdx - 1;
+            long high = hiIdx >= 0 ? src[hiIdx] : 0L;
+            long low = loIdx >= 0 ? src[loIdx] : 0L;
+            arr[i] = (high >>> bits) | (low << l);
         }
         return new UInt256(arr[0], arr[1], arr[2], arr[3]);
     }

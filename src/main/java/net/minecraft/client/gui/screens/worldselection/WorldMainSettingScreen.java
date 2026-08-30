@@ -1,8 +1,8 @@
 package net.minecraft.client.gui.screens.worldselection;
 
-import java.util.Locale;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
@@ -13,9 +13,9 @@ import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.Nullable;
@@ -45,6 +45,9 @@ public class WorldMainSettingScreen extends Screen {
     private final LinearLayout scrollContent = LinearLayout.vertical().spacing(6);
     private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
     private @Nullable ScrollableLayout scrollArea;
+
+    /** "限制返回值"启用时显示的整数输入框（null 表示尚未在 init() 中创建） */
+    private @Nullable EditBox limitValueInput;
 
     // ==================== 构造函数 ====================
     public WorldMainSettingScreen(final Screen parent, final WorldCreationContext settings) {
@@ -94,46 +97,47 @@ public class WorldMainSettingScreen extends Screen {
     private void buildScrollContent() {
         this.scrollContent.defaultCellSetting().alignHorizontallyCenter();
 
-        // ========== 第一组：边境之地核心设置 ==========
+        // ========== 第一组：噪声插值设置 ==========
+        this.scrollContent.addChild(this.createSectionHeader(
+                Component.literal("§6§l噪声插值设置")
+        ));
+
+        // 1. 限制返回值（开关）——绑定 configData.limitReturnValue，切换时联动下方输入框显隐
+        SwitchGrid.Builder limitReturnBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
+                .withRowSpacing(4);
+        limitReturnBuilder.addSwitch(
+                Component.literal("限制返回值"),
+                () -> this.configData.limitReturnValue,
+                val -> {
+                    this.configData.limitReturnValue = val;
+                    if (this.limitValueInput != null) {
+                        // 联动：开启时显示输入框，关闭时隐藏（并把高度置 0 让布局收回占位）
+                        this.limitValueInput.setVisible(val);
+                        this.limitValueInput.setHeight(val ? 20 : 0);
+                        this.repositionElements();
+                    }
+                }
+        ).withInfo(Component.literal("启用后，噪声插值将把返回值限制在下方输入的整数范围内（例如 -10 或 1145）"));
+        this.scrollContent.addChild(limitReturnBuilder.build().layout(), s -> s.paddingHorizontal(10));
+
+        // 2. 限制返回值的整数输入框（仅在开关启用时显示，宽度 = 滚动面板宽 - 7px，居中顶住面板）
+        this.limitValueInput = new IntegerOnlyEditBox(
+                this.font, 0, 0, CONTENT_WIDTH - 7, 20, Component.literal("限制返回值")
+        );
+        this.limitValueInput.setValue(String.valueOf(this.configData.limitReturnValueValue));
+        this.limitValueInput.setResponder(val -> {
+            try {
+                this.configData.limitReturnValueValue = Integer.parseInt(val.trim().isEmpty() ? "0" : val.trim());
+            } catch (NumberFormatException ignored) {
+            }
+        });
+        this.limitValueInput.setVisible(this.configData.limitReturnValue);
+        this.limitValueInput.setHeight(this.configData.limitReturnValue ? 20 : 0);
+        this.scrollContent.addChild(this.limitValueInput);
+
         this.scrollContent.addChild(this.createSectionHeader(
                 Component.literal("§6§l边境之地设置")
         ));
-
-        // 1. 边境之地距离（输入框）
-        LinearLayout distanceRow = LinearLayout.horizontal().spacing(4);
-        distanceRow.defaultCellSetting().alignVerticallyMiddle();
-        distanceRow.addChild(new StringWidget(Component.literal("边境之地距离:"), this.font));
-        EditBox distanceInput = new EditBox(this.font, 120, 20, Component.literal("边境之地距离"));
-        distanceInput.setValue(String.valueOf(this.configData.farLandsDistance));
-        distanceInput.setResponder(val -> {
-            try {
-                int parsed = Integer.parseInt(val.trim());
-                this.configData.farLandsDistance = Mth.clamp(parsed, 10000000, 33554432);
-            } catch (NumberFormatException ignored) {
-            }
-        });
-        distanceRow.addChild(distanceInput);
-        this.scrollContent.addChild(distanceRow, s -> s.paddingHorizontal(10));
-        this.scrollContent.addChild(new StringWidget(
-        Component.literal("§7边境之地生成位置与世界原点的距离\n§7该设置用于各类机制的判定，不影响地形生成"),
-        this.font
-        ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20));
-
-        // 2. 条纹之地距离（输入框）
-        LinearLayout stripeRow = LinearLayout.horizontal().spacing(4);
-        stripeRow.defaultCellSetting().alignVerticallyMiddle();
-        stripeRow.addChild(new StringWidget(Component.literal("条纹之地距离:"), this.font));
-        EditBox stripeInput = new EditBox(this.font, 120, 20, Component.literal("条纹之地距离"));
-        stripeInput.setValue(this.configData.stripeLandsDistance == -1 ? "-1" : String.valueOf(this.configData.stripeLandsDistance));
-        stripeInput.setResponder(val -> {
-            try {
-                int parsed = Integer.parseInt(val.trim());
-                this.configData.stripeLandsDistance = parsed < 0 ? -1 : Mth.clamp(parsed, 0, 33554432);
-            } catch (NumberFormatException ignored) {
-            }
-        });
-        stripeRow.addChild(stripeInput);
-        this.scrollContent.addChild(stripeRow, s -> s.paddingHorizontal(10));
 
         // 3. 启用天空网格（开关）
         SwitchGrid.Builder skyGridBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
@@ -374,8 +378,10 @@ public class WorldMainSettingScreen extends Screen {
     // ==================== 配置数据类 ====================
 
     public static class FarLandsConfigData {
-        public int farLandsDistance = 12550824;
-        public int stripeLandsDistance = 16777216;
+        /** "限制返回值"开关 */
+        public boolean limitReturnValue = false;
+        /** "限制返回值"输入框的整数值 */
+        public int limitReturnValueValue = 9;
         public boolean enableSkyGrid = false;
         public boolean forceSkyGrid = false;
         public boolean progressiveFarlands = false;
@@ -397,5 +403,44 @@ public class WorldMainSettingScreen extends Screen {
 
         /** 当前活动的 FarLands 配置，由 WorldMainSettingScreen.onDone() 写入 */
         public static FarLandsConfigData activeConfig = new FarLandsConfigData();
+    }
+
+    /**
+     * 🔧 MCRe：整数专用输入框 —— 只允许输入整数（含一位可选负号 -），
+     * 用于"限制返回值"等需要数值输入的配置项。粘贴时也会过滤非法字符。
+     */
+    private static class IntegerOnlyEditBox extends EditBox {
+        private IntegerOnlyEditBox(final Font font, final int x, final int y, final int width, final int height, final Component narration) {
+            super(font, x, y, width, height, narration);
+        }
+
+        @Override
+        public boolean charTyped(final CharacterEvent event) {
+            int codepoint = event.codepoint();
+            // 数字直接放行；负号仅允许出现在首位且只出现一次
+            if (codepoint >= '0' && codepoint <= '9') {
+                return super.charTyped(event);
+            } else if (codepoint == '-' && this.getCursorPosition() == 0 && !this.getValue().contains("-")) {
+                return super.charTyped(event);
+            }
+            return false;
+        }
+
+        @Override
+        public void insertText(final String input) {
+            // 过滤粘贴内容：只保留数字，负号仅当本地尚无负号且位于插入首部时保留
+            StringBuilder filtered = new StringBuilder();
+            boolean canMinus = !this.getValue().contains("-") && this.getCursorPosition() == 0;
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+                if (c >= '0' && c <= '9') {
+                    filtered.append(c);
+                } else if (c == '-' && canMinus && filtered.length() == 0) {
+                    filtered.append(c);
+                    canMinus = false;
+                }
+            }
+            super.insertText(filtered.toString());
+        }
     }
 }
