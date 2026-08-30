@@ -122,7 +122,7 @@ public class WorldMainSettingScreen extends Screen {
 
         // 2. 限制返回值的整数输入框（仅在开关启用时显示，宽度 = 滚动面板宽 - 7px，居中顶住面板）
         this.limitValueInput = new IntegerOnlyEditBox(
-                this.font, 0, 0, CONTENT_WIDTH - 7, 20, Component.literal("限制返回值")
+        this.font, 0, 0, CONTENT_WIDTH - 7, 20, Component.literal("限制返回值")
         );
         this.limitValueInput.setValue(String.valueOf(this.configData.limitReturnValueValue));
         this.limitValueInput.setResponder(val -> {
@@ -275,7 +275,7 @@ public class WorldMainSettingScreen extends Screen {
                 () -> this.configData.disabledStructureSpawn,
                 val -> this.configData.disabledStructureSpawn = val
         ).withInfo(Component.literal("无论游戏规则 / 世界生成器怎么定义某个结构，也总是不生成结构"));
-                structBuilder.addSwitch(
+        structBuilder.addSwitch(
                 Component.literal("不生成除玩家外任何实体"),
                 () -> this.configData.disabledEntitySpawn,
                 val -> this.configData.disabledEntitySpawn = val
@@ -307,7 +307,7 @@ public class WorldMainSettingScreen extends Screen {
 
         // ===== 动态总结栏（每次渲染都读取最新值） =====
         Component summary = Component.literal(
-                "§7当前配置: 边境之地样式 §e" + String.format("%,d", this.configData.farlandsStyle)
+                "§7当前配置: 边境之地样式 §e" + this.configData.farlandsStyle
                         + " §r§7| 边境之地位置 §b" + this.configData.precisionMode
         );
         int summaryWidth = this.font.width(summary);
@@ -380,8 +380,10 @@ public class WorldMainSettingScreen extends Screen {
     public static class FarLandsConfigData {
         /** "限制返回值"开关 */
         public boolean limitReturnValue = false;
+
         /** "限制返回值"输入框的整数值 */
         public int limitReturnValueValue = 9;
+
         public boolean enableSkyGrid = false;
         public boolean forceSkyGrid = false;
         public boolean progressiveFarlands = false;
@@ -405,10 +407,7 @@ public class WorldMainSettingScreen extends Screen {
         public static FarLandsConfigData activeConfig = new FarLandsConfigData();
     }
 
-    /**
-     * 🔧 MCRe：整数专用输入框 —— 只允许输入整数（含一位可选负号 -），
-     * 用于"限制返回值"等需要数值输入的配置项。粘贴时也会过滤非法字符。
-     */
+    /** 🔧 MCRe：整数专用输入框 —— 只允许输入整数（含一位可选负号 -）， 用于"限制返回值"等需要数值输入的配置项。粘贴时也会过滤非法字符。 */
     private static class IntegerOnlyEditBox extends EditBox {
         private IntegerOnlyEditBox(final Font font, final int x, final int y, final int width, final int height, final Component narration) {
             super(font, x, y, width, height, narration);
