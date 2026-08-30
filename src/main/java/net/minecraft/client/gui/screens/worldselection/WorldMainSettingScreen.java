@@ -307,8 +307,8 @@ public class WorldMainSettingScreen extends Screen {
 
         // ===== 动态总结栏（每次渲染都读取最新值） =====
         Component summary = Component.literal(
-                "§7当前配置：边境之地距离 §e" + String.format("%,d", this.configData.farLandsDistance)
-                        + " §r§7| 精度模式 §b" + this.configData.precisionMode
+                "§7当前配置: 边境之地样式 §e" + String.format("%,d", this.configData.farlandsStyle)
+                        + " §r§7| 边境之地位置 §b" + this.configData.precisionMode
         );
         int summaryWidth = this.font.width(summary);
         int summaryY = (this.scrollArea != null ? this.scrollArea.getRectangle().bottom() : this.height / 2) + 5;
