@@ -69,7 +69,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         Aquifer.FluidStatus lavaStatus = new Aquifer.FluidStatus(-54, Blocks.LAVA.defaultBlockState());
         int seaLevel = settings.seaLevel();
         Aquifer.FluidStatus seaStatus = new Aquifer.FluidStatus(seaLevel, settings.defaultFluid());
-        Aquifer.FluidStatus emptyStatus = new Aquifer.FluidStatus(DimensionType.MIN_Y * 2, Blocks.AIR.defaultBlockState());
+        Aquifer.FluidStatus emptyStatus = new Aquifer.FluidStatus(DimensionType.MIN_Y, Blocks.AIR.defaultBlockState());
         return (x, y, z) -> {
             if (SharedConstants.DEBUG_DISABLE_FLUID_GENERATION) {
                 return emptyStatus;

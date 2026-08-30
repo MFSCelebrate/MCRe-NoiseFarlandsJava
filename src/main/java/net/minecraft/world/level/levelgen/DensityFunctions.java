@@ -626,7 +626,7 @@ public final class DensityFunctions {
                                 ::density),
                         DensityFunction.CODEC.fieldOf("upper_bound").forGetter(DensityFunctions.FindTopSurface
                                 ::upperBound),
-                        Codec.intRange(DimensionType.MIN_Y * 2, DimensionType.MAX_Y * 2)
+                        Codec.intRange(DimensionType.MIN_Y, DimensionType.MAX_Y)
                                 .fieldOf("lower_bound")
                                 .forGetter(DensityFunctions.FindTopSurface::lowerBound),
                         ExtraCodecs.POSITIVE_INT.fieldOf("cell_height").forGetter(DensityFunctions.FindTopSurface
@@ -1503,9 +1503,9 @@ public final class DensityFunctions {
         private static final MapCodec<
                 DensityFunctions.YClampedGradient> DATA_CODEC = RecordCodecBuilder.mapCodec(
                 i -> i.group(
-                        Codec.intRange(DimensionType.MIN_Y * 2, DimensionType.MAX_Y * 2).fieldOf("from_y").forGetter(DensityFunctions.YClampedGradient
+                        Codec.intRange(DimensionType.MIN_Y, DimensionType.MAX_Y).fieldOf("from_y").forGetter(DensityFunctions.YClampedGradient
                                 ::fromY),
-                        Codec.intRange(DimensionType.MIN_Y * 2, DimensionType.MAX_Y * 2).fieldOf("to_y").forGetter(DensityFunctions.YClampedGradient
+                        Codec.intRange(DimensionType.MIN_Y, DimensionType.MAX_Y).fieldOf("to_y").forGetter(DensityFunctions.YClampedGradient
                                 ::toY),
                         DensityFunctions.NOISE_VALUE_CODEC.fieldOf("from_value").forGetter(DensityFunctions.YClampedGradient
                                 ::fromValue),

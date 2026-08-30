@@ -99,6 +99,18 @@ public class ModTranslateResources {
         return DISPLAY_NAMES;
     }
 
+    /**
+     * 🔧 MCRe：静态查询入口 —— 供 ClientLanguage 桥接调用。
+     *
+     * <p>按当前游戏语言查自定义翻译表，命中返回翻译，未命中返回 null
+     * （null 表示"无自定义翻译"，由原版语言表继续处理）。
+     */
+    public static String getCustomTranslation(final String key) {
+        String lang = Minecraft.getInstance().options.languageCode;
+        HashMap<String, String> map = TRANSLATIONS.getOrDefault(lang, TRANSLATIONS.get("en_us"));
+        return map != null ? map.get(key) : null;
+    }
+
     static {
         HashMap<String, String> en_us = new HashMap<>();
         HashMap<String, String> zh_cn = new HashMap<>();
@@ -108,10 +120,12 @@ public class ModTranslateResources {
         zh_cn.put("generator.minecraft.caves", "洞穴");
         zh_cn.put("generator.minecraft.floating_islands", "浮岛");
         zh_cn.put("generator.minecraft.1_18_1_overworld", "1.18.1 无限世界");
+        zh_cn.put("generator.minecraft.so_high_overworld", "很高的主世界");
         
         en_us.put("generator.minecraft.caves", "Caves");
         en_us.put("generator.minecraft.floating_islands", "Floating Islands");
         en_us.put("generator.minecraft.1_18_1_overworld", "1.18.1 Infinity World");
+        en_us.put("generator.minecraft.so_high_overworld", "So High Overworld");
 
         TRANSLATIONS.put("en_us", en_us);
         TRANSLATIONS.put("zh_cn", zh_cn);

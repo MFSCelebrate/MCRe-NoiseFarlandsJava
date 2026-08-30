@@ -76,8 +76,8 @@ public class NoiseRouterData {
         HolderGetter<NormalNoise.NoiseParameters> noises = context.lookup(Registries.NOISE);
         HolderGetter<DensityFunction> functions = context.lookup(Registries.DENSITY_FUNCTION);
         context.register(ZERO, DensityFunctions.zero());
-        int belowBottom = DimensionType.MIN_Y * 2;
-        int aboveTop = DimensionType.MAX_Y * 2;
+        int belowBottom = DimensionType.MIN_Y;
+        int aboveTop = DimensionType.MAX_Y;
         context.register(Y, DensityFunctions.yClampedGradient(belowBottom, aboveTop, belowBottom, aboveTop));
         DensityFunction shiftX = registerAndWrap(
             context, SHIFT_X, DensityFunctions.flatCache(DensityFunctions.cache2d(DensityFunctions.shiftA(noises.getOrThrow(Noises.SHIFT))))
@@ -363,8 +363,8 @@ public class NoiseRouterData {
         );
         DensityFunction fullNoise = DensityFunctions.min(postProcess(slideOverworld(amplified, caves)), getFunction(functions, NOODLE));
         DensityFunction y = getFunction(functions, Y);
-        int veinMinY = Stream.of(OreVeinifier.VeinType.values()).mapToInt(t -> t.minY).min().orElse(-DimensionType.MIN_Y * 2);
-        int veinMaxY = Stream.of(OreVeinifier.VeinType.values()).mapToInt(t -> t.maxY).max().orElse(-DimensionType.MIN_Y * 2);
+        int veinMinY = Stream.of(OreVeinifier.VeinType.values()).mapToInt(t -> t.minY).min().orElse(DimensionType.MIN_Y);
+        int veinMaxY = Stream.of(OreVeinifier.VeinType.values()).mapToInt(t -> t.maxY).max().orElse(DimensionType.MIN_Y);
         DensityFunction veinToggle = yLimitedInterpolatable(y, DensityFunctions.noise(noises.getOrThrow(Noises.ORE_VEININESS), 1.5, 1.5), veinMinY, veinMaxY, 0);
         float oreRidgeFrequency = 4.0F;
         DensityFunction veinA = yLimitedInterpolatable(y, DensityFunctions.noise(noises.getOrThrow(Noises.ORE_VEIN_A), 4.0, 4.0), veinMinY, veinMaxY, 0).abs();

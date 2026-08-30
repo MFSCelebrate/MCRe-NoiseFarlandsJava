@@ -26,7 +26,8 @@ public record NoiseSettings(int minY, int height, int noiseSizeHorizontal, int n
     static final NoiseSettings FLOATING_ISLANDS_NOISE_SETTINGS = create(0, 256, 2, 1);
 
     private static DataResult<NoiseSettings> guardY(final NoiseSettings dimensionType) {
-        if (dimensionType.minY() + dimensionType.height() > DimensionType.MAX_Y + 1) {
+        // 🔧 MCRe：改用 long 比较，防止 min_y + height 在 int 上限附近溢出误判
+        if ((long) dimensionType.minY() + dimensionType.height() > DimensionType.MAX_Y + 1) {
             return DataResult.error(() -> "min_y + height cannot be higher than: " + (DimensionType.MAX_Y + 1));
         } else if (dimensionType.height() % 16 != 0) {
             return DataResult.error(() -> "height has to be a multiple of 16");

@@ -44,14 +44,17 @@ public record DimensionType(
     HolderSet<Timeline> timelines,
     Optional<Holder<WorldClock>> defaultClock
 ) {
-    // MCRe NoiseFarlands: 原 BlockPos.PACKED_Y_LENGTH 随打包系统移除，固定 12（64-2×26）
+    // 🔧 MCRe NoiseFarlands: 解除打包位宽限制——高度可到 int 极限
     public static final int BITS_FOR_Y = 12;
     public static final int MIN_HEIGHT = 16;
-    public static final int Y_SIZE = (1 << BITS_FOR_Y) - 32;
-    public static final int MAX_Y = (Y_SIZE >> 1) - 1;
-    public static final int MIN_Y = MAX_Y - Y_SIZE + 1;
-    public static final int WAY_ABOVE_MAX_Y = MAX_Y << 4;
-    public static final int WAY_BELOW_MIN_Y = MIN_Y << 4;
+    // 世界高度容量（height 上限）
+    public static final int Y_SIZE = Integer.MAX_VALUE;
+    // 数据包允许的 Y 范围：-2147483646 ~ 2147483646（不再是 -2032~2031）
+    public static final int MAX_Y = 2147483646;
+    public static final int MIN_Y = -2147483646;
+    // 哨兵：远高于/远低于世界范围（直接用 int 极限，避免 <<4 溢出）
+    public static final int WAY_ABOVE_MAX_Y = Integer.MAX_VALUE;
+    public static final int WAY_BELOW_MIN_Y = Integer.MIN_VALUE;
     public static final Codec<DimensionType> DIRECT_CODEC = createDirectCodec(EnvironmentAttributeMap.CODEC);
     public static final Codec<DimensionType> NETWORK_CODEC = createDirectCodec(EnvironmentAttributeMap.NETWORK_CODEC);
     public static final StreamCodec<RegistryFriendlyByteBuf, Holder<DimensionType>> STREAM_CODEC = ByteBufCodecs.holderRegistry(Registries.DIMENSION_TYPE);
@@ -63,7 +66,8 @@ public record DimensionType(
             throw new IllegalStateException("height has to be at least 16");
         }
 
-        if (minY + height > MAX_Y + 1) {
+        // 🔧 MCRe：改用 long 比较，防止 min_y + height 在 int 上限附近溢出误判
+        if ((long) minY + height > MAX_Y + 1) {
             throw new IllegalStateException("min_y + height cannot be higher than: " + (MAX_Y + 1));
         }
 

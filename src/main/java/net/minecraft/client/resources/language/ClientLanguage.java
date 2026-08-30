@@ -16,6 +16,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.ModMetadata.I18N.ModTranslateResources;
 import org.slf4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
@@ -61,6 +62,13 @@ public class ClientLanguage extends Language {
 
     @Override
     public String getOrDefault(final String key, final String defaultValue) {
+        // 🔧 MCRe：自定义 I18N 桥接 —— 命中自定义表优先返回，否则走原版语言表。
+        // 这样世界类型（generator.minecraft.*）等 Component.translatable 也能吃到自定义翻译，
+        // 无需改动散列资源加载优先级。
+        String custom = ModTranslateResources.getCustomTranslation(key);
+        if (custom != null) {
+            return custom;
+        }
         return this.storage.getOrDefault(key, defaultValue);
     }
 
