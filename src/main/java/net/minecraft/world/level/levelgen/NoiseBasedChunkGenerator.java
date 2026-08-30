@@ -136,12 +136,28 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         int blockY = context.blockY();
         int blockZ = context.blockZ();
         if (blockY >= minY && blockY < minY + noiseSettings.height()) {
+            // 🔧 MCRe：窗口化修复——F3 调试屏的临时 NoiseChunk 不再按数据包声明的高度（可到 21 亿）
+            // 分配插值数组（cellCountY 可达 2.6 亿 → 2×2GB → OOM）。
+            // 改为以查询点 blockY 为中心、固定小高度（含上下各 64 格）的窗口 NoiseSettings，
+            // 仅计算该点密度，数组规模恒为常量。与 inf_farlands 的窗口化思路一致。
+            int windowHalf = 64;
+            int windowMinY = Mth.floorDiv(blockY - windowHalf, 16) * 16;
+            int windowHeight = Mth.floorDiv(windowMinY + 2 * windowHalf, 16) * 16 - windowMinY;
+            if (windowHeight < 16) {
+                windowHeight = 16;
+            }
+            NoiseSettings window = new NoiseSettings(
+                windowMinY, windowHeight, noiseSettings.noiseSizeHorizontal(), noiseSettings.noiseSizeVertical()
+            );
+            int wMinY = window.minY();
+            int wCellHeight = window.getCellHeight();
+            int wCellWidth = window.getCellWidth();
             NoiseChunk noiseChunk = new NoiseChunk(
                 1,
                 randomState,
-                blockX - Math.floorMod(blockX, cellWidth),
-                blockZ - Math.floorMod(blockZ, cellWidth),
-                noiseSettings,
+                blockX - Math.floorMod(blockX, wCellWidth),
+                blockZ - Math.floorMod(blockZ, wCellWidth),
+                window,
                 DensityFunctions.BeardifierMarker.INSTANCE,
                 this.settings.value(),
                 this.globalFluidPicker.get(),
@@ -149,10 +165,10 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
             );
             noiseChunk.initializeForFirstCellX();
             noiseChunk.advanceCellX(0);
-            noiseChunk.selectCellYZ(Math.floorDiv(blockY - minY, cellHeight), 0);
-            noiseChunk.updateForY(blockY, (double)Math.floorMod(blockY - minY, cellHeight) / cellHeight);
-            noiseChunk.updateForX(blockX, (double)Math.floorMod(blockX, cellWidth) / cellWidth);
-            noiseChunk.updateForZ(blockZ, (double)Math.floorMod(blockZ, cellWidth) / cellWidth);
+            noiseChunk.selectCellYZ(Math.floorDiv(blockY - wMinY, wCellHeight), 0);
+            noiseChunk.updateForY(blockY, (double)Math.floorMod(blockY - wMinY, wCellHeight) / wCellHeight);
+            noiseChunk.updateForX(blockX, (double)Math.floorMod(blockX, wCellWidth) / wCellWidth);
+            noiseChunk.updateForZ(blockZ, (double)Math.floorMod(blockZ, wCellWidth) / wCellWidth);
             return noiseChunk.getInterpolatedDensity();
         } else {
             return Double.NaN;
