@@ -65,7 +65,8 @@ public class WorldMainSettingScreen extends Screen {
         super(Component.literal("世界自定义设置 │ World custom settings"));
         this.parent = parent;
         this.settings = settings;
-        this.configData = new FarLandsConfigData();
+        // 🔧 MCRe：从 options.txt 同目录的 farlands_config.json 加载上次保存的全局配置
+        this.configData = FarLandsConfigStorage.load(Minecraft.getInstance().gameDirectory);
     }
 
     // ==================== 初始化 ====================
@@ -93,10 +94,11 @@ public class WorldMainSettingScreen extends Screen {
 
         // 底部按钮：上一页 + 完成 + 取消 + 下一页
         LinearLayout footer = this.layout.addToFooter(LinearLayout.horizontal().spacing(8));
+        // 🔧 MCRe：换页按钮缩小到原默认(150×20)的四分之一面积 → 75×10（各维度减半）
         this.prevPageButton = footer.addChild(Button.builder(
                 Component.literal("<="),
                 button -> this.switchPage(-1)
-        ).build());
+        ).size(75, 10).build());
         footer.addChild(Button.builder(
                 Component.literal("完成"),
                 button -> this.onDone()
@@ -108,7 +110,7 @@ public class WorldMainSettingScreen extends Screen {
         this.nextPageButton = footer.addChild(Button.builder(
                 Component.literal("=>"),
                 button -> this.switchPage(1)
-        ).build());
+        ).size(75, 10).build());
 
         // 统一注册所有组件
         this.layout.visitWidgets(x$0 -> this.addRenderableWidget(x$0));
@@ -445,6 +447,8 @@ public class WorldMainSettingScreen extends Screen {
     private void onDone() {
         // 保存当前配置到静态字段
         FarLandsConfigData.activeConfig = this.configData;
+        // 🔧 MCRe：同时持久化到 options.txt 同目录的 farlands_config.json
+        FarLandsConfigStorage.save(Minecraft.getInstance().gameDirectory, this.configData);
         Minecraft.getInstance().gui.setScreen(this.parent);
     }
 
@@ -528,7 +532,9 @@ public class WorldMainSettingScreen extends Screen {
             // 过滤粘贴内容：只保留数字、小数点、负号（负号仅首位一次、小数点仅一次）
             StringBuilder filtered = new StringBuilder();
             boolean canMinus = !this.getValue().contains("-") && this.getCursorPosition() == 0;
-            boolean canDot = !this.getValue().contains(".") && !input.contains(".");
+            // 🔧 修复：canDot 只看当前值是否已有点，不再判断 input 本身——
+            // 否则键盘敲单个 '.' 时 input="." 会让 canDot=false，小数点被自己吞掉。
+            boolean canDot = !this.getValue().contains(".");
             for (int i = 0; i < input.length(); i++) {
                 char c = input.charAt(i);
                 if (c >= '0' && c <= '9') {

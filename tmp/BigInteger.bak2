@@ -1158,10 +1158,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         for (int i = xstart - 1; i >= 0; i--) {
             carry = 0;
-            // 🔧 优化：提取 x[i] 到内层循环外，减少重复掩码运算与数组访问
-            long xVal = x[i] & LONG_MASK;
             for (int j = ystart, k = ystart + 1 + i; j >= 0; j--, k--) {
-                long product = (y[j] & LONG_MASK) * xVal +
+                long product = (y[j] & LONG_MASK) *
+                                (x[i] & LONG_MASK) +
                         (z[k] & LONG_MASK) + carry;
                 z[k] = (int) product;
                 carry = product >>> 32;

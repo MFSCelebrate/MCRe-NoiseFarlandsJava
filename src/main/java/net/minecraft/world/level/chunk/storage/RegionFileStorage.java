@@ -18,8 +18,10 @@ import org.jspecify.annotations.Nullable;
 
 public final class RegionFileStorage implements AutoCloseable {
     public static final String ANVIL_EXTENSION = ".mca";
-    // MCRe：far lands 跨大量 region，256 太小导致频繁开关 region 文件；加大缓存减少文件 IO
-    private static final int MAX_CACHE_SIZE = 512;
+    // MCRe：far lands 跨大量 region，缓存加大减少频繁开关 region 文件
+    // 注意：缓存过大会让 close() 时逐个 fsync 太多 region（Android 存储上极易触发退出看门狗 15s 超时），
+    // 512 与 256 的命中率收益有限，保持 256 与退出安全平衡
+    private static final int MAX_CACHE_SIZE = 256;
     // MCRe：access-order（true）= 真 LRU——get 移动条目，remove 最久未用（原版 insertion-order 是 FIFO，命中率差）
     private final LinkedHashMap<ChunkPos, RegionFile> regionCache = new LinkedHashMap<>(16, 0.75F, true);
     private final RegionStorageInfo info;
@@ -39,7 +41,7 @@ public final class RegionFileStorage implements AutoCloseable {
             return region;
         }
 
-        if (this.regionCache.size() >= 256) {
+        if (this.regionCache.size() >= MAX_CACHE_SIZE) {
             this.regionCache.remove(this.regionCache.keySet().iterator().next()).close();
         }
 

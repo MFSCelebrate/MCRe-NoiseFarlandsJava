@@ -107,6 +107,8 @@ import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 import net.minecraft.client.gui.screens.social.PlayerSocialManager;
 import net.minecraft.client.gui.screens.social.RemoteFriendListUpdateHandler;
 import net.minecraft.client.gui.screens.worldselection.WorldOpenFlows;
+import net.minecraft.client.gui.screens.worldselection.FarLandsConfigStorage;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import net.minecraft.client.main.GameConfig;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.multiplayer.ClientHandshakePacketListenerImpl;
@@ -424,6 +426,8 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
         this.fixerUpper = DataFixers.getDataFixer();
         this.gameThread = Thread.currentThread();
         this.options = new Options(this, this.gameDirectory);
+        // 🔧 MCRe：启动时加载 FarLands 全局配置（文件缺失时自动写默认配置一次）
+        WorldMainSettingScreen.FarLandsConfigData.activeConfig = FarLandsConfigStorage.load(this.gameDirectory);
         this.debugEntries = new DebugScreenEntryList(this.gameDirectory, this.fixerUpper);
         boolean lastStartWasClean = this.options.startedCleanly;
         this.options.startedCleanly = false;
