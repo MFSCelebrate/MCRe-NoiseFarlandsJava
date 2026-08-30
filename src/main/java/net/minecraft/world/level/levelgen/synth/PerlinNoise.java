@@ -305,7 +305,7 @@ public class PerlinNoise {
         if (config == null) {
             return x;
         }
-        int limitNoiseValue = config.limitReturnValueValue;
+        double limitNoiseValue = config.limitReturnValueValue;
         String mode = config.precisionMode;
         double folded;
         switch (mode) {
@@ -320,12 +320,11 @@ public class PerlinNoise {
                 folded = x;
                 break;
         }
-        // 🔧 修复：限制逻辑移到 switch 之后（原来在 switch 后的不可达位置），
-        // 通过局部变量 folded 赋值（x 是 final 参数不可改）
+        // 🔧 限制逻辑：限制输入坐标量级（对数域折叠），支持任意实数等级（含小数、0）
         if (limitReturnValueMode()) {
             double abs = Math.abs(folded);
-            // 避免 log10(0) = -Infinity 与负数 log10 的边界问题
-            if (abs != 0.0 && Math.log10(abs) > limitNoiseValue) {
+            // log10(0) = -Infinity，恒不满足 > limit，天然跳过，无需特判 0
+            if (Math.log10(abs) > limitNoiseValue) {
                 double logAbs = Math.log10(abs);
                 folded = Math.pow(10, logAbs - Math.floor(logAbs - limitNoiseValue)) * Math.signum(folded);
             }

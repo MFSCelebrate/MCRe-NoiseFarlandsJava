@@ -49,17 +49,6 @@ public class WorldMainSettingScreen extends Screen {
     /** "限制返回值"启用时显示的整数输入框（null 表示尚未在 init() 中创建） */
     private @Nullable EditBox limitValueInput;
 
-    // ==================== 分页状态 ====================
-    /** 当前页码（0 起），进入界面默认为第一页 */
-    private int currentPage = 0;
-    /** 总页数（目前仅 1、2 两页，等待扩展） */
-    private static final int PAGE_COUNT = 2;
-    private @Nullable Button prevPageButton;
-    private @Nullable Button nextPageButton;
-    private @Nullable StringWidget titleWidget;
-    private @Nullable StringWidget subtitleWidget;
-    private @Nullable StringWidget pageNumberWidget;
-
     // ==================== 构造函数 ====================
     public WorldMainSettingScreen(final Screen parent, final WorldCreationContext settings) {
         super(Component.literal("世界自定义设置 │ World custom settings"));
@@ -71,32 +60,24 @@ public class WorldMainSettingScreen extends Screen {
     // ==================== 初始化 ====================
     @Override
     protected void init() {
-        // 标题放在 header（存为字段以便换页时更新文案）
+        // 标题放在 header
         LinearLayout header = LinearLayout.vertical().spacing(4);
         header.defaultCellSetting().alignHorizontallyCenter();
-        this.titleWidget = new StringWidget(this.title.copy().withStyle(ChatFormatting.BOLD), this.font);
-        header.addChild(this.titleWidget);
-        this.subtitleWidget = new StringWidget(
-                Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"),
-                this.font
-        );
-        header.addChild(this.subtitleWidget);
-        this.pageNumberWidget = new StringWidget(Component.literal(""), this.font);
-        header.addChild(this.pageNumberWidget);
+        header.addChild(new StringWidget(this.title.copy().withStyle(ChatFormatting.BOLD), this.font));
+        header.addChild(new StringWidget(
+        Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"),
+        this.font
+        ));
         this.layout.addToHeader(header);
 
         // 主体内容：滚动面板
-        this.buildCurrentPageContent();
+        this.buildScrollContent();
         this.scrollArea = new ScrollableLayout(this.minecraft, this.scrollContent, SCROLL_AREA_MIN_HEIGHT);
         this.scrollArea.setMinWidth(CONTENT_WIDTH);
         this.layout.addToContents(this.scrollArea);
 
-        // 底部按钮：上一页 + 完成 + 取消 + 下一页
+        // 底部按钮
         LinearLayout footer = this.layout.addToFooter(LinearLayout.horizontal().spacing(8));
-        this.prevPageButton = footer.addChild(Button.builder(
-                Component.literal("<="),
-                button -> this.switchPage(-1)
-        ).build());
         footer.addChild(Button.builder(
                 Component.literal("完成"),
                 button -> this.onDone()
@@ -105,36 +86,20 @@ public class WorldMainSettingScreen extends Screen {
                 Component.literal("取消"),
                 button -> this.onClose()
         ).build());
-        this.nextPageButton = footer.addChild(Button.builder(
-                Component.literal("=>"),
-                button -> this.switchPage(1)
-        ).build());
 
         // 统一注册所有组件
         this.layout.visitWidgets(x$0 -> this.addRenderableWidget(x$0));
-        this.updatePageState();
         this.repositionElements();
     }
 
-    // ==================== 构建滚动内容（按页分发） ====================
+    // ==================== 构建滚动内容 ====================
 
-    private void buildCurrentPageContent() {
-        this.scrollContent.removeChildren();
-        this.scrollContent.defaultCellSetting().alignHorizontallyCenter();
-        switch (this.currentPage) {
-            case 0 -> this.buildPage1Content();
-            case 1 -> this.buildPage2Content();
-            default -> { }
-        }
-    }
-
-    // 第 1 页：世界自定义设置（原内容）
-    private void buildPage1Content() {
+    private void buildScrollContent() {
         this.scrollContent.defaultCellSetting().alignHorizontallyCenter();
 
         // ========== 第一组：噪声插值设置 ==========
         this.scrollContent.addChild(this.createSectionHeader(
-                Component.literal("§u§l噪声插值设置")
+                Component.literal("§6§l噪声插值设置")
         ));
 
         // 1. 限制返回值（开关）——绑定 configData.limitReturnValue，切换时联动下方输入框显隐
@@ -152,20 +117,17 @@ public class WorldMainSettingScreen extends Screen {
                         this.repositionElements();
                     }
                 }
-        ).withInfo(Component.literal("启用后，噪声插值将把输入坐标量级限制到等级对应的对数范围，等级支持任意数值（含小数，例如 -10、9、1145）"));
+        ).withInfo(Component.literal("启用后，噪声插值将把返回值限制在下方输入的整数范围内（例如 -10 或 1145）"));
         this.scrollContent.addChild(limitReturnBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
-        // 2. 限制返回值的输入框（仅在开关启用时显示，宽度 = 滚动面板宽 - 7px，居中顶住面板）
-        this.limitValueInput = new NumberOnlyEditBox(
+        // 2. 限制返回值的整数输入框（仅在开关启用时显示，宽度 = 滚动面板宽 - 7px，居中顶住面板）
+        this.limitValueInput = new IntegerOnlyEditBox(
         this.font, 0, 0, CONTENT_WIDTH - 7, 20, Component.literal("限制返回值")
         );
-        this.limitValueInput.setValue(WorldMainSettingScreen.formatLimitValue(this.configData.limitReturnValueValue));
+        this.limitValueInput.setValue(String.valueOf(this.configData.limitReturnValueValue));
         this.limitValueInput.setResponder(val -> {
-            if (val.trim().isEmpty()) {
-                return; // 空输入不写入配置
-            }
             try {
-                this.configData.limitReturnValueValue = Double.parseDouble(val.trim());
+                this.configData.limitReturnValueValue = Integer.parseInt(val.trim().isEmpty() ? "0" : val.trim());
             } catch (NumberFormatException ignored) {
             }
         });
@@ -174,7 +136,7 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollContent.addChild(this.limitValueInput);
 
         this.scrollContent.addChild(this.createSectionHeader(
-                Component.literal("§d§l边境之地设置")
+                Component.literal("§6§l边境之地设置")
         ));
 
         // 3. 启用天空网格（开关）
@@ -321,51 +283,6 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollContent.addChild(structBuilder.build().layout(), s -> s.paddingHorizontal(10));
     }
 
-    // 第 2 页：地形偏移与缩放（滚动面板暂空，等待后续添加）
-    private void buildPage2Content() {
-        this.scrollContent.defaultCellSetting().alignHorizontallyCenter();
-        // 🔧 MCRe：第二页内容占位——当前为空，等待扩展偏移/缩放设置项
-    }
-
-    // ==================== 分页逻辑 ====================
-
-    private void switchPage(final int delta) {
-        int newPage = this.currentPage + delta;
-        if (newPage < 0 || newPage >= PAGE_COUNT) {
-            return;
-        }
-        this.currentPage = newPage;
-        this.buildCurrentPageContent();
-        // 换页后刷新滚动面板，收集新页控件
-        if (this.scrollArea != null) {
-            this.scrollArea.arrangeElements();
-        }
-        this.updatePageState();
-        this.repositionElements();
-    }
-
-    /** 刷新页码显示、上一页/下一页按钮可用状态、标题/副标题文案 */
-    private void updatePageState() {
-        if (this.pageNumberWidget != null) {
-            this.pageNumberWidget.setMessage(Component.literal("§7第 " + (this.currentPage + 1) + " / " + PAGE_COUNT + " 页"));
-        }
-        if (this.prevPageButton != null) {
-            this.prevPageButton.active = this.currentPage > 0;
-        }
-        if (this.nextPageButton != null) {
-            this.nextPageButton.active = this.currentPage < PAGE_COUNT - 1;
-        }
-        if (this.titleWidget != null && this.subtitleWidget != null) {
-            if (this.currentPage == 1) {
-                this.titleWidget.setMessage(Component.literal("地形偏移与缩放").withStyle(ChatFormatting.BOLD));
-                this.subtitleWidget.setMessage(Component.literal("§7用于在 32 位整数限制下探索更远的地形"));
-            } else {
-                this.titleWidget.setMessage(this.title.copy().withStyle(ChatFormatting.BOLD));
-                this.subtitleWidget.setMessage(Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"));
-            }
-        }
-    }
-
     // ==================== 布局调整 ====================
 
     @Override
@@ -460,20 +377,12 @@ public class WorldMainSettingScreen extends Screen {
 
     // ==================== 配置数据类 ====================
 
-    /** 🔧 MCRe：限制值的显示格式化——整数不带 ".0"，小数保留原样 */
-    private static String formatLimitValue(final double value) {
-        if (value == Math.floor(value) && !Double.isInfinite(value) && Math.abs(value) < 1e15) {
-            return String.valueOf((long) value);
-        }
-        return String.valueOf(value);
-    }
-
     public static class FarLandsConfigData {
         /** "限制返回值"开关 */
         public boolean limitReturnValue = false;
 
-        /** "限制返回值"输入框的数值（支持任意实数，含小数） */
-        public double limitReturnValueValue = 9.0;
+        /** "限制返回值"输入框的整数值 */
+        public int limitReturnValueValue = 9;
 
         public boolean enableSkyGrid = false;
         public boolean forceSkyGrid = false;
@@ -498,26 +407,19 @@ public class WorldMainSettingScreen extends Screen {
         public static FarLandsConfigData activeConfig = new FarLandsConfigData();
     }
 
-    /** 🔧 MCRe：数字专用输入框 —— 只允许输入数字（含一位可选负号 -、小数点 .），
-     * 支持整数与小数（如 -10、1145、-3.14）。粘贴时也会过滤非法字符。 */
-    private static class NumberOnlyEditBox extends EditBox {
-        private NumberOnlyEditBox(final Font font, final int x, final int y, final int width, final int height, final Component narration) {
+    /** 🔧 MCRe：整数专用输入框 —— 只允许输入整数（含一位可选负号 -）， 用于"限制返回值"等需要数值输入的配置项。粘贴时也会过滤非法字符。 */
+    private static class IntegerOnlyEditBox extends EditBox {
+        private IntegerOnlyEditBox(final Font font, final int x, final int y, final int width, final int height, final Component narration) {
             super(font, x, y, width, height, narration);
         }
 
         @Override
         public boolean charTyped(final CharacterEvent event) {
             int codepoint = event.codepoint();
-            // 数字直接放行
+            // 数字直接放行；负号仅允许出现在首位且只出现一次
             if (codepoint >= '0' && codepoint <= '9') {
                 return super.charTyped(event);
-            }
-            // 负号仅允许出现在首位且只出现一次
-            if (codepoint == '-' && this.getCursorPosition() == 0 && !this.getValue().contains("-")) {
-                return super.charTyped(event);
-            }
-            // 小数点仅允许出现一次（不支持科学计数法的 'e'，保持简单）
-            if (codepoint == '.' && !this.getValue().contains(".")) {
+            } else if (codepoint == '-' && this.getCursorPosition() == 0 && !this.getValue().contains("-")) {
                 return super.charTyped(event);
             }
             return false;
@@ -525,10 +427,9 @@ public class WorldMainSettingScreen extends Screen {
 
         @Override
         public void insertText(final String input) {
-            // 过滤粘贴内容：只保留数字、小数点、负号（负号仅首位一次、小数点仅一次）
+            // 过滤粘贴内容：只保留数字，负号仅当本地尚无负号且位于插入首部时保留
             StringBuilder filtered = new StringBuilder();
             boolean canMinus = !this.getValue().contains("-") && this.getCursorPosition() == 0;
-            boolean canDot = !this.getValue().contains(".") && !input.contains(".");
             for (int i = 0; i < input.length(); i++) {
                 char c = input.charAt(i);
                 if (c >= '0' && c <= '9') {
@@ -536,9 +437,6 @@ public class WorldMainSettingScreen extends Screen {
                 } else if (c == '-' && canMinus && filtered.length() == 0) {
                     filtered.append(c);
                     canMinus = false;
-                } else if (c == '.' && canDot) {
-                    filtered.append(c);
-                    canDot = false;
                 }
             }
             super.insertText(filtered.toString());

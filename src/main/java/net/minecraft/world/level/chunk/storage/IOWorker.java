@@ -222,7 +222,14 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
             this.runStore(entry.getKey(), entry.getValue());
             batch++;
         }
-        this.tellStorePending();
+        // 🔧 修复：仅在仍有待写条目时继续调度。
+        // 原实现无条件 tellStorePending() 会让 BACKGROUND(1) 队列无限自循环（永远非空），
+        // 而 close() 的 waitForShutdown() 使用最低优先级 SHUTDOWN(2)，
+        // FixedPriorityQueue.pop() 从高优先级开始轮询 → SHUTDOWN 永远轮不到 → join 永久挂起，
+        // 表现为：服务端已保存世界但客户端卡死"保存世界"页面。
+        if (!this.pendingWrites.isEmpty()) {
+            this.tellStorePending();
+        }
     }
 
     private void tellStorePending() {
