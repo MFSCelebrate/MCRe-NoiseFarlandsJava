@@ -1,11 +1,9 @@
 package net.minecraft.world.level.lighting;
 
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
-import net.minecraft.util.BitStorage;
-import net.minecraft.util.Mth;
-import net.minecraft.util.SimpleBitStorage;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.block.Blocks;
@@ -15,19 +13,25 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+/**
+ * ChunkSkyLightSources — 天空光源最低 Y 记录（MCRe NoiseFarlands 对象化版）
+ *
+ * <p>🔧 修复：原版用 SimpleBitStorage 按「value - minY」相对值存列最低光源 Y，
+ * 超高世界（±21.47 亿）span 达 42.9 亿 → ceillog2 位宽膨胀且相对值溢出 int。
+ * 改为 Int2IntOpenHashMap 直接存绝对 sourceY（列号 0..255 为键），
+ * 未设置 = minY（无光源），消除高度敏感性。
+ */
 public class ChunkSkyLightSources {
     private static final int SIZE = 16;
     public static final int NEGATIVE_INFINITY = Integer.MIN_VALUE;
     private final int minY;
-    private final BitStorage heightmap;
+    /** 🔧 MCRe：列号 → 绝对 sourceY（替代 BitStorage 相对值，支持任意高度） */
+    private final Int2IntOpenHashMap sourceMap = new Int2IntOpenHashMap();
     private final BlockPos.MutableBlockPos mutablePos1 = new BlockPos.MutableBlockPos();
     private final BlockPos.MutableBlockPos mutablePos2 = new BlockPos.MutableBlockPos();
 
     public ChunkSkyLightSources(final LevelHeightAccessor level) {
         this.minY = level.getMinY() - 1;
-        int maxY = level.getMaxY() + 1;
-        int bits = Mth.ceillog2(maxY - this.minY + 1);
-        this.heightmap = new SimpleBitStorage(bits, 256);
     }
 
     public void fillFrom(final ChunkAccess chunk) {
@@ -153,32 +157,29 @@ public class ChunkSkyLightSources {
     }
 
     public int getHighestLowestSourceY() {
-        int maxValue = Integer.MIN_VALUE;
-
-        for (int i = 0; i < this.heightmap.getSize(); i++) {
-            int value = this.heightmap.get(i);
-            if (value > maxValue) {
-                maxValue = value;
+        int maxValue = this.minY;
+        for (int v : this.sourceMap.values()) {
+            if (v > maxValue) {
+                maxValue = v;
             }
         }
-
-        return this.extendSourcesBelowWorld(maxValue + this.minY);
+        return this.extendSourcesBelowWorld(maxValue);
     }
 
     private void fill(final int lowestSourceY) {
-        int value = lowestSourceY - this.minY;
-
-        for (int i = 0; i < this.heightmap.getSize(); i++) {
-            this.heightmap.set(i, value);
+        if (lowestSourceY == this.minY) {
+            this.sourceMap.clear();
+        } else {
+            this.sourceMap.replaceAll((k, v) -> lowestSourceY);
         }
     }
 
     private void set(final int index, final int value) {
-        this.heightmap.set(index, value - this.minY);
+        this.sourceMap.put(index, value);
     }
 
     private int get(final int index) {
-        return this.heightmap.get(index) + this.minY;
+        return this.sourceMap.containsKey(index) ? this.sourceMap.get(index) : this.minY;
     }
 
     private int extendSourcesBelowWorld(final int value) {

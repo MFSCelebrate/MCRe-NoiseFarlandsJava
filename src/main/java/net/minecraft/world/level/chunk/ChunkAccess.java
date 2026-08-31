@@ -55,7 +55,7 @@ import net.minecraft.world.ticks.TickContainerAccess;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
-public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeManager.NoiseBiomeSource {
+public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeManager.NoiseBiomeSource, WindowedChunk {
     public static final int NO_FILLED_SECTION = -1;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Set<ChunkPos> EMPTY_REFERENCE_SET = java.util.Collections.emptySet();
@@ -78,6 +78,16 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     protected final LevelHeightAccessor levelHeightAccessor;
     protected final LevelChunkSection[] sections;
 
+    // ──────── 🔧 MCRe：窗口化区块（P1，参考 inf_farlands） ────────
+    /** 无限 Y 的 section 仓库（键 = 绝对 sectionY），超高世界超出窗口的 section 存放于此 */
+    protected final java.util.concurrent.ConcurrentHashMap<Integer, LevelChunkSection> allSections = new java.util.concurrent.ConcurrentHashMap<>();
+    /** 窗口视图数组（对外暴露的固定窗口，默认 WINDOW_SECTIONS=34 内） */
+    private volatile LevelChunkSection[] windowSections = new LevelChunkSection[0];
+    /** 窗口底部 sectionY */
+    private int windowMinY;
+    /** PalettedContainerFactory，用于懒创建缺失 section（等价 inf_farlands 的 biomeRegistry） */
+    private final PalettedContainerFactory containerFactory;
+
     public ChunkAccess(
         final ChunkPos chunkPos,
         final UpgradeData upgradeData,
@@ -90,20 +100,29 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
         this.chunkPos = chunkPos;
         this.upgradeData = upgradeData;
         this.levelHeightAccessor = levelHeightAccessor;
+        this.containerFactory = containerFactory;
+        // 🔧 MCRe：窗口鉗制，防止超高世界（±21.47億）分配 1.34億 section 數組 OOM
         this.sections = new LevelChunkSection[levelHeightAccessor.getSectionsCount()];
         this.inhabitedTime = inhabitedTime;
         this.postProcessing = new ShortList[levelHeightAccessor.getSectionsCount()];
         this.blendingData = blendingData;
         this.skyLightSources = new ChunkSkyLightSources(levelHeightAccessor);
+        // 🔧 MCRe：传入的 sections 全部转入 allSections 无限仓库（键 = 绝对 sectionY）
         if (sections != null) {
             if (this.sections.length == sections.length) {
                 System.arraycopy(sections, 0, this.sections, 0, this.sections.length);
             } else {
                 LOGGER.warn("Could not set level chunk sections, array length is {} instead of {}", sections.length, this.sections.length);
             }
+            for (int i = 0; i < sections.length; i++) {
+                if (sections[i] != null) {
+                    this.allSections.put(levelHeightAccessor.getSectionYFromSectionIndex(i), sections[i]);
+                }
+            }
         }
 
         replaceMissingSections(containerFactory, this.sections);
+        this.buildDefaultWindow();
     }
 
     private static void replaceMissingSections(final PalettedContainerFactory containerFactory, final LevelChunkSection[] sections) {
@@ -154,11 +173,117 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     }
 
     public LevelChunkSection[] getSections() {
+        // 🔧 MCRe：返回窗口视图（与 sections 全量一致——超高世界 sections 已钳制到窗口大小）
         return this.sections;
     }
 
     public LevelChunkSection getSection(final int sectionIndex) {
-        return this.getSections()[sectionIndex];
+        LevelChunkSection[] arr = this.getSections();
+        // 🔧 MCRe：窗口索引 → 绝对 sectionY，优先从 allSections 取（懒创建）
+        int sectionY = this.getSectionYFromSectionIndex(sectionIndex);
+        LevelChunkSection s = this.allSections.get(sectionY);
+        if (s == null) {
+            s = new LevelChunkSection(this.containerFactory);
+            this.allSections.put(sectionY, s);
+            if (sectionIndex >= 0 && sectionIndex < arr.length) {
+                arr[sectionIndex] = s;
+            }
+        }
+        return s;
+    }
+
+    /** 🔧 MCRe：存入指定 sectionY 的 section（无限仓库 + 窗口同步） */
+    public void setSectionAt(final int sectionY, final LevelChunkSection section) {
+        this.allSections.put(sectionY, section);
+        int idx = this.getSectionIndexFromSectionY(sectionY);
+        if (idx >= 0 && idx < this.sections.length) {
+            this.sections[idx] = section;
+        }
+    }
+
+    /** 🔧 MCRe：当前窗口底部 sectionY */
+    public int getWindowMinY() {
+        return this.windowMinY;
+    }
+
+    /** 🔧 MCRe：当前窗口顶部 sectionY */
+    public int getWindowMaxY() {
+        return this.windowMinY + this.windowSections.length - 1;
+    }
+
+    /** 🔧 MCRe：窗口基准索引——sectionY → 窗口相对索引（超出窗口允许负/超大，由 getSection 经 allSections 兜底） */
+    @Override
+    public int getSectionIndexFromSectionY(final int sectionY) {
+        return sectionY - this.windowMinY;
+    }
+
+    /** 🔧 MCRe：窗口基准逆映射——窗口相对索引 → sectionY */
+    @Override
+    public int getSectionYFromSectionIndex(final int sectionIndex) {
+        return this.windowMinY + sectionIndex;
+    }
+
+    /** 🔧 MCRe：WindowedChunk —— 窗口相对索引 → 绝对 sectionY */
+    @Override
+    public int windowSectionYFromIndex(final int index) {
+        return this.windowMinY + index;
+    }
+
+    /** 🔧 MCRe：WindowedChunk —— 绝对 sectionY → 窗口相对索引 */
+    @Override
+    public int windowSectionIndexFromY(final int sectionY) {
+        return sectionY - this.windowMinY;
+    }
+
+    /** 🔧 MCRe：WindowedChunk —— 无限 Y 的 section 仓库 */
+    @Override
+    public Map<Integer, LevelChunkSection> windowedAllSections() {
+        return this.allSections;
+    }
+
+    /** 🔧 MCRe：WindowedChunk —— 区块真实高度访问器（维度范围） */
+    @Override
+    public LevelHeightAccessor levelHeightAccessor() {
+        return this.levelHeightAccessor;
+    }
+
+    /** 🔧 MCRe：重建窗口视图为 [sectionYMin, sectionYMax] */
+    public void buildWindow(final int sectionYMin, final int sectionYMax) {
+        if (sectionYMin > sectionYMax) {
+            return;
+        }
+        int count = sectionYMax - sectionYMin + 1;
+        this.windowMinY = sectionYMin;
+        LevelChunkSection[] win = new LevelChunkSection[count];
+        for (int sy = sectionYMin; sy <= sectionYMax; sy++) {
+            int idx = sy - sectionYMin;
+            win[idx] = this.allSections.computeIfAbsent(sy, k -> new LevelChunkSection(this.containerFactory));
+        }
+        // 同步到 sections 数组（保持 getSections() 读数一致）
+        if (this.sections.length >= count) {
+            for (int i = 0; i < count; i++) {
+                this.sections[i] = win[i];
+            }
+        }
+        this.windowSections = win;
+    }
+
+    /** 🔧 MCRe：滑动窗口——以 centerSectionY 为中心重建窗口（对齐 inf_farlands 的 34-section 窗口） */
+    public void moveWindowTo(final int centerSectionY) {
+        this.buildWindow(centerSectionY - 17, centerSectionY + 16);
+    }
+
+    /** 🔧 MCRe：确保 sectionY 在窗口内（窗口外则滑窗） */
+    public void ensureWindowContains(final int sectionY) {
+        if (sectionY < this.windowMinY || sectionY > this.getWindowMaxY()) {
+            this.moveWindowTo(sectionY);
+        }
+    }
+
+    private void buildDefaultWindow() {
+        int minSectionY = this.levelHeightAccessor.getMinSectionY();
+        int count = this.levelHeightAccessor.getSectionsCount();
+        this.buildWindow(minSectionY, minSectionY + count - 1);
     }
 
     public Collection<Entry<Heightmap.Types, Heightmap>> getHeightmaps() {

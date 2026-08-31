@@ -3,7 +3,9 @@ package net.minecraft.server.level;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -40,7 +42,10 @@ public class ChunkHolder extends GenerationChunkHolder {
     private int ticketLevel;
     private int queueLevel;
     private boolean hasChangedSections;
-    private final @Nullable ShortSet[] changedBlocksPerSection;
+    // 🔧 MCRe：方块变化按「绝对 sectionY」记录（Map），替代 vanilla 的
+    // changedBlocksPerSection 数组——超高世界 getSectionsCount 可达 1.34亿，
+    // 数组分配直接 OOM。绝对 sectionY 与广播侧 SectionPos 编码解耦，极端 Y 不越界。
+    private final Map<Integer, ShortSet> changedBlocksPerSection = new HashMap<>();
     private final BitSet blockChangedLightSectionFilter = new BitSet();
     private final BitSet skyChangedLightSectionFilter = new BitSet();
     private final LevelLightEngine lightEngine;
@@ -68,7 +73,6 @@ public class ChunkHolder extends GenerationChunkHolder {
         this.ticketLevel = this.oldTicketLevel;
         this.queueLevel = this.oldTicketLevel;
         this.setTicketLevel(ticketLevel);
-        this.changedBlocksPerSection = new ShortSet[levelHeightAccessor.getSectionsCount()];
     }
 
     public CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() {
@@ -127,12 +131,13 @@ public class ChunkHolder extends GenerationChunkHolder {
         }
 
         boolean hadChangedSections = this.hasChangedSections;
-        int sectionIndex = this.levelHeightAccessor.getSectionIndex(pos.getY());
-        ShortSet changedBlocksInSection = this.changedBlocksPerSection[sectionIndex];
+        // 🔧 MCRe：绝对 sectionY（无范围限制），替代原数组索引（超高世界越界/OOM）
+        int sectionY = SectionPos.blockToSectionCoord(pos.getY());
+        ShortSet changedBlocksInSection = this.changedBlocksPerSection.get(sectionY);
         if (changedBlocksInSection == null) {
             this.hasChangedSections = true;
             changedBlocksInSection = new ShortOpenHashSet();
-            this.changedBlocksPerSection[sectionIndex] = changedBlocksInSection;
+            this.changedBlocksPerSection.put(sectionY, changedBlocksInSection);
         }
 
         changedBlocksInSection.add(SectionPos.sectionRelativePos(pos));
@@ -190,28 +195,27 @@ public class ChunkHolder extends GenerationChunkHolder {
             if (this.hasChangedSections) {
                 List<ServerPlayer> players = this.playerProvider.getPlayers(this.pos, false);
 
-                for (int sectionIndex = 0; sectionIndex < this.changedBlocksPerSection.length; sectionIndex++) {
-                    ShortSet changedBlocks = this.changedBlocksPerSection[sectionIndex];
-                    if (changedBlocks != null) {
-                        this.changedBlocksPerSection[sectionIndex] = null;
-                        if (!players.isEmpty()) {
-                            int sectionY = this.levelHeightAccessor.getSectionYFromSectionIndex(sectionIndex);
-                            SectionPos sectionPos = SectionPos.of(chunk.getPos(), sectionY);
-                            if (changedBlocks.size() == 1) {
-                                BlockPos pos = sectionPos.relativeToBlockPos(changedBlocks.iterator().nextShort());
-                                BlockState state = level.getBlockState(pos);
-                                this.broadcast(players, new ClientboundBlockUpdatePacket(pos, state));
-                                this.broadcastBlockEntityIfNeeded(players, level, pos, state);
-                            } else {
-                                LevelChunkSection section = chunk.getSection(sectionIndex);
-                                ClientboundSectionBlocksUpdatePacket packet = new ClientboundSectionBlocksUpdatePacket(sectionPos, changedBlocks, section);
-                                this.broadcast(players, packet);
-                                packet.runUpdates((pos, state) -> this.broadcastBlockEntityIfNeeded(players, level, pos, state));
-                            }
+                // 🔧 MCRe：遍历 Map（键 = 绝对 sectionY），替代原数组索引遍历
+                for (Map.Entry<Integer, ShortSet> entry : this.changedBlocksPerSection.entrySet()) {
+                    ShortSet changedBlocks = entry.getValue();
+                    if (changedBlocks != null && !changedBlocks.isEmpty()) {
+                        int sectionY = entry.getKey();
+                        SectionPos sectionPos = SectionPos.of(chunk.getPos(), sectionY);
+                        if (changedBlocks.size() == 1) {
+                            BlockPos pos = sectionPos.relativeToBlockPos(changedBlocks.iterator().nextShort());
+                            BlockState state = level.getBlockState(pos);
+                            this.broadcast(players, new ClientboundBlockUpdatePacket(pos, state));
+                            this.broadcastBlockEntityIfNeeded(players, level, pos, state);
+                        } else {
+                            LevelChunkSection section = chunk.getSection(chunk.getSectionIndexFromSectionY(sectionY));
+                            ClientboundSectionBlocksUpdatePacket packet = new ClientboundSectionBlocksUpdatePacket(sectionPos, changedBlocks, section);
+                            this.broadcast(players, packet);
+                            packet.runUpdates((pos, state) -> this.broadcastBlockEntityIfNeeded(players, level, pos, state));
                         }
                     }
                 }
 
+                this.changedBlocksPerSection.clear();
                 this.hasChangedSections = false;
             }
         }

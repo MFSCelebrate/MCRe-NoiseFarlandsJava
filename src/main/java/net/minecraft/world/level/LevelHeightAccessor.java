@@ -12,8 +12,13 @@ public interface LevelHeightAccessor {
         return this.getMinY() + this.getHeight() - 1;
     }
 
+    // 🔧 MCRe：窗口钳制——section 相关 API 全局封顶到 WINDOW_SECTIONS，
+    // 防止超高世界（height→±21.47亿）在 ChunkHolder/ChunkAccess 分配 1.34亿 数组 OOM。
+    // 区块内部用 allSections 无限存储（见 WindowedChunk），Level 上报窗口大小即可。
+    int WINDOW_SECTIONS = 34;
+
     default int getSectionsCount() {
-        return this.getMaxSectionY() - this.getMinSectionY() + 1;
+        return Math.min(this.getMaxSectionY() - this.getMinSectionY() + 1, WINDOW_SECTIONS);
     }
 
     default int getMinSectionY() {
@@ -21,7 +26,8 @@ public interface LevelHeightAccessor {
     }
 
     default int getMaxSectionY() {
-        return SectionPos.blockToSectionCoord(this.getMaxY());
+        // 与 getMinSectionY 对齐：窗口最大 sectionY = minSectionY + WINDOW_SECTIONS - 1
+        return this.getMinSectionY() + Math.min(this.getHeight() >> 4, WINDOW_SECTIONS) - 1;
     }
 
     default boolean isInsideBuildHeight(final BlockPos pos) {
@@ -45,11 +51,18 @@ public interface LevelHeightAccessor {
     }
 
     default int getSectionIndexFromSectionY(final int sectionY) {
-        return sectionY - this.getMinSectionY();
+        // 🔧 MCRe：窗口钳制，防止极端 sectionY 越界 WINDOW_SECTIONS 数组
+        int raw = sectionY - this.getMinSectionY();
+        if (raw < 0) {
+            return 0;
+        }
+        int max = this.getSectionsCount() - 1;
+        return raw > max ? max : raw;
     }
 
     default int getSectionYFromSectionIndex(final int sectionIndex) {
-        return sectionIndex + this.getMinSectionY();
+        // 🔧 MCRe：窗口钳制逆映射，保持与 getSectionIndexFromSectionY 一致
+        return this.getMinSectionY() + sectionIndex;
     }
 
     static LevelHeightAccessor create(final int minY, final int height) {

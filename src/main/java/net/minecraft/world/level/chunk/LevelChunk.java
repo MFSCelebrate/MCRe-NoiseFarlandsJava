@@ -223,11 +223,9 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
         } else {
             try {
                 int sectionIndex = this.getSectionIndex(y);
-                if (sectionIndex >= 0 && sectionIndex < this.sections.length) {
-                    LevelChunkSection currentSection = this.sections[sectionIndex];
-                    if (!currentSection.hasOnlyAir()) {
-                        return currentSection.getBlockState(x & 15, y & 15, z & 15);
-                    }
+                LevelChunkSection currentSection = this.getSection(sectionIndex);
+                if (currentSection != null && !currentSection.hasOnlyAir()) {
+                    return currentSection.getBlockState(x & 15, y & 15, z & 15);
                 }
 
                 return Blocks.AIR.defaultBlockState();
@@ -248,11 +246,9 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
     public FluidState getFluidState(final int x, final int y, final int z) {
         try {
             int sectionIndex = this.getSectionIndex(y);
-            if (sectionIndex >= 0 && sectionIndex < this.sections.length) {
-                LevelChunkSection currentSection = this.sections[sectionIndex];
-                if (!currentSection.hasOnlyAir()) {
-                    return currentSection.getFluidState(x & 15, y & 15, z & 15);
-                }
+            LevelChunkSection currentSection = this.getSection(sectionIndex);
+            if (currentSection != null && !currentSection.hasOnlyAir()) {
+                return currentSection.getFluidState(x & 15, y & 15, z & 15);
             }
 
             return Fluids.EMPTY.defaultFluidState();
