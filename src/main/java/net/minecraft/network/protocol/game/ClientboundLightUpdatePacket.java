@@ -1,6 +1,6 @@
 package net.minecraft.network.protocol.game;
 
-import java.util.BitSet;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.Packet;
@@ -17,21 +17,26 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
     private final int z;
     private final ClientboundLightUpdatePacketData lightData;
 
+    // 🔧 MCRe P4b：光照增量改绝对 sectionY 集合（LongOpenHashSet），全量模式传 null + 窗口锚定
     public ClientboundLightUpdatePacket(
         final ChunkPos pos,
         final LevelLightEngine lightEngine,
-        final @Nullable BitSet skyChangedLightSectionFilter,
-        final @Nullable BitSet blockChangedLightSectionFilter
+        final @Nullable LongOpenHashSet skyChangedLightSections,
+        final @Nullable LongOpenHashSet blockChangedLightSections,
+        final int windowMinSection,
+        final int windowMaxSection
     ) {
         this.x = (int)pos.x();
         this.z = (int)pos.z();
-        this.lightData = new ClientboundLightUpdatePacketData(pos, lightEngine, skyChangedLightSectionFilter, blockChangedLightSectionFilter);
+        this.lightData = new ClientboundLightUpdatePacketData(
+            pos, lightEngine, skyChangedLightSections, blockChangedLightSections, windowMinSection, windowMaxSection
+        );
     }
 
     private ClientboundLightUpdatePacket(final FriendlyByteBuf input) {
         this.x = input.readVarInt();
         this.z = input.readVarInt();
-        this.lightData = new ClientboundLightUpdatePacketData(input, this.x, this.z);
+        this.lightData = new ClientboundLightUpdatePacketData(input);
     }
 
     private void write(final FriendlyByteBuf output) {

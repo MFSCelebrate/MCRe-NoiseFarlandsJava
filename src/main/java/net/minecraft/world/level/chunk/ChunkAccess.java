@@ -293,7 +293,17 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     private void buildDefaultWindow() {
         int minSectionY = this.levelHeightAccessor.getMinSectionY();
         int count = this.levelHeightAccessor.getSectionsCount();
-        this.buildWindow(minSectionY, minSectionY + count - 1);
+        // 🔧 MCRe P4b：超高世界（getMinSectionY = -1.34亿）窗口若锚定世界底部，
+        // 玩家活动区（y≈0）完全不在窗口内，方块/光照/序列化全错位。
+        // 正常高度世界保持原版语义（minSectionY..minSectionY+count-1），
+        // 超高世界锚定到玩家默认活动区（0 中心，-17..+16）。
+        // 玩家可探索超过窗口范围的部分由 moveWindowTo 滑动跟随（渲染层接线）。
+        if (minSectionY < -512 || minSectionY + count > 0x7FFF) {
+            int center = 0;
+            this.buildWindow(center - net.minecraft.world.level.chunk.WindowedChunk.WINDOW_HALF_BELOW, center + net.minecraft.world.level.chunk.WindowedChunk.WINDOW_HALF_ABOVE);
+        } else {
+            this.buildWindow(minSectionY, minSectionY + count - 1);
+        }
     }
 
     public Collection<Entry<Heightmap.Types, Heightmap>> getHeightmaps() {

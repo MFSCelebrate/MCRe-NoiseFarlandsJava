@@ -880,8 +880,18 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
         for (ClientboundChunksBiomesPacket.ChunkBiomeData data : packet.chunkBiomeData()) {
             for (int xOffset = -1; xOffset <= 1; xOffset++) {
                 for (int zOffset = -1; zOffset <= 1; zOffset++) {
-                    for (int y = this.level.getMinSectionY(); y <= this.level.getMaxSectionY(); y++) {
-                        this.minecraft.levelExtractor.setSectionDirty((int)data.pos().x() + xOffset, y, (int)data.pos().z() + zOffset);
+                    // 🔧 MCRe P4b：超高世界 level.getMinSectionY()=-1.34亿，循环锚定底部无意义；
+                    // 改为遍历 chunk 实际持有的 section（windowedAllSections 键 = 绝对 sectionY）
+                    net.minecraft.world.level.chunk.ChunkAccess ca = this.level.getChunkSource()
+                        .getChunk((int)data.pos().x() + xOffset, (int)data.pos().z() + zOffset, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false);
+                    if (ca instanceof net.minecraft.world.level.chunk.WindowedChunk wc) {
+                        for (Integer y : wc.windowedAllSections().keySet()) {
+                            this.minecraft.levelExtractor.setSectionDirty((int)data.pos().x() + xOffset, y, (int)data.pos().z() + zOffset);
+                        }
+                    } else if (ca != null) {
+                        for (int y = this.level.getMinSectionY(); y <= this.level.getMaxSectionY(); y++) {
+                            this.minecraft.levelExtractor.setSectionDirty((int)data.pos().x() + xOffset, y, (int)data.pos().z() + zOffset);
+                        }
                     }
                 }
             }
@@ -901,35 +911,67 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
 
         for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
             LevelChunkSection section = sections[sectionIndex];
-            int sectionY = this.level.getSectionYFromSectionIndex(sectionIndex);
+            // 🔧 MCRe P4b：level.getSectionYFromSectionIndex 锚定世界底部（超高世界 -1.34亿）；
+            // 改用 chunk 自己的窗口基准（windowMinY + index）
+            int sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
             lightEngine.updateSectionStatus(SectionPos.of(chunkPos, sectionY), section.hasOnlyAir());
         }
 
-        this.level.setSectionRangeDirty(x - 1, this.level.getMinSectionY(), z - 1, x + 1, this.level.getMaxSectionY(), z + 1);
+        int dirtyMinY;
+        int dirtyMaxY;
+        if (chunk instanceof net.minecraft.world.level.chunk.WindowedChunk wc) {
+            dirtyMinY = wc.getWindowMinY();
+            dirtyMaxY = wc.getWindowMaxY();
+        } else {
+            dirtyMinY = chunk.getMinSectionY();
+            dirtyMaxY = chunk.getMaxSectionY();
+        }
+        this.level.setSectionRangeDirty(x - 1, dirtyMinY, z - 1, x + 1, dirtyMaxY, z + 1);
     }
 
     @Override
     public void handleForgetLevelChunk(final ClientboundForgetLevelChunkPacket packet) {
         PacketUtils.ensureRunningOnSameThread(packet, this, this.minecraft.packetProcessor());
+        ChunkPos chunkPos = packet.pos();
+        // 🔧 MCRe P4b：drop 前捕获 chunk 实际持有的 sectionY（绝对），
+        // 卸载后清理光照用——超高世界 level 窗口锚定 -1.34亿，循环无意义
+        java.util.Set<Integer> sectionYs = null;
+        net.minecraft.world.level.chunk.ChunkAccess ca = this.level.getChunkSource()
+            .getChunk((int)chunkPos.x(), (int)chunkPos.z(), net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false);
+        if (ca instanceof net.minecraft.world.level.chunk.WindowedChunk wc) {
+            sectionYs = wc.windowedAllSections().keySet();
+        }
+        final java.util.Set<Integer> captured = sectionYs;
         this.level.getChunkSource().drop(packet.pos());
         this.debugSubscriber.dropChunk(packet.pos());
-        this.queueLightRemoval(packet);
+        this.queueLightRemoval(packet, captured);
     }
 
-    private void queueLightRemoval(final ClientboundForgetLevelChunkPacket packet) {
+    private void queueLightRemoval(final ClientboundForgetLevelChunkPacket packet, final java.util.Set<Integer> sectionYs) {
         ChunkPos chunkPos = packet.pos();
         this.level.queueLightUpdate(() -> {
             LevelLightEngine lightEngine = this.level.getLightEngine();
             lightEngine.setLightEnabled(chunkPos, false);
 
-            for (int sectionY = lightEngine.getMinLightSection(); sectionY < lightEngine.getMaxLightSection(); sectionY++) {
-                SectionPos sectionPos = SectionPos.of(chunkPos, sectionY);
-                lightEngine.queueSectionData(LightLayer.BLOCK, sectionPos, null);
-                lightEngine.queueSectionData(LightLayer.SKY, sectionPos, null);
-            }
+            if (sectionYs != null) {
+                for (int sectionY : sectionYs) {
+                    SectionPos sectionPos = SectionPos.of(chunkPos, sectionY);
+                    lightEngine.queueSectionData(LightLayer.BLOCK, sectionPos, null);
+                    lightEngine.queueSectionData(LightLayer.SKY, sectionPos, null);
+                }
+                for (int sectionY : sectionYs) {
+                    lightEngine.updateSectionStatus(SectionPos.of(chunkPos, sectionY), true);
+                }
+            } else {
+                for (int sectionY = lightEngine.getMinLightSection(); sectionY < lightEngine.getMaxLightSection(); sectionY++) {
+                    SectionPos sectionPos = SectionPos.of(chunkPos, sectionY);
+                    lightEngine.queueSectionData(LightLayer.BLOCK, sectionPos, null);
+                    lightEngine.queueSectionData(LightLayer.SKY, sectionPos, null);
+                }
 
-            for (int sectionY = this.level.getMinSectionY(); sectionY <= this.level.getMaxSectionY(); sectionY++) {
-                lightEngine.updateSectionStatus(SectionPos.of(chunkPos, sectionY), true);
+                for (int sectionY = this.level.getMinSectionY(); sectionY <= this.level.getMaxSectionY(); sectionY++) {
+                    lightEngine.updateSectionStatus(SectionPos.of(chunkPos, sectionY), true);
+                }
             }
         });
     }
@@ -2396,14 +2438,8 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
 
     private void applyLightData(final int x, final int z, final ClientboundLightUpdatePacketData lightData, final boolean scheduleRebuild) {
         LevelLightEngine lightEngine = this.level.getChunkSource().getLightEngine();
-        BitSet skyYMask = lightData.getSkyYMask();
-        BitSet emptySkyYMask = lightData.getEmptySkyYMask();
-        Iterator<byte[]> skyUpdates = lightData.getSkyUpdates().iterator();
-        this.readSectionList(x, z, lightEngine, LightLayer.SKY, skyYMask, emptySkyYMask, skyUpdates, scheduleRebuild);
-        BitSet blockYMask = lightData.getBlockYMask();
-        BitSet emptyBlockYMask = lightData.getEmptyBlockYMask();
-        Iterator<byte[]> blockUpdates = lightData.getBlockUpdates().iterator();
-        this.readSectionList(x, z, lightEngine, LightLayer.BLOCK, blockYMask, emptyBlockYMask, blockUpdates, scheduleRebuild);
+        this.readSectionList(x, z, lightEngine, LightLayer.SKY, lightData.getSkySectionYs(), lightData.getEmptySkySectionYs(), lightData.getSkyUpdates().iterator(), scheduleRebuild);
+        this.readSectionList(x, z, lightEngine, LightLayer.BLOCK, lightData.getBlockSectionYs(), lightData.getEmptyBlockSectionYs(), lightData.getBlockUpdates().iterator(), scheduleRebuild);
         lightEngine.setLightEnabled(new ChunkPos(x, z), true);
     }
 
@@ -2542,22 +2578,21 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
         final int chunkZ,
         final LevelLightEngine lightEngine,
         final LightLayer layer,
-        final BitSet yMask,
-        final BitSet emptyYMask,
+        final List<Integer> dataSections,
+        final List<Integer> emptySections,
         final Iterator<byte[]> updates,
         final boolean scheduleRebuild
     ) {
-        for (int sectionIndex = 0; sectionIndex < lightEngine.getLightSectionCount(); sectionIndex++) {
-            int sectionY = lightEngine.getMinLightSection() + sectionIndex;
-            boolean haveData = yMask.get(sectionIndex);
-            boolean haveEmpty = emptyYMask.get(sectionIndex);
-            if (haveData || haveEmpty) {
-                lightEngine.queueSectionData(
-                    layer, SectionPos.of(chunkX, sectionY, chunkZ), haveData ? new DataLayer((byte[])updates.next().clone()) : new DataLayer()
-                );
-                if (scheduleRebuild) {
-                    this.level.setSectionDirtyWithNeighbors(chunkX, sectionY, chunkZ);
-                }
+        for (int sectionY : dataSections) {
+            lightEngine.queueSectionData(layer, SectionPos.of(chunkX, sectionY, chunkZ), new DataLayer((byte[])updates.next().clone()));
+            if (scheduleRebuild) {
+                this.level.setSectionDirtyWithNeighbors(chunkX, sectionY, chunkZ);
+            }
+        }
+        for (int sectionY : emptySections) {
+            lightEngine.queueSectionData(layer, SectionPos.of(chunkX, sectionY, chunkZ), new DataLayer());
+            if (scheduleRebuild) {
+                this.level.setSectionDirtyWithNeighbors(chunkX, sectionY, chunkZ);
             }
         }
     }

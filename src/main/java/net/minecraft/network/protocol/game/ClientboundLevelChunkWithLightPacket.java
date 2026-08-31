@@ -22,21 +22,33 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
     public ClientboundLevelChunkWithLightPacket(
         final LevelChunk levelChunk,
         final LevelLightEngine lightEngine,
-        final @Nullable BitSet skyChangedLightSectionFilter,
-        final @Nullable BitSet blockChangedLightSectionFilter
+        final @Nullable it.unimi.dsi.fastutil.longs.LongOpenHashSet skyChangedLightSections,
+        final @Nullable it.unimi.dsi.fastutil.longs.LongOpenHashSet blockChangedLightSections
     ) {
         ChunkPos chunkPos = levelChunk.getPos();
         this.x = (int)chunkPos.x();
         this.z = (int)chunkPos.z();
         this.chunkData = new ClientboundLevelChunkPacketData(levelChunk);
-        this.lightData = new ClientboundLightUpdatePacketData(chunkPos, lightEngine, skyChangedLightSectionFilter, blockChangedLightSectionFilter);
+        // 🔧 MCRe P4b：全量模式用 chunk 窗口锚定（超高世界不能依赖 level 底部光照窗口）
+        int winMin;
+        int winMax;
+        if (levelChunk instanceof net.minecraft.world.level.chunk.WindowedChunk wc) {
+            winMin = wc.getWindowMinY();
+            winMax = wc.getWindowMaxY();
+        } else {
+            winMin = lightEngine.getMinLightSection();
+            winMax = lightEngine.getMaxLightSection();
+        }
+        this.lightData = new ClientboundLightUpdatePacketData(
+            chunkPos, lightEngine, skyChangedLightSections, blockChangedLightSections, winMin, winMax
+        );
     }
 
     private ClientboundLevelChunkWithLightPacket(final RegistryFriendlyByteBuf input) {
         this.x = input.readInt();
         this.z = input.readInt();
         this.chunkData = new ClientboundLevelChunkPacketData(input, this.x, this.z);
-        this.lightData = new ClientboundLightUpdatePacketData(input, this.x, this.z);
+        this.lightData = new ClientboundLightUpdatePacketData(input);
     }
 
     private void write(final RegistryFriendlyByteBuf output) {

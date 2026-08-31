@@ -1,5 +1,6 @@
 package net.minecraft.server.level;
 
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import java.util.BitSet;
@@ -46,8 +47,11 @@ public class ChunkHolder extends GenerationChunkHolder {
     // changedBlocksPerSection 数组——超高世界 getSectionsCount 可达 1.34亿，
     // 数组分配直接 OOM。绝对 sectionY 与广播侧 SectionPos 编码解耦，极端 Y 不越界。
     private final Map<Integer, ShortSet> changedBlocksPerSection = new HashMap<>();
-    private final BitSet blockChangedLightSectionFilter = new BitSet();
-    private final BitSet skyChangedLightSectionFilter = new BitSet();
+    // 🔧 MCRe P4b：光照增量改为「绝对 sectionY 集合」——替代 vanilla 的 BitSet filter
+    // （索引 = chunkY - getMinLightSection()，超高世界窗口锚定 -1.34亿：玩家区域变化被
+    // 范围判断挡死，且索引差值 1.34 亿级撑爆 BitSet）。集合无窗口依赖，极端 Y 天然安全。
+    private final LongOpenHashSet blockChangedLightSections = new LongOpenHashSet();
+    private final LongOpenHashSet skyChangedLightSections = new LongOpenHashSet();
     private final LevelLightEngine lightEngine;
     private final ChunkHolder.LevelChangeListener onLevelChange;
     private final ChunkHolder.PlayerProvider playerProvider;
@@ -156,40 +160,35 @@ public class ChunkHolder extends GenerationChunkHolder {
             return false;
         }
 
-        int minLightSection = this.lightEngine.getMinLightSection();
-        int maxLightSection = this.lightEngine.getMaxLightSection();
-        if (chunkY >= minLightSection && chunkY <= maxLightSection) {
-            BitSet filter = layer == LightLayer.SKY ? this.skyChangedLightSectionFilter : this.blockChangedLightSectionFilter;
-            int index = chunkY - minLightSection;
-            if (!filter.get(index)) {
-                filter.set(index);
-                return true;
-            } else {
-                return false;
-            }
-        } else {
+        // 🔧 MCRe P4b：无窗口范围判断——超高世界光照窗口锚定 -1.34亿，
+        // 玩家区域真实 sectionY 不在 [minLightSection, maxLightSection] 内会被挡死。
+        // 改为无条件记录绝对 sectionY（集合），广播侧直接用绝对 sectionY 取数据。
+        LongOpenHashSet filter = layer == LightLayer.SKY ? this.skyChangedLightSections : this.blockChangedLightSections;
+        if (!filter.add(chunkY)) {
             return false;
+        } else {
+            return true;
         }
     }
 
     public boolean hasChangesToBroadcast() {
-        return this.hasChangedSections || !this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty();
+        return this.hasChangedSections || !this.skyChangedLightSections.isEmpty() || !this.blockChangedLightSections.isEmpty();
     }
 
     public void broadcastChanges(final LevelChunk chunk) {
         if (this.hasChangesToBroadcast()) {
             Level level = chunk.getLevel();
-            if (!this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
+            if (!this.skyChangedLightSections.isEmpty() || !this.blockChangedLightSections.isEmpty()) {
                 List<ServerPlayer> borderPlayers = this.playerProvider.getPlayers(this.pos, true);
                 if (!borderPlayers.isEmpty()) {
                     ClientboundLightUpdatePacket lightPacket = new ClientboundLightUpdatePacket(
-                        chunk.getPos(), this.lightEngine, this.skyChangedLightSectionFilter, this.blockChangedLightSectionFilter
+                        chunk.getPos(), this.lightEngine, this.skyChangedLightSections, this.blockChangedLightSections
                     );
                     this.broadcast(borderPlayers, lightPacket);
                 }
 
-                this.skyChangedLightSectionFilter.clear();
-                this.blockChangedLightSectionFilter.clear();
+                this.skyChangedLightSections.clear();
+                this.blockChangedLightSections.clear();
             }
 
             if (this.hasChangedSections) {
