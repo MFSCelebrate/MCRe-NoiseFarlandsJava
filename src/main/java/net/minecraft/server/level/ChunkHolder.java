@@ -182,7 +182,8 @@ public class ChunkHolder extends GenerationChunkHolder {
                 List<ServerPlayer> borderPlayers = this.playerProvider.getPlayers(this.pos, true);
                 if (!borderPlayers.isEmpty()) {
                     ClientboundLightUpdatePacket lightPacket = new ClientboundLightUpdatePacket(
-                        chunk.getPos(), this.lightEngine, this.skyChangedLightSections, this.blockChangedLightSections
+                        chunk.getPos(), this.lightEngine, this.skyChangedLightSections, this.blockChangedLightSections,
+                        chunk.getMinSectionY(), chunk.getMaxSectionY()
                     );
                     this.broadcast(borderPlayers, lightPacket);
                 }

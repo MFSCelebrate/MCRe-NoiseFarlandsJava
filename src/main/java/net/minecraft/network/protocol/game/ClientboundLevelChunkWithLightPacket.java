@@ -22,8 +22,9 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
     public ClientboundLevelChunkWithLightPacket(
         final LevelChunk levelChunk,
         final LevelLightEngine lightEngine,
-        final @Nullable it.unimi.dsi.fastutil.longs.LongOpenHashSet skyChangedLightSections,
-        final @Nullable it.unimi.dsi.fastutil.longs.LongOpenHashSet blockChangedLightSections
+        // 修正：将 @Nullable 移到 LongOpenHashSet 前面
+        final it.unimi.dsi.fastutil.longs.@Nullable LongOpenHashSet skyChangedLightSections,
+        final it.unimi.dsi.fastutil.longs.@Nullable LongOpenHashSet blockChangedLightSections
     ) {
         ChunkPos chunkPos = levelChunk.getPos();
         this.x = (int)chunkPos.x();

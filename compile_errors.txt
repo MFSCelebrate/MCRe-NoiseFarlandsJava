@@ -1,0 +1,30 @@
+
+> Task :compileJava
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java:25: error: type annotation @org.jspecify.annotations.Nullable is not expected here
+        final @Nullable it.unimi.dsi.fastutil.longs.LongOpenHashSet skyChangedLightSections,
+                                                   ^
+  (to annotate a qualified type, write it.unimi.dsi.fastutil.longs.@org.jspecify.annotations.Nullable LongOpenHashSet)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java:26: error: type annotation @org.jspecify.annotations.Nullable is not expected here
+        final @Nullable it.unimi.dsi.fastutil.longs.LongOpenHashSet blockChangedLightSections
+                                                   ^
+  (to annotate a qualified type, write it.unimi.dsi.fastutil.longs.@org.jspecify.annotations.Nullable LongOpenHashSet)
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/com/sun/jna/Native.java:264: warning: [removal] finalize() in Object has been deprecated and marked for removal
+        protected void finalize() throws Throwable {
+--
+                double groundValue = Biome.BIOME_INFO_NOISE.getValue(x * 0.0225, z * 0.0225, false);
+                                          ^
+/home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/server/level/ChunkHolder.java:184: error: no suitable constructor found for ClientboundLightUpdatePacket(ChunkPos,LevelLightEngine,LongOpenHashSet,LongOpenHashSet)
+                    ClientboundLightUpdatePacket lightPacket = new ClientboundLightUpdatePacket(
+                                                               ^
+    constructor ClientboundLightUpdatePacket.ClientboundLightUpdatePacket(ChunkPos,LevelLightEngine,@org.jspecify.annotations.Nullable LongOpenHashSet,@org.jspecify.annotations.Nullable LongOpenHashSet,int,int) is not applicable
+      (actual and formal argument lists differ in length)
+    constructor ClientboundLightUpdatePacket.ClientboundLightUpdatePacket(FriendlyByteBuf) is not applicable
+--
+Execution failed for task ':compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  /home/runner/work/MCRe-NoiseFarlandsJava/MCRe-NoiseFarlandsJava/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java:25: error: type annotation @org.jspecify.annotations.Nullable is not expected here
+          final @Nullable it.unimi.dsi.fastutil.longs.LongOpenHashSet skyChangedLightSections,
+                                                     ^
+    (to annotate a qualified type, write it.unimi.dsi.fastutil.longs.@org.jspecify.annotations.Nullable LongOpenHashSet)
+  3 errors
+  70 warnings
