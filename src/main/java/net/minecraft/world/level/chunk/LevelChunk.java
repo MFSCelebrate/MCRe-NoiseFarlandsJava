@@ -519,8 +519,13 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
     ) {
         this.clearAllBlockEntities();
 
-        for (LevelChunkSection section : this.sections) {
-            section.read(buffer);
+        // 🔧 MCRe：读入 (绝对 sectionY, data) 对，写入 allSections 无限仓库——支持任意高度世界
+        int sectionCount = buffer.readVarInt();
+        for (int i = 0; i < sectionCount; i++) {
+            int sectionY = buffer.readVarInt();
+            net.minecraft.world.level.chunk.LevelChunkSection s = new net.minecraft.world.level.chunk.LevelChunkSection(this.getContainerFactory());
+            s.read(buffer);
+            this.setSectionAt(sectionY, s);
         }
 
         heightmaps.forEach(this::setHeightmap);
@@ -537,8 +542,14 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
     }
 
     public void replaceBiomes(final FriendlyByteBuf buffer) {
-        for (LevelChunkSection section : this.sections) {
-            section.readBiomes(buffer);
+        // 🔧 MCRe：读入 (绝对 sectionY, biome data) 对，写入 allSections 对应 section
+        int sectionCount = buffer.readVarInt();
+        for (int i = 0; i < sectionCount; i++) {
+            int sectionY = buffer.readVarInt();
+            net.minecraft.world.level.chunk.LevelChunkSection s = this.getSectionAt(sectionY);
+            if (s != null) {
+                s.readBiomes(buffer);
+            }
         }
     }
 

@@ -66,14 +66,40 @@ public class ClientboundLevelChunkPacketData {
         ClientboundLevelChunkPacketData.BlockEntityInfo.LIST_STREAM_CODEC.encode(output, this.blockEntitiesData);
     }
 
+    // 🔧 MCRe：窗口过滤——只发送窗口内非空 section（按绝对 sectionY），供写侧遍历（块/生态系包共用）
+    static java.util.List<java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection>> sendableSections(final LevelChunk chunk) {
+        java.util.List<java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection>> out = new java.util.ArrayList<>();
+        if (chunk instanceof net.minecraft.world.level.chunk.WindowedChunk wc) {
+            int minY = wc.getWindowMinY();
+            int maxY = wc.getWindowMaxY();
+            for (java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection> e : wc.windowedAllSections().entrySet()) {
+                int sy = e.getKey();
+                net.minecraft.world.level.chunk.LevelChunkSection s = e.getValue();
+                if (sy >= minY && sy <= maxY && s != null && !s.hasOnlyAir()) {
+                    out.add(e);
+                }
+            }
+            out.sort(java.util.Comparator.comparingInt(java.util.Map.Entry::getKey));
+        } else {
+            int base = chunk.getMinSectionY();
+            int i = 0;
+            for (net.minecraft.world.level.chunk.LevelChunkSection s : chunk.getSections()) {
+                if (s != null && !s.hasOnlyAir()) {
+                    out.add(java.util.Map.entry(base + i, s));
+                }
+                i++;
+            }
+        }
+        return out;
+    }
+
     private static int calculateChunkSize(final LevelChunk chunk) {
         int total = 0;
-
-        for (LevelChunkSection section : chunk.getSections()) {
-            total += section.getSerializedSize();
+        // 🔧 MCRe：窗口过滤 + 每 section 带绝对 sectionY（5 = varInt 上限）
+        for (java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection> e : sendableSections(chunk)) {
+            total += 5 + e.getValue().getSerializedSize();
         }
-
-        return total;
+        return total + 5;
     }
 
     private ByteBuf getWriteBuffer() {
@@ -83,12 +109,13 @@ public class ClientboundLevelChunkPacketData {
     }
 
     public static void extractChunkData(final FriendlyByteBuf buffer, final LevelChunk chunk) {
-        for (LevelChunkSection section : chunk.getSections()) {
-            section.write(buffer);
-        }
-
-        if (buffer.writerIndex() != buffer.capacity()) {
-            throw new IllegalStateException("Didn't fill chunk buffer: expected " + buffer.capacity() + " bytes, got " + buffer.writerIndex());
+        // 🔧 MCRe：写入 section 数量 + 每节 (绝对 sectionY, data)——支持任意高度世界，
+        // 不再依赖服务端/客户端 layout 一致的顺序数组
+        java.util.List<java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection>> toSend = sendableSections(chunk);
+        buffer.writeVarInt(toSend.size());
+        for (java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection> e : toSend) {
+            buffer.writeVarInt(e.getKey());
+            e.getValue().write(buffer);
         }
     }
 

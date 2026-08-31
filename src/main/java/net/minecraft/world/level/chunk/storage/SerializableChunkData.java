@@ -285,6 +285,17 @@ public record SerializableChunkData(
         }
 
         chunk.setLightCorrect(this.lightCorrect);
+
+        // 🔧 MCRe：窗口化——sectionData 自带绝对 sectionY，读回后回注 allSections，
+        // 保证超高世界（超出窗口的 section）也能从存档还原，不受窗口数组钳制
+        if (chunk instanceof net.minecraft.world.level.chunk.WindowedChunk windowed) {
+            for (SerializableChunkData.SectionData sectionData : this.sectionData) {
+                if (sectionData.chunkSection != null) {
+                    chunk.setSectionAt(sectionData.y, sectionData.chunkSection);
+                }
+            }
+        }
+
         EnumSet<Heightmap.Types> toPrime = EnumSet.noneOf(Heightmap.Types.class);
 
         for (Heightmap.Types type : chunk.getPersistedStatus().heightmapsAfter()) {
@@ -342,16 +353,36 @@ public record SerializableChunkData(
         LevelChunkSection[] chunkSections = chunk.getSections();
         LevelLightEngine lightEngine = level.getChunkSource().getLightEngine();
 
-        for (int sectionY = lightEngine.getMinLightSection(); sectionY < lightEngine.getMaxLightSection(); sectionY++) {
-            int sectionIndex = chunk.getSectionIndexFromSectionY(sectionY);
-            boolean hasSection = sectionIndex >= 0 && sectionIndex < chunkSections.length;
-            DataLayer sourceBlockLight = lightEngine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(pos, sectionY));
-            DataLayer sourceSkyLight = lightEngine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(pos, sectionY));
-            DataLayer blockLight = sourceBlockLight != null && !sourceBlockLight.isEmpty() ? sourceBlockLight.copy() : null;
-            DataLayer skyLight = sourceSkyLight != null && !sourceSkyLight.isEmpty() ? sourceSkyLight.copy() : null;
-            if (hasSection || blockLight != null || skyLight != null) {
-                LevelChunkSection section = hasSection ? chunkSections[sectionIndex].copy() : null;
-                sectionData.add(new SerializableChunkData.SectionData(sectionY, section, blockLight, skyLight));
+        // 🔧 MCRe：窗口化——遍历 allSections 无限仓库（绝对 sectionY），
+        // 保证超高世界（超出窗口）的 section 也能写入存档，不再受窗口数组钳制
+        if (chunk instanceof net.minecraft.world.level.chunk.WindowedChunk windowedChunk) {
+            java.util.List<java.util.Map.Entry<Integer, LevelChunkSection>> all =
+                new java.util.ArrayList<>(windowedChunk.windowedAllSections().entrySet());
+            all.sort(java.util.Comparator.comparingInt(java.util.Map.Entry::getKey));
+            for (java.util.Map.Entry<Integer, LevelChunkSection> e : all) {
+                int sectionY = e.getKey();
+                LevelChunkSection section = e.getValue();
+                DataLayer sourceBlockLight = lightEngine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(pos, sectionY));
+                DataLayer sourceSkyLight = lightEngine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(pos, sectionY));
+                DataLayer blockLight = sourceBlockLight != null && !sourceBlockLight.isEmpty() ? sourceBlockLight.copy() : null;
+                DataLayer skyLight = sourceSkyLight != null && !sourceSkyLight.isEmpty() ? sourceSkyLight.copy() : null;
+                if (section != null && !section.hasOnlyAir() || blockLight != null || skyLight != null) {
+                    LevelChunkSection sectionCopy = section != null ? section.copy() : null;
+                    sectionData.add(new SerializableChunkData.SectionData(sectionY, sectionCopy, blockLight, skyLight));
+                }
+            }
+        } else {
+            for (int sectionY = lightEngine.getMinLightSection(); sectionY < lightEngine.getMaxLightSection(); sectionY++) {
+                int sectionIndex = chunk.getSectionIndexFromSectionY(sectionY);
+                boolean hasSection = sectionIndex >= 0 && sectionIndex < chunkSections.length;
+                DataLayer sourceBlockLight = lightEngine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(pos, sectionY));
+                DataLayer sourceSkyLight = lightEngine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(pos, sectionY));
+                DataLayer blockLight = sourceBlockLight != null && !sourceBlockLight.isEmpty() ? sourceBlockLight.copy() : null;
+                DataLayer skyLight = sourceSkyLight != null && !sourceSkyLight.isEmpty() ? sourceSkyLight.copy() : null;
+                if (hasSection || blockLight != null || skyLight != null) {
+                    LevelChunkSection section = hasSection ? chunkSections[sectionIndex].copy() : null;
+                    sectionData.add(new SerializableChunkData.SectionData(sectionY, section, blockLight, skyLight));
+                }
             }
         }
 

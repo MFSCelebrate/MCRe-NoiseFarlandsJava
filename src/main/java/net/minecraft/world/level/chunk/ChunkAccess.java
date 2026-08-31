@@ -88,6 +88,11 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     /** PalettedContainerFactory，用于懒创建缺失 section（等价 inf_farlands 的 biomeRegistry） */
     private final PalettedContainerFactory containerFactory;
 
+    /** 🔧 MCRe：外部访问 containerFactory（LevelChunk 网络读入等用） */
+    public PalettedContainerFactory getContainerFactory() {
+        return this.containerFactory;
+    }
+
     public ChunkAccess(
         final ChunkPos chunkPos,
         final UpgradeData upgradeData,
@@ -199,6 +204,11 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
         if (idx >= 0 && idx < this.sections.length) {
             this.sections[idx] = section;
         }
+    }
+
+    /** 🔧 MCRe：按绝对 sectionY 取 section（仅返回已存在的，不懒创建） */
+    public @Nullable LevelChunkSection getSectionAt(final int sectionY) {
+        return this.allSections.get(sectionY);
     }
 
     /** 🔧 MCRe：当前窗口底部 sectionY */

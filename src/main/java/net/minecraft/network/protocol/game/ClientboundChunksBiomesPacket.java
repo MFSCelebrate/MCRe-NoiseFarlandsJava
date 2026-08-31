@@ -50,12 +50,11 @@ public record ClientboundChunksBiomesPacket(List<ClientboundChunksBiomesPacket.C
 
         private static int calculateChunkSize(final LevelChunk chunk) {
             int total = 0;
-
-            for (LevelChunkSection section : chunk.getSections()) {
-                total += section.getBiomes().getSerializedSize();
+            // 🔧 MCRe：窗口过滤 + 每 section 带绝对 sectionY
+            for (java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection> e : ClientboundLevelChunkPacketData.sendableSections(chunk)) {
+                total += 5 + e.getValue().getBiomes().getSerializedSize();
             }
-
-            return total;
+            return total + 5;
         }
 
         public FriendlyByteBuf getReadBuffer() {
@@ -69,12 +68,12 @@ public record ClientboundChunksBiomesPacket(List<ClientboundChunksBiomesPacket.C
         }
 
         public static void extractChunkData(final FriendlyByteBuf buffer, final LevelChunk chunk) {
-            for (LevelChunkSection section : chunk.getSections()) {
-                section.getBiomes().write(buffer);
-            }
-
-            if (buffer.writerIndex() != buffer.capacity()) {
-                throw new IllegalStateException("Didn't fill biome buffer: expected " + buffer.capacity() + " bytes, got " + buffer.writerIndex());
+            // 🔧 MCRe：写入 section 数量 + 每节 (绝对 sectionY, biome data)
+            java.util.List<java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection>> toSend = ClientboundLevelChunkPacketData.sendableSections(chunk);
+            buffer.writeVarInt(toSend.size());
+            for (java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection> e : toSend) {
+                buffer.writeVarInt(e.getKey());
+                e.getValue().getBiomes().write(buffer);
             }
         }
 
