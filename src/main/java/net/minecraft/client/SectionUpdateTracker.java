@@ -31,11 +31,7 @@ public class SectionUpdateTracker {
     }
 
     public void repositionCamera(final SectionPos cameraSectionPos) {
-        // 🔧 MCRe P5 修复：同步 Y 边界，保证脏块追踪在垂直滑动后仍能正确命中
-        int sectionGridSizeY = this.storage.height();
-        int verticalHalfSpan = sectionGridSizeY / 2;
-        int newBaseSectionY = cameraSectionPos.y() - verticalHalfSpan;
-        this.storage.setYRange(newBaseSectionY, newBaseSectionY + sectionGridSizeY - 1);
+        // 只跟随 X/Z，Y 不滑动（渲染网格 Y 固定）
         this.storage.repositionCenter(cameraSectionPos);
     }
 

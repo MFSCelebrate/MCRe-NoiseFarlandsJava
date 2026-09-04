@@ -1025,13 +1025,12 @@ public class LevelRenderer implements AutoCloseable {
         }
 
         this.sectionRenderDispatcher.clearCompileQueue();
-        // 🔧 MCRe P5 修复：ViewArea 构造用相机附近的固定窗口域（sectionGridSizeY = 34）——
+        // 🔧 MCRe P5 修复：ViewArea 构造用固定世界 Y 域（sectionGridSizeY = 34）——
         // 超高世界下 level.getMinSectionY()/getMaxSectionY() = ±1.34亿 → 1.13万亿 Node 数组 OOM。
-        // 固定 34 sections 让 ViewArea 网格大小恒定，跟随玩家相机 Y 滑动（updateYOrigins）。
-        SectionPos cameraSectionPosAtBoot = SectionPos.of(camera.position());
-        int camSecYBoot = cameraSectionPosAtBoot.y();
-        int viewMinSectionY = camSecYBoot - 17;
-        int viewMaxSectionY = camSecYBoot + 16;
+        // 固定 34 sections 锚定世界 Y=0（玩家默认活动区），不再跟随相机 Y 滑动。
+        // ChunkAccess 内部会用 windowMinY（跟随玩家）把世界 Y 转窗口索引，自动拿到正确 section 数据。
+        int viewMinSectionY = -17;
+        int viewMaxSectionY = 16;
         this.viewArea = new ViewArea(
             this.sectionRenderDispatcher,
             viewMinSectionY * 16,
@@ -1043,8 +1042,6 @@ public class LevelRenderer implements AutoCloseable {
         );
         this.sectionOcclusionGraph().waitAndReset(this.viewArea);
         this.clearVisibleSections();
-        // 🔧 MCRe P5：ViewArea.repositionCamera 现在同时处理 X/Z/Y 三轴滑动，
-        // 内部先 setYRange 再 repositionCenter，一次调用搞定
         this.viewArea.repositionCamera(cameraSectionPosAtBoot);
     }
 

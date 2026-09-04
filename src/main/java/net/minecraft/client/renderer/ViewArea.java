@@ -72,40 +72,17 @@ public class ViewArea {
     }
 
     /**
-     * 🔧 MCRe P5 修复：重写 repositionCamera，同时处理 X/Z 和 Y 滑动。
-     * <p>关键修复：先调用 setYRange 更新 RotatingSectionStorage 的 Y 边界，
-     * 然后调用 repositionCenter —— repositionCenter 内部会用更新后的 minY
-     * 计算 newSectionY = minY + gridY，从而正确设置所有 RenderSection 的 Y 坐标。
-     * <p>早退：cameraSectionPos 完全相同（含 Y）→ 零开销。
-     * <p>重编译：窗口 Y 滑动后，所有 RenderSection 的数据源(ChunkAccess section)变了，
-     * 必须标记重编译，否则 mesh 还是旧 section 的方块数据。
+     * 🔧 MCRe P5 修复：repositionCamera 只处理 X/Z 滑动（渲染网格跟随玩家水平移动）。
+     * <p>Y 轴**不跟随玩家**——渲染网格固定在世界坐标（构造时确定的 34 layers）。
+     * ChunkAccess 内部会用 windowMinY（跟随玩家）把世界 Y 转窗口索引，自动拿到正确 section 数据。
+     * <p>早退：cameraSectionPos X/Z 相同 → 零开销。
      */
     public boolean repositionCamera(final SectionPos cameraSectionPos) {
-        // 先计算新的 Y 基准（窗口中心 = cameraSectionY - 17）
-        int sectionGridSizeY = this.sections.height();
-        int verticalHalfSpan = sectionGridSizeY / 2; // 17
-        int newBaseSectionY = cameraSectionPos.y() - verticalHalfSpan;
-
-        // 先更新 Y 边界，让后续 repositionCenter 用新的 minY 计算 Y 坐标
-        this.sections.setYRange(newBaseSectionY, newBaseSectionY + sectionGridSizeY - 1);
-
-        // 记录旧中心用于判断是否真正滑动
-        SectionPos oldCenter = this.sections.centerSectionPos();
-        boolean yActuallyChanged = oldCenter.y() != cameraSectionPos.y();
-
-        // 调用原版 repositionCenter（处理 X/Z 滑动，同时用新 minY 正确设置 Y）
+        // 只更新 X/Z 中心，Y 保持构造时固定范围
         boolean result = this.sections.repositionCenter(cameraSectionPos);
         if (result) {
             this.sectionOcclusionGraph.invalidate();
         }
-
-        // 🔧 关键修复：如果 Y 实际滑动了，所有 RenderSection 的数据源变了，必须强制重编译
-        if (yActuallyChanged) {
-            for (SectionRenderDispatcher.RenderSection section : this.sections) {
-                section.markForRecompile();
-            }
-        }
-
         return result;
     }
 
