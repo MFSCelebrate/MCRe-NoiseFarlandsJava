@@ -1029,6 +1029,7 @@ public class LevelRenderer implements AutoCloseable {
         // 超高世界下 level.getMinSectionY()/getMaxSectionY() = ±1.34亿 → 1.13万亿 Node 数组 OOM。
         // 固定 34 sections 锚定世界 Y=0（玩家默认活动区），不再跟随相机 Y 滑动。
         // ChunkAccess 内部会用 windowMinY（跟随玩家）把世界 Y 转窗口索引，自动拿到正确 section 数据。
+        SectionPos cameraSectionPosAtBoot = SectionPos.of(camera.position());
         int viewMinSectionY = -17;
         int viewMaxSectionY = 16;
         this.viewArea = new ViewArea(
