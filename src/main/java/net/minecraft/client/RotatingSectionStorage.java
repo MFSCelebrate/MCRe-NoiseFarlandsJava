@@ -15,8 +15,9 @@ import org.jspecify.annotations.Nullable;
 public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> implements Iterable<T> {
     private final RotatingSectionStorage.Node<T>[] nodes;
     private final int radius;
-    private final int minY;
-    private final int maxY;
+    // 🔧 MCRe P5：从 final 改为可变——ViewArea 跟随相机 Y 滑动时需要同步更新边界（让 containsSection 持续命中）
+    private int minY;
+    private int maxY;
     private final int sectionGridSizeY;
     private final int sectionGridSizeXZ;
     private SectionPos centerSectionPos = SectionPos.of(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
@@ -80,6 +81,15 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
 
     public int maxY() {
         return this.maxY;
+    }
+
+    /** 🔧 MCRe P5：让 ViewArea 跟随相机 Y 滑动时同步更新边界（让 containsSection 持续命中） */
+    public void setYRange(int newMinY, int newMaxY) {
+        if (newMaxY - newMinY + 1 != this.sectionGridSizeY) {
+            throw new IllegalArgumentException("Y range size must equal sectionGridSizeY=" + this.sectionGridSizeY + ", got " + (newMaxY - newMinY + 1));
+        }
+        this.minY = newMinY;
+        this.maxY = newMaxY;
     }
 
     public int height() {

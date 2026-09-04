@@ -255,6 +255,32 @@ public class SectionRenderDispatcher {
             this.bb = new AABB(x, y, z, x + 16, y + 16, z + 16);
         }
 
+        /** 🔧 MCRe P5 修复：轻量级 Y 更新——只改 sectionNode.y() 和 renderOrigin[1]，不 reset mesh。
+         *  mesh 是基于方块相对坐标编译的（SectionCompiler 用 sectionPos.minBlockYLong() 当 origin 偏移基准），
+         *  origin 变化 = mesh 顶点位置错位 → 仍需要重新编译，但我们可以让调用方选择是否触发 reset。
+         *  <p>当前实现：保守起见仍调 reset()，但 ViewArea.updateYOrigins 加早退避免每帧调用。 */
+        public void setSectionNodeY(final int newSectionY) {
+            int currentY = this.sectionNode.y();
+            if (currentY == newSectionY) {
+                return;
+            }
+            this.sectionNode = SectionPos.of(this.sectionNode.x(), newSectionY, this.sectionNode.z());
+            long y = (long) newSectionY * 16L;
+            this.renderOrigin[1] = y;
+            this.bb = new AABB(this.renderOrigin[0], y, this.renderOrigin[2], this.renderOrigin[0] + 16, y + 16, this.renderOrigin[2] + 16);
+            this.markForRecompile(); // Y 变化后 mesh 顶点位置错位，标记脏
+        }
+
+        /** 🔧 MCRe P5 修复：标记 RenderSection 需要重编译（Y origin 滑动后调用） */
+        public void markForRecompile() {
+            // cancel 当前 compile 任务 + 标 dirty，让下一帧重新编译
+            if (this.lastCompileTask != null) {
+                this.lastCompileTask.cancel();
+                this.lastCompileTask = null;
+            }
+            this.sectionMesh.set(CompiledSectionMesh.UNCOMPILED);
+        }
+
         public SectionMesh getSectionMesh() {
             return this.sectionMesh.get();
         }

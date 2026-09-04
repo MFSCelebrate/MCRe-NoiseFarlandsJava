@@ -322,7 +322,11 @@ public class LevelRenderer implements AutoCloseable {
     private void repositionCamera(final CameraRenderState camera) {
         Vec3 cameraPos = camera.pos;
         SectionPos cameraSectionPos = SectionPos.of(cameraPos);
-        if (this.viewArea.repositionCamera(cameraSectionPos)) {
+        boolean xzChanged = this.viewArea.repositionCamera(cameraSectionPos);
+        // 🔧 MCRe P5 修复：让 ViewArea 的 RenderSection Y origin 跟随相机 sectionY 滑动，
+        // 与 ChunkAccess.windowMinY 中心对齐（同一个 camSecY），消除"地形下偏 80 格"bug
+        boolean yChanged = this.viewArea.updateYOrigins(cameraSectionPos.y());
+        if (xzChanged || yChanged) {
             this.worldBorderRenderer.invalidate();
         }
 
@@ -1019,19 +1023,27 @@ public class LevelRenderer implements AutoCloseable {
         }
 
         this.sectionRenderDispatcher.clearCompileQueue();
+        // 🔧 MCRe P5 修复：ViewArea 构造用相机附近的固定窗口域（sectionGridSizeY = 34）——
+        // 超高世界下 level.getMinSectionY()/getMaxSectionY() = ±1.34亿 → 1.13万亿 Node 数组 OOM。
+        // 固定 34 sections 让 ViewArea 网格大小恒定，跟随玩家相机 Y 滑动（updateYOrigins）。
+        SectionPos cameraSectionPosAtBoot = SectionPos.of(camera.position());
+        int camSecYBoot = cameraSectionPosAtBoot.y();
+        int viewMinSectionY = camSecYBoot - 17;
+        int viewMaxSectionY = camSecYBoot + 16;
         this.viewArea = new ViewArea(
             this.sectionRenderDispatcher,
-            level.getMinY(),
-            level.getMaxY(),
-            level.getMinSectionY(),
-            level.getMaxSectionY(),
+            viewMinSectionY * 16,
+            viewMaxSectionY * 16 + 15,
+            viewMinSectionY,
+            viewMaxSectionY,
             options.getEffectiveRenderDistance(),
             this.sectionOcclusionGraph
         );
         this.sectionOcclusionGraph().waitAndReset(this.viewArea);
         this.clearVisibleSections();
-        SectionPos cameraSectionPos = SectionPos.of(camera.position());
-        this.viewArea.repositionCamera(cameraSectionPos);
+        this.viewArea.repositionCamera(cameraSectionPosAtBoot);
+        // MCRe P5：记录 ViewArea 初始基准 Y（updateYOrigins 内部用 lastUpdatedSectionY 早退）
+        this.viewArea.updateYOrigins(camSecYBoot);
     }
 
     private @Nullable PostChain getTransparencyChain() {
