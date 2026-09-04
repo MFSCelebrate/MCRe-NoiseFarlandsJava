@@ -72,18 +72,36 @@ public class ViewArea {
     }
 
     /**
-     * 🔧 MCRe P5 修复：repositionCamera 只处理 X/Z 滑动（渲染网格跟随玩家水平移动）。
-     * <p>Y 轴**不跟随玩家**——渲染网格固定在世界坐标（构造时确定的 34 layers）。
-     * ChunkAccess 内部会用 windowMinY（跟随玩家）把世界 Y 转窗口索引，自动拿到正确 section 数据。
-     * <p>早退：cameraSectionPos X/Z 相同 → 零开销。
+     * 🔧 MCRe P5 修复：repositionCamera 处理 X/Z/Y 三轴滑动（渲染网格跟随玩家移动）。
+     * <p>Y 轴采用与 ChunkAccess 完全一致的窗口大小（34 sections = 17下+16上+中心），
+     * 窗口中心对齐玩家 sectionY，与 ChunkAccess.windowMinY 保持完全同步。
+     * 这保证 SectionCompiler 查询世界 Y 时，ChunkAccess 内部转换命中正确 section。
+     * <p>早退：cameraSectionPos 完全相同（含 Y）→ 零开销。
      */
     public boolean repositionCamera(final SectionPos cameraSectionPos) {
-        // 只更新 X/Z 中心，Y 保持构造时固定范围
-        boolean result = this.sections.repositionCenter(cameraSectionPos);
-        if (result) {
+        // 先计算新的 Y 基准（窗口中心 = cameraSectionY - 17，与 ChunkAccess WINDOW_HALF_BELOW 对齐）
+        int sectionGridSizeY = this.sections.height();  // 34
+        int verticalHalfSpan = 17;  // WINDOW_HALF_BELOW，与 ChunkAccess 窗口下半径对齐
+        int newBaseSectionY = cameraSectionPos.y() - verticalHalfSpan;
+
+        // 先更新 Y 边界，让后续 repositionCenter 用新的 minY 计算 Y 坐标
+        this.sections.setYRange(newBaseSectionY, newBaseSectionY + sectionGridSizeY - 1);
+
+        // 记录旧中心用于判断是否真正滑动
+        SectionPos oldCenter = this.sections.centerSectionPos();
+        boolean changed = this.sections.repositionCenter(cameraSectionPos);
+
+        // 如果 Y 实际滑动了，标记所有 section 重编译（数据源变了）
+        if (oldCenter.y() != cameraSectionPos.y()) {
+            for (SectionRenderDispatcher.RenderSection section : this.sections) {
+                section.markForRecompile();
+            }
+        }
+
+        if (changed) {
             this.sectionOcclusionGraph.invalidate();
         }
-        return result;
+        return changed;
     }
 
     public SectionPos getCameraSectionPos() {

@@ -1025,13 +1025,13 @@ public class LevelRenderer implements AutoCloseable {
         }
 
         this.sectionRenderDispatcher.clearCompileQueue();
-        // 🔧 MCRe P5 修复：ViewArea 构造用固定世界 Y 域（sectionGridSizeY = 34）——
+        // 🔧 MCRe P5 修复：ViewArea 构造用玩家附近的固定垂直渲染距离（34 sections = 17下+16上+中心）——
         // 超高世界下 level.getMinSectionY()/getMaxSectionY() = ±1.34亿 → 1.13万亿 Node 数组 OOM。
-        // 固定 34 sections 锚定世界 Y=0（玩家默认活动区），不再跟随相机 Y 滑动。
-        // ChunkAccess 内部会用 windowMinY（跟随玩家）把世界 Y 转窗口索引，自动拿到正确 section 数据。
+        // 窗口中心锚定玩家初始 Y，垂直半径与 ChunkAccess 窗口完全对齐（WINDOW_HALF_BELOW=17, WINDOW_HALF_ABOVE=16）。
         SectionPos cameraSectionPosAtBoot = SectionPos.of(camera.position());
-        int viewMinSectionY = -17;
-        int viewMaxSectionY = 16;
+        int camSecYBoot = cameraSectionPosAtBoot.y();
+        int viewMinSectionY = camSecYBoot - 17;  // WINDOW_HALF_BELOW
+        int viewMaxSectionY = camSecYBoot + 16;  // WINDOW_HALF_ABOVE
         this.viewArea = new ViewArea(
             this.sectionRenderDispatcher,
             viewMinSectionY * 16,
