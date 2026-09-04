@@ -41,9 +41,9 @@
   "has_ceiling": false,
   "has_ender_dragon_fight": false,
   "has_skylight": true,
-  "height": 2147480000,
+  "height": 2147000000,
   "infiniburn": "#minecraft:infiniburn_overworld",
-  "logical_height": 2147480000,
+  "logical_height": 2147000000,
   "min_y": -64,
   "monster_spawn_block_light_limit": 0,
   "monster_spawn_light_level": {

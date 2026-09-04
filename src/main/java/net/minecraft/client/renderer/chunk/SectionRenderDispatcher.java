@@ -51,15 +51,15 @@ public class SectionRenderDispatcher {
     private final AtomicReference<Vec3> cameraPosition = new AtomicReference<>(Vec3.ZERO);
     private volatile SectionCompiler sectionCompiler;
     private final StagingBuffer stagingBuffer;
-    private final Map<ChunkSectionLayer, SectionRenderDispatcher.SectionUberBuffers> chunkUberBuffers;
+    private final Map<
+            ChunkSectionLayer, SectionRenderDispatcher.SectionUberBuffers> chunkUberBuffers;
     private final ReentrantLock copyLock = new ReentrantLock();
 
     public SectionRenderDispatcher(
-        final TracingExecutor executor,
-        final RenderBuffers renderBuffers,
-        final SectionCompiler sectionCompiler,
-        final Consumer<SectionRenderDispatcher.RenderSection> onSectionMeshUpdate
-    ) {
+            final TracingExecutor executor,
+            final RenderBuffers renderBuffers,
+            final SectionCompiler sectionCompiler,
+            final Consumer<SectionRenderDispatcher.RenderSection> onSectionMeshUpdate) {
         this.onSectionMeshUpdate = onSectionMeshUpdate;
         this.fixedBuffers = renderBuffers.fixedBufferPack();
         this.bufferPool = renderBuffers.sectionBufferPool();
@@ -72,8 +72,10 @@ public class SectionRenderDispatcher {
         this.stagingBuffer = StagingBuffer.create("Chunk", gpuDevice, 102760448);
         this.chunkUberBuffers = Util.makeEnumMap(ChunkSectionLayer.class, layer -> {
             VertexFormat vertexFormat = layer.pipeline().getVertexFormatBinding(0);
-            UberGpuBuffer<SectionMesh> vertexUberBuffer = new UberGpuBuffer<>(layer.label(), 32, 134217728, vertexFormat.getVertexSize(), this.stagingBuffer);
-            UberGpuBuffer<SectionMesh> indexUberBuffer = new UberGpuBuffer<>(layer.label(), 64, 33554432, 8, this.stagingBuffer);
+            UberGpuBuffer<
+                    SectionMesh> vertexUberBuffer = new UberGpuBuffer<>(layer.label(), 32, 134217728, vertexFormat.getVertexSize(), this.stagingBuffer);
+            UberGpuBuffer<
+                    SectionMesh> indexUberBuffer = new UberGpuBuffer<>(layer.label(), 64, 33554432, 8, this.stagingBuffer);
             return new SectionRenderDispatcher.SectionUberBuffers(vertexUberBuffer, indexUberBuffer);
         });
     }
@@ -111,7 +113,8 @@ public class SectionRenderDispatcher {
         this.cameraPosition.set(cameraPosition);
     }
 
-    public SectionRenderDispatcher.@Nullable RenderSectionBufferSlice getRenderSectionSlice(final SectionMesh sectionMesh, final ChunkSectionLayer layer) {
+    public SectionRenderDispatcher.@Nullable
+            RenderSectionBufferSlice getRenderSectionSlice(final SectionMesh sectionMesh, final ChunkSectionLayer layer) {
         SectionRenderDispatcher.SectionUberBuffers uberBuffers = this.chunkUberBuffers.get(layer);
         TlsfAllocator.Allocation vertexSlice = uberBuffers.vertexBuffer.getAllocation(sectionMesh);
         if (vertexSlice == null) {
@@ -128,7 +131,7 @@ public class SectionRenderDispatcher {
         }
 
         return new SectionRenderDispatcher.RenderSectionBufferSlice(
-            uberBuffers.vertexBuffer.getGpuBuffer(vertexSlice), vertexBufferOffset, indexBuffer, indexBufferOffset
+        uberBuffers.vertexBuffer.getGpuBuffer(vertexSlice), vertexBufferOffset, indexBuffer, indexBufferOffset
         );
     }
 
@@ -204,9 +207,11 @@ public class SectionRenderDispatcher {
     @OnlyIn(Dist.CLIENT)
     public class RenderSection implements RotatingSectionStorage.Value {
         public final int index;
-        public final AtomicReference<SectionMesh> sectionMesh = new AtomicReference<>(CompiledSectionMesh.UNCOMPILED);
+        public final AtomicReference<
+                SectionMesh> sectionMesh = new AtomicReference<>(CompiledSectionMesh.UNCOMPILED);
         private SectionRenderDispatcher.RenderSection.@Nullable CompileTask lastCompileTask;
-        private SectionRenderDispatcher.RenderSection.@Nullable ResortTransparencyTask lastResortTransparencyTask;
+        private SectionRenderDispatcher.RenderSection.@Nullable
+        ResortTransparencyTask lastResortTransparencyTask;
         private AABB bb;
         private volatile SectionPos sectionNode = SectionPos.of(-1, -1, -1);
         // far lands：渲染原点用 long 存储（section << 4 在 2^27 section 处溢出 int），
@@ -223,7 +228,7 @@ public class SectionRenderDispatcher {
 
         public float getVisibility(final long now) {
             long elapsed = now - this.uploadedTime;
-            return elapsed >= this.fadeDuration ? 1.0F : (float)elapsed / (float)this.fadeDuration;
+            return elapsed >= this.fadeDuration ? 1.0F : (float) elapsed / (float) this.fadeDuration;
         }
 
         public void setFadeDuration(final long fadeDuration) {
@@ -244,7 +249,10 @@ public class SectionRenderDispatcher {
 
         @Override
         public void setSectionNode(final SectionPos sectionNode) {
-            this.reset();
+            // 只有当 X/Z 真正改变时才 reset mesh；Y 变化走 setSectionNodeY（轻量级）
+            if (this.sectionNode.x() != sectionNode.x() || this.sectionNode.z() != sectionNode.z()) {
+                this.reset();
+            }
             this.sectionNode = sectionNode;
             long x = sectionNode.minBlockXLong();
             long y = sectionNode.minBlockYLong();
@@ -255,10 +263,13 @@ public class SectionRenderDispatcher {
             this.bb = new AABB(x, y, z, x + 16, y + 16, z + 16);
         }
 
-        /** 🔧 MCRe P5 修复：轻量级 Y 更新——只改 sectionNode.y() 和 renderOrigin[1]，不 reset mesh。
-         *  mesh 是基于方块相对坐标编译的（SectionCompiler 用 sectionPos.minBlockYLong() 当 origin 偏移基准），
-         *  origin 变化 = mesh 顶点位置错位 → 仍需要重新编译，但我们可以让调用方选择是否触发 reset。
-         *  <p>当前实现：保守起见仍调 reset()，但 ViewArea.updateYOrigins 加早退避免每帧调用。 */
+        /**
+         * 🔧 MCRe P5 修复：轻量级 Y 更新——只改 sectionNode.y() 和 renderOrigin[1]，不 reset mesh。 mesh
+         * 是基于方块相对坐标编译的（SectionCompiler 用 sectionPos.minBlockYLong() 当 origin 偏移基准）， origin 变化 =
+         * mesh 顶点位置错位 → 仍需要重新编译，但我们可以让调用方选择是否触发 reset。
+         *
+         * <p>当前实现：保守起见仍调 reset()，但 ViewArea.updateYOrigins 加早退避免每帧调用。
+         */
         public void setSectionNodeY(final int newSectionY) {
             int currentY = this.sectionNode.y();
             if (currentY == newSectionY) {
@@ -267,7 +278,8 @@ public class SectionRenderDispatcher {
             this.sectionNode = SectionPos.of(this.sectionNode.x(), newSectionY, this.sectionNode.z());
             long y = (long) newSectionY * 16L;
             this.renderOrigin[1] = y;
-            this.bb = new AABB(this.renderOrigin[0], y, this.renderOrigin[2], this.renderOrigin[0] + 16, y + 16, this.renderOrigin[2] + 16);
+            this.bb = new AABB(this.renderOrigin[0], y, this.renderOrigin[2], this.renderOrigin[
+                    0] + 16, y + 16, this.renderOrigin[2] + 16);
             this.markForRecompile(); // Y 变化后 mesh 顶点位置错位，标记脏
         }
 
@@ -378,7 +390,7 @@ public class SectionRenderDispatcher {
 
         private VertexSorting createVertexSorting(final SectionPos sectionPos, final Vec3 cameraPos) {
             return VertexSorting.byDistance(
-                (float)(cameraPos.x - sectionPos.minBlockXLong()), (float)(cameraPos.y - sectionPos.minBlockYLong()), (float)(cameraPos.z - sectionPos.minBlockZLong())
+                    (float) (cameraPos.x - sectionPos.minBlockXLong()), (float) (cameraPos.y - sectionPos.minBlockYLong()), (float) (cameraPos.z - sectionPos.minBlockZLong())
             );
         }
 
@@ -412,8 +424,8 @@ public class SectionRenderDispatcher {
         }
 
         private boolean addSectionBuffersToUberBuffer(
-            final ChunkSectionLayer layer, final CompiledSectionMesh key, final @Nullable ByteBuffer vertexBuffer, final @Nullable ByteBuffer indexBuffer
-        ) {
+                final ChunkSectionLayer layer, final CompiledSectionMesh key, final @Nullable
+                ByteBuffer vertexBuffer, final @Nullable ByteBuffer indexBuffer) {
             boolean success = true;
             SectionRenderDispatcher.this.copyLock.lock();
 
@@ -423,14 +435,18 @@ public class SectionRenderDispatcher {
                     SectionRenderDispatcher.SectionUberBuffers sectionBuffers = SectionRenderDispatcher.this.chunkUberBuffers.get(layer);
                     assert sectionBuffers != null;
                     if (vertexBuffer != null) {
-                        UberGpuBuffer.UploadCallback<CompiledSectionMesh> callback = mesh -> this.vertexBufferUploadCallback(mesh, layer);
-                        success &= sectionBuffers.vertexBuffer.addAllocation(key, callback, vertexBuffer);
+                        UberGpuBuffer.UploadCallback<
+                                CompiledSectionMesh> callback = mesh -> this.vertexBufferUploadCallback(mesh, layer);
+                        success &=
+                                sectionBuffers.vertexBuffer.addAllocation(key, callback, vertexBuffer);
                     }
 
                     if (indexBuffer != null) {
                         boolean sortedIndexBuffer = vertexBuffer == null;
-                        UberGpuBuffer.UploadCallback<CompiledSectionMesh> callback = mesh -> this.indexBufferUploadCallback(mesh, layer, sortedIndexBuffer);
-                        success &= sectionBuffers.indexBuffer.addAllocation(key, callback, indexBuffer);
+                        UberGpuBuffer.UploadCallback<
+                                CompiledSectionMesh> callback = mesh -> this.indexBufferUploadCallback(mesh, layer, sortedIndexBuffer);
+                        success &=
+                                sectionBuffers.indexBuffer.addAllocation(key, callback, indexBuffer);
                     } else {
                         key.setIndexBufferUploaded(layer);
                     }
@@ -471,7 +487,7 @@ public class SectionRenderDispatcher {
                 SectionCompiler.Results results;
                 try (Zone ignored = Profiler.get().zone("Compile Section")) {
                     results = SectionRenderDispatcher.this.sectionCompiler
-                        .compile(sectionPos, this.region, RenderSection.this.createVertexSorting(sectionPos, cameraPos), buffers);
+                            .compile(sectionPos, this.region, RenderSection.this.createVertexSorting(sectionPos, cameraPos), buffers);
                 }
 
                 TranslucencyPointOfView translucencyPointOfView = TranslucencyPointOfView.of(cameraPos, sectionNode);
@@ -488,7 +504,9 @@ public class SectionRenderDispatcher {
 
                     return SectionRenderDispatcher.RenderSection.SectionTask.SectionTaskResult.SUCCESSFUL;
                 } else {
-                    for (Entry<ChunkSectionLayer, MeshData> entry : results.renderedLayers.entrySet()) {
+                    for (Entry<
+                            ChunkSectionLayer,
+                            MeshData> entry : results.renderedLayers.entrySet()) {
                         MeshData meshData = entry.getValue();
                         boolean success = false;
 
@@ -507,7 +525,7 @@ public class SectionRenderDispatcher {
                             }
 
                             success = RenderSection.this.addSectionBuffersToUberBuffer(
-                                entry.getKey(), compiledSectionMesh, meshData.vertexBuffer(), meshData.indexBuffer()
+                                    entry.getKey(), compiledSectionMesh, meshData.vertexBuffer(), meshData.indexBuffer()
                             );
                             if (!success && !RenderSystem.isOnRenderThread()) {
                                 Thread.onSpinWait();
@@ -528,7 +546,8 @@ public class SectionRenderDispatcher {
         }
 
         @OnlyIn(Dist.CLIENT)
-        private class ResortTransparencyTask extends SectionRenderDispatcher.RenderSection.SectionTask {
+        private class ResortTransparencyTask
+                extends SectionRenderDispatcher.RenderSection.SectionTask {
             private final CompiledSectionMesh compiledSectionMesh;
 
             public ResortTransparencyTask(final CompiledSectionMesh compiledSectionMesh) {
@@ -566,7 +585,7 @@ public class SectionRenderDispatcher {
                         }
 
                         success = RenderSection.this.addSectionBuffersToUberBuffer(
-                            ChunkSectionLayer.TRANSLUCENT, this.compiledSectionMesh, null, indexBuffer.byteBuffer()
+                                ChunkSectionLayer.TRANSLUCENT, this.compiledSectionMesh, null, indexBuffer.byteBuffer()
                         );
                         if (!success && !RenderSystem.isOnRenderThread()) {
                             Thread.onSpinWait();
@@ -618,10 +637,10 @@ public class SectionRenderDispatcher {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public record RenderSectionBufferSlice(GpuBuffer vertexBuffer, long vertexBufferOffset, @Nullable GpuBuffer indexBuffer, long indexBufferOffset) {
-    }
+    public record RenderSectionBufferSlice(GpuBuffer vertexBuffer, long vertexBufferOffset, @Nullable
+            GpuBuffer indexBuffer, long indexBufferOffset) {}
 
     @OnlyIn(Dist.CLIENT)
-    private record SectionUberBuffers(UberGpuBuffer<SectionMesh> vertexBuffer, UberGpuBuffer<SectionMesh> indexBuffer) {
-    }
+    private record SectionUberBuffers(UberGpuBuffer<SectionMesh> vertexBuffer, UberGpuBuffer<
+                    SectionMesh> indexBuffer) {}
 }

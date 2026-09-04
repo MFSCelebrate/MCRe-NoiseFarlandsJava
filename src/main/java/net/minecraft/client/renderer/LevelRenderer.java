@@ -822,6 +822,10 @@ public class LevelRenderer implements AutoCloseable {
             }
 
             SectionRenderDispatcher.RenderSection section = this.viewArea.getRenderSection(state.sectionNode());
+            // 🔧 MCRe P5 修复：ViewArea 窗口滑动时 getRenderSection 可能返回 null（旧 Y 坐标映射失败），加空值保护
+            if (section == null) {
+                continue;
+            }
             if (!isNearby && !section.wasPreviouslyEmpty()) {
                 section.setFadeDuration(fadeDuration);
             } else {
