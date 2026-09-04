@@ -615,7 +615,9 @@ public abstract class ChunkGenerator {
                 seed,
                 sourceChunkPos,
                 references,
-                centerChunk,
+                // 🔧 MCRe P4b：传窗口化生成高度域——结构定位的 getBaseHeight→iterateNoiseColumn
+                // 若用世界域（超高世界 ±21亿）cellCountY=5.36亿 → NoiseChunk OOM 崩溃
+                centerChunk.getHeightAccessorForGeneration(),
                 biomePredicate
         );
         if (start.isValid()) {

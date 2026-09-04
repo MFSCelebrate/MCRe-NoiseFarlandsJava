@@ -328,6 +328,10 @@ public class ProtoChunk extends ChunkAccess {
 
     @Override
     public LevelHeightAccessor getHeightAccessorForGeneration() {
-        return this.isUpgrading() ? BelowZeroRetrogen.UPGRADE_HEIGHT_ACCESSOR : this;
+        if (this.isUpgrading()) {
+            return BelowZeroRetrogen.UPGRADE_HEIGHT_ACCESSOR;
+        }
+        // 🔧 MCRe P4b：走 ChunkAccess 的窗口化生成高度域（超高世界 OOM 修复）
+        return super.getHeightAccessorForGeneration();
     }
 }

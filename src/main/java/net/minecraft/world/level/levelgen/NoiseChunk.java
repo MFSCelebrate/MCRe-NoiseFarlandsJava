@@ -94,7 +94,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         final Aquifer.FluidPicker globalFluidPicker,
         final Blender blender
     ) {
-        NoiseSettings noiseSettings = settings.noiseSettings().clampToHeightAccessor(chunk);
+        NoiseSettings noiseSettings = settings.noiseSettings().clampToHeightAccessor(chunk.getHeightAccessorForGeneration());
         ChunkPos pos = chunk.getPos();
         int cellCountXZ = 16 / noiseSettings.getCellWidth();
         return new NoiseChunk(cellCountXZ, randomState, (int)pos.getMinBlockX(), (int)pos.getMinBlockZ(), noiseSettings, beardifier, settings, globalFluidPicker, blender);

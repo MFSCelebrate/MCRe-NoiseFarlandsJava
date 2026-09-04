@@ -521,11 +521,19 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
 
         // 🔧 MCRe：读入 (绝对 sectionY, data) 对，写入 allSections 无限仓库——支持任意高度世界
         int sectionCount = buffer.readVarInt();
+        // 🔧 MCRe P5：记录本次网络包覆盖的 sectionY 范围（discardOutsideHoldBoundary 用）
+        int packetMinY = Integer.MAX_VALUE;
+        int packetMaxY = Integer.MIN_VALUE;
         for (int i = 0; i < sectionCount; i++) {
             int sectionY = buffer.readVarInt();
             net.minecraft.world.level.chunk.LevelChunkSection s = new net.minecraft.world.level.chunk.LevelChunkSection(this.getContainerFactory());
             s.read(buffer);
             this.setSectionAt(sectionY, s);
+            if (sectionY < packetMinY) packetMinY = sectionY;
+            if (sectionY > packetMaxY) packetMaxY = sectionY;
+        }
+        if (sectionCount > 0) {
+            this.setLastPacketRange(packetMinY, packetMaxY);
         }
 
         heightmaps.forEach(this::setHeightmap);

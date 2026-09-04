@@ -85,8 +85,13 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     private volatile LevelChunkSection[] windowSections = new LevelChunkSection[0];
     /** 窗口底部 sectionY */
     private int windowMinY;
+    /** 🔧 MCRe P4b：窗口化生成高度域缓存（getHeightAccessorForGeneration 用） */
+    private volatile LevelHeightAccessor windowedHeightAccessor;
     /** PalettedContainerFactory，用于懒创建缺失 section（等价 inf_farlands 的 biomeRegistry） */
     private final PalettedContainerFactory containerFactory;
+    /** 🔧 MCRe P5：最近一次网络包携带的 sectionY 范围（discardOutsideHoldBoundary 用），MIN_VALUE=尚未收到 */
+    private volatile int lastPacketMinY = Integer.MIN_VALUE;
+    private volatile int lastPacketMaxY = Integer.MIN_VALUE;
 
     /** 🔧 MCRe：外部访问 containerFactory（LevelChunk 网络读入等用） */
     public PalettedContainerFactory getContainerFactory() {
@@ -211,6 +216,32 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
         return this.allSections.get(sectionY);
     }
 
+    /** 🔧 MCRe P5：最近一次网络包携带的 sectionY 最小值（MIN_VALUE=尚未收到任何包） */
+    @Override
+    public int lastPacketMinY() {
+        return this.lastPacketMinY;
+    }
+
+    /** 🔧 MCRe P5：最近一次网络包携带的 sectionY 最大值 */
+    @Override
+    public int lastPacketMaxY() {
+        return this.lastPacketMaxY;
+    }
+
+    /** 🔧 MCRe P5：网络包接收方调用，记录本次包覆盖的 sectionY 范围（discardOutsideHoldBoundary 用） */
+    public void setLastPacketRange(final int minSectionY, final int maxSectionY) {
+        if (minSectionY > maxSectionY) {
+            return;
+        }
+        int oldMin = this.lastPacketMinY;
+        int oldMax = this.lastPacketMaxY;
+        // 取并集——分片到达/光照包可能比方块包范围更大
+        int newMin = oldMin == Integer.MIN_VALUE ? minSectionY : Math.min(oldMin, minSectionY);
+        int newMax = oldMax == Integer.MIN_VALUE ? maxSectionY : Math.max(oldMax, maxSectionY);
+        this.lastPacketMinY = newMin;
+        this.lastPacketMaxY = newMax;
+    }
+
     /** 🔧 MCRe：当前窗口底部 sectionY */
     public int getWindowMinY() {
         return this.windowMinY;
@@ -278,9 +309,20 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
         this.windowSections = win;
     }
 
-    /** 🔧 MCRe：滑动窗口——以 centerSectionY 为中心重建窗口（对齐 inf_farlands 的 34-section 窗口） */
+    /** 🔧 MCRe P5：滑动窗口——以 centerSectionY 为中心重建窗口（对齐 inf_farlands 的 34-section 窗口）。
+     *  <p>早退：相机 sectionY 已被当前窗口完全覆盖（[center-17, center+16] ⊆ [windowMinY, windowMaxY]）→ 直接返回，避免每帧重建数组。
+     *  <p>不等式：centerSectionY - windowMinY ∈ [WINDOW_HALF_BELOW, WINDOW_HALF_BELOW+WINDOW_HALF_ABOVE] = [17, 33] 时命中。 */
     public void moveWindowTo(final int centerSectionY) {
-        this.buildWindow(centerSectionY - 17, centerSectionY + 16);
+        int halfBelow = net.minecraft.world.level.chunk.WindowedChunk.WINDOW_HALF_BELOW;
+        int halfAbove = net.minecraft.world.level.chunk.WindowedChunk.WINDOW_HALF_ABOVE;
+        if (this.windowSections.length > 0) {
+            int offset = centerSectionY - this.windowMinY;
+            if (offset >= halfBelow && offset <= halfBelow + halfAbove) {
+                // 当前窗口已完全覆盖玩家可探索区，无需滑动
+                return;
+            }
+        }
+        this.buildWindow(centerSectionY - halfBelow, centerSectionY + halfAbove);
     }
 
     /** 🔧 MCRe：确保 sectionY 在窗口内（窗口外则滑窗） */
@@ -614,7 +656,34 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     }
 
     public LevelHeightAccessor getHeightAccessorForGeneration() {
-        return this;
+        // 🔧 MCRe P4b：生成链必须用「窗口化高度域」而不是世界域——
+        // 超高世界 getMinY()=-21.47亿/height=42.9亿，NoiseChunk 按全高算 cellCountY
+        // （42.9亿/8=5.36亿）分配插值数组直接 OOM（内存可达 8GB+）。
+        // 窗口域 minY=windowMinY*16, height=窗口section数*16(=34*16=544) → cellCountY=68，恒定小内存。
+        if (this.windowedHeightAccessor == null) {
+            this.windowedHeightAccessor = new LevelHeightAccessor() {
+                @Override
+                public int getHeight() {
+                    return ChunkAccess.this.windowSections.length * 16;
+                }
+
+                @Override
+                public int getMinY() {
+                    return ChunkAccess.this.windowMinY * 16;
+                }
+
+                @Override
+                public int getMinSectionY() {
+                    return ChunkAccess.this.getWindowMinY();
+                }
+
+                @Override
+                public int getMaxSectionY() {
+                    return ChunkAccess.this.getWindowMaxY();
+                }
+            };
+        }
+        return this.windowedHeightAccessor;
     }
 
     public void initializeLightSources() {

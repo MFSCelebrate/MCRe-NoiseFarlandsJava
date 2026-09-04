@@ -52,4 +52,15 @@ public interface WindowedChunk {
 
     /** 区块的真实 LevelHeightAccessor（维度范围，非窗口感知） */
     LevelHeightAccessor levelHeightAccessor();
+
+    // ──────── 🔧 MCRe P5：滑出丢弃边界（discardOutsideHoldBoundary 用） ────────
+    /**
+     * 最近一次网络包（ClientboundLevelChunkWithLightPacket / ClientboundLightUpdatePacket）携带的 sectionY 最小值。
+     * 服务端可能延迟发送（无数据 chunk 不发、快速移动包延迟），所以 view 窗口比 hold 边界更实时。
+     * 初始为 {@link Integer#MIN_VALUE} 表示"尚未收到任何包"。
+     */
+    int lastPacketMinY();
+
+    /** 最近一次网络包携带的 sectionY 最大值。初始为 {@link Integer#MIN_VALUE}。 */
+    int lastPacketMaxY();
 }
