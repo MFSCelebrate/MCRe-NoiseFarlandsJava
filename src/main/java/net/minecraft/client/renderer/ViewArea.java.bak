@@ -71,23 +71,7 @@ public class ViewArea {
         return this.sections.radius();
     }
 
-    /**
-     * 🔧 MCRe P5 修复：重写 repositionCamera，同时处理 X/Z 和 Y 滑动。
-     * <p>关键修复：先调用 setYRange 更新 RotatingSectionStorage 的 Y 边界，
-     * 然后调用 repositionCenter —— repositionCenter 内部会用更新后的 minY
-     * 计算 newSectionY = minY + gridY，从而正确设置所有 RenderSection 的 Y 坐标。
-     * <p>早退：cameraSectionPos 完全相同（含 Y）→ 零开销。
-     */
     public boolean repositionCamera(final SectionPos cameraSectionPos) {
-        // 先计算新的 Y 基准（窗口中心 = cameraSectionY - 17）
-        int sectionGridSizeY = this.sections.height();
-        int verticalHalfSpan = sectionGridSizeY / 2; // 17
-        int newBaseSectionY = cameraSectionPos.y() - verticalHalfSpan;
-
-        // 先更新 Y 边界，让后续 repositionCenter 用新的 minY 计算 Y 坐标
-        this.sections.setYRange(newBaseSectionY, newBaseSectionY + sectionGridSizeY - 1);
-
-        // 调用原版 repositionCenter（处理 X/Z 滑动，同时用新 minY 正确设置 Y）
         boolean result = this.sections.repositionCenter(cameraSectionPos);
         if (result) {
             this.sectionOcclusionGraph.invalidate();

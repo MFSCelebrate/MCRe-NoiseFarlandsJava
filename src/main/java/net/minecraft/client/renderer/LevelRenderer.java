@@ -322,11 +322,9 @@ public class LevelRenderer implements AutoCloseable {
     private void repositionCamera(final CameraRenderState camera) {
         Vec3 cameraPos = camera.pos;
         SectionPos cameraSectionPos = SectionPos.of(cameraPos);
-        boolean xzChanged = this.viewArea.repositionCamera(cameraSectionPos);
-        // 🔧 MCRe P5 修复：让 ViewArea 的 RenderSection Y origin 跟随相机 sectionY 滑动，
-        // 与 ChunkAccess.windowMinY 中心对齐（同一个 camSecY），消除"地形下偏 80 格"bug
-        boolean yChanged = this.viewArea.updateYOrigins(cameraSectionPos.y());
-        if (xzChanged || yChanged) {
+        // 🔧 MCRe P5 修复：ViewArea.repositionCamera 现在同时处理 X/Z/Y 三轴滑动，
+        // 内部先 setYRange 再 repositionCenter，保证 RenderSection Y origin 与 ChunkAccess 窗口中心对齐
+        if (this.viewArea.repositionCamera(cameraSectionPos)) {
             this.worldBorderRenderer.invalidate();
         }
 
@@ -1041,9 +1039,9 @@ public class LevelRenderer implements AutoCloseable {
         );
         this.sectionOcclusionGraph().waitAndReset(this.viewArea);
         this.clearVisibleSections();
+        // 🔧 MCRe P5：ViewArea.repositionCamera 现在同时处理 X/Z/Y 三轴滑动，
+        // 内部先 setYRange 再 repositionCenter，一次调用搞定
         this.viewArea.repositionCamera(cameraSectionPosAtBoot);
-        // MCRe P5：记录 ViewArea 初始基准 Y（updateYOrigins 内部用 lastUpdatedSectionY 早退）
-        this.viewArea.updateYOrigins(camSecYBoot);
     }
 
     private @Nullable PostChain getTransparencyChain() {

@@ -621,7 +621,8 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
             int quartMaxY = quartMinY + QuartPos.fromBlock(this.getHeight()) - 1;
             int clampedQuartY = Mth.clamp(quartY, quartMinY, quartMaxY);
             int sectionIndex = this.getSectionIndex(QuartPos.toBlock(clampedQuartY));
-            return this.sections[sectionIndex].getNoiseBiome(quartX & 3, clampedQuartY & 3, quartZ & 3);
+            // 🔧 MCRe P5 修复：使用 getSection 代替直接数组访问，支持窗口化后的 sectionIndex 超出 sections 数组长度
+            return this.getSection(sectionIndex).getNoiseBiome(quartX & 3, clampedQuartY & 3, quartZ & 3);
         } catch (Throwable t) {
             CrashReport report = CrashReport.forThrowable(t, "Getting biome");
             CrashReportCategory category = report.addCategory("Biome being got");
