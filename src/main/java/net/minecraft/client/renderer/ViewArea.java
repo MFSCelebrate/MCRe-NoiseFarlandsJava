@@ -71,6 +71,10 @@ public class ViewArea {
         return this.sections.radius();
     }
 
+    public RotatingSectionStorage<SectionRenderDispatcher.RenderSection> getStorage() {
+        return this.sections;
+    }
+
     /**
      * 🔧 MCRe P5 修复：repositionCamera 处理 X/Z/Y 三轴滑动（渲染网格跟随玩家移动）。
      *
@@ -80,8 +84,11 @@ public class ViewArea {
      * <p>早退：cameraSectionPos 完全相同（含 Y）→ 零开销。
      */
     public boolean repositionCamera(final SectionPos cameraSectionPos) {
-        // 只传 X/Z 变化，Y 锁死为当前中心 Y（构造时固定）
-        SectionPos fixedYPos = SectionPos.of(cameraSectionPos.x(), this.sections.centerSectionPos().y(), cameraSectionPos.z());
+        SectionPos fixedYPos = SectionPos.of(
+                cameraSectionPos.x(),
+                this.sections.centerSectionPos().y(), // 保持当前中心 Y
+                cameraSectionPos.z()
+        );
         boolean changed = this.sections.repositionCenter(fixedYPos);
         if (changed) this.sectionOcclusionGraph.invalidate();
         return changed;

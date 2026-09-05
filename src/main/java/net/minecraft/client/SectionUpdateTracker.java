@@ -21,6 +21,7 @@ public class SectionUpdateTracker {
         levelHeightAccessor.getMaxSectionY(),
         (index, sectionNode) -> new SectionUpdateTracker.SectionDirtyState(true, false, sectionNode)
         );
+        this.storage.setFixedY(true);
     }
 
     public void setDirty(final int sectionX, final int sectionY, final int sectionZ, final boolean playerChanged) {
@@ -31,7 +32,12 @@ public class SectionUpdateTracker {
     }
 
     public void repositionCamera(final SectionPos cameraSectionPos) {
-        this.storage.repositionCenter(cameraSectionPos); // 只 X/Z
+        SectionPos fixedYPos = SectionPos.of(
+                cameraSectionPos.x(),
+                this.storage.centerSectionPos().y(),
+                cameraSectionPos.z()
+        );
+        this.storage.repositionCenter(fixedYPos);
     }
 
     public int size() {
