@@ -1,7 +1,7 @@
 package net.minecraft.client.gui.screens.worldselection;
 
-import java.math.BigDecimal;
 import java.util.function.Consumer;
+import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 import net.MinecraftTools.Math._256Bit.Float256;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -19,6 +19,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.levelgen.WorldReposition;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.Nullable;

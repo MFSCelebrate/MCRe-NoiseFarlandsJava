@@ -10,6 +10,7 @@ import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.DensityFunction;
+import net.minecraft.world.level.levelgen.WorldReposition;
 import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import com.mojang.datafixers.util.Pair;

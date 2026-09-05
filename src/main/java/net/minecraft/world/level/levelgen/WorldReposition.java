@@ -1,7 +1,7 @@
 package net.minecraft.world.level.levelgen;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
+import net.MinecraftTools.Math.DynamicAccuracy.BigInteger;
 import net.MinecraftTools.Math._256Bit.Float256;
 import net.minecraft.core.Direction;
 
@@ -72,10 +72,11 @@ public final class WorldReposition {
     /**
      * 一维变换 → BigInteger（EndIsland 末地环修复，需要精确整数算 sqrt(x²+z²)）。
      * 注意：这是「前向变换」（pos → 新坐标），不是逆运算。
+     * <p>Float256 没有直接的 toBigInteger()，走 {@code toBigDecimal().toBigInteger()} 中转（自研 BigDecimal 有 toBigInteger）。
      */
     public static BigInteger repositionToBigInteger(final int pos, final Direction.Axis axis) {
         final int i = axis.ordinal();
-        return Float256.of(pos).multiply(SCALE[i]).add(SHIFT[i]).toBigInteger();
+        return Float256.of(pos).multiply(SCALE[i]).add(SHIFT[i]).toBigDecimal().toBigInteger();
     }
 
     // ═════════════════ 开关访问 ═════════════════

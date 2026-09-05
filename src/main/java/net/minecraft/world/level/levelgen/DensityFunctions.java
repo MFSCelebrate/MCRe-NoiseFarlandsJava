@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.BoundedFloatFunction;
