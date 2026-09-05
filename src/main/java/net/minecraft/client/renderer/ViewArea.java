@@ -17,14 +17,13 @@ public class ViewArea {
     private final int maxY;
 
     public ViewArea(
-        final SectionRenderDispatcher sectionRenderDispatcher,
-        final int minY,
-        final int maxY,
-        final int minSectionY,
-        final int maxSectionY,
-        final int renderDistance,
-        final SectionOcclusionGraph sectionOcclusionGraph
-    ) {
+            final SectionRenderDispatcher sectionRenderDispatcher,
+            final int minY,
+            final int maxY,
+            final int minSectionY,
+            final int maxSectionY,
+            final int renderDistance,
+            final SectionOcclusionGraph sectionOcclusionGraph) {
         this.sectionOcclusionGraph = sectionOcclusionGraph;
         this.minY = minY;
         this.maxY = maxY;
@@ -33,7 +32,8 @@ public class ViewArea {
         }
 
         this.sections = new RotatingSectionStorage<>(
-            renderDistance, minSectionY, maxSectionY, (index, sectionNode) -> sectionRenderDispatcher.new RenderSection(index, sectionNode)
+        renderDistance, minSectionY, maxSectionY, (index, sectionNode) -> sectionRenderDispatcher
+        .new RenderSection(index, sectionNode)
         );
     }
 
@@ -73,34 +73,21 @@ public class ViewArea {
 
     /**
      * 🔧 MCRe P5 修复：repositionCamera 处理 X/Z/Y 三轴滑动（渲染网格跟随玩家移动）。
-     * <p>Y 轴采用与 ChunkAccess 完全一致的窗口大小（34 sections = 17下+16上+中心），
-     * 窗口中心对齐玩家 sectionY，与 ChunkAccess.windowMinY 保持完全同步。
-     * 这保证 SectionCompiler 查询世界 Y 时，ChunkAccess 内部转换命中正确 section。
+     *
+     * <p>Y 轴采用与 ChunkAccess 完全一致的窗口大小（34 sections = 17下+16上+中心）， 窗口中心对齐玩家 sectionY，与
+     * ChunkAccess.windowMinY 保持完全同步。 这保证 SectionCompiler 查询世界 Y 时，ChunkAccess 内部转换命中正确 section。
+     *
      * <p>早退：cameraSectionPos 完全相同（含 Y）→ 零开销。
      */
     public boolean repositionCamera(final SectionPos cameraSectionPos) {
         // 先计算新的 Y 基准（窗口中心 = cameraSectionY - 17，与 ChunkAccess WINDOW_HALF_BELOW 对齐）
-        int sectionGridSizeY = this.sections.height();  // 34
-        int verticalHalfSpan = 17;  // WINDOW_HALF_BELOW，与 ChunkAccess 窗口下半径对齐
+        int sectionGridSizeY = this.sections.height(); // 34
+        int verticalHalfSpan = 17; // WINDOW_HALF_BELOW，与 ChunkAccess 窗口下半径对齐
         int newBaseSectionY = cameraSectionPos.y() - verticalHalfSpan;
 
-        // 先更新 Y 边界，让后续 repositionCenter 用新的 minY 计算 Y 坐标
         this.sections.setYRange(newBaseSectionY, newBaseSectionY + sectionGridSizeY - 1);
-
-        // 记录旧中心用于判断是否真正滑动
-        SectionPos oldCenter = this.sections.centerSectionPos();
         boolean changed = this.sections.repositionCenter(cameraSectionPos);
-
-        // 如果 Y 实际滑动了，标记所有 section 重编译（数据源变了）
-        if (oldCenter.y() != cameraSectionPos.y()) {
-            for (SectionRenderDispatcher.RenderSection section : this.sections) {
-                section.markForRecompile();
-            }
-        }
-
-        if (changed) {
-            this.sectionOcclusionGraph.invalidate();
-        }
+        if (changed) this.sectionOcclusionGraph.invalidate();
         return changed;
     }
 
@@ -112,29 +99,30 @@ public class ViewArea {
         return this.sections.getValueAt(pos);
     }
 
-    protected SectionRenderDispatcher.@Nullable RenderSection getRenderSection(final SectionPos sectionNode) {
+    protected SectionRenderDispatcher.@Nullable
+            RenderSection getRenderSection(final SectionPos sectionNode) {
         // 🔧 MCRe P5 修复：窗口滑动时，render state 里的 sectionNode 可能携带旧 Y 坐标。
         // 策略：以当前窗口中心为基准，保持 X/Z 不变，将请求的 Y 映射到当前窗口对应的 gridY。
         int currentMinY = this.sections.minY();
         int sectionGridSizeY = this.sections.height();
         int requestedY = sectionNode.y();
-        
+
         // 快速路径：已在窗口内直接命中
         if (requestedY >= currentMinY && requestedY < currentMinY + sectionGridSizeY) {
             return this.sections.getValue(sectionNode);
         }
-        
+
         // 映射路径：计算相对于窗口中心的偏移，投影到当前窗口
         int windowCenterY = currentMinY + sectionGridSizeY / 2;
         int offsetFromCenter = requestedY - windowCenterY;
         int mappedY = windowCenterY + offsetFromCenter;
-        
+
         // 钳制到窗口边界（防止极端偏移越界）
         mappedY = Math.max(currentMinY, Math.min(currentMinY + sectionGridSizeY - 1, mappedY));
-        
+
         SectionPos mappedNode = SectionPos.of(sectionNode.x(), mappedY, sectionNode.z());
         SectionRenderDispatcher.RenderSection section = this.sections.getValue(mappedNode);
-        
+
         // 兜底：如果映射后仍为 null（极少见），遍历当前窗口所有 section 找同 X/Z 最近的
         if (section == null) {
             for (SectionRenderDispatcher.RenderSection s : this.sections) {
