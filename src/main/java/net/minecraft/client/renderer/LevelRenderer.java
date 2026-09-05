@@ -26,7 +26,6 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectListIterator;
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
@@ -34,7 +33,6 @@ import net.minecraft.SharedConstants;
 import net.minecraft.client.Camera;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.PrioritizeChunkUpdates;
 import net.minecraft.client.TextureFilteringMethod;
@@ -72,14 +70,6 @@ import net.minecraft.client.resources.model.sprite.AtlasManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.EmptyLevelChunk;
-import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.minecraft.world.level.chunk.WindowedChunk;
-import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.gizmos.Gizmos;
 import net.minecraft.gizmos.SimpleGizmoCollector;
 import net.minecraft.resources.Identifier;
@@ -133,8 +123,6 @@ public class LevelRenderer implements AutoCloseable {
     // MCRe：遮挡剔除——实体/方块实体可见性 O(1) 查询集合（与 visibleSections 同步）
     private final java.util.Set<SectionRenderDispatcher.RenderSection> visibleSectionSet = new java.util.HashSet<>();
     private @Nullable ViewArea viewArea;
-    // MCRe P5：保存当前世界引用（invalidateCompiledGeometry 时赋值，repositionCamera 用于遍历 chunk 调 moveWindowTo）
-    private @Nullable ClientLevel activeLevel;
     private final RenderTarget entityOutlineTarget;
     private final LevelTargetBundle targets = new LevelTargetBundle();
     private @Nullable SectionRenderDispatcher sectionRenderDispatcher;
@@ -326,90 +314,7 @@ public class LevelRenderer implements AutoCloseable {
             this.worldBorderRenderer.invalidate();
         }
 
-        // 🔧 MCRe P5：每帧让可视范围 LevelChunk 的窗口跟随相机 Y（超高世界玩家飞离 ±272 格后区块不再错位）
-        // moveWindowTo 内部有早退，相机不动时零开销
-        this.slideChunkWindowsToCamera(cameraSectionPos);
-
         this.sectionRenderDispatcher.setCameraPosition(cameraPos);
-    }
-
-    /**
-     * 🔧 MCRe P5：渲染层每帧调用——遍历相机可视范围的所有 LevelChunk，
-     * 让每个 chunk 的 34-section 窗口跟随相机 sectionY 居中。
-     * <p>遍历范围：相机 chunkPos ± viewDistance（已加载 chunk 子集，避免遍历全 chunkMap）。
-     * <p>性能：32 渲染距离 = 65×65 = 4225 chunks/帧；moveWindowTo 早退命中 ≈99%，真实滑动极少。
-     */
-    private void slideChunkWindowsToCamera(final SectionPos cameraSectionPos) {
-        ClientLevel level = this.activeLevel;
-        if (level == null || this.viewArea == null) {
-            return;
-        }
-        int renderDistance = this.viewArea.getViewDistance();
-        if (renderDistance <= 0) {
-            return;
-        }
-        int camX = cameraSectionPos.x();
-        int camZ = cameraSectionPos.z();
-        int camSecY = cameraSectionPos.y();
-
-        for (int cx = camX - renderDistance; cx <= camX + renderDistance; cx++) {
-            for (int cz = camZ - renderDistance; cz <= camZ + renderDistance; cz++) {
-                net.minecraft.world.level.chunk.ChunkAccess ca = level.getChunk(cx, cz, ChunkStatus.FULL, false);
-                if (ca instanceof LevelChunk chunk && !(chunk instanceof EmptyLevelChunk)) {
-                    ((WindowedChunk) chunk).moveWindowTo(camSecY);
-                    this.discardOutsideHoldBoundary(chunk);
-                }
-            }
-        }
-    }
-
-    /**
-     * 🔧 MCRe P5：滑出丢弃（参考 inf_farlands §7.3）。
-     * <p>玩家窗口滑动后，旧的 sections 仍存在 allSections 仓库中导致内存无限增长——
-     * 清理落在保护区间外的 sections（释放内存 + 通知光照引擎）。
-     * <p>保护区间 = [min(hold, view)-2, max(hold, view)+2]：
-     *  - hold 边界（lastPacketMinY/MaxY）滞后于玩家窗口（服务端 difference 包延迟）；
-     *  - 单独用 hold 会把 view 内新数据误丢（实测 C4 证据）；
-     *  - view 每帧实时，hold 是数据回放保证。
-     * <p>空 section（懒创建产物）不丢——丢弃会触发光照查询再懒创建，每帧循环。
-     */
-    private void discardOutsideHoldBoundary(final LevelChunk chunk) {
-        WindowedChunk wc = (WindowedChunk) chunk;
-        int viewMin = wc.getWindowMinY();
-        int viewMax = wc.getWindowMaxY();
-        int holdMin = wc.lastPacketMinY();
-        int dropBelow;
-        int dropAbove;
-        if (holdMin == Integer.MIN_VALUE) {
-            // 尚未收到任何网络包——保护区间 = view 边界 ±2
-            dropBelow = viewMin - 2;
-            dropAbove = viewMax + 2;
-        } else {
-            // 保护区间 = view ∪ hold 并集再外扩 2（滑回时数据重发，§8 闭环）
-            int holdMax = wc.lastPacketMaxY();
-            dropBelow = Math.min(holdMin, viewMin) - 2;
-            dropAbove = Math.max(holdMax, viewMax) + 2;
-        }
-        ChunkPos cpos = chunk.getPos();
-        ClientLevel level = this.activeLevel;
-        if (level == null) {
-            return;
-        }
-        LevelLightEngine lightEngine = level.getLightEngine();
-        Iterator<Map.Entry<Integer, LevelChunkSection>> it = wc.windowedAllSections().entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<Integer, LevelChunkSection> e = it.next();
-            int sy = e.getKey();
-            LevelChunkSection section = e.getValue();
-            if (section == null || section.hasOnlyAir() || (sy >= dropBelow && sy <= dropAbove)) {
-                continue;
-            }
-            it.remove();
-            SectionPos sectionPosAt = SectionPos.of(cpos, sy);
-            lightEngine.queueSectionData(LightLayer.BLOCK, sectionPosAt, null);
-            lightEngine.queueSectionData(LightLayer.SKY, sectionPosAt, null);
-            lightEngine.updateSectionStatus(sectionPosAt, true);
-        }
     }
 
     private void addSkyPass(final FrameGraphBuilder frame, final CameraRenderState cameraState, final GpuBufferSlice skyFog) {
@@ -991,8 +896,6 @@ public class LevelRenderer implements AutoCloseable {
     }
 
     public void invalidateCompiledGeometry(final ClientLevel level, final Options options, final Camera camera, final BlockColors blockColors) {
-        // MCRe P5：保存当前世界引用，供 repositionCamera 遍历 chunk 调 moveWindowTo
-        this.activeLevel = level;
         SectionCompiler sectionCompiler = new SectionCompiler(
             options.ambientOcclusion().get(),
             options.cutoutLeaves().get(),
