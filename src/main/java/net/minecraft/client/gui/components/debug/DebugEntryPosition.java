@@ -2,6 +2,8 @@ package net.minecraft.client.gui.components.debug;
 
 import java.util.List;
 import java.util.Locale;
+import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
+import net.MinecraftTools.Math.DynamicAccuracy.BigInteger;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -14,6 +16,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.WorldReposition;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.MinecraftTools.Math._256Bit.Float256;
@@ -34,6 +37,27 @@ public class DebugEntryPosition implements DebugScreenEntry {
         int frac = s.length() - dot - 1;
         if (frac <= MAX_FRAC_DIGITS) return s;
         return s.substring(0, dot + MAX_FRAC_DIGITS + 1) + "…";
+    }
+
+    /**
+     * 🔧 MCRe：BigInteger 整数显示（Terrain XYZ 用，无小数点、无精度损失，直接 toString）。
+     * 跟 XYZ/XYZ(Camera) 的 fmtExact 输出格式对齐（不省略、无限位数）。
+     */
+    private static String fmtBigInt(final BigInteger value) {
+        return value.toString();
+    }
+
+    /**
+     * 🔧 MCRe：计算 Terrain XYZ（玩家坐标经 WorldReposition 偏移缩放 → BigDecimal → BigInteger 截断）。
+     * <p>无大小限制：scale/shift 即使是 1e49 也能精确算出 BigInteger 整数地形坐标。
+     * <p>无精度损失：WorldReposition 内部用 BigDecimal 计算，截断成 BigInteger 时仅去掉小数部分。
+     */
+    private static BigInteger[] computeTerrainXYZ(final double playerX, final double playerY, final double playerZ) {
+        return new BigInteger[] {
+            WorldReposition.reposition(BigDecimal.valueOf(playerX), Direction.Axis.X).toBigInteger(),
+            WorldReposition.reposition(BigDecimal.valueOf(playerY), Direction.Axis.Y).toBigInteger(),
+            WorldReposition.reposition(BigDecimal.valueOf(playerZ), Direction.Axis.Z).toBigInteger()
+        };
     }
 
     @Override
@@ -65,15 +89,15 @@ public class DebugEntryPosition implements DebugScreenEntry {
             };
             java.util.Set<ChunkPos> chunks = serverOrClientLevel instanceof ServerLevel serverLevel ? serverLevel.getForceLoadedChunks() : java.util.Set.of();
 
-            // ===== 精度计算 =====
-            long maxAbs = (long)Math.max(
-                Math.abs(entity.getX()),
-                Math.max(Math.abs(entity.getY()), Math.abs(entity.getZ()))
-            );
-            int shift = 64 - Long.numberOfLeadingZeros(maxAbs);
-            double doublePrecision = Math.pow(2.0, (double)(shift - 53));
-            double floatPrecision = Math.pow(2.0, (double)(shift - 24));
-            String precisionString = "Current precision: §" + getColorCodeFromPrecision(doublePrecision) + doublePrecision
+            // ===== 🔧 MCRe：计算 Terrain XYZ（玩家坐标经 WorldReposition 偏移缩放）=====
+            final BigInteger[] terrainXYZ = computeTerrainXYZ(entity.getX(), entity.getY(), entity.getZ());
+
+            // ===== 精度计算（基于 Terrain XYZ 的 BigInteger 值，反映玩家坐标在「地形生成器世界」里的实际精度）=====
+            final BigInteger maxAbs = terrainXYZ[0].abs().max(terrainXYZ[1].abs()).max(terrainXYZ[2].abs());
+            final int bitLen = maxAbs.bitLength();  // 最高位 1 的位置（等价于 64 - Long.numberOfLeadingZeros）
+            final double doublePrecision = Math.pow(2.0, (double)(bitLen - 53));
+            final double floatPrecision = Math.pow(2.0, (double)(bitLen - 24));
+            final String precisionString = "Current precision: §" + getColorCodeFromPrecision(doublePrecision) + doublePrecision
                                    + "§r (float: §" + getColorCodeFromPrecision(floatPrecision) + floatPrecision + "§r)";
 
             displayer.addToGroup(
@@ -83,6 +107,8 @@ public class DebugEntryPosition implements DebugScreenEntry {
                     "XYZ: " + fmtExact(entity.getX()) + " / " + fmtExact(entity.getY()) + " / " + fmtExact(entity.getZ()),
                     // ===== 256-bit 精确摄像机坐标 =====
                     "XYZ(Camera): " + fmtExact(camX) + " / " + fmtExact(camY) + " / " + fmtExact(camZ),
+                    // ===== 🔧 MCRe：地形生成器坐标（玩家坐标经偏移缩放，无精度损失 BigInteger）=====
+                    "Terrain XYZ(BigInteger): " + fmtBigInt(terrainXYZ[0]) + " / " + fmtBigInt(terrainXYZ[1]) + " / " + fmtBigInt(terrainXYZ[2]),
                     String.format(Locale.ROOT, "Block: %d %d %d", feetPos.getX(), feetPos.getY(), feetPos.getZ()),
                     String.format(
                         Locale.ROOT,

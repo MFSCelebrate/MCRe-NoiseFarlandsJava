@@ -33,6 +33,8 @@ import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.synth.BlendedNoise;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
+import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
+import java.math.BigInteger;
 import org.slf4j.Logger;
 
 public final class DensityFunctions {
@@ -566,10 +568,18 @@ public final class DensityFunctions {
         }
 
         private static float getHeightValue(final SimplexNoise islandNoise, final int sectionX, final int sectionZ) {
-            int chunkX = sectionX / 2;
-            int chunkZ = sectionZ / 2;
-            int subSectionX = sectionX % 2;
-            int subSectionZ = sectionZ % 2;
+            // 🔧 MCRe NoiseFarlands：WorldReposition 偏移（自研 BigDecimal，无大小限制）
+            // 公式：offsetX = sectionX * scaleX + shiftX（BigDecimal 精确）
+            // 然后 /16 = 原始 /8 后 /2（chunkX），/8 后 % 2 = subSectionX
+            final BigInteger offsetX = WorldReposition.reposition(BigDecimal.valueOf(sectionX), Direction.Axis.X).toBigInteger();
+            final BigInteger offsetZ = WorldReposition.reposition(BigDecimal.valueOf(sectionZ), Direction.Axis.Z).toBigInteger();
+            final BigInteger SIXTEEN = BigInteger.valueOf(16);
+            final BigInteger EIGHT = BigInteger.valueOf(8);
+            final BigInteger TWO = BigInteger.valueOf(2);
+            int chunkX = offsetX.divide(SIXTEEN).intValue();
+            int chunkZ = offsetZ.divide(SIXTEEN).intValue();
+            int subSectionX = offsetX.divide(EIGHT).remainder(TWO).intValue();
+            int subSectionZ = offsetZ.divide(EIGHT).remainder(TWO).intValue();
             float doffs;
             if (fixEndRingMode()) {
                 doffs = 100.0F - Mth.sqrt((float) sectionX * (float) sectionX + (float) sectionZ * (float) sectionZ) * 8.0F;
@@ -599,7 +609,8 @@ public final class DensityFunctions {
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            return (getHeightValue(this.islandNoise, context.blockX() / 8, context.blockZ() / 8) - 8.0) / 128.0;
+            // 🔧 MCRe NoiseFarlands：传原始坐标进 getHeightValue，由内部 BigInteger 偏移后还原 /8
+            return (getHeightValue(this.islandNoise, context.blockX(), context.blockZ()) - 8.0) / 128.0;
         }
 
         @Override

@@ -15,10 +15,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import net.MinecraftTools.Math._256Bit.Float256;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.resources.ResourceKey;
@@ -69,16 +67,14 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
 
     private static Aquifer.FluidPicker createFluidPicker(final NoiseGeneratorSettings settings) {
         // 🔧 MCRe：YClampedGradient 偏移启用时，把原版 lava/sea level 还原到玩家世界 Y——
-        //   playerY = (worldY - shift) / scale（逆运算）
+        //   playerY = (worldY - shift) / scale（WorldReposition.inverseY 已处理）
         //   这样玩家在玩家世界里看到的 lava/sea level 仍在原版位置（-54 / seaLevel）
         // 变量必须 final/effectively final 才能被下方 lambda 引用
         final int lavaLevelY;
         final int seaLevelY;
         if (WorldReposition.isYClampedGradientOffsetEnabled()) {
-            Float256 scaleY = WorldReposition.getScale(Direction.Axis.Y);
-            Float256 shiftY = WorldReposition.getShift(Direction.Axis.Y);
-            lavaLevelY = Float256.of(-54).subtract(shiftY).divide(scaleY).intValue();
-            seaLevelY = Float256.of(settings.seaLevel()).subtract(shiftY).divide(scaleY).intValue();
+            lavaLevelY = WorldReposition.inverseY(-54);
+            seaLevelY = WorldReposition.inverseY(settings.seaLevel());
         } else {
             lavaLevelY = -54;
             seaLevelY = settings.seaLevel();

@@ -2,7 +2,6 @@ package net.minecraft.client.gui.screens.worldselection;
 
 import java.util.function.Consumer;
 import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
-import net.MinecraftTools.Math._256Bit.Float256;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -364,17 +363,17 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollContent.addChild(scalerBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // 2. 三个缩放输入框（顺序：x 在上、y 中、z 下），高度 20、宽度 = CONTENT_WIDTH 占满滚动面板
-        this.xWorldScalerInput = this.createFloat256Input(
+        this.xWorldScalerInput = this.createBigDecimalInput(
                 Component.literal("X 轴缩放"),
                 this.configData.xWorldScaler,
                 val -> this.configData.xWorldScaler = val
         );
-        this.yWorldScalerInput = this.createFloat256Input(
+        this.yWorldScalerInput = this.createBigDecimalInput(
                 Component.literal("Y 轴缩放"),
                 this.configData.yWorldScaler,
                 val -> this.configData.yWorldScaler = val
         );
-        this.zWorldScalerInput = this.createFloat256Input(
+        this.zWorldScalerInput = this.createBigDecimalInput(
                 Component.literal("Z 轴缩放"),
                 this.configData.zWorldScaler,
                 val -> this.configData.zWorldScaler = val
@@ -401,17 +400,17 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollContent.addChild(offsetBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // 3. 三个偏移输入框（顺序：x 在上、y 中、z 下）
-        this.xWorldOffsetInput = this.createFloat256Input(
+        this.xWorldOffsetInput = this.createBigDecimalInput(
                 Component.literal("X 轴偏移"),
                 this.configData.xWorldOffset,
                 val -> this.configData.xWorldOffset = val
         );
-        this.yWorldOffsetInput = this.createFloat256Input(
+        this.yWorldOffsetInput = this.createBigDecimalInput(
                 Component.literal("Y 轴偏移"),
                 this.configData.yWorldOffset,
                 val -> this.configData.yWorldOffset = val
         );
-        this.zWorldOffsetInput = this.createFloat256Input(
+        this.zWorldOffsetInput = this.createBigDecimalInput(
                 Component.literal("Z 轴偏移"),
                 this.configData.zWorldOffset,
                 val -> this.configData.zWorldOffset = val
@@ -481,14 +480,15 @@ public class WorldMainSettingScreen extends Screen {
     }
 
     /**
-     * 🔧 MCRe：创建 Float256 输入框——高度 20、宽度 = CONTENT_WIDTH 占满滚动面板， 支持科学记数法 e/E。responder 自动用
-     * BigDecimal 校验格式，非法输入静默丢弃（保留旧值）。
+     * 🔧 MCRe：创建 BigDecimal 输入框——高度 20、宽度 = CONTENT_WIDTH 占满滚动面板，
+     * 支持科学记数法 e/E（自研 BigDecimal 构造器原生支持）。
+     * responder 自动用 BigDecimal 构造器校验格式，非法输入静默丢弃（保留旧值）。
      */
-    private Float256EditBox createFloat256Input(
-            final Component narration, final String initialValue, final Consumer<
-                    String> onValidValue) {
-        final Float256EditBox box = new Float256EditBox(
-        this.font, 0, 0, CONTENT_WIDTH, 20, narration
+    private BigDecimalEditBox createBigDecimalInput(
+            final Component narration, final String initialValue, final Consumer<String> onValidValue
+    ) {
+        final BigDecimalEditBox box = new BigDecimalEditBox(
+                this.font, 0, 0, CONTENT_WIDTH, 20, narration
         );
         box.setValue(initialValue);
         box.setResponder(val -> {
@@ -497,7 +497,7 @@ public class WorldMainSettingScreen extends Screen {
                 return; // 空输入不写入
             }
             try {
-                // 校验格式合法性——Float256 通过 BigDecimal.of(...) 中转
+                // 校验格式合法性——自研 BigDecimal 构造器原生支持 e/E、负号、小数
                 new BigDecimal(trimmed);
                 onValidValue.accept(trimmed);
             } catch (NumberFormatException ignored) {
@@ -624,14 +624,14 @@ public class WorldMainSettingScreen extends Screen {
     private void onDone() {
         FarLandsConfigData cfg = this.configData;
         FarLandsConfigData.activeConfig = cfg;
-        // 一次性解析为 Float256，避免运行期反复 parse 字符串
+        // 一次性解析为 BigDecimal（自研 DynamicAccuracy 库，无大小限制），避免运行期反复 parse 字符串
         WorldReposition.refresh(new WorldReposition.RepositionConfig(
-        cfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(cfg.xWorldScaler, Float256.ONE) : Float256.ONE,
-        cfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(cfg.yWorldScaler, Float256.ONE) : Float256.ONE,
-        cfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(cfg.zWorldScaler, Float256.ONE) : Float256.ONE,
-        cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.xWorldOffset, Float256.ZERO) : Float256.ZERO,
-        cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.yWorldOffset, Float256.ZERO) : Float256.ZERO,
-        cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.zWorldOffset, Float256.ZERO) : Float256.ZERO,
+        cfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(cfg.xWorldScaler, BigDecimal.ONE) : BigDecimal.ONE,
+        cfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(cfg.yWorldScaler, BigDecimal.ONE) : BigDecimal.ONE,
+        cfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(cfg.zWorldScaler, BigDecimal.ONE) : BigDecimal.ONE,
+        cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.xWorldOffset, BigDecimal.ZERO) : BigDecimal.ZERO,
+        cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.yWorldOffset, BigDecimal.ZERO) : BigDecimal.ZERO,
+        cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.zWorldOffset, BigDecimal.ZERO) : BigDecimal.ZERO,
         cfg.enabledYClampedGradientOffset
         ));
         FarLandsConfigStorage.save(Minecraft.getInstance().gameDirectory, cfg);
@@ -685,8 +685,8 @@ public class WorldMainSettingScreen extends Screen {
         public boolean disabledEntitySpawn = false;
 
         // 🔧 MCRe：第二页「地形偏移与缩放」——
-        // scaler 默认 1（无缩放），offset 默认 0（无偏移）。用 String 存 Float256.toString()，
-        // Gson 自动序列化，无需写 TypeAdapter；UI 层用 BigDecimal.parse(...) → Float256.of(...) 中转解析。
+        // scaler 默认 1（无缩放），offset 默认 0（无偏移）。用 String 存 BigDecimal.toString()，
+        // Gson 自动序列化，无需写 TypeAdapter；UI 层用 BigDecimal.parse(...) → WorldReposition 刷新缓存。
         public boolean enabledTerrainScaler = false;
         public String xWorldScaler = "1";
         public String yWorldScaler = "1";
@@ -709,6 +709,8 @@ public class WorldMainSettingScreen extends Screen {
     private static class NumberOnlyEditBox extends EditBox {
         private NumberOnlyEditBox(final Font font, final int x, final int y, final int width, final int height, final Component narration) {
             super(font, x, y, width, height, narration);
+            // 🔧 MCRe：移除 EditBox 默认 maxLength=32 限制——科学记数法长串不受 32 字符截断
+            this.setMaxLength(Integer.MAX_VALUE);
         }
 
         @Override
@@ -754,13 +756,16 @@ public class WorldMainSettingScreen extends Screen {
     }
 
     /**
-     * 🔧 MCRe：Float256 专用输入框——支持科学记数法 e/E。 解析路径：String → BigDecimal（构造器支持 e/E） →
-     * Float256.of(BigDecimal)。 非法输入（如 "1e"、"1e10.5"、".e5"）在 responder 端用 BigDecimal
+     * 🔧 MCRe：BigDecimal 专用输入框——支持科学记数法 e/E。
+     * 解析路径：String → BigDecimal（自研 DynamicAccuracy 库构造器原生支持 e/E）→ WorldReposition.parseOrFallback。
+     * 非法输入（如 "1e"、"1e10.5"、".e5"）在 responder 端用 BigDecimal
      * 构造器校验后静默丢弃，保留旧值。
      */
-    private static class Float256EditBox extends EditBox {
-        private Float256EditBox(final Font font, final int x, final int y, final int width, final int height, final Component narration) {
+    private static class BigDecimalEditBox extends EditBox {
+        private BigDecimalEditBox(final Font font, final int x, final int y, final int width, final int height, final Component narration) {
             super(font, x, y, width, height, narration);
+            // 🔧 MCRe：移除 EditBox 默认 maxLength=32 限制——缩放/偏移值可能需要 1e49 这种长串科学记数法
+            this.setMaxLength(Integer.MAX_VALUE);
         }
 
         @Override
