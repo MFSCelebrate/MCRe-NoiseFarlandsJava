@@ -14,6 +14,7 @@ import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import net.minecraft.core.Direction;
 
 public class BlendedNoise implements DensityFunction.SimpleFunction {
     private static final Codec<Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
@@ -121,9 +122,10 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
     public double compute(final DensityFunction.FunctionContext context) {
         if (isBedrockMode()) {
             // === Bedrock 模式：全部使用 float 精度计算 ===
-            float limitX = (float)(context.blockX() * this.xzMultiplier);
-            float limitY = (float)(context.blockY() * this.yMultiplier);
-            float limitZ = (float)(context.blockZ() * this.xzMultiplier);
+            // 🔧 MCRe：先施加 WorldReposition 偏移（newPos = pos * scale + shift），再乘 xzMultiplier/yMultiplier
+            float limitX = (float)(WorldReposition.reposition(context.blockX(), Direction.Axis.X) * this.xzMultiplier);
+            float limitY = (float)(WorldReposition.reposition(context.blockY(), Direction.Axis.Y) * this.yMultiplier);
+            float limitZ = (float)(WorldReposition.reposition(context.blockZ(), Direction.Axis.Z) * this.xzMultiplier);
             float mainX = limitX / (float)this.xzFactor;
             float mainY = limitY / (float)this.yFactor;
             float mainZ = limitZ / (float)this.xzFactor;
@@ -186,9 +188,10 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         }
 
         // === 原 double 实现 ===
-        double limitX = context.blockX() * this.xzMultiplier;
-        double limitY = context.blockY() * this.yMultiplier;
-        double limitZ = context.blockZ() * this.xzMultiplier;
+        // 🔧 MCRe：先施加 WorldReposition 偏移（newPos = pos * scale + shift），再乘 xzMultiplier/yMultiplier
+        double limitX = WorldReposition.reposition(context.blockX(), Direction.Axis.X) * this.xzMultiplier;
+        double limitY = WorldReposition.reposition(context.blockY(), Direction.Axis.Y) * this.yMultiplier;
+        double limitZ = WorldReposition.reposition(context.blockZ(), Direction.Axis.Z) * this.xzMultiplier;
         double mainX = limitX / this.xzFactor;
         double mainY = limitY / this.yFactor;
         double mainZ = limitZ / this.xzFactor;

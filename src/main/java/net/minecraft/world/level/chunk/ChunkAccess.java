@@ -615,11 +615,18 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     @Override
     public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
         try {
-            int quartMinY = QuartPos.fromBlock(this.getMinY());
-            int quartMaxY = quartMinY + QuartPos.fromBlock(this.getHeight()) - 1;
+            // 🔧 MCRe P4b+：超高世界 dimensionType.height=2147000000，世界域 getMinY/getHeight 会让
+            // clamp 后的 quartY 仍是世界域值，转 sectionIndex 后远超 sections.length=34 而越界。
+            // 改用窗口化高度域（与 getHeightAccessorForGeneration / NoiseChunk / carve 一致），
+            // quartY 钳制到 [windowMinY, windowMaxY] 范围内，sectionIndex 落在 [0, WINDOW_SECTIONS) 内。
+            // 同时 this.sections[sectionIndex] 改走 this.getSection(sectionIndex) 懒创建（与
+            // LevelChunk.getBlockState/getFluidState 同思路），杜绝任何 sectionIndex 越界。
+            LevelHeightAccessor ha = this.getHeightAccessorForGeneration();
+            int quartMinY = QuartPos.fromBlock(ha.getMinY());
+            int quartMaxY = quartMinY + QuartPos.fromBlock(ha.getHeight()) - 1;
             int clampedQuartY = Mth.clamp(quartY, quartMinY, quartMaxY);
             int sectionIndex = this.getSectionIndex(QuartPos.toBlock(clampedQuartY));
-            return this.sections[sectionIndex].getNoiseBiome(quartX & 3, clampedQuartY & 3, quartZ & 3);
+            return this.getSection(sectionIndex).getNoiseBiome(quartX & 3, clampedQuartY & 3, quartZ & 3);
         } catch (Throwable t) {
             CrashReport report = CrashReport.forThrowable(t, "Getting biome");
             CrashReportCategory category = report.addCategory("Biome being got");

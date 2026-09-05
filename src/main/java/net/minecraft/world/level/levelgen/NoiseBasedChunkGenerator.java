@@ -15,8 +15,10 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import net.MinecraftTools.Math._256Bit.Float256;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.resources.ResourceKey;
@@ -66,15 +68,25 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
     }
 
     private static Aquifer.FluidPicker createFluidPicker(final NoiseGeneratorSettings settings) {
-        Aquifer.FluidStatus lavaStatus = new Aquifer.FluidStatus(-54, Blocks.LAVA.defaultBlockState());
-        int seaLevel = settings.seaLevel();
-        Aquifer.FluidStatus seaStatus = new Aquifer.FluidStatus(seaLevel, settings.defaultFluid());
+        // 🔧 MCRe：YClampedGradient 偏移启用时，把原版 lava/sea level 还原到玩家世界 Y——
+        //   playerY = (worldY - shift) / scale（逆运算）
+        //   这样玩家在玩家世界里看到的 lava/sea level 仍在原版位置（-54 / seaLevel）
+        int lavaLevelY = -54;
+        int seaLevelY = settings.seaLevel();
+        if (WorldReposition.isYClampedGradientOffsetEnabled()) {
+            Float256 scaleY = WorldReposition.getScale(Direction.Axis.Y);
+            Float256 shiftY = WorldReposition.getShift(Direction.Axis.Y);
+            lavaLevelY = Float256.of(-54).subtract(shiftY).divide(scaleY).intValue();
+            seaLevelY = Float256.of(settings.seaLevel()).subtract(shiftY).divide(scaleY).intValue();
+        }
+        Aquifer.FluidStatus lavaStatus = new Aquifer.FluidStatus(lavaLevelY, Blocks.LAVA.defaultBlockState());
+        Aquifer.FluidStatus seaStatus = new Aquifer.FluidStatus(seaLevelY, settings.defaultFluid());
         Aquifer.FluidStatus emptyStatus = new Aquifer.FluidStatus(DimensionType.MIN_Y, Blocks.AIR.defaultBlockState());
         return (x, y, z) -> {
             if (SharedConstants.DEBUG_DISABLE_FLUID_GENERATION) {
                 return emptyStatus;
             } else {
-                return y < Math.min(-54, seaLevel) ? lavaStatus : seaStatus;
+                return y < Math.min(lavaLevelY, seaLevelY) ? lavaStatus : seaStatus;
             }
         };
     }

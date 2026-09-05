@@ -1021,7 +1021,11 @@ public final class DensityFunctions {
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            return this.noise.getValue(context.blockX() * this.xzScale, context.blockY() * this.yScale, context.blockZ() * this.xzScale);
+            // 🔧 MCRe：先施加 WorldReposition 偏移（newPos = pos * scale + shift），再乘数据定义的 xzScale/yScale
+            final double x = WorldReposition.reposition(context.blockX(), Direction.Axis.X) * this.xzScale;
+            final double y = WorldReposition.reposition(context.blockY(), Direction.Axis.Y) * this.yScale;
+            final double z = WorldReposition.reposition(context.blockZ(), Direction.Axis.Z) * this.xzScale;
+            return this.noise.getValue(x, y, z);
         }
 
         @Override
@@ -1144,7 +1148,12 @@ public final class DensityFunctions {
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            return this.compute(context.blockX(), context.blockY(), context.blockZ());
+            // 🔧 MCRe：先施加 WorldReposition 偏移，再调内部 compute(x, y, z)
+            return this.compute(
+                    WorldReposition.reposition(context.blockX(), Direction.Axis.X),
+                    WorldReposition.reposition(context.blockY(), Direction.Axis.Y),
+                    WorldReposition.reposition(context.blockZ(), Direction.Axis.Z)
+            );
         }
 
         @Override
@@ -1168,7 +1177,12 @@ public final class DensityFunctions {
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            return this.compute(context.blockX(), 0.0, context.blockZ());
+            // 🔧 MCRe：先施加 WorldReposition 偏移（X/Z 轴，Y 强制 0），再调内部 compute
+            return this.compute(
+                    WorldReposition.reposition(context.blockX(), Direction.Axis.X),
+                    0.0,
+                    WorldReposition.reposition(context.blockZ(), Direction.Axis.Z)
+            );
         }
 
         @Override
@@ -1192,7 +1206,12 @@ public final class DensityFunctions {
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            return this.compute(context.blockZ(), context.blockX(), 0.0);
+            // 🔧 MCRe：ShiftB 内部参数顺序是 (z, x, y=0)，施加 WorldReposition 偏移保持原版语义
+            return this.compute(
+                    WorldReposition.reposition(context.blockZ(), Direction.Axis.Z),
+                    WorldReposition.reposition(context.blockX(), Direction.Axis.X),
+                    0.0
+            );
         }
 
         @Override
@@ -1255,9 +1274,10 @@ public final class DensityFunctions {
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            double x = context.blockX() * this.xzScale + this.shiftX.compute(context);
-            double y = context.blockY() * this.yScale + this.shiftY.compute(context);
-            double z = context.blockZ() * this.xzScale + this.shiftZ.compute(context);
+            // 🔧 MCRe：先施加 WorldReposition 偏移，再乘 xzScale/yScale，最后加 shiftX/Y/Z（数据包定义的偏移）
+            final double x = WorldReposition.reposition(context.blockX(), Direction.Axis.X) * this.xzScale + this.shiftX.compute(context);
+            final double y = WorldReposition.reposition(context.blockY(), Direction.Axis.Y) * this.yScale + this.shiftY.compute(context);
+            final double z = WorldReposition.reposition(context.blockZ(), Direction.Axis.Z) * this.xzScale + this.shiftZ.compute(context);
             return this.noise.getValue(x, y, z);
         }
 
@@ -1519,7 +1539,12 @@ public final class DensityFunctions {
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            return Mth.clampedMap(context.blockY(), this.fromY, this.toY, this.fromValue, this.toValue);
+            // 🔧 MCRe：YClampedGradient 控制 Y 轴 base stone 海拔梯度——独立开关 enabledYClampedGradientOffset
+            // 默认关闭（保持原版海拔梯度，避免 Y 轴边境之地消失）；用户主动开启后才能扩展 Y 轴探索范围
+            final double y = WorldReposition.isYClampedGradientOffsetEnabled()
+                    ? WorldReposition.reposition(context.blockY(), Direction.Axis.Y)
+                    : context.blockY();
+            return Mth.clampedMap(y, this.fromY, this.toY, this.fromValue, this.toValue);
         }
 
         @Override

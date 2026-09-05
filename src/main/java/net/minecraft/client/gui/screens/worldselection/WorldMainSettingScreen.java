@@ -1,5 +1,8 @@
 package net.minecraft.client.gui.screens.worldselection;
 
+import java.math.BigDecimal;
+import java.util.function.Consumer;
+import net.MinecraftTools.Math._256Bit.Float256;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -49,11 +52,21 @@ public class WorldMainSettingScreen extends Screen {
     /** "限制返回值"启用时显示的整数输入框（null 表示尚未在 init() 中创建） */
     private @Nullable EditBox limitValueInput;
 
+    // 🔧 MCRe：第二页「地形偏移与缩放」输入框引用——开关启用时显示，关闭时收起
+    private @Nullable EditBox xWorldScalerInput;
+    private @Nullable EditBox yWorldScalerInput;
+    private @Nullable EditBox zWorldScalerInput;
+    private @Nullable EditBox xWorldOffsetInput;
+    private @Nullable EditBox yWorldOffsetInput;
+    private @Nullable EditBox zWorldOffsetInput;
+
     // ==================== 分页状态 ====================
     /** 当前页码（0 起），进入界面默认为第一页 */
     private int currentPage = 0;
+
     /** 总页数（目前仅 1、2 两页，等待扩展） */
     private static final int PAGE_COUNT = 2;
+
     private @Nullable Button prevPageButton;
     private @Nullable Button nextPageButton;
     private @Nullable StringWidget titleWidget;
@@ -78,8 +91,8 @@ public class WorldMainSettingScreen extends Screen {
         this.titleWidget = new StringWidget(this.title.copy().withStyle(ChatFormatting.BOLD), this.font);
         header.addChild(this.titleWidget);
         this.subtitleWidget = new StringWidget(
-                Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"),
-                this.font
+        Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"),
+        this.font
         );
         header.addChild(this.subtitleWidget);
         this.pageNumberWidget = new StringWidget(Component.literal(""), this.font);
@@ -126,7 +139,7 @@ public class WorldMainSettingScreen extends Screen {
         switch (this.currentPage) {
             case 0 -> this.buildPage1Content();
             case 1 -> this.buildPage2Content();
-            default -> { }
+            default -> {}
         }
     }
 
@@ -323,10 +336,174 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollContent.addChild(structBuilder.build().layout(), s -> s.paddingHorizontal(10));
     }
 
-    // 第 2 页：地形偏移与缩放（滚动面板暂空，等待后续添加）
+    // 第 2 页：地形偏移与缩放
     private void buildPage2Content() {
         this.scrollContent.defaultCellSetting().alignHorizontallyCenter();
-        // 🔧 MCRe：第二页内容占位——当前为空，等待扩展偏移/缩放设置项
+
+        // ========== 第一节：地形生成器缩放 ==========
+        this.scrollContent.addChild(this.createSectionHeader(
+                Component.literal("§b§l地形生成器偏移缩放")
+        ));
+
+        // 1. 启用地形缩放（开关）—— 切换时联动下方三个 X/Y/Z 输入框显隐
+        SwitchGrid.Builder scalerBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
+                .withRowSpacing(4);
+        scalerBuilder.addSwitch(
+                Component.literal("启用 世界生成器地形缩放"),
+                () -> this.configData.enabledTerrainScaler,
+                val -> {
+                    this.configData.enabledTerrainScaler = val;
+                    this.setScalerInputsVisible(val);
+                }
+        ).withInfo(Component.literal(
+                "启用后，世界生成器输出将按 X/Y/Z 三个轴的缩放因子对坐标进行缩放。\n"
+                        + "§e典型用途：§r把边境之地推得更远（缩放 > 1）或拉近（缩放 < 1）\n"
+                        + "§c[警告] §r会影响所有方块坐标/结构生成/实体位置，超大缩放可能产生意外行为"
+        ));
+        this.scrollContent.addChild(scalerBuilder.build().layout(), s -> s.paddingHorizontal(10));
+
+        // 2. 三个缩放输入框（顺序：x 在上、y 中、z 下），高度 20、宽度 = CONTENT_WIDTH 占满滚动面板
+        this.xWorldScalerInput = this.createFloat256Input(
+                Component.literal("X 轴缩放"),
+                this.configData.xWorldScaler,
+                val -> this.configData.xWorldScaler = val
+        );
+        this.yWorldScalerInput = this.createFloat256Input(
+                Component.literal("Y 轴缩放"),
+                this.configData.yWorldScaler,
+                val -> this.configData.yWorldScaler = val
+        );
+        this.zWorldScalerInput = this.createFloat256Input(
+                Component.literal("Z 轴缩放"),
+                this.configData.zWorldScaler,
+                val -> this.configData.zWorldScaler = val
+        );
+        this.scrollContent.addChild(this.xWorldScalerInput);
+        this.scrollContent.addChild(this.yWorldScalerInput);
+        this.scrollContent.addChild(this.zWorldScalerInput);
+
+        // ========== 第二节：地形生成器偏移 ==========
+        SwitchGrid.Builder offsetBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
+                .withRowSpacing(4);
+        offsetBuilder.addSwitch(
+                Component.literal("启用 世界生成器地形偏移"),
+                () -> this.configData.enabledTerrainOffsets,
+                val -> {
+                    this.configData.enabledTerrainOffsets = val;
+                    this.setOffsetInputsVisible(val);
+                }
+        ).withInfo(Component.literal(
+                "启用后，世界生成器输出将按 X/Y/Z 三个轴的偏移量对坐标进行平移。\n"
+                        + "§e典型用途：§r让玩家从远离原点的位置开始探索，绕过 32 位整数限制\n"
+                        + "§c[警告] §r偏移会改变区块坐标基准，玩家出生点/结构位置都会偏移"
+        ));
+        this.scrollContent.addChild(offsetBuilder.build().layout(), s -> s.paddingHorizontal(10));
+
+        // 3. 三个偏移输入框（顺序：x 在上、y 中、z 下）
+        this.xWorldOffsetInput = this.createFloat256Input(
+                Component.literal("X 轴偏移"),
+                this.configData.xWorldOffset,
+                val -> this.configData.xWorldOffset = val
+        );
+        this.yWorldOffsetInput = this.createFloat256Input(
+                Component.literal("Y 轴偏移"),
+                this.configData.yWorldOffset,
+                val -> this.configData.yWorldOffset = val
+        );
+        this.zWorldOffsetInput = this.createFloat256Input(
+                Component.literal("Z 轴偏移"),
+                this.configData.zWorldOffset,
+                val -> this.configData.zWorldOffset = val
+        );
+        this.scrollContent.addChild(this.xWorldOffsetInput);
+        this.scrollContent.addChild(this.yWorldOffsetInput);
+        this.scrollContent.addChild(this.zWorldOffsetInput);
+
+        // ========== 第三节：YClampedGradient 扩展（独立开关） ==========
+        // 🔧 MCRe：YClampedGradient 控制 Y 轴 base stone 海拔梯度——
+        // 偏移后 Y 轴将不会出现任何边境之地，所以单独做开关供玩家权衡。
+        SwitchGrid.Builder yGradientBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
+                .withRowSpacing(4);
+        yGradientBuilder.addSwitch(
+                Component.literal("启用 Y 轴扩展偏移"),
+                () -> this.configData.enabledYClampedGradientOffset,
+                val -> this.configData.enabledYClampedGradientOffset = val
+        ).withInfo(Component.literal(
+                "YClampedGradient 控制 Y 轴 base stone 海拔梯度。\n"
+                        + "§e启用后：§r可以将 Y 轴探索范围大幅扩展（配合 yWorldOffset/yWorldScaler 使用）\n"
+                        + "§c[警告] §r启用后 Y 轴将不会出现任何边境之地，海拔梯度（基岩/海平面过渡）会失效\n"
+                        + "§7建议：§r除非你想专门探索超高 Y 区域，否则保持关闭"
+        ));
+        this.scrollContent.addChild(yGradientBuilder.build().layout(), s -> s.paddingHorizontal(10));
+
+        // 根据开关状态初始化输入框显隐（页面切换后重新构建时生效）
+        this.setScalerInputsVisible(this.configData.enabledTerrainScaler);
+        this.setOffsetInputsVisible(this.configData.enabledTerrainOffsets);
+    }
+
+    // ============ 第二页 helper：联动显隐 ============
+
+    /** 🔧 MCRe：缩放开关 → 三个 X/Y/Z 输入框同步显隐（仿第一页「限制返回值」联动模式） */
+    private void setScalerInputsVisible(final boolean visible) {
+        final int h = visible ? 20 : 0;
+        if (this.xWorldScalerInput != null) {
+            this.xWorldScalerInput.setVisible(visible);
+            this.xWorldScalerInput.setHeight(h);
+        }
+        if (this.yWorldScalerInput != null) {
+            this.yWorldScalerInput.setVisible(visible);
+            this.yWorldScalerInput.setHeight(h);
+        }
+        if (this.zWorldScalerInput != null) {
+            this.zWorldScalerInput.setVisible(visible);
+            this.zWorldScalerInput.setHeight(h);
+        }
+        this.repositionElements();
+    }
+
+    /** 🔧 MCRe：偏移开关 → 三个 X/Y/Z 输入框同步显隐 */
+    private void setOffsetInputsVisible(final boolean visible) {
+        final int h = visible ? 20 : 0;
+        if (this.xWorldOffsetInput != null) {
+            this.xWorldOffsetInput.setVisible(visible);
+            this.xWorldOffsetInput.setHeight(h);
+        }
+        if (this.yWorldOffsetInput != null) {
+            this.yWorldOffsetInput.setVisible(visible);
+            this.yWorldOffsetInput.setHeight(h);
+        }
+        if (this.zWorldOffsetInput != null) {
+            this.zWorldOffsetInput.setVisible(visible);
+            this.zWorldOffsetInput.setHeight(h);
+        }
+        this.repositionElements();
+    }
+
+    /**
+     * 🔧 MCRe：创建 Float256 输入框——高度 20、宽度 = CONTENT_WIDTH 占满滚动面板， 支持科学记数法 e/E。responder 自动用
+     * BigDecimal 校验格式，非法输入静默丢弃（保留旧值）。
+     */
+    private Float256EditBox createFloat256Input(
+            final Component narration, final String initialValue, final Consumer<
+                    String> onValidValue) {
+        final Float256EditBox box = new Float256EditBox(
+        this.font, 0, 0, CONTENT_WIDTH, 20, narration
+        );
+        box.setValue(initialValue);
+        box.setResponder(val -> {
+            final String trimmed = val.trim();
+            if (trimmed.isEmpty()) {
+                return; // 空输入不写入
+            }
+            try {
+                // 校验格式合法性——Float256 通过 BigDecimal.of(...) 中转
+                new BigDecimal(trimmed);
+                onValidValue.accept(trimmed);
+            } catch (NumberFormatException ignored) {
+                // 格式非法（如 "1e"、"1e10.5"）——保留旧值，不写入 configData
+            }
+        });
+        return box;
     }
 
     // ==================== 分页逻辑 ====================
@@ -443,12 +620,20 @@ public class WorldMainSettingScreen extends Screen {
     }
 
     // ==================== 回调 ====================
-
     private void onDone() {
-        // 保存当前配置到静态字段
-        FarLandsConfigData.activeConfig = this.configData;
-        // 🔧 MCRe：同时持久化到 options.txt 同目录的 farlands_config.json
-        FarLandsConfigStorage.save(Minecraft.getInstance().gameDirectory, this.configData);
+        FarLandsConfigData cfg = this.configData;
+        FarLandsConfigData.activeConfig = cfg;
+        // 一次性解析为 Float256，避免运行期反复 parse 字符串
+        WorldReposition.refresh(new WorldReposition.RepositionConfig(
+        cfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(cfg.xWorldScaler, Float256.ONE) : Float256.ONE,
+        cfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(cfg.yWorldScaler, Float256.ONE) : Float256.ONE,
+        cfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(cfg.zWorldScaler, Float256.ONE) : Float256.ONE,
+        cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.xWorldOffset, Float256.ZERO) : Float256.ZERO,
+        cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.yWorldOffset, Float256.ZERO) : Float256.ZERO,
+        cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.zWorldOffset, Float256.ZERO) : Float256.ZERO,
+        cfg.enabledYClampedGradientOffset
+        ));
+        FarLandsConfigStorage.save(Minecraft.getInstance().gameDirectory, cfg);
         Minecraft.getInstance().gui.setScreen(this.parent);
     }
 
@@ -498,12 +683,28 @@ public class WorldMainSettingScreen extends Screen {
         public boolean disabledStructureSpawn = false;
         public boolean disabledEntitySpawn = false;
 
+        // 🔧 MCRe：第二页「地形偏移与缩放」——
+        // scaler 默认 1（无缩放），offset 默认 0（无偏移）。用 String 存 Float256.toString()，
+        // Gson 自动序列化，无需写 TypeAdapter；UI 层用 BigDecimal.parse(...) → Float256.of(...) 中转解析。
+        public boolean enabledTerrainScaler = false;
+        public String xWorldScaler = "1";
+        public String yWorldScaler = "1";
+        public String zWorldScaler = "1";
+
+        public boolean enabledTerrainOffsets = false;
+        public String xWorldOffset = "0";
+        public String yWorldOffset = "0";
+        public String zWorldOffset = "0";
+
+        // 🔧 MCRe：YClampedGradient 偏移独立开关——默认关闭。
+        // 原因：YClampedGradient 控制 Y 轴 base stone 海拔梯度，偏移后 Y 轴边境之地特征会消失。
+        public boolean enabledYClampedGradientOffset = false;
+
         /** 当前活动的 FarLands 配置，由 WorldMainSettingScreen.onDone() 写入 */
         public static FarLandsConfigData activeConfig = new FarLandsConfigData();
     }
 
-    /** 🔧 MCRe：数字专用输入框 —— 只允许输入数字（含一位可选负号 -、小数点 .），
-     * 支持整数与小数（如 -10、1145、-3.14）。粘贴时也会过滤非法字符。 */
+    /** 🔧 MCRe：数字专用输入框 —— 只允许输入数字（含一位可选负号 -、小数点 .）， 支持整数与小数（如 -10、1145、-3.14）。粘贴时也会过滤非法字符。 */
     private static class NumberOnlyEditBox extends EditBox {
         private NumberOnlyEditBox(final Font font, final int x, final int y, final int width, final int height, final Component narration) {
             super(font, x, y, width, height, narration);
@@ -545,6 +746,74 @@ public class WorldMainSettingScreen extends Screen {
                 } else if (c == '.' && canDot) {
                     filtered.append(c);
                     canDot = false;
+                }
+            }
+            super.insertText(filtered.toString());
+        }
+    }
+
+    /**
+     * 🔧 MCRe：Float256 专用输入框——支持科学记数法 e/E。 解析路径：String → BigDecimal（构造器支持 e/E） →
+     * Float256.of(BigDecimal)。 非法输入（如 "1e"、"1e10.5"、".e5"）在 responder 端用 BigDecimal
+     * 构造器校验后静默丢弃，保留旧值。
+     */
+    private static class Float256EditBox extends EditBox {
+        private Float256EditBox(final Font font, final int x, final int y, final int width, final int height, final Component narration) {
+            super(font, x, y, width, height, narration);
+        }
+
+        @Override
+        public boolean charTyped(final CharacterEvent event) {
+            int codepoint = event.codepoint();
+            // 数字直接放行
+            if (codepoint >= '0' && codepoint <= '9') {
+                return super.charTyped(event);
+            }
+            // 负号仅允许出现在首位且只出现一次
+            if (codepoint == '-' && this.getCursorPosition() == 0 && !this.getValue().contains("-")) {
+                return super.charTyped(event);
+            }
+            // 小数点仅允许出现一次
+            if (codepoint == '.' && !this.getValue().contains(".")) {
+                return super.charTyped(event);
+            }
+            // 科学记数法 e/E 仅允许出现一次，且前一位必须是数字（不能在首位、不能在 e/E 后、不能在 . 后紧接）
+            if ((codepoint == 'e' || codepoint == 'E')
+                    && !this.getValue().contains("e") && !this.getValue().contains("E")) {
+                String v = this.getValue();
+                if (!v.isEmpty()) {
+                    char last = v.charAt(v.length() - 1);
+                    if (last != 'e' && last != 'E' && last != '.' && last != '-') {
+                        return super.charTyped(event);
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void insertText(final String input) {
+            // 过滤粘贴内容：保留数字、小数点、负号（首位）、e/E（不能在首位/不能在 . /e/E/- 后）
+            StringBuilder filtered = new StringBuilder();
+            boolean canMinus = !this.getValue().contains("-") && this.getCursorPosition() == 0;
+            boolean canDot = !this.getValue().contains(".");
+            boolean canE = !this.getValue().contains("e") && !this.getValue().contains("E");
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+                if (c >= '0' && c <= '9') {
+                    filtered.append(c);
+                } else if (c == '-' && canMinus && filtered.length() == 0) {
+                    filtered.append(c);
+                    canMinus = false;
+                } else if (c == '.' && canDot) {
+                    filtered.append(c);
+                    canDot = false;
+                } else if ((c == 'e' || c == 'E') && canE && filtered.length() > 0) {
+                    char last = filtered.charAt(filtered.length() - 1);
+                    if (last != 'e' && last != 'E' && last != '.' && last != '-') {
+                        filtered.append(c);
+                        canE = false;
+                    }
                 }
             }
             super.insertText(filtered.toString());
