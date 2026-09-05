@@ -217,13 +217,11 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     }
 
     /** 🔧 MCRe P5：最近一次网络包携带的 sectionY 最小值（MIN_VALUE=尚未收到任何包） */
-    @Override
     public int lastPacketMinY() {
         return this.lastPacketMinY;
     }
 
     /** 🔧 MCRe P5：最近一次网络包携带的 sectionY 最大值 */
-    @Override
     public int lastPacketMaxY() {
         return this.lastPacketMaxY;
     }
