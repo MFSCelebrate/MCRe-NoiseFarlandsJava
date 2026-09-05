@@ -21,7 +21,6 @@ public class SectionUpdateTracker {
         levelHeightAccessor.getMaxSectionY(),
         (index, sectionNode) -> new SectionUpdateTracker.SectionDirtyState(true, false, sectionNode)
         );
-        this.storage.setFixedY(true);
     }
 
     public void setDirty(final int sectionX, final int sectionY, final int sectionZ, final boolean playerChanged) {
@@ -32,12 +31,7 @@ public class SectionUpdateTracker {
     }
 
     public void repositionCamera(final SectionPos cameraSectionPos) {
-        SectionPos fixedYPos = SectionPos.of(
-                cameraSectionPos.x(),
-                this.storage.centerSectionPos().y(),
-                cameraSectionPos.z()
-        );
-        this.storage.repositionCenter(fixedYPos);
+        this.storage.repositionCenter(cameraSectionPos);
     }
 
     public int size() {
@@ -50,19 +44,19 @@ public class SectionUpdateTracker {
     }
 
     public boolean hasAllNeighbors(final ClientLevel level, final SectionPos sectionNode) {
-        // return false;
-        return this.doesChunkExistAt(level, sectionNode.offset(Direction.WEST.getStepX(), 0,
-                        Direction.WEST.getStepZ()))
-                && this.doesChunkExistAt(level, sectionNode.offset(Direction.NORTH.getStepX(), 0,
-                        Direction.NORTH.getStepZ()))
-                && this.doesChunkExistAt(level, sectionNode.offset(Direction.EAST.getStepX(), 0,
-                        Direction.EAST.getStepZ()))
-                && this.doesChunkExistAt(level, sectionNode.offset(Direction.SOUTH.getStepX(), 0,
-                        Direction.SOUTH.getStepZ()))
-                && this.doesChunkExistAt(level, sectionNode.offset(-1, 0, -1))
-                && this.doesChunkExistAt(level, sectionNode.offset(-1, 0, 1))
-                && this.doesChunkExistAt(level, sectionNode.offset(1, 0, -1))
-                && this.doesChunkExistAt(level, sectionNode.offset(1, 0, 1));
+        return true;
+        // return this.doesChunkExistAt(level, sectionNode.offset(Direction.WEST.getStepX(), 0,
+        // Direction.WEST.getStepZ()))
+        // && this.doesChunkExistAt(level, sectionNode.offset(Direction.NORTH.getStepX(), 0,
+        // Direction.NORTH.getStepZ()))
+        // && this.doesChunkExistAt(level, sectionNode.offset(Direction.EAST.getStepX(), 0,
+        // Direction.EAST.getStepZ()))
+        // && this.doesChunkExistAt(level, sectionNode.offset(Direction.SOUTH.getStepX(), 0,
+        // Direction.SOUTH.getStepZ()))
+        // && this.doesChunkExistAt(level, sectionNode.offset(-1, 0, -1))
+        // && this.doesChunkExistAt(level, sectionNode.offset(-1, 0, 1))
+        // && this.doesChunkExistAt(level, sectionNode.offset(1, 0, -1))
+        // && this.doesChunkExistAt(level, sectionNode.offset(1, 0, 1));
     }
 
     private boolean doesChunkExistAt(final ClientLevel level, final SectionPos sectionNode) {

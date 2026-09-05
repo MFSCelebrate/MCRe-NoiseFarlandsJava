@@ -128,13 +128,10 @@ public class LevelRenderer implements AutoCloseable {
     private final WorldBorderRenderer worldBorderRenderer = new WorldBorderRenderer();
     private final WeatherEffectRenderer weatherEffectRenderer = new WeatherEffectRenderer();
     private final SectionOcclusionGraph sectionOcclusionGraph = new SectionOcclusionGraph();
-    private final ObjectArrayList<
-            SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
-    private final ObjectArrayList<
-            SectionRenderDispatcher.RenderSection> nearbyVisibleSections = new ObjectArrayList<>(50);
+    private final ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
+    private final ObjectArrayList<SectionRenderDispatcher.RenderSection> nearbyVisibleSections = new ObjectArrayList<>(50);
     // MCRe：遮挡剔除——实体/方块实体可见性 O(1) 查询集合（与 visibleSections 同步）
-    private final java.util.Set<
-            SectionRenderDispatcher.RenderSection> visibleSectionSet = new java.util.HashSet<>();
+    private final java.util.Set<SectionRenderDispatcher.RenderSection> visibleSectionSet = new java.util.HashSet<>();
     private @Nullable ViewArea viewArea;
     // MCRe P5：保存当前世界引用（invalidateCompiledGeometry 时赋值，repositionCamera 用于遍历 chunk 调 moveWindowTo）
     private @Nullable ClientLevel activeLevel;
@@ -148,15 +145,16 @@ public class LevelRenderer implements AutoCloseable {
     private LevelRenderer.FinalizedGizmos finalizedGizmos = new LevelRenderer.FinalizedGizmos(new DrawableGizmoPrimitives(), new DrawableGizmoPrimitives());
 
     public LevelRenderer(
-            final EntityRenderDispatcher entityRenderDispatcher,
-            final BlockEntityRenderDispatcher blockEntityRenderDispatcher,
-            final ModelManager modelManager,
-            final TextureManager textureManager,
-            final AtlasManager atlasManager,
-            final ShaderManager shaderManager,
-            final GameRenderer gameRenderer,
-            final int width,
-            final int height) {
+        final EntityRenderDispatcher entityRenderDispatcher,
+        final BlockEntityRenderDispatcher blockEntityRenderDispatcher,
+        final ModelManager modelManager,
+        final TextureManager textureManager,
+        final AtlasManager atlasManager,
+        final ShaderManager shaderManager,
+        final GameRenderer gameRenderer,
+        final int width,
+        final int height
+    ) {
         this.gameRenderer = gameRenderer;
         this.entityRenderDispatcher = entityRenderDispatcher;
         this.blockEntityRenderDispatcher = blockEntityRenderDispatcher;
@@ -168,19 +166,19 @@ public class LevelRenderer implements AutoCloseable {
         this.shaderManager = shaderManager;
         this.levelRenderState = gameRenderer.gameRenderState().levelRenderState;
         this.optionsRenderState = gameRenderer.gameRenderState().optionsRenderState;
-        
         this.entityOutlineTarget = new TextureTarget("Entity Outline", width, height, true, GpuFormat.RGBA8_UNORM);
     }
 
     public void render(
-            final GraphicsResourceAllocator resourceAllocator,
-            final DeltaTracker deltaTracker,
-            final boolean renderOutline,
-            final CameraRenderState cameraState,
-            final Matrix4fc modelViewMatrix,
-            final GpuBufferSlice terrainFog,
-            final Vector4f fogColor,
-            final boolean shouldRenderSky) {
+        final GraphicsResourceAllocator resourceAllocator,
+        final DeltaTracker deltaTracker,
+        final boolean renderOutline,
+        final CameraRenderState cameraState,
+        final Matrix4fc modelViewMatrix,
+        final GpuBufferSlice terrainFog,
+        final Vector4f fogColor,
+        final boolean shouldRenderSky
+    ) {
         float deltaPartialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
         final ProfilerFiller profiler = Profiler.get();
         profiler.push("repositionCamera");
@@ -198,7 +196,7 @@ public class LevelRenderer implements AutoCloseable {
         int screenWidth = this.gameRenderer.mainRenderTarget().width;
         int screenHeight = this.gameRenderer.mainRenderTarget().height;
         RenderTargetDescriptor screenSizeTargetDescriptor = new RenderTargetDescriptor(
-        screenWidth, screenHeight, true, SCREEN_SIZE_TARGET_CLEAR_COLOR, GpuFormat.RGBA8_UNORM
+            screenWidth, screenHeight, true, SCREEN_SIZE_TARGET_CLEAR_COLOR, GpuFormat.RGBA8_UNORM
         );
         PostChain transparencyChain = this.getTransparencyChain();
         if (transparencyChain != null) {
@@ -213,22 +211,22 @@ public class LevelRenderer implements AutoCloseable {
         FramePass clearPass = frame.addPass("clear");
         this.targets.main = clearPass.readsAndWrites(this.targets.main);
         clearPass.executes(
-                () -> {
-                    RenderTarget mainRenderTarget = this.gameRenderer.mainRenderTarget();
-                    RenderSystem.getDevice()
-                            .createCommandEncoder()
-                            .clearColorAndDepthTextures(
-                                    mainRenderTarget.getColorTexture(), new Vector4f(fogColor.x, fogColor.y, fogColor.z, 0.0F), mainRenderTarget.getDepthTexture(), 0.0
-                            );
-                }
+            () -> {
+                RenderTarget mainRenderTarget = this.gameRenderer.mainRenderTarget();
+                RenderSystem.getDevice()
+                    .createCommandEncoder()
+                    .clearColorAndDepthTextures(
+                        mainRenderTarget.getColorTexture(), new Vector4f(fogColor.x, fogColor.y, fogColor.z, 0.0F), mainRenderTarget.getDepthTexture(), 0.0
+                    );
+            }
         );
         if (shouldRenderSky) {
             this.addSkyPass(frame, cameraState, terrainFog);
         }
 
         ChunkSectionsToRender chunkSectionsToRender = this.isChunkRenderingUsesMultiDraw
-                ? this.prepareChunkRendersIndirect(this.levelRenderState.cameraRenderState.viewRotationMatrix)
-                : this.prepareChunkRenders(this.levelRenderState.cameraRenderState.viewRotationMatrix);
+            ? this.prepareChunkRendersIndirect(this.levelRenderState.cameraRenderState.viewRotationMatrix)
+            : this.prepareChunkRenders(this.levelRenderState.cameraRenderState.viewRotationMatrix);
         this.addMainPass(frame, featureFrame, terrainFog, this.levelRenderState, profiler, chunkSectionsToRender);
         PostChain entityOutlineChain = this.shaderManager.getPostChain(ENTITY_OUTLINE_POST_CHAIN_ID, LevelTargetBundle.OUTLINE_TARGETS);
         if (featureFrame.hasAnyOutline() && entityOutlineChain != null) {
@@ -238,14 +236,14 @@ public class LevelRenderer implements AutoCloseable {
         CloudStatus cloudStatus = this.optionsRenderState.cloudStatus;
         if (cloudStatus != CloudStatus.OFF && ARGB.alpha(this.levelRenderState.cloudColor) > 0) {
             this.addCloudsPass(
-                    frame,
-                    cloudStatus,
-                    this.levelRenderState.cameraRenderState.pos,
-                    this.levelRenderState.gameTime,
-                    deltaPartialTick,
-                    this.levelRenderState.cloudColor,
-                    this.levelRenderState.cloudHeight,
-                    this.optionsRenderState.cloudRange
+                frame,
+                cloudStatus,
+                this.levelRenderState.cameraRenderState.pos,
+                this.levelRenderState.gameTime,
+                deltaPartialTick,
+                this.levelRenderState.cloudColor,
+                this.levelRenderState.cloudHeight,
+                this.optionsRenderState.cloudRange
             );
         }
 
@@ -322,24 +320,23 @@ public class LevelRenderer implements AutoCloseable {
     }
 
     private void repositionCamera(final CameraRenderState camera) {
-        SectionPos cameraSectionPos = SectionPos.of(camera.pos);
-
-        // 1. 逻辑层窗口跟随玩家 Y（核心：数据源跟着走）
-        this.slideChunkWindowsToCamera(cameraSectionPos);
-
-        // 2. 渲染层只跟随 X/Z（ViewArea Y 固定）
+        Vec3 cameraPos = camera.pos;
+        SectionPos cameraSectionPos = SectionPos.of(cameraPos);
         if (this.viewArea.repositionCamera(cameraSectionPos)) {
             this.worldBorderRenderer.invalidate();
         }
 
-        this.sectionRenderDispatcher.setCameraPosition(camera.pos);
+        // 🔧 MCRe P5：每帧让可视范围 LevelChunk 的窗口跟随相机 Y（超高世界玩家飞离 ±272 格后区块不再错位）
+        // moveWindowTo 内部有早退，相机不动时零开销
+        this.slideChunkWindowsToCamera(cameraSectionPos);
+
+        this.sectionRenderDispatcher.setCameraPosition(cameraPos);
     }
 
     /**
-     * 🔧 MCRe P5：渲染层每帧调用——遍历相机可视范围的所有 LevelChunk， 让每个 chunk 的 34-section 窗口跟随相机 sectionY 居中。
-     *
+     * 🔧 MCRe P5：渲染层每帧调用——遍历相机可视范围的所有 LevelChunk，
+     * 让每个 chunk 的 34-section 窗口跟随相机 sectionY 居中。
      * <p>遍历范围：相机 chunkPos ± viewDistance（已加载 chunk 子集，避免遍历全 chunkMap）。
-     *
      * <p>性能：32 渲染距离 = 65×65 = 4225 chunks/帧；moveWindowTo 早退命中 ≈99%，真实滑动极少。
      */
     private void slideChunkWindowsToCamera(final SectionPos cameraSectionPos) {
@@ -368,12 +365,12 @@ public class LevelRenderer implements AutoCloseable {
 
     /**
      * 🔧 MCRe P5：滑出丢弃（参考 inf_farlands §7.3）。
-     *
-     * <p>玩家窗口滑动后，旧的 sections 仍存在 allSections 仓库中导致内存无限增长—— 清理落在保护区间外的 sections（释放内存 + 通知光照引擎）。
-     *
-     * <p>保护区间 = [min(hold, view)-2, max(hold, view)+2]： - hold 边界（lastPacketMinY/MaxY）滞后于玩家窗口（服务端
-     * difference 包延迟）； - 单独用 hold 会把 view 内新数据误丢（实测 C4 证据）； - view 每帧实时，hold 是数据回放保证。
-     *
+     * <p>玩家窗口滑动后，旧的 sections 仍存在 allSections 仓库中导致内存无限增长——
+     * 清理落在保护区间外的 sections（释放内存 + 通知光照引擎）。
+     * <p>保护区间 = [min(hold, view)-2, max(hold, view)+2]：
+     *  - hold 边界（lastPacketMinY/MaxY）滞后于玩家窗口（服务端 difference 包延迟）；
+     *  - 单独用 hold 会把 view 内新数据误丢（实测 C4 证据）；
+     *  - view 每帧实时，hold 是数据回放保证。
      * <p>空 section（懒创建产物）不丢——丢弃会触发光照查询再懒创建，每帧循环。
      */
     private void discardOutsideHoldBoundary(final LevelChunk chunk) {
@@ -399,10 +396,7 @@ public class LevelRenderer implements AutoCloseable {
             return;
         }
         LevelLightEngine lightEngine = level.getLightEngine();
-        Iterator<
-                Map.Entry<
-                        Integer,
-                        LevelChunkSection>> it = wc.windowedAllSections().entrySet().iterator();
+        Iterator<Map.Entry<Integer, LevelChunkSection>> it = wc.windowedAllSections().entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<Integer, LevelChunkSection> e = it.next();
             int sy = e.getKey();
@@ -434,39 +428,40 @@ public class LevelRenderer implements AutoCloseable {
                 FramePass pass = frame.addPass("sky");
                 this.targets.main = pass.readsAndWrites(this.targets.main);
                 pass.executes(
-                        () -> {
-                            RenderSystem.setShaderFog(skyFog);
-                            if (state.skybox == DimensionType.Skybox.END) {
-                                this.skyRenderer.renderEndSky();
-                                if (state.endFlashIntensity > 1.0E-5F) {
-                                    PoseStack poseStack = new PoseStack();
-                                    this.skyRenderer.renderEndFlash(poseStack, state.endFlashIntensity, state.endFlashXAngle, state.endFlashYAngle);
-                                }
-                            } else {
+                    () -> {
+                        RenderSystem.setShaderFog(skyFog);
+                        if (state.skybox == DimensionType.Skybox.END) {
+                            this.skyRenderer.renderEndSky();
+                            if (state.endFlashIntensity > 1.0E-5F) {
                                 PoseStack poseStack = new PoseStack();
-                                this.skyRenderer.renderSkyDisc(state.skyColor);
-                                this.skyRenderer.renderSunriseAndSunset(poseStack, state.sunAngle, state.sunriseAndSunsetColor);
-                                this.skyRenderer
-                                        .renderSunMoonAndStars(
-                                        poseStack, state.sunAngle, state.moonAngle, state.starAngle, state.moonPhase, state.rainBrightness, state.starBrightness
+                                this.skyRenderer.renderEndFlash(poseStack, state.endFlashIntensity, state.endFlashXAngle, state.endFlashYAngle);
+                            }
+                        } else {
+                            PoseStack poseStack = new PoseStack();
+                            this.skyRenderer.renderSkyDisc(state.skyColor);
+                            this.skyRenderer.renderSunriseAndSunset(poseStack, state.sunAngle, state.sunriseAndSunsetColor);
+                            this.skyRenderer
+                                .renderSunMoonAndStars(
+                                    poseStack, state.sunAngle, state.moonAngle, state.starAngle, state.moonPhase, state.rainBrightness, state.starBrightness
                                 );
-                                if (state.shouldRenderDarkDisc) {
-                                    this.skyRenderer.renderDarkDisc();
-                                }
+                            if (state.shouldRenderDarkDisc) {
+                                this.skyRenderer.renderDarkDisc();
                             }
                         }
+                    }
                 );
             }
         }
     }
 
     private void addMainPass(
-            final FrameGraphBuilder frame,
-            final FeatureRenderDispatcher.PreparedFrame featureFrame,
-            final GpuBufferSlice terrainFog,
-            final LevelRenderState levelRenderState,
-            final ProfilerFiller profiler,
-            final ChunkSectionsToRender chunkSectionsToRender) {
+        final FrameGraphBuilder frame,
+        final FeatureRenderDispatcher.PreparedFrame featureFrame,
+        final GpuBufferSlice terrainFog,
+        final LevelRenderState levelRenderState,
+        final ProfilerFiller profiler,
+        final ChunkSectionsToRender chunkSectionsToRender
+    ) {
         FramePass pass = frame.addPass("main");
         this.targets.main = pass.readsAndWrites(this.targets.main);
         if (this.targets.translucent != null) {
@@ -495,68 +490,69 @@ public class LevelRenderer implements AutoCloseable {
         ResourceHandle<RenderTarget> entityOutlineTarget = this.targets.entityOutline;
         ResourceHandle<RenderTarget> particleTarget = this.targets.particles;
         pass.executes(
-                () -> {
-                    RenderSystem.setShaderFog(terrainFog);
-                    if (levelRenderState.shouldResetChunkLayerSampler || this.chunkLayerSampler == null) {
-                        if (this.chunkLayerSampler != null) {
-                            this.chunkLayerSampler.close();
-                        }
-
-                        int maxAnisotropy = this.optionsRenderState.textureFiltering == TextureFilteringMethod.ANISOTROPIC
-                                ? this.optionsRenderState.maxAnisotropyValue
-                                : 1;
-                        this.chunkLayerSampler = RenderSystem.getDevice()
-                                .createSampler(
-                                        AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE, FilterMode.LINEAR, FilterMode.LINEAR, maxAnisotropy, OptionalDouble.empty()
-                                );
+            () -> {
+                RenderSystem.setShaderFog(terrainFog);
+                if (levelRenderState.shouldResetChunkLayerSampler || this.chunkLayerSampler == null) {
+                    if (this.chunkLayerSampler != null) {
+                        this.chunkLayerSampler.close();
                     }
 
-                    profiler.push("solidTerrain");
-                    chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE, this.chunkLayerSampler);
-                    this.gameRenderer.lighting().setupFor(Lighting.Entry.LEVEL);
-                    if (levelRenderState.shouldShowEntityOutlines && entityOutlineTarget != null) {
-                        RenderTarget outlineTarget = entityOutlineTarget.get();
-                        RenderSystem.getDevice()
-                                .createCommandEncoder()
-                                .clearColorAndDepthTextures(outlineTarget.getColorTexture(), ENTITY_OUTLINE_CLEAR_COLOR, outlineTarget.getDepthTexture(), 0.0);
-                    }
-
-                    profiler.popPush("renderSolidFeatures");
-                    featureFrame.executeSolid();
-                    profiler.pop();
-                    if (translucentTarget != null) {
-                        translucentTarget.get().copyDepthFrom(mainTarget.get());
-                    }
-
-                    if (itemEntityTarget != null) {
-                        itemEntityTarget.get().copyDepthFrom(mainTarget.get());
-                    }
-
-                    if (particleTarget != null) {
-                        particleTarget.get().copyDepthFrom(mainTarget.get());
-                    }
-
-                    profiler.push("renderTranslucentFeatures");
-                    featureFrame.executeTranslucent();
-                    profiler.pop();
-                    featureFrame.executeOutline();
-                    profiler.push("translucentTerrain");
-                    chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT, this.chunkLayerSampler);
-                    profiler.pop();
-                    featureFrame.executeTranslucentAfterTerrain();
+                    int maxAnisotropy = this.optionsRenderState.textureFiltering == TextureFilteringMethod.ANISOTROPIC
+                        ? this.optionsRenderState.maxAnisotropyValue
+                        : 1;
+                    this.chunkLayerSampler = RenderSystem.getDevice()
+                        .createSampler(
+                            AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE, FilterMode.LINEAR, FilterMode.LINEAR, maxAnisotropy, OptionalDouble.empty()
+                        );
                 }
+
+                profiler.push("solidTerrain");
+                chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE, this.chunkLayerSampler);
+                this.gameRenderer.lighting().setupFor(Lighting.Entry.LEVEL);
+                if (levelRenderState.shouldShowEntityOutlines && entityOutlineTarget != null) {
+                    RenderTarget outlineTarget = entityOutlineTarget.get();
+                    RenderSystem.getDevice()
+                        .createCommandEncoder()
+                        .clearColorAndDepthTextures(outlineTarget.getColorTexture(), ENTITY_OUTLINE_CLEAR_COLOR, outlineTarget.getDepthTexture(), 0.0);
+                }
+
+                profiler.popPush("renderSolidFeatures");
+                featureFrame.executeSolid();
+                profiler.pop();
+                if (translucentTarget != null) {
+                    translucentTarget.get().copyDepthFrom(mainTarget.get());
+                }
+
+                if (itemEntityTarget != null) {
+                    itemEntityTarget.get().copyDepthFrom(mainTarget.get());
+                }
+
+                if (particleTarget != null) {
+                    particleTarget.get().copyDepthFrom(mainTarget.get());
+                }
+
+                profiler.push("renderTranslucentFeatures");
+                featureFrame.executeTranslucent();
+                profiler.pop();
+                featureFrame.executeOutline();
+                profiler.push("translucentTerrain");
+                chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT, this.chunkLayerSampler);
+                profiler.pop();
+                featureFrame.executeTranslucentAfterTerrain();
+            }
         );
     }
 
     private void addCloudsPass(
-            final FrameGraphBuilder frame,
-            final CloudStatus cloudStatus,
-            final Vec3 cameraPosition,
-            final long gameTime,
-            final float partialTicks,
-            final int cloudColor,
-            final float cloudHeight,
-            final int cloudRange) {
+        final FrameGraphBuilder frame,
+        final CloudStatus cloudStatus,
+        final Vec3 cameraPosition,
+        final long gameTime,
+        final float partialTicks,
+        final int cloudColor,
+        final float cloudHeight,
+        final int cloudRange
+    ) {
         FramePass pass = frame.addPass("clouds");
         if (this.targets.clouds != null) {
             this.targets.clouds = pass.readsAndWrites(this.targets.clouds);
@@ -577,13 +573,13 @@ public class LevelRenderer implements AutoCloseable {
         }
 
         pass.executes(
-                () -> {
-                    RenderSystem.setShaderFog(fog);
-                    CameraRenderState cameraState = this.levelRenderState.cameraRenderState;
-                    this.weatherEffectRenderer.render(cameraState.pos, this.levelRenderState.weatherRenderState);
-                    this.worldBorderRenderer
-                            .render(this.levelRenderState.worldBorderRenderState, cameraState.pos, renderDistance, this.levelRenderState.cameraRenderState.depthFar);
-                }
+            () -> {
+                RenderSystem.setShaderFog(fog);
+                CameraRenderState cameraState = this.levelRenderState.cameraRenderState;
+                this.weatherEffectRenderer.render(cameraState.pos, this.levelRenderState.weatherRenderState);
+                this.worldBorderRenderer
+                    .render(this.levelRenderState.worldBorderRenderState, cameraState.pos, renderDistance, this.levelRenderState.cameraRenderState.depthFar);
+            }
         );
     }
 
@@ -611,17 +607,16 @@ public class LevelRenderer implements AutoCloseable {
         }
     }
 
-    // MCRe：26.3 MultiDrawIndirect 移植——MultiDraw 可用性（Vulkan 支持 drawIndexedIndirect +
-    // nonZeroFirstInstance）
+    // MCRe：26.3 MultiDrawIndirect 移植——MultiDraw 可用性（Vulkan 支持 drawIndexedIndirect + nonZeroFirstInstance）
     private boolean isChunkRenderingUsesMultiDraw;
 
     /** MCRe：26.3 MultiDrawIndirect 移植——按 vertex/index buffer 分组构建 ChunkDrawGroup */
     private int extractSectionDrawGroups(
-            final List<DynamicUniforms.ChunkSectionInfo> sectionInfos,
-            final EnumMap<ChunkSectionLayer, List<LevelRenderer.ChunkDrawGroup>> drawGroups) {
+        final List<DynamicUniforms.ChunkSectionInfo> sectionInfos,
+        final EnumMap<ChunkSectionLayer, List<LevelRenderer.ChunkDrawGroup>> drawGroups
+    ) {
         int largestIndexCount = 0;
-        Int2ObjectOpenHashMap<
-                LevelRenderer.ChunkDrawGroup> drawGroupCache = new Int2ObjectOpenHashMap<>();
+        Int2ObjectOpenHashMap<LevelRenderer.ChunkDrawGroup> drawGroupCache = new Int2ObjectOpenHashMap<>();
         if (this.sectionRenderDispatcher != null) {
             this.sectionRenderDispatcher.lock();
             long now = Util.getMillis();
@@ -644,12 +639,12 @@ public class LevelRenderer implements AutoCloseable {
                                 sectionInfoDataIndex = sectionInfos.size();
                                 // MCRe：相机相对偏移（far lands 防 int 溢出），shader 里 + CameraOffset 还原
                                 sectionInfos.add(
-                                        new DynamicUniforms.ChunkSectionInfo(
-                                        (int) (renderOffset.x - camFloorX),
-                                        (int) (renderOffset.y - camFloorY),
-                                        (int) (renderOffset.z - camFloorZ),
+                                    new DynamicUniforms.ChunkSectionInfo(
+                                        (int)(renderOffset.x - camFloorX),
+                                        (int)(renderOffset.y - camFloorY),
+                                        (int)(renderOffset.z - camFloorZ),
                                         section.getVisibility(now)
-                                        )
+                                    )
                                 );
                             }
 
@@ -672,21 +667,21 @@ public class LevelRenderer implements AutoCloseable {
                                 indexType = draw.indexType();
                                 combinedHash = 31 * combinedHash + indexBuffer.hashCode();
                                 combinedHash = 31 * combinedHash + indexType.hashCode();
-                                firstIndex = (int) (slice.indexBufferOffset() / indexType.bytes);
+                                firstIndex = (int)(slice.indexBufferOffset() / indexType.bytes);
                             }
 
-                            int baseVertex = (int) (slice.vertexBufferOffset() / vertexFormat.getVertexSize());
+                            int baseVertex = (int)(slice.vertexBufferOffset() / vertexFormat.getVertexSize());
                             LevelRenderer.ChunkDrawGroup drawGroup = drawGroupCache.get(combinedHash);
                             if (drawGroup == null) {
                                 drawGroup = new LevelRenderer.ChunkDrawGroup(
-                                vertexBuffer.slice(), indexBuffer != null ? indexBuffer.slice() : null, indexType, new ArrayList<>()
+                                    vertexBuffer.slice(), indexBuffer != null ? indexBuffer.slice() : null, indexType, new ArrayList<>()
                                 );
                                 drawGroupCache.put(combinedHash, drawGroup);
                                 drawGroups.get(layer).add(drawGroup);
                             }
 
                             drawGroup.draws().add(
-                                    new DynamicUniforms.IndexedDraw(draw.indexCount(), 1, firstIndex, baseVertex, sectionInfoDataIndex)
+                                new DynamicUniforms.IndexedDraw(draw.indexCount(), 1, firstIndex, baseVertex, sectionInfoDataIndex)
                             );
                         }
                     }
@@ -700,10 +695,7 @@ public class LevelRenderer implements AutoCloseable {
     }
 
     public ChunkSectionsToRender prepareChunkRenders(final Matrix4fc modelViewMatrix) {
-        EnumMap<
-                ChunkSectionLayer,
-                List<
-                        LevelRenderer.ChunkDrawGroup>> drawGroups = new EnumMap<>(ChunkSectionLayer.class);
+        EnumMap<ChunkSectionLayer, List<LevelRenderer.ChunkDrawGroup>> drawGroups = new EnumMap<>(ChunkSectionLayer.class);
 
         for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
             drawGroups.put(layer, new ArrayList<>());
@@ -714,10 +706,8 @@ public class LevelRenderer implements AutoCloseable {
         int textureAtlasWidth = blockAtlas.getWidth(0);
         int textureAtlasHeight = blockAtlas.getHeight(0);
         int largestIndexCount = this.extractSectionDrawGroups(sectionInfos, drawGroups);
-        Map<
-                ChunkSectionLayer,
-                List<RenderPass.Draw<GpuBufferSlice[]>>> flattenDraws = Util.makeEnumMap(
-                ChunkSectionLayer.class, layer -> new ArrayList<>()
+        Map<ChunkSectionLayer, List<RenderPass.Draw<GpuBufferSlice[]>>> flattenDraws = Util.makeEnumMap(
+            ChunkSectionLayer.class, layer -> new ArrayList<>()
         );
 
         for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
@@ -727,7 +717,7 @@ public class LevelRenderer implements AutoCloseable {
                 for (DynamicUniforms.IndexedDraw draw : drawGroup.draws()) {
                     int sectionInfoDataIndex = draw.baseInstance();
                     dest.add(
-                            new RenderPass.Draw<>(
+                        new RenderPass.Draw<>(
                             0,
                             drawGroup.vertexBuffer().buffer(),
                             drawGroup.indexBuffer() == null ? null : drawGroup.indexBuffer().buffer(),
@@ -735,9 +725,8 @@ public class LevelRenderer implements AutoCloseable {
                             draw.firstIndex(),
                             draw.indexCount(),
                             draw.baseVertex(),
-                            (sectionUbos, uploader) -> uploader.upload("ChunkSection", sectionUbos[
-                            sectionInfoDataIndex])
-                            )
+                            (sectionUbos, uploader) -> uploader.upload("ChunkSection", sectionUbos[sectionInfoDataIndex])
+                        )
                     );
                 }
             }
@@ -745,16 +734,13 @@ public class LevelRenderer implements AutoCloseable {
 
         GpuBufferSlice terrainTransformUBO = RenderSystem.getDynamicUniforms().writeTerrainTransform(modelViewMatrix, textureAtlasWidth, textureAtlasHeight);
         GpuBufferSlice[] chunkSectionInfos = RenderSystem.getDynamicUniforms()
-                .writeChunkSections(sectionInfos.toArray(new DynamicUniforms.ChunkSectionInfo[0]));
+            .writeChunkSections(sectionInfos.toArray(new DynamicUniforms.ChunkSectionInfo[0]));
         return new ChunkSectionsToRender.DrawSeparate(blockAtlas, terrainTransformUBO, flattenDraws, largestIndexCount, chunkSectionInfos);
     }
 
     /** MCRe：26.3 MultiDrawIndirect——批量 indirect 命令构建（DrawIndirect 路径） */
     public ChunkSectionsToRender prepareChunkRendersIndirect(final Matrix4fc modelViewMatrix) {
-        EnumMap<
-                ChunkSectionLayer,
-                List<
-                        LevelRenderer.ChunkDrawGroup>> drawGroups = new EnumMap<>(ChunkSectionLayer.class);
+        EnumMap<ChunkSectionLayer, List<LevelRenderer.ChunkDrawGroup>> drawGroups = new EnumMap<>(ChunkSectionLayer.class);
 
         for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
             drawGroups.put(layer, new ArrayList<>());
@@ -765,10 +751,7 @@ public class LevelRenderer implements AutoCloseable {
         int textureAtlasWidth = blockAtlas.getWidth(0);
         int textureAtlasHeight = blockAtlas.getHeight(0);
         int largestIndexCount = this.extractSectionDrawGroups(sectionInfos, drawGroups);
-        EnumMap<
-                ChunkSectionLayer,
-                List<
-                        ChunkSectionsToRender.GpuMultiDrawIndexedIndirect>> indirectDraws = new EnumMap<>(ChunkSectionLayer.class);
+        EnumMap<ChunkSectionLayer, List<ChunkSectionsToRender.GpuMultiDrawIndexedIndirect>> indirectDraws = new EnumMap<>(ChunkSectionLayer.class);
 
         for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
             indirectDraws.put(layer, new ArrayList<>());
@@ -795,9 +778,9 @@ public class LevelRenderer implements AutoCloseable {
                 List<DynamicUniforms.IndexedDraw> draws = chunkDrawGroup.draws();
                 GpuBufferSlice indirectBuffer = indirectBufferSlices[index++];
                 indirectDraws.get(layer).add(
-                        new ChunkSectionsToRender.GpuMultiDrawIndexedIndirect(
+                    new ChunkSectionsToRender.GpuMultiDrawIndexedIndirect(
                         chunkDrawGroup.vertexBuffer(), chunkDrawGroup.indexBuffer(), chunkDrawGroup.indexType(), indirectBuffer, draws.size()
-                        )
+                    )
                 );
             }
         }
@@ -809,10 +792,12 @@ public class LevelRenderer implements AutoCloseable {
 
     /** MCRe：MultiDraw 路径记录（按 vertex/index buffer 分组） */
     private record ChunkDrawGroup(
-            GpuBufferSlice vertexBuffer,
-            @Nullable GpuBufferSlice indexBuffer,
-            @Nullable IndexType indexType,
-            List<DynamicUniforms.IndexedDraw> draws) {}
+        GpuBufferSlice vertexBuffer,
+        @Nullable GpuBufferSlice indexBuffer,
+        @Nullable IndexType indexType,
+        List<DynamicUniforms.IndexedDraw> draws
+    ) {
+    }
 
     private void compileSections(final CameraRenderState camera) {
         ProfilerFiller profiler = Profiler.get();
@@ -835,10 +820,6 @@ public class LevelRenderer implements AutoCloseable {
             }
 
             SectionRenderDispatcher.RenderSection section = this.viewArea.getRenderSection(state.sectionNode());
-            // 🔧 MCRe P5 修复：ViewArea 窗口滑动时 getRenderSection 可能返回 null（旧 Y 坐标映射失败），加空值保护
-            if (section == null) {
-                continue;
-            }
             if (!isNearby && !section.wasPreviouslyEmpty()) {
                 section.setFadeDuration(fadeDuration);
             } else {
@@ -931,43 +912,44 @@ public class LevelRenderer implements AutoCloseable {
 
             int outlineColor = state.highContrast() ? -11010079 : ARGB.black(102);
             this.submitHitOutline(
-                    poseStack,
-                    submitNodeCollector,
-                    RenderTypes.lines(),
-                    state,
-                    outlineColor,
-                    this.gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth,
-                    state.isTranslucent()
+                poseStack,
+                submitNodeCollector,
+                RenderTypes.lines(),
+                state,
+                outlineColor,
+                this.gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth,
+                state.isTranslucent()
             );
             poseStack.popPose();
         }
     }
 
     private void submitHitOutline(
-            final PoseStack poseStack,
-            final SubmitNodeCollector submitNodeCollector,
-            final RenderType renderType,
-            final BlockOutlineRenderState state,
-            final int color,
-            final float width,
-            final boolean afterTerrain) {
+        final PoseStack poseStack,
+        final SubmitNodeCollector submitNodeCollector,
+        final RenderType renderType,
+        final BlockOutlineRenderState state,
+        final int color,
+        final float width,
+        final boolean afterTerrain
+    ) {
         if (SharedConstants.DEBUG_SHAPES) {
             submitNodeCollector.submitShapeOutline(poseStack, state.shape(), renderType, -1, width, afterTerrain);
             if (state.collisionShape() != null) {
                 submitNodeCollector.submitShapeOutline(
-                        poseStack, state.collisionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 0.0F, 0.0F), width, afterTerrain
+                    poseStack, state.collisionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 0.0F, 0.0F), width, afterTerrain
                 );
             }
 
             if (state.occlusionShape() != null) {
                 submitNodeCollector.submitShapeOutline(
-                        poseStack, state.occlusionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 1.0F, 0.0F), width, afterTerrain
+                    poseStack, state.occlusionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 1.0F, 0.0F), width, afterTerrain
                 );
             }
 
             if (state.interactionShape() != null) {
                 submitNodeCollector.submitShapeOutline(
-                        poseStack, state.interactionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 0.0F, 1.0F), width, afterTerrain
+                    poseStack, state.interactionShape(), renderType, ARGB.colorFromFloat(0.4F, 0.0F, 0.0F, 1.0F), width, afterTerrain
                 );
             }
         } else {
@@ -1004,7 +986,7 @@ public class LevelRenderer implements AutoCloseable {
     public void doEntityOutline() {
         if (this.levelRenderState.shouldShowEntityOutlines) {
             this.entityOutlineTarget
-                    .blitAndBlendToTexture(this.gameRenderer.mainRenderTarget().getColorTextureView(), this.gameRenderer.mainRenderTarget().getDepthTextureView());
+                .blitAndBlendToTexture(this.gameRenderer.mainRenderTarget().getColorTextureView(), this.gameRenderer.mainRenderTarget().getDepthTextureView());
         }
     }
 
@@ -1012,16 +994,15 @@ public class LevelRenderer implements AutoCloseable {
         // MCRe P5：保存当前世界引用，供 repositionCamera 遍历 chunk 调 moveWindowTo
         this.activeLevel = level;
         SectionCompiler sectionCompiler = new SectionCompiler(
-        options.ambientOcclusion().get(),
-        options.cutoutLeaves().get(),
-        this.modelManager.getBlockStateModelSet(),
-        this.modelManager.getFluidStateModelSet(),
-        blockColors
+            options.ambientOcclusion().get(),
+            options.cutoutLeaves().get(),
+            this.modelManager.getBlockStateModelSet(),
+            this.modelManager.getFluidStateModelSet(),
+            blockColors
         );
         if (this.sectionRenderDispatcher == null) {
             this.sectionRenderDispatcher = new SectionRenderDispatcher(
-            Util.backgroundExecutor(), this.renderBuffers, sectionCompiler, this.sectionOcclusionGraph
-                    ::schedulePropagationFrom
+                Util.backgroundExecutor(), this.renderBuffers, sectionCompiler, this.sectionOcclusionGraph::schedulePropagationFrom
             );
         } else {
             this.sectionRenderDispatcher.setCompiler(sectionCompiler);
@@ -1038,32 +1019,25 @@ public class LevelRenderer implements AutoCloseable {
         }
 
         this.sectionRenderDispatcher.clearCompileQueue();
-        // 🔧 MCRe P5 修复：ViewArea 构造用玩家附近的固定垂直渲染距离（34 sections = 17下+16上+中心）——
-        // 超高世界下 level.getMinSectionY()/getMaxSectionY() = ±1.34亿 → 1.13万亿 Node 数组 OOM。
-        // 窗口中心锚定玩家初始 Y，垂直半径与 ChunkAccess 窗口完全对齐（WINDOW_HALF_BELOW=17, WINDOW_HALF_ABOVE=16）。
-        SectionPos cameraSectionPosAtBoot = SectionPos.of(camera.position());
-        int camSecYBoot = cameraSectionPosAtBoot.y();
-        int viewMinSectionY = camSecYBoot - 17; // WINDOW_HALF_BELOW
-        int viewMaxSectionY = camSecYBoot + 16; // WINDOW_HALF_ABOVE
         this.viewArea = new ViewArea(
-        this.sectionRenderDispatcher,
-        viewMinSectionY * 16,
-        viewMaxSectionY * 16 + 15,
-        viewMinSectionY,
-        viewMaxSectionY,
-        options.getEffectiveRenderDistance(),
-        this.sectionOcclusionGraph
+            this.sectionRenderDispatcher,
+            level.getMinY(),
+            level.getMaxY(),
+            level.getMinSectionY(),
+            level.getMaxSectionY(),
+            options.getEffectiveRenderDistance(),
+            this.sectionOcclusionGraph
         );
-        this.viewArea.getSections().setFixedY(true);  // 锁死 Y
         this.sectionOcclusionGraph().waitAndReset(this.viewArea);
         this.clearVisibleSections();
-        this.viewArea.repositionCamera(cameraSectionPosAtBoot);
+        SectionPos cameraSectionPos = SectionPos.of(camera.position());
+        this.viewArea.repositionCamera(cameraSectionPos);
     }
 
     private @Nullable PostChain getTransparencyChain() {
         return !this.gameRenderer.gameRenderState().useShaderTransparency()
-                ? null
-                : this.shaderManager.getPostChain(TRANSPARENCY_POST_CHAIN_ID, LevelTargetBundle.SORTING_TARGETS);
+            ? null
+            : this.shaderManager.getPostChain(TRANSPARENCY_POST_CHAIN_ID, LevelTargetBundle.SORTING_TARGETS);
     }
 
     private void scheduleTranslucentSectionResort(final Vec3 cameraPos) {
@@ -1089,11 +1063,12 @@ public class LevelRenderer implements AutoCloseable {
     }
 
     private void scheduleResort(
-            final SectionRenderDispatcher.RenderSection section,
-            final TranslucencyPointOfView pointOfView,
-            final Vec3 cameraPos,
-            final boolean blockPosChanged,
-            final boolean isNearby) {
+        final SectionRenderDispatcher.RenderSection section,
+        final TranslucencyPointOfView pointOfView,
+        final Vec3 cameraPos,
+        final boolean blockPosChanged,
+        final boolean isNearby
+    ) {
         pointOfView.set(cameraPos, section.getSectionNode());
         boolean pointOfViewChanged = section.getSectionMesh().isDifferentPointOfView(pointOfView);
         boolean resortBecauseBlockPosChanged = blockPosChanged && (pointOfView.isAxisAligned() || isNearby);
@@ -1141,10 +1116,10 @@ public class LevelRenderer implements AutoCloseable {
         SectionRenderDispatcher.RenderSection renderSection = this.viewArea.getRenderSectionAt(blockPos);
         // MCRe：遮挡剔除——区块必须处于当前可见集合（被遮挡区块内的实体不渲染计算）
         return renderSection != null
-                        && renderSection.sectionMesh.get() != CompiledSectionMesh.UNCOMPILED
-                        && this.visibleSectionSet.contains(renderSection)
-                ? renderSection.getVisibility(Util.getMillis()) >= 0.3F
-                : false;
+            && renderSection.sectionMesh.get() != CompiledSectionMesh.UNCOMPILED
+            && this.visibleSectionSet.contains(renderSection)
+            ? renderSection.getVisibility(Util.getMillis()) >= 0.3F
+            : false;
     }
 
     public @Nullable SectionRenderDispatcher sectionRenderDispatcher() {
@@ -1235,11 +1210,11 @@ public class LevelRenderer implements AutoCloseable {
         this.finalizedGizmos = new LevelRenderer.FinalizedGizmos(standardPrimitives, alwaysOnTopPrimitives);
     }
 
-    public void addMainThreadGizmos(final List<
-                    SimpleGizmoCollector.GizmoInstance> mainThreadGizmos) {
+    public void addMainThreadGizmos(final List<SimpleGizmoCollector.GizmoInstance> mainThreadGizmos) {
         this.renderThreadGizmos.addTemporaryGizmos(mainThreadGizmos);
     }
 
     @OnlyIn(Dist.CLIENT)
-    private record FinalizedGizmos(DrawableGizmoPrimitives standardPrimitives, DrawableGizmoPrimitives alwaysOnTopPrimitives) {}
+    private record FinalizedGizmos(DrawableGizmoPrimitives standardPrimitives, DrawableGizmoPrimitives alwaysOnTopPrimitives) {
+    }
 }

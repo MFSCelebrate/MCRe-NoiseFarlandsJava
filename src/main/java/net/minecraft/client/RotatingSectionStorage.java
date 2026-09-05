@@ -15,17 +15,13 @@ import org.jspecify.annotations.Nullable;
 public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> implements Iterable<T> {
     private final RotatingSectionStorage.Node<T>[] nodes;
     private final int radius;
-    // 🔧 MCRe P5：从 final 改为可变——ViewArea 跟随相机 Y 滑动时需要同步更新边界（让 containsSection 持续命中）
-    private int minY;
-    private int maxY;
+    private final int minY;
+    private final int maxY;
     private final int sectionGridSizeY;
     private final int sectionGridSizeXZ;
-    // 新增字段
-    private boolean fixedY = false;
     private SectionPos centerSectionPos = SectionPos.of(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
 
-    public RotatingSectionStorage(final int radius, final int minY, final int maxY, final RotatingSectionStorage.ValueCreator<
-                    T> valueCreator) {
+    public RotatingSectionStorage(final int radius, final int minY, final int maxY, final RotatingSectionStorage.ValueCreator<T> valueCreator) {
         this.radius = radius;
         this.minY = minY;
         this.maxY = maxY;
@@ -39,16 +35,10 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
                 for (int z = 0; z < this.sectionGridSizeXZ; z++) {
                     int index = this.getSectionIndex(x, y, z);
                     SectionPos sectionNode = SectionPos.of(x, y + minY, z);
-                    this.nodes[
-                    index] = new RotatingSectionStorage.Node<>(valueCreator.createValue(index, sectionNode));
+                    this.nodes[index] = new RotatingSectionStorage.Node<>(valueCreator.createValue(index, sectionNode));
                 }
             }
         }
-    }
-
-    // 新增方法
-    public void setFixedY(boolean fixedY) {
-        this.fixedY = fixedY;
     }
 
     public boolean repositionCenter(final SectionPos newCenterSectionPos) {
@@ -66,8 +56,7 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
                 int newSectionZ = lowestZ + Math.floorMod(gridZ - lowestZ, this.sectionGridSizeXZ);
 
                 for (int gridY = 0; gridY < this.sectionGridSizeY; gridY++) {
-                    // repositionCenter 中判断
-                    int newSectionY = this.fixedY ? value.getSectionNode().y() : this.minY + gridY;
+                    int newSectionY = this.minY + gridY;
                     T value = this.nodes[this.getSectionIndex(gridX, gridY, gridZ)].value;
                     SectionPos sectionNode = value.getSectionNode();
                     if (!sectionNode.equals(SectionPos.of(newSectionX, newSectionY, newSectionZ))) {
@@ -91,15 +80,6 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
 
     public int maxY() {
         return this.maxY;
-    }
-
-    /** 🔧 MCRe P5：让 ViewArea 跟随相机 Y 滑动时同步更新边界（让 containsSection 持续命中） */
-    public void setYRange(int newMinY, int newMaxY) {
-        if (newMaxY - newMinY + 1 != this.sectionGridSizeY) {
-            throw new IllegalArgumentException("Y range size must equal sectionGridSizeY=" + this.sectionGridSizeY + ", got " + (newMaxY - newMinY + 1));
-        }
-        this.minY = newMinY;
-        this.maxY = newMaxY;
     }
 
     public int height() {
@@ -135,8 +115,8 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
     private boolean containsSection(final int sectionX, final int sectionY, final int sectionZ) {
         if (sectionY >= this.minY && sectionY <= this.maxY) {
             return sectionX < this.centerSectionPos.x() - this.radius || sectionX > this.centerSectionPos.x() + this.radius
-                    ? false
-                    : sectionZ >= this.centerSectionPos.z() - this.radius && sectionZ <= this.centerSectionPos.z() + this.radius;
+                ? false
+                : sectionZ >= this.centerSectionPos.z() - this.radius && sectionZ <= this.centerSectionPos.z() + this.radius;
         } else {
             return false;
         }
@@ -183,7 +163,8 @@ public class RotatingSectionStorage<T extends RotatingSectionStorage.Value> impl
     }
 
     @OnlyIn(Dist.CLIENT)
-    private record Node<T>(T value) {}
+    private record Node<T>(T value) {
+    }
 
     @OnlyIn(Dist.CLIENT)
     public interface Value {
