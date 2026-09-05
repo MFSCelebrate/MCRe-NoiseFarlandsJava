@@ -80,16 +80,14 @@ public class ViewArea {
      * <p>早退：cameraSectionPos 完全相同（含 Y）→ 零开销。
      */
     public boolean repositionCamera(final SectionPos cameraSectionPos) {
-        // 先计算新的 Y 基准（窗口中心 = cameraSectionY - 17，与 ChunkAccess WINDOW_HALF_BELOW 对齐）
-        int sectionGridSizeY = this.sections.height(); // 34
-        int verticalHalfSpan = 17; // WINDOW_HALF_BELOW，与 ChunkAccess 窗口下半径对齐
-        int newBaseSectionY = cameraSectionPos.y() - verticalHalfSpan;
-
-        this.sections.setYRange(newBaseSectionY, newBaseSectionY + sectionGridSizeY - 1);
-        boolean changed = this.sections.repositionCenter(cameraSectionPos);
+        boolean changed = this.sections.repositionCenter(cameraSectionPos); // 只 X/Z
         if (changed) this.sectionOcclusionGraph.invalidate();
         return changed;
     }
+
+// 构造时锚定世界 Y=0
+    int viewMinSectionY = -17;
+    int viewMaxSectionY = 16;
 
     public SectionPos getCameraSectionPos() {
         return this.sections.centerSectionPos();

@@ -31,8 +31,7 @@ public class SectionUpdateTracker {
     }
 
     public void repositionCamera(final SectionPos cameraSectionPos) {
-        // 只跟随 X/Z，Y 不滑动（渲染网格 Y 固定）
-        this.storage.repositionCenter(cameraSectionPos);
+        this.storage.repositionCenter(cameraSectionPos); // 只 X/Z
     }
 
     public int size() {
@@ -45,19 +44,19 @@ public class SectionUpdateTracker {
     }
 
     public boolean hasAllNeighbors(final ClientLevel level, final SectionPos sectionNode) {
-        return true;
-        // return this.doesChunkExistAt(level, sectionNode.offset(Direction.WEST.getStepX(), 0,
-        // Direction.WEST.getStepZ()))
-        // && this.doesChunkExistAt(level, sectionNode.offset(Direction.NORTH.getStepX(), 0,
-        // Direction.NORTH.getStepZ()))
-        // && this.doesChunkExistAt(level, sectionNode.offset(Direction.EAST.getStepX(), 0,
-        // Direction.EAST.getStepZ()))
-        // && this.doesChunkExistAt(level, sectionNode.offset(Direction.SOUTH.getStepX(), 0,
-        // Direction.SOUTH.getStepZ()))
-        // && this.doesChunkExistAt(level, sectionNode.offset(-1, 0, -1))
-        // && this.doesChunkExistAt(level, sectionNode.offset(-1, 0, 1))
-        // && this.doesChunkExistAt(level, sectionNode.offset(1, 0, -1))
-        // && this.doesChunkExistAt(level, sectionNode.offset(1, 0, 1));
+        // return false;
+        return this.doesChunkExistAt(level, sectionNode.offset(Direction.WEST.getStepX(), 0,
+                        Direction.WEST.getStepZ()))
+                && this.doesChunkExistAt(level, sectionNode.offset(Direction.NORTH.getStepX(), 0,
+                        Direction.NORTH.getStepZ()))
+                && this.doesChunkExistAt(level, sectionNode.offset(Direction.EAST.getStepX(), 0,
+                        Direction.EAST.getStepZ()))
+                && this.doesChunkExistAt(level, sectionNode.offset(Direction.SOUTH.getStepX(), 0,
+                        Direction.SOUTH.getStepZ()))
+                && this.doesChunkExistAt(level, sectionNode.offset(-1, 0, -1))
+                && this.doesChunkExistAt(level, sectionNode.offset(-1, 0, 1))
+                && this.doesChunkExistAt(level, sectionNode.offset(1, 0, -1))
+                && this.doesChunkExistAt(level, sectionNode.offset(1, 0, 1));
     }
 
     private boolean doesChunkExistAt(final ClientLevel level, final SectionPos sectionNode) {

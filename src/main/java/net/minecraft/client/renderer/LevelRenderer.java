@@ -321,18 +321,17 @@ public class LevelRenderer implements AutoCloseable {
     }
 
     private void repositionCamera(final CameraRenderState camera) {
-        Vec3 cameraPos = camera.pos;
-        SectionPos cameraSectionPos = SectionPos.of(cameraPos);
-        // 🔧 MCRe P5 修复：ViewArea.repositionCamera 现在同时处理 X/Z/Y 三轴滑动，
-        // 内部先 setYRange 再 repositionCenter，保证 RenderSection Y origin 与 ChunkAccess 窗口中心对齐
+        SectionPos cameraSectionPos = SectionPos.of(camera.pos);
+
+        // 1. 逻辑层窗口跟随玩家 Y（核心：数据源跟着走）
         this.slideChunkWindowsToCamera(cameraSectionPos);
 
-        // 2. 再移动渲染层视图（ViewArea），不再主动 markForRecompile
+        // 2. 渲染层只跟随 X/Z（ViewArea Y 固定）
         if (this.viewArea.repositionCamera(cameraSectionPos)) {
             this.worldBorderRenderer.invalidate();
         }
 
-        this.sectionRenderDispatcher.setCameraPosition(cameraPos);
+        this.sectionRenderDispatcher.setCameraPosition(camera.pos);
     }
 
     /**
