@@ -34,7 +34,7 @@ import net.minecraft.world.level.levelgen.synth.BlendedNoise;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
-import java.math.BigInteger;
+import net.MinecraftTools.Math.DynamicAccuracy.BigInteger;
 import org.slf4j.Logger;
 
 public final class DensityFunctions {
