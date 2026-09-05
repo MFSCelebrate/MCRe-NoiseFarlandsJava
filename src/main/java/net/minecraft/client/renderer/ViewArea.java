@@ -80,12 +80,14 @@ public class ViewArea {
      * <p>早退：cameraSectionPos 完全相同（含 Y）→ 零开销。
      */
     public boolean repositionCamera(final SectionPos cameraSectionPos) {
-        boolean changed = this.sections.repositionCenter(cameraSectionPos); // 只 X/Z
+        // 只传 X/Z 变化，Y 锁死为当前中心 Y（构造时固定）
+        SectionPos fixedYPos = SectionPos.of(cameraSectionPos.x(), this.sections.centerSectionPos().y(), cameraSectionPos.z());
+        boolean changed = this.sections.repositionCenter(fixedYPos);
         if (changed) this.sectionOcclusionGraph.invalidate();
         return changed;
     }
 
-// 构造时锚定世界 Y=0
+    // 构造时锚定世界 Y=0
     int viewMinSectionY = -17;
     int viewMaxSectionY = 16;
 

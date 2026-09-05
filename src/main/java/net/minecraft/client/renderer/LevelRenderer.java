@@ -168,6 +168,7 @@ public class LevelRenderer implements AutoCloseable {
         this.shaderManager = shaderManager;
         this.levelRenderState = gameRenderer.gameRenderState().levelRenderState;
         this.optionsRenderState = gameRenderer.gameRenderState().optionsRenderState;
+        
         this.entityOutlineTarget = new TextureTarget("Entity Outline", width, height, true, GpuFormat.RGBA8_UNORM);
     }
 
@@ -1053,6 +1054,7 @@ public class LevelRenderer implements AutoCloseable {
         options.getEffectiveRenderDistance(),
         this.sectionOcclusionGraph
         );
+        this.viewArea.getSections().setFixedY(true);  // 锁死 Y
         this.sectionOcclusionGraph().waitAndReset(this.viewArea);
         this.clearVisibleSections();
         this.viewArea.repositionCamera(cameraSectionPosAtBoot);
