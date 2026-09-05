@@ -291,7 +291,13 @@ public class ProtoChunk extends ChunkAccess {
 
     public CarvingMask getOrCreateCarvingMask() {
         if (this.carvingMask == null) {
-            this.carvingMask = new CarvingMask(this.getHeight(), this.getMinY());
+            // 🔧 MCRe P4b+：超高世界维度 height 可达 21.47 亿（so_high_overworld.json: height=2147000000），
+            // 原版 `new BitSet(256 * height)` 在 int32 下溢出成 -123,813,888 → NegativeArraySizeException。
+            // 改用窗口化高度域（与 applyCarvers 传的 CarvingContext 完全一致，都走 getHeightAccessorForGeneration），
+            // 高度=544, minY=windowMinY*16 → 256*544=139264 完全在 int 范围。
+            // carve 阶段是同步的，windowMinY 此时稳定，windowSections 已 buildDefaultWindow 初始化。
+            LevelHeightAccessor carvingHa = this.getHeightAccessorForGeneration();
+            this.carvingMask = new CarvingMask(carvingHa.getHeight(), carvingHa.getMinY());
         }
 
         return this.carvingMask;

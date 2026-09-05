@@ -12,7 +12,10 @@ public class CarvingMask {
 
     public CarvingMask(final int height, final int minY) {
         this.minY = minY;
-        this.mask = new BitSet(256 * height);
+        // 🔧 MCRe：防御性兜底——256 * height 在超高世界（height=2147000000）会溢出 int32 成负数。
+        // ProtoChunk.getOrCreateCarvingMask 已走窗口化高度域（height=544），这里 Math.max(0, ...) 兜底防止未来类似 bug。
+        int nbits = Math.max(0, 256 * height);
+        this.mask = new BitSet(nbits);
     }
 
     public void setAdditionalMask(final CarvingMask.Mask additionalMask) {
