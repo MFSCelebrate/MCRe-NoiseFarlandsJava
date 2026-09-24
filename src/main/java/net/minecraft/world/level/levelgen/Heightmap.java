@@ -18,6 +18,7 @@ import net.minecraft.util.ByIdMap;
 import net.minecraft.util.Mth;
 import net.minecraft.util.SimpleBitStorage;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -46,6 +47,8 @@ public class Heightmap {
             ObjectList<Heightmap> heightmaps = new ObjectArrayList<>(size);
             ObjectListIterator<Heightmap> iterator = heightmaps.iterator();
             int highestSectionPosition = chunk.getHighestSectionPosition() + 16;
+            // 🔧 MCRe：钳制下扫深度——超高世界/高分带窗口下，vanilla 会从窗口顶一路扫到世界底（可达 21 亿次）
+            final int scanBottom = Math.max(chunk.getMinY(), highestSectionPosition - FarLandsYScan.MAX_BLOCK_SCAN);
             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
             for (int x = 0; x < 16; x++) {
@@ -54,7 +57,7 @@ public class Heightmap {
                         heightmaps.add(chunk.getOrCreateHeightmapUnprimed(type));
                     }
 
-                    for (int y = highestSectionPosition - 1; y >= chunk.getMinY(); y--) {
+                    for (int y = highestSectionPosition - 1; y >= scanBottom; y--) {
                         pos.set(x, y, z);
                         BlockState state = chunk.getBlockState(pos);
                         if (!state.is(Blocks.AIR)) {
@@ -91,8 +94,10 @@ public class Heightmap {
             }
         } else if (firstAvailable - 1 == localY) {
             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+            // 🔧 MCRe：钳制下扫深度——超高世界下 vanilla 会从 localY 扫到 chunk.getMinY()（可达 21 亿次）
+            final int scanBottom = Math.max(this.chunk.getMinY(), localY - FarLandsYScan.MAX_BLOCK_SCAN);
 
-            for (int y = localY - 1; y >= this.chunk.getMinY(); y--) {
+            for (int y = localY - 1; y >= scanBottom; y--) {
                 pos.set(localX, y, localZ);
                 if (this.isOpaque.test(this.chunk.getBlockState(pos))) {
                     this.setHeight(localX, localZ, y + 1);
@@ -120,7 +125,13 @@ public class Heightmap {
     }
 
     private void setHeight(final int x, final int z, final int height) {
-        this.data.set(getIndex(x, z), height - this.chunk.getMinY());
+        // 🔧 MCRe：饱和到 BitStorage 可表示范围——超高世界下 height - minY 会超出位数
+        // （例：so_high_overworld 高度 2.1e10 需要 35 bit，但 SimpleBitStorage 上限 32 bit）
+        // 原先会静默截断成垃圾值（getFirstAvailable 返回 ~43 亿的假高度，干扰后续 update 判断）
+        final long stored = (long) height - (long) this.chunk.getMinY();
+        final long maxStored = (1L << this.data.getBits()) - 1L;
+        final int clamped = stored <= 0L ? 0 : (stored >= maxStored ? (int) maxStored : (int) stored);
+        this.data.set(getIndex(x, z), clamped);
     }
 
     public void setRawData(final ChunkAccess chunk, final Heightmap.Types type, final long[] data) {

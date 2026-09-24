@@ -194,6 +194,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
     private static final AtomicInteger ENTITY_COUNTER = new AtomicInteger();
     private final List<ServerPlayer> players = Lists.newArrayList();
     private final ServerChunkCache chunkSource;
+    /** 🔧 MCRe 分带生成：玩家竖直窗口触发的按需带填充（阶段 2+3）。 */
+    private final FarLandsBandGenerator bandGenerator;
     private final MinecraftServer server;
     private final ServerLevelData serverLevelData;
     private final EntityTickList entityTickList = new EntityTickList();
@@ -271,6 +273,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
         );
         this.chunkSource.getGeneratorState().ensureStructuresGenerated();
         this.portalForcer = new PortalForcer(this);
+        this.bandGenerator = new FarLandsBandGenerator(this);
         if (this.canHaveWeather()) {
             this.prepareWeather(server.getWeatherData());
         }
@@ -406,6 +409,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
 
         profiler.popPush("chunkSource");
         this.getChunkSource().tick(haveTime, true);
+        // 🔧 MCRe 分带生成（阶段 2）：玩家竖直窗口触发的按需带填充（超高世界天空边境之地）
+        this.bandGenerator.tick();
         profiler.popPush("blockEvents");
         if (runs) {
             this.runBlockEvents();

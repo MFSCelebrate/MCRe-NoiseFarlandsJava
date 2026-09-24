@@ -346,6 +346,15 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
         return oldState;
     }
 
+    /**
+     * 🔧 MCRe 分带生成：LevelChunk 不支持「后处理」（vanilla 只在 ProtoChunk 生成期用），
+     * 但分带 fill 会往已加载的 LevelChunk 里写方块，水位更新可能触发此调用。
+     * 静默忽略，避免刷 "Trying to mark a block for post processing" 警告。
+     */
+    @Override
+    public void markPosForPostProcessing(final BlockPos blockPos) {
+    }
+
     @Deprecated
     @Override
     public void addEntity(final Entity entity) {

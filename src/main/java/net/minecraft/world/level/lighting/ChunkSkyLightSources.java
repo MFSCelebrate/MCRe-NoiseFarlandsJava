@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -126,8 +127,11 @@ public class ChunkSkyLightSources {
         BlockPos.MutableBlockPos topPos = this.mutablePos1.set(startPos);
         BlockPos.MutableBlockPos bottomPos = this.mutablePos2.setWithOffset(startPos, Direction.DOWN);
         BlockState topState = startState;
+        // 🔧 MCRe：钳制下扫深度——超高世界下 vanilla 会从 startPos 扫到 minY（可达 21 亿次，每格读方块）
+        // 正常游玩时实际距离远小于上限；钳制后区间内无遮挡 → 保守返回 minY（该列近似无光源）
+        final int scanBottom = Math.max(this.minY, startPos.getY() - FarLandsYScan.MAX_BLOCK_SCAN);
 
-        while (bottomPos.getY() >= this.minY) {
+        while (bottomPos.getY() >= scanBottom) {
             BlockState bottomState = level.getBlockState(bottomPos);
             if (isEdgeOccluded(topState, bottomState)) {
                 return topPos.getY();

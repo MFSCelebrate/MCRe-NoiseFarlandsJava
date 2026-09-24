@@ -119,7 +119,7 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         profiler.push("prepareDispatchers");
         this.levelRenderer.blockEntityRenderDispatcher().prepare(cameraPos);
         this.levelRenderer.entityRenderDispatcher().prepare(camera, this.minecraft.crosshairPickEntity);
-        if (this.shouldInvalidateCompiledGeometry) {
+        if (this.shouldInvalidateCompiledGeometry || this.hasCameraLeftViewAreaY(camera)) {
             this.levelRenderer.invalidateCompiledGeometry(this.level, this.minecraft.options, camera, this.minecraft.getBlockColors());
             this.shouldInvalidateCompiledGeometry = false;
         } else if (camera.getCapturedFrustum() == null) {
@@ -490,6 +490,21 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         }
 
         return rendered;
+    }
+
+    /**
+     * 🔧 MCRe 分带生成（阶段 5b）：相机 Y 是否已离开当前渲染窗口的 Y 范围。
+     * <p>离开 → 触发 {@code invalidateCompiledGeometry} 重建 ViewArea（中心移到相机所在带）。
+     * <p>只在**跨带**时发生（每 544 格），不是 P5 的每帧滑动——所以不会每帧重编译全部 RenderSection；
+     * 代价是跨带瞬间一次全量重建（releaseAllBuffers + clearCompileQueue）。
+     */
+    private boolean hasCameraLeftViewAreaY(final Camera camera) {
+        final ViewArea viewArea = this.levelRenderer.viewArea();
+        if (viewArea == null) {
+            return false;
+        }
+        final int cameraSectionY = SectionPos.of(camera.position()).y();
+        return cameraSectionY < viewArea.minSectionY() || cameraSectionY > viewArea.maxSectionY();
     }
 
     @VisibleForDebug

@@ -292,6 +292,9 @@ public record SerializableChunkData(
             for (SerializableChunkData.SectionData sectionData : this.sectionData) {
                 if (sectionData.chunkSection != null) {
                     chunk.setSectionAt(sectionData.y, sectionData.chunkSection);
+                    // 🔧 MCRe 分带生成（阶段 1）：存档里存在的 section 视为已生成——
+                    // 避免分带触发重复生成（否则会覆盖玩家在高 Y 带的建筑）
+                    chunk.markSectionGenerated(sectionData.y);
                 }
             }
         }

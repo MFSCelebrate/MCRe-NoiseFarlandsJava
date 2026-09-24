@@ -33,13 +33,14 @@ public class SectionCopy {
         if (levelChunk instanceof EmptyLevelChunk) {
             this.section = null;
         } else {
-            LevelChunkSection[] sections = levelChunk.getSections();
-            if (sectionIndex >= 0 && sectionIndex < sections.length) {
-                LevelChunkSection levelChunkSection = sections[sectionIndex];
-                this.section = levelChunkSection.hasOnlyAir() ? null : levelChunkSection.getStates().copy();
-            } else {
-                this.section = null;
-            }
+            // 🔧 MCRe 分带生成（阶段 5b）：sectionIndex 是「窗口相对」索引（可能远超窗口数组长度），
+            // 必须按绝对 sectionY 从无限仓库 allSections 取——否则窗口外（如分带生成的高 Y 带）
+            // 恒判空 → 渲染成空 section → 即使收到网络数据也看不到地形。
+            LevelChunkSection levelChunkSection = levelChunk.getSectionAt(
+                    levelChunk.getSectionYFromSectionIndex(sectionIndex));
+            this.section = levelChunkSection == null || levelChunkSection.hasOnlyAir()
+                    ? null
+                    : levelChunkSection.getStates().copy();
         }
     }
 

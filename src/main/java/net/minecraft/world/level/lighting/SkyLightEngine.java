@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.DataLayer;
@@ -87,8 +88,12 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
             int sectionX = SectionPos.blockToSectionCoord(x);
             int sectionZ = SectionPos.blockToSectionCoord(z);
             int startY = lowestSourceY - 1;
+            // 🔧 MCRe：钳制 section 扫描深度——超高世界下 vanilla 会从 startY 的 section 一路扫到
+            // 数据底（可达 13 亿个 section，每轮 SectionPos.of 分配 + HashMap 查询）
+            final int startSectionY = SectionPos.blockToSectionCoord(startY);
+            final int minSectionY = startSectionY - FarLandsYScan.MAX_SECTION_SCAN;
 
-            for (int sectionY = SectionPos.blockToSectionCoord(startY); this.storage.hasLightDataAtOrBelow(sectionY); sectionY--) {
+            for (int sectionY = startSectionY; this.storage.hasLightDataAtOrBelow(sectionY) && sectionY >= minSectionY; sectionY--) {
                 if (this.storage.storingLightForSection(SectionPos.of(sectionX, sectionY, sectionZ))) {
                     int sectionBottomY = SectionPos.sectionToBlockCoord(sectionY);
                     int sectionTopY = sectionBottomY + 15;
@@ -223,8 +228,10 @@ public final class SkyLightEngine extends LightEngine<SkyLightSectionStorage.Sky
         int sectionZ = SectionPos.blockToSectionCoord(z);
         int emptySectionsBelow = 0;
 
+        // 🔧 MCRe：钳制 section 扫描深度（同上，防止极端 Y 下 13 亿轮迭代）
         while (
-            !this.storage.storingLightForSection(SectionPos.of(sectionX, sectionY - emptySectionsBelow - 1, sectionZ))
+            emptySectionsBelow < FarLandsYScan.MAX_SECTION_SCAN
+                && !this.storage.storingLightForSection(SectionPos.of(sectionX, sectionY - emptySectionsBelow - 1, sectionZ))
                 && this.storage.hasLightDataAtOrBelow(sectionY - emptySectionsBelow - 1)
         ) {
             emptySectionsBelow++;

@@ -93,6 +93,18 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     private volatile int lastPacketMinY = Integer.MIN_VALUE;
     private volatile int lastPacketMaxY = Integer.MIN_VALUE;
 
+    // ──────── 🔧 MCRe 分带生成（阶段 1，参考 inf_farlands 的窗口段生成） ────────
+    /**
+     * 生成带（section 单位）——与显示窗口**解耦**：仅影响 {@link #getHeightAccessorForGeneration()}，
+     * 使 fill 只填该带。{@code Integer.MIN_VALUE} = 未设置（回退到显示窗口）。
+     */
+    private volatile int generationBandMinY = Integer.MIN_VALUE;
+    private volatile int generationBandMaxY = Integer.MIN_VALUE;
+    /** 生成带高度域缓存（带变更时置 null 重建） */
+    private volatile LevelHeightAccessor bandHeightAccessor;
+    /** 已生成地形（TERRAIN stage）的 sectionY 集合——分带触发时用于跳过已生成的带 */
+    private final Set<Integer> generatedSectionYs = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     /** 🔧 MCRe：外部访问 containerFactory（LevelChunk 网络读入等用） */
     public PalettedContainerFactory getContainerFactory() {
         return this.containerFactory;
@@ -603,6 +615,15 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
         return this.noiseChunk;
     }
 
+    /**
+     * 🔧 MCRe 分带生成：读已缓存的 NoiseChunk（不懒创建）。
+     * <p>分带 fill 后、{@code clearGenerationBand()} 前，该 NoiseChunk 是**带域**的——
+     * 分带 surface/carve 复用它即可（与 vanilla 生成期同源）。
+     */
+    public @Nullable NoiseChunk getCachedNoiseChunk() {
+        return this.noiseChunk;
+    }
+
     @Deprecated
     public BiomeGenerationSettings carverBiome(final Supplier<BiomeGenerationSettings> source) {
         if (this.carverBiomeSettings == null) {
@@ -661,6 +682,39 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     }
 
     public LevelHeightAccessor getHeightAccessorForGeneration() {
+        // 🔧 MCRe 分带生成（阶段 1）：生成带优先——与显示窗口解耦，fill 只填该带。
+        // 分带 fill 前调用 setGenerationBand(min, max)，fill 后 clearGenerationBand()。
+        final int bandMin = this.generationBandMinY;
+        if (bandMin != Integer.MIN_VALUE) {
+            LevelHeightAccessor band = this.bandHeightAccessor;
+            if (band == null) {
+                final int bandMax = this.generationBandMaxY;
+                band = new LevelHeightAccessor() {
+                    @Override
+                    public int getHeight() {
+                        return (bandMax - bandMin + 1) * 16;
+                    }
+
+                    @Override
+                    public int getMinY() {
+                        return bandMin * 16;
+                    }
+
+                    @Override
+                    public int getMinSectionY() {
+                        return bandMin;
+                    }
+
+                    @Override
+                    public int getMaxSectionY() {
+                        return bandMax;
+                    }
+                };
+                this.bandHeightAccessor = band;
+            }
+            return band;
+        }
+
         // 🔧 MCRe P4b：生成链必须用「窗口化高度域」而不是世界域——
         // 超高世界 getMinY()=-21.47亿/height=42.9亿，NoiseChunk 按全高算 cellCountY
         // （42.9亿/8=5.36亿）分配插值数组直接 OOM（内存可达 8GB+）。
@@ -689,6 +743,62 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
             };
         }
         return this.windowedHeightAccessor;
+    }
+
+    // ──────── 🔧 MCRe 分带生成 API（阶段 1） ────────
+
+    /**
+     * 设置生成带（section 单位）——fill 将只填该带。
+     * <p>同时失效缓存的带 accessor 与 NoiseChunk（NoiseChunk 是按 accessor 钳制后构造的，
+     * 换带必须重建，否则仍按旧带填）。
+     */
+    public void setGenerationBand(final int minSectionY, final int maxSectionY) {
+        if (minSectionY > maxSectionY) {
+            this.generationBandMinY = Integer.MIN_VALUE;
+            this.generationBandMaxY = Integer.MIN_VALUE;
+        } else {
+            this.generationBandMinY = minSectionY;
+            this.generationBandMaxY = maxSectionY;
+        }
+        this.bandHeightAccessor = null;
+        this.noiseChunk = null;
+    }
+
+    /** 清除生成带（回退到显示窗口）。 */
+    public void clearGenerationBand() {
+        this.setGenerationBand(Integer.MIN_VALUE, Integer.MIN_VALUE);
+    }
+
+    /** 是否处于分带生成模式。 */
+    public boolean hasGenerationBand() {
+        return this.generationBandMinY != Integer.MIN_VALUE;
+    }
+
+    /** 该 section 的地形是否已生成。 */
+    public boolean isSectionGenerated(final int sectionY) {
+        return this.generatedSectionYs.contains(sectionY);
+    }
+
+    /** 标记该 section 的地形已生成。 */
+    public void markSectionGenerated(final int sectionY) {
+        this.generatedSectionYs.add(sectionY);
+    }
+
+    /** 标记整带的地形已生成。 */
+    public void markBandGenerated(final int minSectionY, final int maxSectionY) {
+        for (int sy = minSectionY; sy <= maxSectionY; sy++) {
+            this.generatedSectionYs.add(sy);
+        }
+    }
+
+    /** 带 [minSectionY, maxSectionY] 是否全部已生成。 */
+    public boolean isBandGenerated(final int minSectionY, final int maxSectionY) {
+        for (int sy = minSectionY; sy <= maxSectionY; sy++) {
+            if (!this.generatedSectionYs.contains(sy)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void initializeLightSources() {

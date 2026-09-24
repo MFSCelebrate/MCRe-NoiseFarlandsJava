@@ -11,6 +11,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -122,7 +123,9 @@ public class SurfaceSystem {
                 int stoneAboveDepth = 0;
                 int waterHeight = Integer.MIN_VALUE;
                 int nextCeilingStoneY = Integer.MAX_VALUE;
-                int endY = protoChunk.getMinY();
+                // 🔧 MCRe：钳制列扫描下界——超高世界下 vanilla 会从地表一路扫到世界底（2.1e10 次 × 256 列）
+                // 地表规则只替换顶部若干格（草/沙/泥土），下方 2048 格必然是石头，提前结束安全
+                int endY = Math.max(protoChunk.getMinY(), height - FarLandsYScan.MAX_BLOCK_SCAN);
 
                 for (int y = height; y >= endY; y--) {
                     BlockState old = column.getBlock(y);
@@ -224,7 +227,9 @@ public class SurfaceSystem {
             double extensionTop = 64.0 + Math.min(pillarBuffer * pillarBuffer * 2.5, Math.ceil(pillarFloor * 50.0) + 24.0);
             int startY = Mth.floor(extensionTop);
             if (height <= startY) {
-                for (int y = startY; y >= protoChunk.getMinY(); y--) {
+                // 🔧 MCRe：钳制恶地柱扫描下界（超高世界下 vanilla 会扫到世界底）
+                final int badlandsScanBottom = Math.max(protoChunk.getMinY(), startY - FarLandsYScan.MAX_BLOCK_SCAN);
+                for (int y = startY; y >= badlandsScanBottom; y--) {
                     BlockState oldState = column.getBlock(y);
                     if (oldState.is(this.defaultBlock.getBlock())) {
                         break;
@@ -235,7 +240,7 @@ public class SurfaceSystem {
                     }
                 }
 
-                for (int y = startY; y >= protoChunk.getMinY() && column.getBlock(y).isAir(); y--) {
+                for (int y = startY; y >= badlandsScanBottom && column.getBlock(y).isAir(); y--) {
                     column.setBlock(y, this.defaultBlock);
                 }
             }

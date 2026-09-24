@@ -423,7 +423,10 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
             }
 
             try {
-                return this.doFill(blender, structureManager, randomState, centerChunk, cellYMin, cellCountY);
+                ChunkAccess filled = this.doFill(blender, structureManager, randomState, centerChunk, cellYMin, cellCountY);
+                // 🔧 MCRe 分带生成（阶段 1）：标记本次 fill 的带已生成（供分带触发跳过）
+                filled.markBandGenerated(minY >> 4, (minY + noiseSettings.height() - 1) >> 4);
+                return filled;
             } finally {
                 for (LevelChunkSection section : sections) {
                     section.release();

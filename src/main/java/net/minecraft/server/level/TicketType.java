@@ -23,6 +23,8 @@ public record TicketType(long timeout, @TicketType.Flags int flags) {
     public static final TicketType PORTAL = register("portal", 300L, 15);
     public static final TicketType ENDER_PEARL = register("ender_pearl", 40L, 14);
     public static final TicketType UNKNOWN = register("unknown", 1L, 18);
+    /** 🔧 MCRe 分带生成：持区块加载的工作票据（fill 在途防卸载，无超时）。 */
+    public static final TicketType FARLANDS_BAND_GEN = register("farlands_band_gen", NO_TIMEOUT, FLAG_LOADING);
 
     private static TicketType register(final String name, final long timeout, final @TicketType.Flags int flags) {
         return Registry.register(BuiltInRegistries.TICKET_TYPE, name, new TicketType(timeout, flags));
