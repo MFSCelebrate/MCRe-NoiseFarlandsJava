@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -165,12 +166,18 @@ public class SurfaceSystem {
     }
 
     protected int getSurfaceDepth(final int blockX, final int blockZ) {
-        double noiseValue = this.surfaceNoise.getValue(blockX, 0.0, blockZ);
+        // 🔧 MCRe：表面噪声应用偏移缩放（开关：surfaceNoiseOffset，默认开启）
+        double noiseValue = this.surfaceNoise.getValue(
+                WorldReposition.repositionSurface(blockX, Direction.Axis.X), 0.0,
+                WorldReposition.repositionSurface(blockZ, Direction.Axis.Z));
         return (int)(noiseValue * 2.75 + 3.0 + this.noiseRandom.at(blockX, 0, blockZ).nextDouble() * 0.25);
     }
 
     protected double getSurfaceSecondary(final int blockX, final int blockZ) {
-        return this.surfaceSecondaryNoise.getValue(blockX, 0.0, blockZ);
+        // 🔧 MCRe：表面次级噪声应用偏移缩放
+        return this.surfaceSecondaryNoise.getValue(
+                WorldReposition.repositionSurface(blockX, Direction.Axis.X), 0.0,
+                WorldReposition.repositionSurface(blockZ, Direction.Axis.Z));
     }
 
     private boolean isStone(final BlockState state) {
@@ -204,13 +211,16 @@ public class SurfaceSystem {
 
     private void erodedBadlandsExtension(final BlockColumn column, final int blockX, final int blockZ, final int height, final LevelHeightAccessor protoChunk) {
         double pillarNoiseScale = 0.2;
+        // 🔧 MCRe：恶地表面/柱噪声应用偏移缩放（先变换坐标，再乘频率缩放，与密度函数一致）
+        final double erodedX = WorldReposition.repositionSurface(blockX, Direction.Axis.X);
+        final double erodedZ = WorldReposition.repositionSurface(blockZ, Direction.Axis.Z);
         double pillarBuffer = Math.min(
-            Math.abs(this.badlandsSurfaceNoise.getValue(blockX, 0.0, blockZ) * 8.25), this.badlandsPillarNoise.getValue(blockX * 0.2, 0.0, blockZ * 0.2) * 15.0
+            Math.abs(this.badlandsSurfaceNoise.getValue(erodedX, 0.0, erodedZ) * 8.25), this.badlandsPillarNoise.getValue(erodedX * 0.2, 0.0, erodedZ * 0.2) * 15.0
         );
         if (!(pillarBuffer <= 0.0)) {
             double floorNoiseSampleResolution = 0.75;
             double floorAmplitude = 1.5;
-            double pillarFloor = Math.abs(this.badlandsPillarRoofNoise.getValue(blockX * 0.75, 0.0, blockZ * 0.75) * 1.5);
+            double pillarFloor = Math.abs(this.badlandsPillarRoofNoise.getValue(erodedX * 0.75, 0.0, erodedZ * 0.75) * 1.5);
             double extensionTop = 64.0 + Math.min(pillarBuffer * pillarBuffer * 2.5, Math.ceil(pillarFloor * 50.0) + 24.0);
             int startY = Mth.floor(extensionTop);
             if (height <= startY) {
@@ -242,13 +252,16 @@ public class SurfaceSystem {
         final int height
     ) {
         double pillarScale = 1.28;
+        // 🔧 MCRe：冰山表面/柱噪声应用偏移缩放
+        final double icebergX = WorldReposition.repositionSurface(blockX, Direction.Axis.X);
+        final double icebergZ = WorldReposition.repositionSurface(blockZ, Direction.Axis.Z);
         double iceberg = Math.min(
-            Math.abs(this.icebergSurfaceNoise.getValue(blockX, 0.0, blockZ) * 8.25), this.icebergPillarNoise.getValue(blockX * 1.28, 0.0, blockZ * 1.28) * 15.0
+            Math.abs(this.icebergSurfaceNoise.getValue(icebergX, 0.0, icebergZ) * 8.25), this.icebergPillarNoise.getValue(icebergX * 1.28, 0.0, icebergZ * 1.28) * 15.0
         );
         if (!(iceberg <= 1.8)) {
             double roofScale = 1.17;
             double roofAmplitude = 1.5;
-            double icebergRoof = Math.abs(this.icebergPillarRoofNoise.getValue(blockX * 1.17, 0.0, blockZ * 1.17) * 1.5);
+            double icebergRoof = Math.abs(this.icebergPillarRoofNoise.getValue(icebergX * 1.17, 0.0, icebergZ * 1.17) * 1.5);
             double top = Math.min(iceberg * iceberg * 1.2, Math.ceil(icebergRoof * 40.0) + 14.0);
             if (surfaceBiome.shouldMeltFrozenOceanIcebergSlightly(blockPos.set(blockX, this.seaLevel, blockZ), this.seaLevel)) {
                 top -= 2.0;
@@ -334,7 +347,10 @@ public class SurfaceSystem {
     }
 
     protected BlockState getBand(final int worldX, final int y, final int worldZ) {
-        int offset = (int)Math.round(this.clayBandsOffsetNoise.getValue(worldX, 0.0, worldZ) * 4.0);
+        // 🔧 MCRe：黏土层偏移噪声应用偏移缩放
+        int offset = (int)Math.round(this.clayBandsOffsetNoise.getValue(
+                WorldReposition.repositionSurface(worldX, Direction.Axis.X), 0.0,
+                WorldReposition.repositionSurface(worldZ, Direction.Axis.Z)) * 4.0);
         return this.clayBands[(y + offset + this.clayBands.length) % this.clayBands.length];
     }
 }

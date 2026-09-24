@@ -29,6 +29,8 @@ public final class WorldReposition {
     private static final BigDecimal[] SHIFT = {BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO};
     /** YClampedGradient 独立开关——默认 false（保持原版 Y 轴海拔梯度，避免边境之地消失） */
     private static volatile boolean yClampedGradientOffsetEnabled = false;
+    /** 表面噪声与规则偏移开关——默认 true（SurfaceSystem/SurfaceRules 也应用偏移缩放） */
+    private static volatile boolean surfaceNoiseOffsetEnabled = true;
 
     private WorldReposition() {
     }
@@ -47,6 +49,7 @@ public final class WorldReposition {
         SHIFT[1] = config.shiftY();
         SHIFT[2] = config.shiftZ();
         yClampedGradientOffsetEnabled = config.yClampedGradientOffset();
+        surfaceNoiseOffsetEnabled = config.surfaceNoiseOffset();
     }
 
     // ═════════════════ 一维变换（无损 BigDecimal） ═════════════════
@@ -103,6 +106,23 @@ public final class WorldReposition {
     }
 
     /**
+     * 🔧 MCRe：表面噪声与规则偏移开关——控制 SurfaceSystem/SurfaceRules 是否应用偏移缩放。
+     * 默认 true；关闭时表面材质按原始坐标采样（等同 UltimateScaler 行为）。
+     */
+    public static boolean isSurfaceNoiseOffsetEnabled() {
+        return surfaceNoiseOffsetEnabled;
+    }
+
+    /**
+     * 🔧 MCRe：表面噪声专用一维变换（int → double）。
+     * <p>开关关闭时直通返回原坐标（零开销，保持原版表面材质分布）；
+     * 开关开启时走 {@link #reposition(int, Direction.Axis)}（含 saturate 防护）。
+     */
+    public static double repositionSurface(final int pos, final Direction.Axis axis) {
+        return surfaceNoiseOffsetEnabled ? reposition(pos, axis) : pos;
+    }
+
+    /**
      * 🔧 MCRe：读指定轴的缩放因子（用于逆运算，如 {@link #inverseY} 把世界 Y 还原到玩家 Y）。
      */
     public static BigDecimal getScale(final Direction.Axis axis) {
@@ -141,13 +161,14 @@ public final class WorldReposition {
     public record RepositionConfig(
             BigDecimal scaleX, BigDecimal scaleY, BigDecimal scaleZ,
             BigDecimal shiftX, BigDecimal shiftY, BigDecimal shiftZ,
-            boolean yClampedGradientOffset
+            boolean yClampedGradientOffset,
+            boolean surfaceNoiseOffset
     ) {
-        /** 默认无变换配置（scale=1, shift=0, yGradient=false） */
+        /** 默认无变换配置（scale=1, shift=0, yGradient=false, surfaceNoise=true） */
         public static final RepositionConfig DISABLED = new RepositionConfig(
                 BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                false
+                false, true
         );
     }
 

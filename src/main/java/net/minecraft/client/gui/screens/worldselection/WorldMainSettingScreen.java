@@ -423,6 +423,23 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollContent.addChild(this.yWorldOffsetInput);
         this.scrollContent.addChild(this.zWorldOffsetInput);
 
+        // ========== 第二节追加：表面噪声与规则偏移开关 ==========
+        // 🔧 MCRe：控制 SurfaceSystem/SurfaceRules 是否也应用偏移缩放（默认开启）
+        SwitchGrid.Builder surfaceNoiseBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
+                .withRowSpacing(4);
+        surfaceNoiseBuilder.addSwitch(
+                Component.literal("允许 地形偏移缩放影响表面噪声与规则"),
+                () -> this.configData.surfaceNoiseOffset,
+                val -> this.configData.surfaceNoiseOffset = val
+        ).withInfo(Component.literal(
+                "控制表面噪声与规则（SurfaceSystem/SurfaceRules）是否也应用偏移缩放。\n"
+                        + "§e启用后：§r表面材质（草/石/沙/黏土/恶地/冰山）与地形形状保持一致的偏移缩放，\\n"
+                        + "        极远坐标下材质不会因精度丢失而错乱\\n"
+                        + "§7关闭后：§r表面材质按原始坐标采样（等同 UltimateScaler 行为），\\n"
+                        + "        地形形状仍受偏移缩放影响"
+        ));
+        this.scrollContent.addChild(surfaceNoiseBuilder.build().layout(), s -> s.paddingHorizontal(10));
+
         // ========== 第三节：YClampedGradient 扩展（独立开关） ==========
         // 🔧 MCRe：YClampedGradient 控制 Y 轴 base stone 海拔梯度——
         // 偏移后 Y 轴将不会出现任何边境之地，所以单独做开关供玩家权衡。
@@ -731,7 +748,8 @@ public class WorldMainSettingScreen extends Screen {
         cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.xWorldOffset, BigDecimal.ZERO) : BigDecimal.ZERO,
         cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.yWorldOffset, BigDecimal.ZERO) : BigDecimal.ZERO,
         cfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(cfg.zWorldOffset, BigDecimal.ZERO) : BigDecimal.ZERO,
-        cfg.enabledYClampedGradientOffset
+        cfg.enabledYClampedGradientOffset,
+        cfg.surfaceNoiseOffset
         ));
         FarLandsConfigStorage.save(Minecraft.getInstance().gameDirectory, cfg);
         Minecraft.getInstance().gui.setScreen(this.parent);
@@ -809,6 +827,10 @@ public class WorldMainSettingScreen extends Screen {
         // 🔧 MCRe：禁用 Offset 噪声（NoOffset 数据包移植）——禁用 ShiftedNoise 的 shift_x/y/z 偏移
         // 用于解决渐消之地地形消失，展现渐消之后更多的边境层
         public boolean disableOffsetNoise = false;
+
+        // 🔧 MCRe：允许地形偏移缩放影响表面噪声与规则（SurfaceSystem/SurfaceRules）——默认 true
+        // 关闭时表面材质（草/石/沙/黏土/恶地/冰山）按原始坐标采样，等同 UltimateScaler 行为
+        public boolean surfaceNoiseOffset = true;
 
         /** 当前活动的 FarLands 配置，由 WorldMainSettingScreen.onDone() 写入 */
         public static FarLandsConfigData activeConfig = new FarLandsConfigData();

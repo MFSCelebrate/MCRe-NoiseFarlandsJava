@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
@@ -431,7 +432,10 @@ public class SurfaceRules {
                 @Override
                 public double getAsDouble() {
                     if (this.lastUpdateXZ != Context.this.lastUpdateXZ) {
-                        this.lastNoise = noise.getValue(Context.this.blockX, 0.0, Context.this.blockZ);
+                        // 🔧 MCRe：表面规则噪声应用偏移缩放（开关：surfaceNoiseOffset，默认开启）
+                        this.lastNoise = noise.getValue(
+                                WorldReposition.repositionSurface(Context.this.blockX, Direction.Axis.X), 0.0,
+                                WorldReposition.repositionSurface(Context.this.blockZ, Direction.Axis.Z));
                         this.lastUpdateXZ = Context.this.lastUpdateXZ;
                     }
 
@@ -453,7 +457,11 @@ public class SurfaceRules {
                 @Override
                 public double getAsDouble() {
                     if (this.lastUpdateY != Context.this.lastUpdateY) {
-                        this.lastNoise = noise.getValue(Context.this.blockX, Context.this.blockY, Context.this.blockZ);
+                        // 🔧 MCRe：表面规则噪声应用偏移缩放（含 Y 轴）
+                        this.lastNoise = noise.getValue(
+                                WorldReposition.repositionSurface(Context.this.blockX, Direction.Axis.X),
+                                WorldReposition.repositionSurface(Context.this.blockY, Direction.Axis.Y),
+                                WorldReposition.repositionSurface(Context.this.blockZ, Direction.Axis.Z));
                         this.lastUpdateY = Context.this.lastUpdateY;
                     }
 

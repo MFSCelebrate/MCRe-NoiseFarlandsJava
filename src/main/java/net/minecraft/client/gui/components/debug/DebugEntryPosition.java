@@ -49,16 +49,18 @@ public class DebugEntryPosition implements DebugScreenEntry {
 
     /**
      * 🔧 MCRe：计算 Terrain XYZ（玩家坐标经 WorldReposition 偏移缩放 → BigDecimal → BigInteger 截断）。
-     * <p><b>精度关键：</b>玩家坐标是 double，必须走 IEEE 754 位精确转换（Float256.of）而非 Double.toString，
-     * 否则 Double.toString 的科学记数法截断到 17 位有效数字会导致大坐标丢失精度（如 9223372036854776000 而非 9223372036854775808）。
+     * <p><b>精度关键：</b>用自研 {@code new BigDecimal(double)} 直接吃下 double 的全部 64-bit 信息——
+     * 该构造器是完整 IEEE 754 精确转换（significand 去尾零 + 5^n 缩放，无舍入），
+     * 不经 Float256 中转、也不走 Double.toString（后者对 ≥2^53 的大整数只保留 17 位有效数字，
+     * 会造成 9223372036854776000 这类精度丢失）。
      * <p>无大小限制：scale/shift 即使是 1e49 也能精确算出 BigInteger 整数地形坐标。
-     * <p>无精度损失：Float256.of(double) 保留所有 64-bit IEEE 754 信息 → toBigDecimal() 精确 → reposition BigDecimal 精确 → toBigInteger 截断。
+     * <p>无精度损失：double → BigDecimal（精确）→ reposition BigDecimal（精确乘加）→ toBigInteger（截断小数部分）。
      */
     private static BigInteger[] computeTerrainXYZ(final double playerX, final double playerY, final double playerZ) {
         return new BigInteger[] {
-            WorldReposition.reposition(Float256.of(playerX).toBigDecimal(), Direction.Axis.X).toBigInteger(),
-            WorldReposition.reposition(Float256.of(playerY).toBigDecimal(), Direction.Axis.Y).toBigInteger(),
-            WorldReposition.reposition(Float256.of(playerZ).toBigDecimal(), Direction.Axis.Z).toBigInteger()
+            WorldReposition.reposition(new BigDecimal(playerX), Direction.Axis.X).toBigInteger(),
+            WorldReposition.reposition(new BigDecimal(playerY), Direction.Axis.Y).toBigInteger(),
+            WorldReposition.reposition(new BigDecimal(playerZ), Direction.Axis.Z).toBigInteger()
         };
     }
 
