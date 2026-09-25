@@ -1,11 +1,18 @@
 {
-  "type": "minecraft:add",
-  "argument1": {
-    "type": "minecraft:y_clamped_gradient",
-    "from_value": 1.5,
-    "from_y": -64,
-    "to_value": -1.5,
-    "to_y": 320
+  "type": "minecraft:range_choice",
+  "input": "minecraft:y",
+  "min_inclusive": -64,
+  "max_exclusive": 320,
+  "when_in_range": {
+    "type": "minecraft:add",
+    "argument1": {
+      "type": "minecraft:y_clamped_gradient",
+      "from_value": 1.5,
+      "from_y": -64,
+      "to_value": -1.5,
+      "to_y": 320
+    },
+    "argument2": "minecraft:overworld_large_biomes/offset"
   },
-  "argument2": "minecraft:overworld_large_biomes/offset"
+  "when_out_of_range": "minecraft:overworld_large_biomes/offset"
 }

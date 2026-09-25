@@ -66,21 +66,15 @@ public class ClientboundLevelChunkPacketData {
         ClientboundLevelChunkPacketData.BlockEntityInfo.LIST_STREAM_CODEC.encode(output, this.blockEntitiesData);
     }
 
-    // 🔧 MCRe：窗口过滤——只发送窗口内非空 section（按绝对 sectionY），供写侧遍历（块/生态系包共用）
-    // 🔧 MCRe 分带生成（阶段 5a）：窗口内 ∪ **已生成带**——分带 fill 的 section 也要发给客户端，
-    // 否则天空边境之地等地形只在服务端存在（客户端收不到 = 看不到）
+    // 🔧 MCRe：发送**全部非空 section**（按绝对 sectionY），供写侧遍历（块/生态系包共用）
+    // 原先只发窗口内 → 窗口外（分带生成的高 Y 带 / 玩家在高 Y 放置的方块）在区块重发时丢失；
+    // 客户端读侧本就按绝对 sectionY 写 allSections（LevelChunk.replaceWithPacketData），无窗口限制。
     static java.util.List<java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection>> sendableSections(final LevelChunk chunk) {
         java.util.List<java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection>> out = new java.util.ArrayList<>();
         if (chunk instanceof net.minecraft.world.level.chunk.WindowedChunk wc) {
-            int minY = wc.getWindowMinY();
-            int maxY = wc.getWindowMaxY();
             for (java.util.Map.Entry<Integer, net.minecraft.world.level.chunk.LevelChunkSection> e : wc.windowedAllSections().entrySet()) {
-                int sy = e.getKey();
                 net.minecraft.world.level.chunk.LevelChunkSection s = e.getValue();
-                if (s == null || s.hasOnlyAir()) {
-                    continue;
-                }
-                if ((sy >= minY && sy <= maxY) || chunk.isSectionGenerated(sy)) {
+                if (s != null && !s.hasOnlyAir()) {
                     out.add(e);
                 }
             }

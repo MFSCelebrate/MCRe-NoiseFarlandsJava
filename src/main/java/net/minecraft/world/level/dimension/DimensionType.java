@@ -47,11 +47,13 @@ public record DimensionType(
     // 🔧 MCRe NoiseFarlands: 解除打包位宽限制——高度可到 int 极限
     public static final int BITS_FOR_Y = 12;
     public static final int MIN_HEIGHT = 16;
-    // 世界高度容量（height 上限）
+    // 世界高度容量（height 上限）——height 是 int 字段，故上限为 Integer.MAX_VALUE
     public static final int Y_SIZE = Integer.MAX_VALUE;
-    // 数据包允许的 Y 范围：-2147483646 ~ 2147483646（不再是 -2032~2031）
-    public static final int MAX_Y = 2147483646;
-    public static final int MIN_Y = -2147483646;
+    // 数据包允许的 min_y 范围：-2147483632 ~ 2147483632（= 2^31 - 16，16 对齐，不再是 -2032~2031）
+    // 注意：世界「跨度」= min_y + height，而 height ≤ Integer.MAX_VALUE 且需 16 对齐（≤ 2147483632），
+    // 所以一个维度最多覆盖 2147483632 格高——无法同时覆盖 -21 亿与 +21 亿（那需要 height 为 long）。
+    public static final int MAX_Y = 2147483632;
+    public static final int MIN_Y = -2147483632;
     // 哨兵：远高于/远低于世界范围（直接用 int 极限，避免 <<4 溢出）
     public static final int WAY_ABOVE_MAX_Y = Integer.MAX_VALUE;
     public static final int WAY_BELOW_MIN_Y = Integer.MIN_VALUE;

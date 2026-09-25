@@ -589,7 +589,12 @@ public abstract class Entity
     }
 
     public void checkBelowWorld() {
-        if (this.getY() < this.level().getMinY() - 64) {
+        // 🔧 MCRe NoiseFarlands：超高世界禁用虚空判定。
+        // 原版用 level.getMinY() - 64 判定（如 -128），玩家探索负 Y 边境之地时会被误判为
+        // 「掉出世界」→ LivingEntity 扣 4 点 fellOutOfWorld 伤害 / Entity 直接 discard。
+        // 本改造的竖直范围可达 ±21 亿，真正的下界是 int 极限，所以这里改成到 int 极限附近才触发
+        // （实际不可达）——玩家在任意 Y 都不受伤、实体也不被删除。
+        if (this.getY() < Integer.MIN_VALUE + 64) {
             this.onBelowWorld();
         }
     }

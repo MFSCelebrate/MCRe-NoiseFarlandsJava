@@ -98,9 +98,13 @@ public class LevelRenderer implements AutoCloseable {
     private static final Identifier TRANSPARENCY_POST_CHAIN_ID = Identifier.withDefaultNamespace("transparency");
     private static final Identifier ENTITY_OUTLINE_POST_CHAIN_ID = Identifier.withDefaultNamespace("entity_outline");
     private static final int MINIMUM_TRANSPARENT_SORT_COUNT = 15;
-    /** 🔧 MCRe 分带生成（阶段 5b）：渲染窗口在相机 sectionY 下方/上方的段数（共 34 段，与区块窗口对齐）。 */
-    public static final int VIEW_WINDOW_HALF_BELOW = 17;
-    public static final int VIEW_WINDOW_HALF_ABOVE = 16;
+    /**
+     * 🔧 MCRe 渲染窗口竖直半高（section）下限。
+     * <p>原版 ViewArea 的 Y 范围 = **整个世界高度**（短世界才做得到）；超高世界只能取窗口。
+     * 固定 34 段（±272 格）会导致「离相机 272 格以上的方块不渲染」——所以下限取 32 段（±512 格），
+     * 并与水平渲染距离取大者（渲染距离 32 时 → ±32 段，竖直可视范围与水平对齐）。
+     */
+    public static final int VIEW_WINDOW_MIN_HALF = 32;
     private static final float CHUNK_VISIBILITY_THRESHOLD = 0.3F;
     private static final Vector4fc SCREEN_SIZE_TARGET_CLEAR_COLOR = new Vector4f(0.0F);
     private static final Vector4fc ENTITY_OUTLINE_CLEAR_COLOR = new Vector4f(0.0F);
@@ -925,13 +929,14 @@ public class LevelRenderer implements AutoCloseable {
         }
 
         this.sectionRenderDispatcher.clearCompileQueue();
-        // 🔧 MCRe 分带生成（阶段 5b）：渲染窗口 Y 范围以**相机所在带**为中心（±17/+16 段，共 34 段），
-        // 而不是世界 [minSectionY, minSectionY+33]——否则飞到极高 Y 后渲染窗口还钉在世界底部，
-        // 即使收到分带地形也渲染不出来。
+        // 🔧 MCRe 分带生成（阶段 5b）+ 渲染窗口高度：渲染窗口 Y 范围以**相机所在带**为中心，
+        // 半高 = max(VIEW_WINDOW_MIN_HALF, 渲染距离)——把竖直可视范围与水平渲染距离对齐
+        // （原版 Y 范围 = 整个世界高度，超高世界做不到；固定 34 段会导致「离相机 272 格以上的方块不渲染」）。
         // 相机离开该范围时由 LevelExtractor 触发**重建**（跨带才发生，不是 P5 的每帧滑动）。
         SectionPos cameraSectionPos = SectionPos.of(camera.position());
-        final int viewMinSectionY = cameraSectionPos.y() - VIEW_WINDOW_HALF_BELOW;
-        final int viewMaxSectionY = cameraSectionPos.y() + VIEW_WINDOW_HALF_ABOVE;
+        final int halfY = Math.max(VIEW_WINDOW_MIN_HALF, options.getEffectiveRenderDistance());
+        final int viewMinSectionY = cameraSectionPos.y() - halfY;
+        final int viewMaxSectionY = cameraSectionPos.y() + halfY;
         this.viewArea = new ViewArea(
             this.sectionRenderDispatcher,
             viewMinSectionY * 16,
