@@ -262,6 +262,13 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
 
     @Override
     public @Nullable BlockState setBlockState(final BlockPos pos, final BlockState state, final @Block.UpdateFlags int flags) {
+        // 🔧 MCRe：分带填充（异步线程）的写入走「生成式」路径——原版活游戏路径会触发
+        // state.onPlace → scheduleTick（异步改 tick 队列 → PriorityQueue 损坏 → NPE ✗）
+        // 以及光照引擎调用、方块实体注册等只应在主线程做的事。
+        if (this.isGenerationWrite()) {
+            return this.setBlockStateGenerationStyle(pos, state);
+        }
+
         int y = pos.getY();
         LevelChunkSection section = this.getSection(this.getSectionIndex(y));
         boolean wasEmpty = section.hasOnlyAir();
@@ -342,6 +349,36 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
             }
         }
 
+        this.markUnsaved();
+        return oldState;
+    }
+
+    /**
+     * 🔧 MCRe 分带生成：「生成式」写入——只写 section + 4 张高度图 + 标脏。
+     * <p>对齐 {@code ProtoChunk.setBlockState} 的语义，**跳过**：
+     * {@code state.onPlace}（流体 scheduleTick ✗）、光照引擎调用、方块实体注册/移除、邻居副作用。
+     * <p>光照与空/非空状态由 {@code FarLandsBandGenerator} 的完成回调在主线程统一补报 ✓。
+     */
+    private @Nullable BlockState setBlockStateGenerationStyle(final BlockPos pos, final BlockState state) {
+        final int y = pos.getY();
+        final LevelChunkSection section = this.getSection(this.getSectionIndex(y));
+        final boolean wasEmpty = section.hasOnlyAir();
+        if (wasEmpty && state.isAir()) {
+            return null;
+        }
+
+        final int localX = pos.getX() & 15;
+        final int localY = y & 15;
+        final int localZ = pos.getZ() & 15;
+        final BlockState oldState = section.setBlockState(localX, localY, localZ, state);
+        if (oldState == state) {
+            return null;
+        }
+
+        this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING).update(localX, y, localZ, state);
+        this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES).update(localX, y, localZ, state);
+        this.heightmaps.get(Heightmap.Types.OCEAN_FLOOR).update(localX, y, localZ, state);
+        this.heightmaps.get(Heightmap.Types.WORLD_SURFACE).update(localX, y, localZ, state);
         this.markUnsaved();
         return oldState;
     }

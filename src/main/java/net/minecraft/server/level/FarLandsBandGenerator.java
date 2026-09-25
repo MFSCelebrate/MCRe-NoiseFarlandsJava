@@ -143,6 +143,9 @@ public final class FarLandsBandGenerator {
 
         CompletableFuture.runAsync(() -> {
             chunk.setGenerationBand(bandMin, bandMax);
+            // 🔧 MCRe：整段填充期间标记「生成式写入」——后续所有写入（fill 本体 + surface + carve）
+            // 都走生成式路径，避免 state.onPlace → scheduleTick 从异步线程污染 tick 队列 ✗
+            chunk.beginGenerationWrite();
             try {
                 // 🔧 MCRe：分带填充必须用「不加 section 锁」的变体——写的是活着的 LevelChunk，
                 // 原版 fill 的 acquire/release 会与服务器线程的流体 tick 撞车，
@@ -163,6 +166,7 @@ public final class FarLandsBandGenerator {
                 chunk.markBandGenerated(bandMin, bandMax);
             } finally {
                 chunk.clearGenerationBand();
+                chunk.endGenerationWrite();
             }
         }, Util.backgroundExecutor()).whenComplete((ignored, throwable) -> {
             // 票据增删 + 光照通知 + 区块重发必须回主线程

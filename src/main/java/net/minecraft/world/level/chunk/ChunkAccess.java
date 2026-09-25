@@ -490,6 +490,37 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
         LOGGER.warn("Trying to mark a block for post processing @ {}, but this operation is not supported.", blockPos);
     }
 
+    /** 🔧 MCRe 分带生成：持有「生成式写入」权的线程。非 null 时，该线程对区块的写入走生成式路径。 */
+    private volatile Thread generationWriteThread;
+
+    /**
+     * 🔧 MCRe 分带生成：标记当前线程开始「生成式写入」。
+     *
+     * <p><b>为什么需要</b>：分带填充在**异步线程**写活着的 LevelChunk。原版活游戏路径的
+     * {@code LevelChunk.setBlockState} 会做三件不该在异步线程做的事 ✗：
+     * <ol>
+     *   <li>{@code state.onPlace(...)} → 对流体方块会 {@code level.scheduleTick(...)}
+     *       → **从异步线程改 tick 队列 → PriorityQueue 堆损坏 → NPE（o1 is null）** ✗✗</li>
+     *   <li>光照引擎调用（checkBlock / updateSectionStatus）</li>
+     *   <li>方块实体的创建与注册</li>
+     * </ol>
+     * 标记后这些写入走「生成式」路径（只写 section + 高度图），
+     * 光照/空状态由分带填充完成回调在主线程统一补报 ✓。
+     */
+    public void beginGenerationWrite() {
+        this.generationWriteThread = Thread.currentThread();
+    }
+
+    /** 结束「生成式写入」。 */
+    public void endGenerationWrite() {
+        this.generationWriteThread = null;
+    }
+
+    /** 当前线程是否持有「生成式写入」权。 */
+    public boolean isGenerationWrite() {
+        return this.generationWriteThread == Thread.currentThread();
+    }
+
     public @Nullable ShortList[] getPostProcessing() {
         return this.postProcessing;
     }

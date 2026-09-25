@@ -348,8 +348,15 @@ public abstract class ChunkGenerator {
             ChunkPos.rangeClosed(sectionPos.chunk(), 1).forEach(chunkPos -> {
                 ChunkAccess chunkInRange = level.getChunk((int) chunkPos.x(), (int) chunkPos.z());
 
-                for (LevelChunkSection section : chunkInRange.getSections()) {
-                    section.getBiomes().getAll(possibleBiomes::add);
+                // 🔧 MCRe：遍历全部 section（含窗口外），否则分带生成的 section 生物群系收集不到
+                if (chunkInRange instanceof net.minecraft.world.level.chunk.WindowedChunk windowed) {
+                    for (LevelChunkSection section : windowed.windowedAllSections().values()) {
+                        section.getBiomes().getAll(possibleBiomes::add);
+                    }
+                } else {
+                    for (LevelChunkSection section : chunkInRange.getSections()) {
+                        section.getBiomes().getAll(possibleBiomes::add);
+                    }
                 }
             });
             possibleBiomes.retainAll(this.biomeSource.possibleBiomes());

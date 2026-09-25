@@ -144,13 +144,25 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     public CompletableFuture<ChunkAccess> initializeLight(final ChunkAccess chunk, final boolean lighted) {
         ChunkPos pos = chunk.getPos();
         this.addTask((int)pos.x(), (int)pos.z(), ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
-            LevelChunkSection[] sections = chunk.getSections();
+            // 🔧 MCRe：遍历「无限仓库」全部 section（绝对 sectionY）。
+            // 原版用窗口数组 + levelHeightAccessor.getSectionYFromSectionIndex（世界域基准），
+            // 窗口外的 section（分带生成的高 Y 带 / 玩家在高 Y 放置的方块）光照状态从不上报 ✗
+            // → 服务端光照数据缺失 → 客户端那些 section 不渲染 ✗✗
+            if (chunk instanceof net.minecraft.world.level.chunk.WindowedChunk windowed) {
+                for (java.util.Map.Entry<Integer, LevelChunkSection> entry : windowed.windowedAllSections().entrySet()) {
+                    if (!entry.getValue().hasOnlyAir()) {
+                        super.updateSectionStatus(SectionPos.of(pos, entry.getKey()), false);
+                    }
+                }
+            } else {
+                LevelChunkSection[] sections = chunk.getSections();
 
-            for (int sectionIndex = 0; sectionIndex < chunk.getSectionsCount(); sectionIndex++) {
-                LevelChunkSection section = sections[sectionIndex];
-                if (!section.hasOnlyAir()) {
-                    int sectionY = this.levelHeightAccessor.getSectionYFromSectionIndex(sectionIndex);
-                    super.updateSectionStatus(SectionPos.of(pos, sectionY), false);
+                for (int sectionIndex = 0; sectionIndex < chunk.getSectionsCount(); sectionIndex++) {
+                    LevelChunkSection section = sections[sectionIndex];
+                    if (!section.hasOnlyAir()) {
+                        int sectionY = this.levelHeightAccessor.getSectionYFromSectionIndex(sectionIndex);
+                        super.updateSectionStatus(SectionPos.of(pos, sectionY), false);
+                    }
                 }
             }
         }, () -> "initializeLight: " + pos));

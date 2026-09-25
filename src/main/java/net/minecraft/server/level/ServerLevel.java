@@ -524,12 +524,22 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
 
         profiler.popPush("tickBlocks");
         if (tickSpeed > 0) {
-            LevelChunkSection[] sections = chunk.getSections();
+            // 🔧 MCRe：遍历「无限仓库」全部 section（绝对 sectionY）——原版用窗口数组，
+            // 窗口外的 section（分带生成的高 Y 带 / 高 Y 放置的方块）永远拿不到随机 tick ✗
+            final java.util.List<java.util.Map.Entry<Integer, LevelChunkSection>> tickSections = new java.util.ArrayList<>();
+            if (chunk instanceof net.minecraft.world.level.chunk.WindowedChunk windowed) {
+                tickSections.addAll(windowed.windowedAllSections().entrySet());
+            } else {
+                LevelChunkSection[] sections = chunk.getSections();
+                for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+                    tickSections.add(java.util.Map.entry(chunk.getSectionYFromSectionIndex(sectionIndex), sections[sectionIndex]));
+                }
+            }
 
-            for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
-                LevelChunkSection section = sections[sectionIndex];
+            for (java.util.Map.Entry<Integer, LevelChunkSection> tickEntry : tickSections) {
+                LevelChunkSection section = tickEntry.getValue();
                 if (section.isRandomlyTicking()) {
-                    int sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
+                    int sectionY = tickEntry.getKey();
                     int minYInSection = SectionPos.sectionToBlockCoord(sectionY);
 
                     for (int i = 0; i < tickSpeed; i++) {

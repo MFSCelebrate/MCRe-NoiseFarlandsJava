@@ -104,12 +104,11 @@ public class EntityFluidInteraction {
                     return false;
                 }
 
-                LevelChunkSection[] sections = chunk.getSections();
-
                 for (int sectionY = sectionY0; sectionY <= sectionY1; sectionY++) {
-                    int sectionIndex = chunk.getSectionIndexFromSectionY(sectionY);
-                    if (sectionIndex >= 0 && sectionIndex < sections.length) {
-                        hasFluid |= sections[sectionIndex].hasFluid();
+                    // 🔧 MCRe：按绝对 sectionY 取 section（窗口外也能查到，原版用窗口数组 + 越界防护会漏掉）
+                    LevelChunkSection section = chunk.getSectionAt(sectionY);
+                    if (section != null) {
+                        hasFluid |= section.hasFluid();
                     }
                 }
             }
