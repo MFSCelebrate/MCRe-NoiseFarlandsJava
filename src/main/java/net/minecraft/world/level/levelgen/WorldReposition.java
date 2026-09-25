@@ -32,6 +32,18 @@ public final class WorldReposition {
     /** 表面噪声与规则偏移开关——默认 true（SurfaceSystem/SurfaceRules 也应用偏移缩放） */
     private static volatile boolean surfaceNoiseOffsetEnabled = true;
 
+    // ──────── 🔧 MCRe 性能：热路径零分配优化 ────────
+    /**
+     * 恒等变换位掩码——bit i 置位表示轴 i 的 {@code scale == 1 && shift == 0}。
+     * <p>此时 {@code pos * 1 + 0 == pos} 精确成立，可**零分配直通**（省掉 BigDecimal 构造/乘法/加法）。
+     * <p>热路径影响：{@code DensityFunctions.Noise/Shift/...compute} 每个噪声采样点都会调用，
+     * 每区块百万级调用 → 每调用 3~4 次 BigDecimal 分配是巨大的 GC 压力。
+     */
+    private static volatile int identityMask = 0b111;
+    /** saturate 比较用的常量（缓存，避免每次调用 BigDecimal.valueOf(Double.MAX_VALUE) 分配） */
+    private static final BigDecimal DOUBLE_MAX = BigDecimal.valueOf(Double.MAX_VALUE);
+    private static final BigDecimal NEG_DOUBLE_MAX = BigDecimal.valueOf(-Double.MAX_VALUE);
+
     private WorldReposition() {
     }
 
@@ -50,6 +62,14 @@ public final class WorldReposition {
         SHIFT[2] = config.shiftZ();
         yClampedGradientOffsetEnabled = config.yClampedGradientOffset();
         surfaceNoiseOffsetEnabled = config.surfaceNoiseOffset();
+        // 🔧 MCRe 性能：一次性算好恒等掩码（运行期热路径只读一个 volatile int）
+        int mask = 0;
+        for (int i = 0; i < 3; i++) {
+            if (SCALE[i].compareTo(BigDecimal.ONE) == 0 && SHIFT[i].signum() == 0) {
+                mask |= 1 << i;
+            }
+        }
+        identityMask = mask;
     }
 
     // ═════════════════ 一维变换（无损 BigDecimal） ═════════════════
@@ -57,6 +77,10 @@ public final class WorldReposition {
     /** 一维变换 → BigDecimal（无损，公式：{@code newPos = pos * scale + shift}） */
     public static BigDecimal reposition(final BigDecimal pos, final Direction.Axis axis) {
         final int i = axis.ordinal();
+        // 🔧 MCRe 性能：恒等变换时直通（省掉 multiply + add 两次分配）
+        if ((identityMask & (1 << i)) != 0) {
+            return pos;
+        }
         return pos.multiply(SCALE[i]).add(SHIFT[i]);
     }
 
@@ -65,19 +89,32 @@ public final class WorldReposition {
     /**
      * 一维变换 → double。BigDecimal 超 ±Double.MAX_VALUE 时 saturate 到 ±MAX_VALUE，
      * 避免 Infinity/NaN 传到 Minecraft 内部触发 NaN 链式崩溃。
+     * <p>🔧 MCRe 性能：恒等变换（scale==1 && shift==0）时零分配直通——这是最高频路径。
      */
     public static double reposition(final double pos, final Direction.Axis axis) {
-        return toDoubleSaturated(BigDecimal.valueOf(pos).multiply(SCALE[axis.ordinal()]).add(SHIFT[axis.ordinal()]));
+        final int i = axis.ordinal();
+        if ((identityMask & (1 << i)) != 0) {
+            return pos;
+        }
+        return toDoubleSaturated(BigDecimal.valueOf(pos).multiply(SCALE[i]).add(SHIFT[i]));
     }
 
     /** 一维变换 → double（int 输入） */
     public static double reposition(final int pos, final Direction.Axis axis) {
-        return toDoubleSaturated(BigDecimal.valueOf(pos).multiply(SCALE[axis.ordinal()]).add(SHIFT[axis.ordinal()]));
+        final int i = axis.ordinal();
+        if ((identityMask & (1 << i)) != 0) {
+            return pos;
+        }
+        return toDoubleSaturated(BigDecimal.valueOf(pos).multiply(SCALE[i]).add(SHIFT[i]));
     }
 
     /** 一维变换 → double（long 输入） */
     public static double reposition(final long pos, final Direction.Axis axis) {
-        return toDoubleSaturated(BigDecimal.valueOf(pos).multiply(SCALE[axis.ordinal()]).add(SHIFT[axis.ordinal()]));
+        final int i = axis.ordinal();
+        if ((identityMask & (1 << i)) != 0) {
+            return pos;
+        }
+        return toDoubleSaturated(BigDecimal.valueOf(pos).multiply(SCALE[i]).add(SHIFT[i]));
     }
 
     // ═════════════════ 逆运算（用于 createFluidPicker 把世界 Y 还原到玩家 Y） ═════════════════
@@ -177,13 +214,19 @@ public final class WorldReposition {
     /**
      * 🔧 把 BigDecimal 转 double，超出 ±Double.MAX_VALUE 时 saturate 到 ±MAX_VALUE。
      * 避免 Minecraft 内部收到 Infinity/NaN 引发连锁崩溃。
+     * <p>🔧 MCRe 性能：saturate 常量已缓存（原来每次调用都 BigDecimal.valueOf(Double.MAX_VALUE) 分配）；
+     * 另加量级快路径——整数部分位数 ≤ 308 时必然 &lt; 10^308 &lt; 1.8e308，直接跳过两次 compareTo。
+     * <p>⚠️ 判量级必须用 {@code precision() - scale()}（= 整数部分位数），
+     * 只用 precision() 会把 {@code 1e309}（precision=1、scale=-309）误判为小数值。
      */
     private static double toDoubleSaturated(final BigDecimal value) {
-        if (value.signum() > 0 && value.compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) > 0) {
-            return Double.MAX_VALUE;
-        }
-        if (value.signum() < 0 && value.compareTo(BigDecimal.valueOf(-Double.MAX_VALUE)) < 0) {
-            return -Double.MAX_VALUE;
+        if (value.precision() - value.scale() > 308) {
+            if (value.signum() > 0 && value.compareTo(DOUBLE_MAX) > 0) {
+                return Double.MAX_VALUE;
+            }
+            if (value.signum() < 0 && value.compareTo(NEG_DOUBLE_MAX) < 0) {
+                return -Double.MAX_VALUE;
+            }
         }
         return value.doubleValue();
     }

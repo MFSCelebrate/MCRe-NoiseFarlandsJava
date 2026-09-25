@@ -362,7 +362,9 @@ public final class NaturalSpawner {
         int x = (int)pos.getMinBlockX() + level.random.nextInt(16);
         int z = (int)pos.getMinBlockZ() + level.random.nextInt(16);
         int topEmptyY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1;
-        int y = Mth.randomBetweenInclusive(level.random, level.getMinY(), topEmptyY);
+        // 🔧 MCRe：钳制随机 Y 下界——超高世界 getMinY() 可达 -21 亿，随机点几乎必落在虚空深处
+        final int randomMinY = (int)Math.max((long)level.getMinY(), (long)topEmptyY - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+        int y = Mth.randomBetweenInclusive(level.random, randomMinY, topEmptyY);
         return new BlockPos(x, y, z);
     }
 

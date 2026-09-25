@@ -96,7 +96,9 @@ public interface LevelReader
             return false;
         }
 
-        for (BlockPos var4 = scanPoint.below(); var4.getY() > pos.getY(); var4 = var4.below()) {
+        // 🔧 MCRe：钳制下扫范围——超高世界 pos.getY() 可达 -21 亿，原版循环会迭代 10 亿次
+        final int scanBottom = (int)Math.max((long)pos.getY(), (long)this.getSeaLevel() - FarLandsYScan.MAX_BLOCK_SCAN);
+        for (BlockPos var4 = scanPoint.below(); var4.getY() > scanBottom; var4 = var4.below()) {
             BlockState state = this.getBlockState(var4);
             if (state.getLightDampening() > 0 && !state.liquid()) {
                 return false;

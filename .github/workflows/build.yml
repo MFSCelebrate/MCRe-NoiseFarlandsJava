@@ -2,9 +2,9 @@ name: Build Minecraft 26.2 (Permanent)
 
 on:
   push:
-    branches: [ "26.2-Permanent" ]
+    branches: [ "26.2-Permanent", "26.2-Permanent/ChunkOptimize" ]
   pull_request:
-    branches: [ "26.2-Permanent" ]
+    branches: [ "26.2-Permanent", "26.2-Permanent/ChunkOptimize" ]
   workflow_dispatch:
 
 concurrency:
