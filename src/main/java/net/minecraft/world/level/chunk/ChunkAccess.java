@@ -495,6 +495,10 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     }
 
     public void addPackedPostProcess(final ShortList packedOffsets, final int sectionIndex) {
+        // 🔧 MCRe：窗口外索引防护（postProcessing 数组按窗口相对 section 索引编址，长度 = WINDOW_SECTIONS）
+        if (sectionIndex < 0 || sectionIndex >= this.postProcessing.length) {
+            return;
+        }
         getOrCreateOffsetList(this.getPostProcessing(), sectionIndex).addAll(packedOffsets);
     }
 

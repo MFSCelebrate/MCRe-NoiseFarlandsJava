@@ -260,12 +260,24 @@ public class ProtoChunk extends ChunkAccess {
     @Override
     public void markPosForPostProcessing(final BlockPos blockPos) {
         if (this.isInsideBuildHeight(blockPos)) {
+            // 🔧 MCRe：postProcessing 数组按「窗口相对 section 索引」编址（长度 = WINDOW_SECTIONS=34），
+            // 窗口外会越界崩溃——典型触发：地形顶到窗口上沿（如 Y=479）时，
+            // Feature.markAboveForPostProcessing 标记 +1/+2 格（Y=480/481 → 索引 34）→ AIOOBE。
+            // 窗口外直接跳过（该处流体后处理省略，比崩溃好）；分带生成的带内方块同理。
+            final int sectionY = SectionPos.blockToSectionCoord(blockPos.getY());
+            if (sectionY < this.getWindowMinY() || sectionY > this.getWindowMaxY()) {
+                return;
+            }
             ChunkAccess.getOrCreateOffsetList(this.postProcessing, this.getSectionIndex(blockPos.getY())).add(packOffsetCoordinates(blockPos));
         }
     }
 
     @Override
     public void addPackedPostProcess(final ShortList packedOffsets, final int sectionIndex) {
+        // 🔧 MCRe：窗口外索引防护（存档读回时窗口可能与存档时不同 → 原版直接越界崩溃）
+        if (sectionIndex < 0 || sectionIndex >= this.postProcessing.length) {
+            return;
+        }
         ChunkAccess.getOrCreateOffsetList(this.postProcessing, sectionIndex).addAll(packedOffsets);
     }
 
