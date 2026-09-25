@@ -407,6 +407,29 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
     public CompletableFuture<ChunkAccess> fillFromNoise(
         final Blender blender, final RandomState randomState, final StructureManager structureManager, final ChunkAccess centerChunk
     ) {
+        return this.fillFromNoise(blender, randomState, structureManager, centerChunk, true);
+    }
+
+    /**
+     * 🔧 MCRe 分带生成：可关闭 section 加锁的 fill 变体。
+     *
+     * <p><b>为什么需要</b>：分带填充写的是**活着的 LevelChunk**（不是生成期的 ProtoChunk），
+     * 而服务器线程随时可能在同 section 里 tick 流体（岩浆/水流动 → `LevelChunkSection.setBlockState`
+     * → `PalettedContainer.getAndSet` → `acquire`）。原版 fill 的 acquire/release 会在解锁时
+     * 触发 ThreadingDetector 的「Accessing PalettedContainer from multiple threads」硬异常 ✗。
+     *
+     * <p>而 fill 内部的**写入**本就使用无锁路径（`setBlockState(..., false)`），
+     * 所以去掉 acquire/release 不改变写入语义，只消除硬异常 ✓。
+     *
+     * @param lockSections false = 不加 section 锁（分带填充用）
+     */
+    public CompletableFuture<ChunkAccess> fillFromNoise(
+        final Blender blender,
+        final RandomState randomState,
+        final StructureManager structureManager,
+        final ChunkAccess centerChunk,
+        final boolean lockSections
+    ) {
         NoiseSettings noiseSettings = this.settings.value().noiseSettings().clampToHeightAccessor(centerChunk.getHeightAccessorForGeneration());
         int minY = noiseSettings.minY();
         int cellYMin = Mth.floorDiv(minY, noiseSettings.getCellHeight());
@@ -416,10 +439,12 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
             int bottomSectionIndex = centerChunk.getSectionIndex(minY);
             Set<LevelChunkSection> sections = Sets.newHashSet();
 
-            for (int sectionIndex = topSectionIndex; sectionIndex >= bottomSectionIndex; sectionIndex--) {
-                LevelChunkSection section = centerChunk.getSection(sectionIndex);
-                section.acquire();
-                sections.add(section);
+            if (lockSections) {
+                for (int sectionIndex = topSectionIndex; sectionIndex >= bottomSectionIndex; sectionIndex--) {
+                    LevelChunkSection section = centerChunk.getSection(sectionIndex);
+                    section.acquire();
+                    sections.add(section);
+                }
             }
 
             try {
@@ -428,8 +453,10 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
                 filled.markBandGenerated(minY >> 4, (minY + noiseSettings.height() - 1) >> 4);
                 return filled;
             } finally {
-                for (LevelChunkSection section : sections) {
-                    section.release();
+                if (lockSections) {
+                    for (LevelChunkSection section : sections) {
+                        section.release();
+                    }
                 }
             }
         }, Util.backgroundExecutor().forName("wgen_fill_noise"));

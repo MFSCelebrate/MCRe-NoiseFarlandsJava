@@ -906,15 +906,21 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
 
     private void enableChunkLight(final LevelChunk chunk, final int x, final int z) {
         LevelLightEngine lightEngine = this.level.getChunkSource().getLightEngine();
-        LevelChunkSection[] sections = chunk.getSections();
         ChunkPos chunkPos = chunk.getPos();
 
-        for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
-            LevelChunkSection section = sections[sectionIndex];
-            // 🔧 MCRe P4b：level.getSectionYFromSectionIndex 锚定世界底部（超高世界 -1.34亿）；
-            // 改用 chunk 自己的窗口基准（windowMinY + index）
-            int sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
-            lightEngine.updateSectionStatus(SectionPos.of(chunkPos, sectionY), section.hasOnlyAir());
+        // 🔧 MCRe：遍历「无限仓库」全部 section（绝对 sectionY）——原版用窗口数组会漏掉窗口外的 section
+        // （分带生成的高 Y 带 / 玩家在高 Y 放置的方块），导致这些 section 的光照状态从不上报 = 不渲染 ✗
+        if (chunk instanceof net.minecraft.world.level.chunk.WindowedChunk windowed) {
+            for (java.util.Map.Entry<Integer, LevelChunkSection> entry : windowed.windowedAllSections().entrySet()) {
+                lightEngine.updateSectionStatus(SectionPos.of(chunkPos, entry.getKey()), entry.getValue().hasOnlyAir());
+            }
+        } else {
+            LevelChunkSection[] sections = chunk.getSections();
+            for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+                LevelChunkSection section = sections[sectionIndex];
+                int sectionY = chunk.getSectionYFromSectionIndex(sectionIndex);
+                lightEngine.updateSectionStatus(SectionPos.of(chunkPos, sectionY), section.hasOnlyAir());
+            }
         }
 
         int dirtyMinY;
@@ -927,6 +933,16 @@ public class ClientPacketListener extends ClientCommonPacketListenerImpl impleme
             dirtyMaxY = chunk.getMaxSectionY();
         }
         this.level.setSectionRangeDirty(x - 1, dirtyMinY, z - 1, x + 1, dirtyMaxY, z + 1);
+
+        // 🔧 MCRe：窗口外的 section（分带生成/高 Y 放置）逐个标脏——
+        // 不能用范围（窗口与世界顶可能相隔上百万段，范围标脏会迭代上百万次）
+        if (chunk instanceof net.minecraft.world.level.chunk.WindowedChunk windowed) {
+            for (int sectionY : windowed.windowedAllSections().keySet()) {
+                if (sectionY < dirtyMinY || sectionY > dirtyMaxY) {
+                    this.level.setSectionDirtyWithNeighbors(x, sectionY, z);
+                }
+            }
+        }
     }
 
     @Override

@@ -277,39 +277,47 @@ public class ClientChunkCache extends ChunkSource {
         private void onChunkRemoved(final LevelChunk chunk) {
             ChunkPos chunkPos = chunk.getPos();
             this.removedLoadedChunks[this.updatingSetsIndex].add(chunkPos);
-            LevelChunkSection[] sections = chunk.getSections();
-
-            for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
-                this.removedEmptySections[this.updatingSetsIndex]
-                    .add(SectionPos.of((int)chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), (int)chunkPos.z()));
-            }
+            // 🔧 MCRe：遍历「无限仓库」全部 section（绝对 sectionY）——原版用窗口数组，
+            // 会漏掉窗口外的 section（分带生成的高 Y 带 / 玩家在高 Y 放置的方块）
+            forEachSection(chunk, (sectionY, section) -> this.removedEmptySections[this.updatingSetsIndex]
+                    .add(SectionPos.of((int)chunkPos.x(), sectionY, (int)chunkPos.z())));
         }
 
         private void onChunkAdded(final LevelChunk chunk) {
             ChunkPos chunkPos = chunk.getPos();
             this.addedLoadedChunks[this.updatingSetsIndex].add(chunkPos);
-            LevelChunkSection[] sections = chunk.getSections();
-
-            for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
-                LevelChunkSection section = sections[sectionIndex];
+            forEachSection(chunk, (sectionY, section) -> {
                 if (section.hasOnlyAir()) {
                     this.addedEmptySections[this.updatingSetsIndex]
-                        .add(SectionPos.of((int)chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), (int)chunkPos.z()));
+                        .add(SectionPos.of((int)chunkPos.x(), sectionY, (int)chunkPos.z()));
                 }
-            }
+            });
         }
 
         private void refreshEmptySections(final LevelChunk chunk) {
             ChunkPos chunkPos = chunk.getPos();
-            LevelChunkSection[] sections = chunk.getSections();
-
-            for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
-                LevelChunkSection section = sections[sectionIndex];
-                SectionPos sectionNode = SectionPos.of((int)chunkPos.x(), chunk.getSectionYFromSectionIndex(sectionIndex), (int)chunkPos.z());
+            forEachSection(chunk, (sectionY, section) -> {
+                SectionPos sectionNode = SectionPos.of((int)chunkPos.x(), sectionY, (int)chunkPos.z());
                 if (section.hasOnlyAir()) {
                     this.addedEmptySections[this.updatingSetsIndex].add(sectionNode);
                 } else {
                     this.removedEmptySections[this.updatingSetsIndex].add(sectionNode);
+                }
+            });
+        }
+
+        /** 🔧 MCRe：遍历区块全部 section（无限仓库的绝对 sectionY + section），窗口内外都覆盖。 */
+        private static void forEachSection(
+                final LevelChunk chunk, final java.util.function.BiConsumer<Integer, LevelChunkSection> action
+        ) {
+            if (chunk instanceof net.minecraft.world.level.chunk.WindowedChunk windowed) {
+                for (java.util.Map.Entry<Integer, LevelChunkSection> entry : windowed.windowedAllSections().entrySet()) {
+                    action.accept(entry.getKey(), entry.getValue());
+                }
+            } else {
+                LevelChunkSection[] sections = chunk.getSections();
+                for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+                    action.accept(chunk.getSectionYFromSectionIndex(sectionIndex), sections[sectionIndex]);
                 }
             }
         }

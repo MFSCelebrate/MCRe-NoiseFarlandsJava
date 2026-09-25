@@ -144,14 +144,18 @@ public final class FarLandsBandGenerator {
         CompletableFuture.runAsync(() -> {
             chunk.setGenerationBand(bandMin, bandMax);
             try {
-                this.level.getChunkSource()
-                        .getGenerator()
-                        .fillFromNoise(
-                                Blender.empty(),
-                                this.level.getChunkSource().randomState(),
-                                this.level.structureManager(),
-                                chunk)
-                        .join();
+                // 🔧 MCRe：分带填充必须用「不加 section 锁」的变体——写的是活着的 LevelChunk，
+                // 原版 fill 的 acquire/release 会与服务器线程的流体 tick 撞车，
+                // 触发 PalettedContainer 的「Accessing ... from multiple threads」硬异常 ✗
+                final net.minecraft.world.level.chunk.ChunkGenerator generator = this.level.getChunkSource().getGenerator();
+                final net.minecraft.world.level.levelgen.blending.Blender blender = Blender.empty();
+                final net.minecraft.world.level.levelgen.RandomState randomState = this.level.getChunkSource().randomState();
+                final net.minecraft.world.level.StructureManager structureManager = this.level.structureManager();
+                final java.util.concurrent.CompletableFuture<net.minecraft.world.level.chunk.ChunkAccess> fillFuture =
+                        generator instanceof NoiseBasedChunkGenerator noiseGenerator
+                                ? noiseGenerator.fillFromNoise(blender, randomState, structureManager, chunk, false)
+                                : generator.fillFromNoise(blender, randomState, structureManager, chunk);
+                fillFuture.join();
                 // 🔧 MCRe 分带生成（阶段 4）：surface / carve 紧跟 fill（复用带域 NoiseChunk），
                 // 必须在 clearGenerationBand 之前（之后 NoiseChunk 缓存被清空）
                 this.applySurface(chunk);
