@@ -105,6 +105,15 @@ public class LevelRenderer implements AutoCloseable {
      * 并与水平渲染距离取大者（渲染距离 32 时 → ±32 段，竖直可视范围与水平对齐）。
      */
     public static final int VIEW_WINDOW_MIN_HALF = 32;
+
+    /**
+     * 🔧 MCRe：渲染窗口竖直半高（单位：section）。
+     * <p>{@code ViewArea} 与 {@code SectionUpdateTracker} **必须**用同一个值——
+     * 否则脏标记表覆盖不到渲染窗口内的 section，那些 section 永不编译 = 不渲染 ✗（Y=480 方块消失的根因）。
+     */
+    public static int viewWindowHalfY(final int renderDistance) {
+        return Math.max(VIEW_WINDOW_MIN_HALF, renderDistance);
+    }
     private static final float CHUNK_VISIBILITY_THRESHOLD = 0.3F;
     private static final Vector4fc SCREEN_SIZE_TARGET_CLEAR_COLOR = new Vector4f(0.0F);
     private static final Vector4fc ENTITY_OUTLINE_CLEAR_COLOR = new Vector4f(0.0F);
@@ -934,7 +943,7 @@ public class LevelRenderer implements AutoCloseable {
         // （原版 Y 范围 = 整个世界高度，超高世界做不到；固定 34 段会导致「离相机 272 格以上的方块不渲染」）。
         // 相机离开该范围时由 LevelExtractor 触发**重建**（跨带才发生，不是 P5 的每帧滑动）。
         SectionPos cameraSectionPos = SectionPos.of(camera.position());
-        final int halfY = Math.max(VIEW_WINDOW_MIN_HALF, options.getEffectiveRenderDistance());
+        final int halfY = viewWindowHalfY(options.getEffectiveRenderDistance());
         final int viewMinSectionY = cameraSectionPos.y() - halfY;
         final int viewMaxSectionY = cameraSectionPos.y() + halfY;
         this.viewArea = new ViewArea(

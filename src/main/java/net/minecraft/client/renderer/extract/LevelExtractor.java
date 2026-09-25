@@ -122,6 +122,8 @@ public class LevelExtractor implements ResourceManagerReloadListener {
         if (this.shouldInvalidateCompiledGeometry || this.hasCameraLeftViewAreaY(camera)) {
             this.levelRenderer.invalidateCompiledGeometry(this.level, this.minecraft.options, camera, this.minecraft.getBlockColors());
             this.shouldInvalidateCompiledGeometry = false;
+            // 🔧 MCRe：ViewArea 重建后（Y 范围 = 新相机带）同步脏标记表范围，否则新窗口内的 section 永不标脏
+            this.refreshSectionUpdateTrackerRange(camera);
         } else if (camera.getCapturedFrustum() == null) {
             double camRotX = Math.floor(camera.xRot() / 2.0F);
             double camRotY = Math.floor(camera.yRot() / 2.0F);
@@ -410,11 +412,42 @@ public class LevelExtractor implements ResourceManagerReloadListener {
             this.level.clearTintCaches();
             Options options = this.minecraft.options;
             this.lastViewDistance = options.getEffectiveRenderDistance();
-            this.sectionUpdateTracker = new SectionUpdateTracker(this.level, this.lastViewDistance);
             Camera camera = this.minecraft.gameRenderer.mainCamera();
             SectionPos cameraSectionPos = SectionPos.of(camera.position());
+            // 🔧 MCRe：脏标记范围必须与 LevelRenderer 构造的 ViewArea 完全一致（相机中心带 ± halfY）。
+            // 用 LevelHeightAccessor 的 world 域范围会因超高世界窗口钳制（34 段）而覆盖不到渲染窗口 ✗
+            final int halfY = LevelRenderer.viewWindowHalfY(this.lastViewDistance);
+            this.sectionUpdateTracker = new SectionUpdateTracker(
+                cameraSectionPos.y() - halfY, cameraSectionPos.y() + halfY, this.lastViewDistance
+            );
             this.sectionUpdateTracker.repositionCamera(cameraSectionPos);
             this.shouldInvalidateCompiledGeometry = true;
+        }
+    }
+
+    /**
+     * 🔧 MCRe：让渲染脏标记表的 Y 范围跟随 {@code ViewArea}。
+     * <p>ViewArea 在相机跨带时重建（Y 范围随相机移动），脏标记表若不跟着变，
+     * 新进入窗口的 section 就永远拿不到 dirty 状态 = 不渲染 ✗（Y=480 方块消失的根因）。
+     * <p>范围不变时零开销（只做两次 int 比较）。
+     */
+    private void refreshSectionUpdateTrackerRange(final Camera camera) {
+        if (this.level == null) {
+            return;
+        }
+
+        final ViewArea viewArea = this.levelRenderer.viewArea();
+        if (viewArea == null) {
+            return;
+        }
+
+        final int minSectionY = viewArea.minSectionY();
+        final int maxSectionY = viewArea.maxSectionY();
+        if (this.sectionUpdateTracker == null
+            || this.sectionUpdateTracker.minSectionY() != minSectionY
+            || this.sectionUpdateTracker.maxSectionY() != maxSectionY) {
+            this.sectionUpdateTracker = new SectionUpdateTracker(minSectionY, maxSectionY, this.lastViewDistance);
+            this.sectionUpdateTracker.repositionCamera(SectionPos.of(camera.position()));
         }
     }
 
