@@ -9,6 +9,7 @@ import java.util.stream.IntStream;
 import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 import net.minecraft.world.level.levelgen.DensityFunction;
 import net.minecraft.world.level.levelgen.WorldReposition;
 import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
@@ -41,6 +42,15 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
     private final double maxValue;
     private final double xzScale;
     private final double yScale;
+
+    // ──────── 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」：精确常量缓存 ────────
+    // 在构造器里一次性初始化（区块生成是多线程的，惰性初始化有可见性风险）。
+    private final BigDecimal xzMultiplierExact;
+    private final BigDecimal yMultiplierExact;
+    private final BigDecimal xzFactorExact;
+    private final BigDecimal yFactorExact;
+    private final BigDecimal smearScaleMultiplierExact;
+    private static final BigDecimal HALF_BD = BigDecimal.valueOf(0.5);
 
     private static boolean isBedrockMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
@@ -98,6 +108,14 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         // maxValue 通过 minLimitNoise.maxBrokenValue 计算，该方法内部已根据 isBedrockMode() 切换精度
         // 若当前为 Bedrock 模式，maxBrokenValue 会返回截断后的值
         this.maxValue = minLimitNoise.maxBrokenValue(this.yMultiplier);
+
+        // 🔧 MCRe 精确路径常量：把上面那些 double 系数解释为它们的精确 IEEE 754 值
+        // （构造期初始化 → 多线程区块生成时无可见性风险）
+        this.xzMultiplierExact = new BigDecimal(this.xzMultiplier);
+        this.yMultiplierExact = new BigDecimal(this.yMultiplier);
+        this.xzFactorExact = new BigDecimal(this.xzFactor);
+        this.yFactorExact = new BigDecimal(this.yFactor);
+        this.smearScaleMultiplierExact = new BigDecimal(this.smearScaleMultiplier);
     }
 
     @VisibleForTesting
@@ -188,6 +206,18 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
             return (float) result;
         }
 
+        // === 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」精确分支 ===
+        // 只有坐标大到 double 会失真（绝对误差 > 0.5 格）时才切换，近处保持原快路径（零开销）。
+        // Bedrock 模式（float 语义）不参与——那是有意为之的精度模拟。
+        if (ExactNoiseMath.enabled()) {
+            final double roughX = WorldReposition.reposition(context.blockX(), Direction.Axis.X);
+            final double roughY = WorldReposition.reposition(context.blockY(), Direction.Axis.Y);
+            final double roughZ = WorldReposition.reposition(context.blockZ(), Direction.Axis.Z);
+            if (ExactNoiseMath.needsExact(roughX, roughY, roughZ, this.xzMultiplier, this.yMultiplier)) {
+                return this.computeExact(context);
+            }
+        }
+
         // === 原 double 实现 ===
         // 🔧 MCRe：先施加 WorldReposition 偏移（newPos = pos * scale + shift），再乘 xzMultiplier/yMultiplier
         double limitX = WorldReposition.reposition(context.blockX(), Direction.Axis.X) * this.xzMultiplier;
@@ -246,6 +276,88 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
 
         double result = Mth.clampedLerp(factor, blendMin / 512.0, blendMax / 512.0) / 128.0;
         return result;
+    }
+
+    /**
+     * 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」——精确版 {@link #compute}。
+     *
+     * <p>与原版 double 分支**逐句对应**，只把坐标链换成精确运算：
+     * <pre>
+     *   整数方块坐标 → WorldReposition（BigDecimal ×scale+shift）→ × xzMultiplier → ÷ xzFactor
+     *   → × 2^k（每 octave）→ wrapExact（精确取模折叠）→ ImprovedNoise.noiseExact（精确 floor + 小数）
+     * </pre>
+     * <b>刻意保留的语义</b>：{@code (int)Math.floor} 的饱和（平面边境之地）、int 晶格索引、hash 溢出、
+     * 噪声输出的 double 加权求和（输出值域小，精度足够）。
+     *
+     * <p>性能：每样本约 20~40 次 BigDecimal 运算（微秒级），只在大坐标区域启用（见 {@link ExactNoiseMath#needsExact}）。
+     */
+    private double computeExact(final DensityFunction.FunctionContext context) {
+        // ⚠️ 从**整数**方块坐标开始精确化——绝不经过 double（double 在 2^53 以上已无法区分相邻方块）
+        final BigDecimal posX = WorldReposition.reposition(BigDecimal.valueOf(context.blockX()), Direction.Axis.X);
+        final BigDecimal posY = WorldReposition.reposition(BigDecimal.valueOf(context.blockY()), Direction.Axis.Y);
+        final BigDecimal posZ = WorldReposition.reposition(BigDecimal.valueOf(context.blockZ()), Direction.Axis.Z);
+
+        final BigDecimal limitX = posX.multiply(this.xzMultiplierExact);
+        final BigDecimal limitY = posY.multiply(this.yMultiplierExact);
+        final BigDecimal limitZ = posZ.multiply(this.xzMultiplierExact);
+        final BigDecimal mainX = limitX.divide(this.xzFactorExact, ExactNoiseMath.DIVISION);
+        final BigDecimal mainY = limitY.divide(this.yFactorExact, ExactNoiseMath.DIVISION);
+        final BigDecimal mainZ = limitZ.divide(this.xzFactorExact, ExactNoiseMath.DIVISION);
+        final BigDecimal limitSmear = this.yMultiplierExact.multiply(this.smearScaleMultiplierExact);
+        final BigDecimal mainSmear = limitSmear.divide(this.yFactorExact, ExactNoiseMath.DIVISION);
+
+        // ── 主噪声（8 个 octave）──
+        double mainNoiseValue = 0.0;
+        BigDecimal pow = BigDecimal.ONE;
+
+        for (int i = 0; i < 8; i++) {
+            final ImprovedNoise noise = this.mainNoise.getOctaveNoise(i);
+            if (noise != null) {
+                final double noiseVal = noise.noiseExact(
+                        PerlinNoise.wrapExact(mainX.multiply(pow)),
+                        PerlinNoise.wrapExact(mainY.multiply(pow)),
+                        PerlinNoise.wrapExact(mainZ.multiply(pow)),
+                        mainSmear.multiply(pow),
+                        mainY.multiply(pow));
+                mainNoiseValue += noiseVal / pow.doubleValue();
+            }
+            pow = pow.multiply(HALF_BD);
+        }
+
+        final double factor = (mainNoiseValue / 10.0 + 1.0) / 2.0;
+        final boolean isMax = factor >= 1.0;
+        final boolean isMin = factor <= 0.0;
+
+        // ── 极限噪声（16 个 octave，min/max 双路混合）──
+        double blendMin = 0.0;
+        double blendMax = 0.0;
+        pow = BigDecimal.ONE;
+
+        for (int i = 0; i < 16; i++) {
+            final BigDecimal wx = PerlinNoise.wrapExact(limitX.multiply(pow));
+            final BigDecimal wy = PerlinNoise.wrapExact(limitY.multiply(pow));
+            final BigDecimal wz = PerlinNoise.wrapExact(limitZ.multiply(pow));
+            final BigDecimal smearPow = limitSmear.multiply(pow);
+            final BigDecimal limitYPow = limitY.multiply(pow);
+
+            if (!isMax) {
+                final ImprovedNoise minNoise = this.minLimitNoise.getOctaveNoise(i);
+                if (minNoise != null) {
+                    blendMin += minNoise.noiseExact(wx, wy, wz, smearPow, limitYPow) / pow.doubleValue();
+                }
+            }
+
+            if (!isMin) {
+                final ImprovedNoise maxNoise = this.maxLimitNoise.getOctaveNoise(i);
+                if (maxNoise != null) {
+                    blendMax += maxNoise.noiseExact(wx, wy, wz, smearPow, limitYPow) / pow.doubleValue();
+                }
+            }
+
+            pow = pow.multiply(HALF_BD);
+        }
+
+        return Mth.clampedLerp(factor, blendMin / 512.0, blendMax / 512.0) / 128.0;
     }
 
     @Override

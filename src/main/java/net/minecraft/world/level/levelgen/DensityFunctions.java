@@ -31,6 +31,7 @@ import net.minecraft.util.MathUtil;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.synth.BlendedNoise;
+import net.minecraft.world.level.levelgen.synth.ExactNoiseMath;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
@@ -1042,9 +1043,28 @@ public final class DensityFunctions {
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
             // 🔧 MCRe：先施加 WorldReposition 偏移（newPos = pos * scale + shift），再乘数据定义的 xzScale/yScale
-            final double x = WorldReposition.reposition(context.blockX(), Direction.Axis.X) * this.xzScale;
-            final double y = WorldReposition.reposition(context.blockY(), Direction.Axis.Y) * this.yScale;
-            final double z = WorldReposition.reposition(context.blockZ(), Direction.Axis.Z) * this.xzScale;
+            final double repositionedX = WorldReposition.reposition(context.blockX(), Direction.Axis.X);
+            final double repositionedY = WorldReposition.reposition(context.blockY(), Direction.Axis.Y);
+            final double repositionedZ = WorldReposition.reposition(context.blockZ(), Direction.Axis.Z);
+            final double x = repositionedX * this.xzScale;
+            final double y = repositionedY * this.yScale;
+            final double z = repositionedZ * this.xzScale;
+
+            // === 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」精确分支 ===
+            // 坐标大到 double 会失真时才切换（近处零开销）
+            if (ExactNoiseMath.enabled()
+                    && (Math.abs(x) > ExactNoiseMath.EXACT_THRESHOLD_XZ
+                    || Math.abs(z) > ExactNoiseMath.EXACT_THRESHOLD_XZ
+                    || Math.abs(y) > ExactNoiseMath.EXACT_THRESHOLD_Y)) {
+                final BigDecimal exactX = WorldReposition.reposition(BigDecimal.valueOf(context.blockX()), Direction.Axis.X)
+                        .multiply(ExactNoiseMath.cachedOf(this.xzScale));
+                final BigDecimal exactY = WorldReposition.reposition(BigDecimal.valueOf(context.blockY()), Direction.Axis.Y)
+                        .multiply(ExactNoiseMath.cachedOf(this.yScale));
+                final BigDecimal exactZ = WorldReposition.reposition(BigDecimal.valueOf(context.blockZ()), Direction.Axis.Z)
+                        .multiply(ExactNoiseMath.cachedOf(this.xzScale));
+                return this.noise.getValueExact(exactX, exactY, exactZ);
+            }
+
             return this.noise.getValue(x, y, z);
         }
 

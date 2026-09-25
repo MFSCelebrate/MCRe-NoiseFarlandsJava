@@ -1,16 +1,23 @@
 package net.minecraft.world.level.levelgen.synth;
 
 import com.google.common.annotations.VisibleForTesting;
+import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 
 public final class ImprovedNoise {
     private static final float SHIFT_UP_EPSILON = 1.0E-7F;
+    /** 🔧 MCRe 精确路径：原版 {@code 1.0E-7F} 是 float 字面量，取它的精确值参与精确运算。 */
+    private static final BigDecimal FLOAT_EPS_1E7 = ExactNoiseMath.ofFloat(1.0E-7F);
     private final byte[] p;
     public final double xo;
     public final double yo;
     public final double zo;
+    /** 🔧 MCRe 精确路径：xo/yo/zo 的精确值缓存（BigDecimal 不可变，惰性初始化并发安全）。 */
+    private BigDecimal xoExact;
+    private BigDecimal yoExact;
+    private BigDecimal zoExact;
 
     private static boolean isBedrockMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
@@ -126,6 +133,92 @@ public final class ImprovedNoise {
 
         double result = this.sampleAndLerp(xf, yf, zf, xr, yr - yrFudge, zr, yr);
         return result;
+    }
+
+    /**
+     * 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」——精确版噪声。
+     *
+     * <p>与原版 {@link #noise(double, double, double, double, double)} 的唯一区别：
+     * 坐标 {@code x = _x + xo}、晶格定位 {@code floor} 与小数部分 {@code xr = x - xf}
+     * 全部用精确运算，彻底消除「大坐标 → ULP 量化 → 台阶（拉伸）」。
+     *
+     * <p><b>刻意保留的溢出语义</b>（这些是边境之地的成因，不是 bug）：
+     * <ul>
+     *   <li>{@code xf = (int) Math.floor(x)} 的<b>饱和</b>——坐标超过 ±2^31 后所有采样点
+     *       落到同一晶格角 → 平面边境之地；</li>
+     *   <li>{@code xr = x - xf} 中 {@code xf} 用的是**饱和后**的 int，所以超大坐标下
+     *       {@code xr} 会变成巨大的数（插值权重失真）——与 double 版行为一致；</li>
+     *   <li>{@code Mth.floor(fudgeLimit / yScale + 1.0E-7F)} 的 int 饱和。</li>
+     * </ul>
+     * 梯度点积与三线性插值仍用 double（输出值域 [-1,1]，精度绰绰有余），保证性能可控。
+     */
+    public double noiseExact(
+            final BigDecimal _x,
+            final BigDecimal _y,
+            final BigDecimal _z,
+            final BigDecimal yScale,
+            final BigDecimal yFudge) {
+        final BigDecimal x = _x.add(this.exactXo());
+        final BigDecimal y = _y.add(this.exactYo());
+        final BigDecimal z = _z.add(this.exactZo());
+
+        // ⚠️ 保留 int 饱和（平面边境之地的来源）
+        final int xf = ExactNoiseMath.floorToIntSaturated(x);
+        final int yf = ExactNoiseMath.floorToIntSaturated(y);
+        final int zf = ExactNoiseMath.floorToIntSaturated(z);
+
+        // ⚠️ 与原版逐字一致：xf 是饱和后的 int，xr = x - xf
+        final BigDecimal xrExact = x.subtract(BigDecimal.valueOf(xf));
+        final BigDecimal yrExact = y.subtract(BigDecimal.valueOf(yf));
+        final BigDecimal zrExact = z.subtract(BigDecimal.valueOf(zf));
+
+        final double xr = xrExact.doubleValue();
+        final double yr = yrExact.doubleValue();
+        final double zr = zrExact.doubleValue();
+
+        double yrFudge;
+        if (yScale.signum() != 0) {
+            final BigDecimal fudgeLimit;
+            if (yFudge.signum() >= 0 && yFudge.compareTo(yrExact) < 0) {
+                fudgeLimit = yFudge;
+            } else {
+                fudgeLimit = yrExact;
+            }
+            // 原版：Mth.floor(fudgeLimit / yScale + 1.0E-7F) * yScale
+            final BigDecimal scaled = fudgeLimit.divide(yScale, ExactNoiseMath.DIVISION).add(FLOAT_EPS_1E7);
+            yrFudge = ExactNoiseMath.floorToIntSaturated(scaled) * yScale.doubleValue();
+        } else {
+            yrFudge = 0.0;
+        }
+
+        return this.sampleAndLerp(xf, yf, zf, xr, yr - yrFudge, zr, yr);
+    }
+
+    private BigDecimal exactXo() {
+        BigDecimal v = this.xoExact;
+        if (v == null) {
+            v = new BigDecimal(this.xo);
+            this.xoExact = v;
+        }
+        return v;
+    }
+
+    private BigDecimal exactYo() {
+        BigDecimal v = this.yoExact;
+        if (v == null) {
+            v = new BigDecimal(this.yo);
+            this.yoExact = v;
+        }
+        return v;
+    }
+
+    private BigDecimal exactZo() {
+        BigDecimal v = this.zoExact;
+        if (v == null) {
+            v = new BigDecimal(this.zo);
+            this.zoExact = v;
+        }
+        return v;
     }
 
     public double noiseWithDerivative(final double _x, final double _y, final double _z, final double[] derivativeOut) {

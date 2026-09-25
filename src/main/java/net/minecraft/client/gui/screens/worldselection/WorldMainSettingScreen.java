@@ -215,6 +215,21 @@ public class WorldMainSettingScreen extends Screen {
                 () -> this.configData.progressiveFarlands,
                 val -> this.configData.progressiveFarlands = val
         ).withInfo(Component.literal("强制让自实现的 lerp 方法返回 start，不再进行原计算"));
+        skyGridBuilder.addSwitch(
+                Component.literal("使用 BigDecimal / BigInteger 重写地形"),
+                () -> this.configData.exactTerrainRewrite,
+                val -> this.configData.exactTerrainRewrite = val
+        ).withInfo(Component.literal(
+                "§e用精确运算消除地形拉伸（「每 2ⁿ 变化一次」的台阶）\n"
+                        + "§f原理：原版噪声用 double（53 位尾数），坐标一大就会出现\n"
+                        + "§71) ULP 量化——相邻方块落到同一个浮点值；\n"
+                        + "§72) wrap 折叠的灾难性抵消——大数相减把低位全吃掉。\n"
+                        + "§f结果就是插值权重只剩几个离散值 → 地形被拉成台阶。\n"
+                        + "§b开启后整条噪声链（坐标缩放 → 折叠 → 晶格定位）改用精确运算，\n"
+                        + "§b彻底消除拉伸；§c噪声的 int 溢出（平面边境之地）会被完整保留§b。\n"
+                        + "§7性能：仅在坐标大到 double 失真（约 4 亿格以上）时自动切换，近处零开销；\n"
+                        + "§7大坐标区域区块生成会明显变慢。"
+        ));
         this.scrollContent.addChild(skyGridBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第二组：修复类设置 ==========
@@ -785,6 +800,19 @@ public class WorldMainSettingScreen extends Screen {
         public boolean enableSkyGrid = false;
         public boolean forceSkyGrid = false;
         public boolean progressiveFarlands = false;
+        /**
+         * 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」（2026-09-25）。
+         * <p>开启后，噪声链（BlendedNoise / DensityFunctions.Noise → PerlinNoise → ImprovedNoise）
+         * 在坐标大到 double 会失真时自动切换到精确运算：
+         * <ul>
+         *   <li>消除地形拉伸（「每 2ⁿ 变化一次」的台阶）——成因是 double 的 ULP 量化 +
+         *       {@code wrap} 折叠的灾难性抵消（实测 pos=1e15 时 double 的插值权重只剩 3 个离散值）；</li>
+         *   <li>保留噪声 int 溢出（{@code (int)Math.floor} 饱和）——那是「平面边境之地」的成因。</li>
+         * </ul>
+         * <p>性能：只在 |坐标 × 171.103| &gt; 2^36（约 4 亿格）时才走精确路径，近处零开销；
+         * 大坐标区域区块生成会明显变慢（每样本几十次 BigDecimal 运算）。
+         */
+        public boolean exactTerrainRewrite = false;
         public boolean fixChunkOutOfBounds = true;
         public boolean fixAverageFunctionOverFlow = true;
 

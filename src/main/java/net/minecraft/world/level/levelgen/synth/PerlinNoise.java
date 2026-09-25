@@ -17,6 +17,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.PositionalRandomFactory;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
+import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 import org.jspecify.annotations.Nullable;
 
 public class PerlinNoise {
@@ -36,6 +37,12 @@ public class PerlinNoise {
     }
 
     private static final int ROUND_OFF = 33554432;
+    /** 🔧 MCRe 精确路径：折叠周期 2^25 = 33554432（double 表示精确无损）。 */
+    private static final BigDecimal PERIOD_BD = BigDecimal.valueOf(33554432L);
+    private static final BigDecimal HALF_BD = BigDecimal.valueOf(0.5);
+    private static final BigDecimal TWO_BD = BigDecimal.valueOf(2L);
+    /** 🔧 MCRe 精确路径：lowestFreqInputFactor 的精确值缓存（BigDecimal 不可变，惰性初始化并发安全）。 */
+    private BigDecimal inputFactorExact;
     private final @Nullable ImprovedNoise[] noiseLevels;
     private final int firstOctave;
     private final DoubleList amplitudes;
@@ -252,6 +259,61 @@ public class PerlinNoise {
         return value;
     }
 
+    /**
+     * 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」——精确版 {@code getValue}。
+     *
+     * <p>与原版逐句对应，只把「坐标 × factor（2 的幂）」「wrap 折叠」换成精确运算：
+     * <pre>
+     *   原版：wrap(x * factor) —— factor 每层 ×2，把上一层的舍入误差一路放大 2^15 倍，
+     *         再经过 wrap 的大数相减（灾难性抵消）→ 折叠结果只剩几个离散台阶 → 地形拉伸
+     *   精确：BigDecimal 全程无损，折叠用精确取模 → 折叠结果严格随坐标逐格变化 ✓
+     * </pre>
+     * 幅度加权（amplitudes × valueFactor）与噪声输出仍用 double —— 输出值域小，精度绰绰有余。
+     */
+    public double getValueExact(final BigDecimal x, final BigDecimal y, final BigDecimal z) {
+        return this.getValueExact(x, y, z, BigDecimal.ZERO, BigDecimal.ZERO);
+    }
+
+    public double getValueExact(
+            final BigDecimal x,
+            final BigDecimal y,
+            final BigDecimal z,
+            final BigDecimal yScale,
+            final BigDecimal yFudge) {
+        double value = 0.0;
+        BigDecimal factor = this.exactInputFactor();
+        double valueFactor = this.lowestFreqValueFactor;
+
+        for (int i = 0; i < this.noiseLevels.length; i++) {
+            ImprovedNoise noise = this.noiseLevels[i];
+            if (noise != null) {
+                final BigDecimal factorYScale = yScale.multiply(factor);
+                final BigDecimal factorYFudge = yFudge.multiply(factor);
+                final double noiseVal = noise.noiseExact(
+                        wrapExact(x.multiply(factor)),
+                        wrapExact(y.multiply(factor)),
+                        wrapExact(z.multiply(factor)),
+                        factorYScale,
+                        factorYFudge);
+                value += this.amplitudes.getDouble(i) * noiseVal * valueFactor;
+            }
+
+            factor = factor.multiply(TWO_BD);
+            valueFactor /= 2.0;
+        }
+
+        return value;
+    }
+
+    private BigDecimal exactInputFactor() {
+        BigDecimal v = this.inputFactorExact;
+        if (v == null) {
+            v = new BigDecimal(this.lowestFreqInputFactor);
+            this.inputFactorExact = v;
+        }
+        return v;
+    }
+
     public double maxBrokenValue(final double yScale) {
         if (isBedrockMode()) {
             float fYScale = (float) yScale;
@@ -327,6 +389,57 @@ public class PerlinNoise {
             if (Math.log10(abs) > limitNoiseValue) {
                 double logAbs = Math.log10(abs);
                 folded = Math.pow(10, logAbs - Math.floor(logAbs - limitNoiseValue)) * Math.signum(folded);
+            }
+        }
+        return folded;
+    }
+
+    /**
+     * 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」——精确版 {@link #wrap(double)}。
+     *
+     * <p>折叠的数学含义是「把坐标折回周期内」（取模）。原版用 double 做
+     * {@code x - lfloor(x / P + 0.5) * P}：当 |x| 大到 ULP &gt; 1 时，高位相减会把低位
+     * 全部吃掉（<b>灾难性抵消</b>）→ 折叠结果被量化成几个离散台阶 → <b>地形拉伸</b>。
+     * 精确版直接做精确取模，彻底消除这一损失。
+     *
+     * <p>各模式与原版一一对应；「限制返回值」分支保留原版的 double 近似
+     * （它本身就是一个量级近似功能，且结果只用于限制输入范围）。
+     */
+    public static BigDecimal wrapExact(final BigDecimal x) {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        if (config == null) {
+            return x;
+        }
+        double limitNoiseValue = config.limitReturnValueValue;
+        String mode = config.precisionMode;
+        BigDecimal folded;
+        switch (mode) {
+            case "64bit":
+            case "1.18-exp-64bit": {
+                // 原版：x - Mth.lfloor(x / 3.3554432E7 + 0.5) * 3.3554432E7
+                final BigDecimal q = x.divide(PERIOD_BD, ExactNoiseMath.DIVISION).add(HALF_BD);
+                final long l = ExactNoiseMath.floorToLongSaturated(q);
+                folded = x.subtract(BigDecimal.valueOf(l).multiply(PERIOD_BD));
+                break;
+            }
+            case "Release": {
+                // 原版：long l = Mth.lfloor(x); x -= l; l %= 16777216L; return x + l;
+                final long l = ExactNoiseMath.floorToLongSaturated(x);
+                final BigDecimal frac = x.subtract(BigDecimal.valueOf(l));
+                folded = frac.add(BigDecimal.valueOf(l % 16777216L));
+                break;
+            }
+            default:
+                folded = x;
+                break;
+        }
+        if (limitReturnValueMode()) {
+            final double fd = folded.doubleValue();
+            final double abs = Math.abs(fd);
+            // log10(0) = -Infinity，恒不满足 > limit，天然跳过
+            if (Math.log10(abs) > limitNoiseValue) {
+                final double logAbs = Math.log10(abs);
+                folded = BigDecimal.valueOf(Math.pow(10, logAbs - Math.floor(logAbs - limitNoiseValue)) * Math.signum(fd));
             }
         }
         return folded;

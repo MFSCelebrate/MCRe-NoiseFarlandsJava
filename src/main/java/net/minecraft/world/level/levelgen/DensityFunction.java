@@ -1,6 +1,7 @@
 package net.minecraft.world.level.levelgen;
 
 import com.mojang.serialization.Codec;
+import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.RegistryFileCodec;
@@ -106,6 +107,15 @@ public interface DensityFunction {
 
         public double getValue(final double x, final double y, final double z) {
             return this.noise == null ? 0.0 : this.noise.getValue(x, y, z);
+        }
+
+        /**
+         * 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」——精确版取值。
+         * <p>语义与原版一致（noise 未解析时返回 0.0），只是坐标以精确值传入，
+         * 由 {@link NormalNoise#getValueExact} 一路精确到晶格定位。
+         */
+        public double getValueExact(final BigDecimal x, final BigDecimal y, final BigDecimal z) {
+            return this.noise == null ? 0.0 : this.noise.getValueExact(x, y, z);
         }
 
         public double maxValue() {

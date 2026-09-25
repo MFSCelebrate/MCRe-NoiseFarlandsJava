@@ -14,10 +14,13 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.Util;
 
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
+import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 
 public class NormalNoise {
     private static final double INPUT_FACTOR = 1.0181268882175227;
     private static final double TARGET_DEVIATION = 0.3333333333333333;
+    /** 🔧 MCRe 精确路径：INPUT_FACTOR 的精确 IEEE 754 值。 */
+    private static final BigDecimal INPUT_FACTOR_BD = new BigDecimal(INPUT_FACTOR);
     private final double valueFactor;
     private final PerlinNoise first;
     private final PerlinNoise second;
@@ -145,6 +148,18 @@ public class NormalNoise {
         double z2 = z * 1.0181268882175227;
         double result = (this.first.getValue(x, y, z) + this.second.getValue(x2, y2, z2)) * this.valueFactor;
         return result;
+    }
+
+    /**
+     * 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」——精确版 {@link #getValue(double, double, double)}。
+     * <p>第二组八度的坐标偏移 {@code × 1.0181268882175227} 改为精确乘法（原版这一步的舍入误差
+     * 会被 PerlinNoise 内部的 {@code × 2^k} 放大 2^15 倍）。噪声输出仍用 double 加权求和。
+     */
+    public double getValueExact(final BigDecimal x, final BigDecimal y, final BigDecimal z) {
+        final BigDecimal x2 = x.multiply(INPUT_FACTOR_BD);
+        final BigDecimal y2 = y.multiply(INPUT_FACTOR_BD);
+        final BigDecimal z2 = z.multiply(INPUT_FACTOR_BD);
+        return (this.first.getValueExact(x, y, z) + this.second.getValueExact(x2, y2, z2)) * this.valueFactor;
     }
 
     public NormalNoise.NoiseParameters parameters() {
