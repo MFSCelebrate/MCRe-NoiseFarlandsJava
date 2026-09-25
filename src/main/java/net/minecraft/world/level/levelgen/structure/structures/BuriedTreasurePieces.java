@@ -5,6 +5,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
@@ -44,7 +45,9 @@ public class BuriedTreasurePieces {
             int y = level.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, this.boundingBox.minX(), this.boundingBox.minZ());
             BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(this.boundingBox.minX(), y, this.boundingBox.minZ());
 
-            while (pos.getY() > level.getMinY()) {
+            // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿 → 原版会迭代 10 亿次）
+            final int scanBottom = (int)Math.max((long)level.getMinY(), (long)pos.getY() - FarLandsYScan.MAX_BLOCK_SCAN);
+            while (pos.getY() > scanBottom) {
                 BlockState currentState = level.getBlockState(pos);
                 BlockState belowState = level.getBlockState(pos.below());
                 if (belowState.is(Blocks.SANDSTONE)

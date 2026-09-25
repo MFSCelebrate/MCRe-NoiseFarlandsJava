@@ -261,8 +261,8 @@
                                   }
                                 },
                                 "when_out_of_range": {
-                                  "type": "minecraft:cache_2d",
-                                  "argument": "minecraft:overworld/offset"
+                                  "type": "minecraft:constant",
+                                  "value": 0.0
                                 }
                               },
                               "argument2": {

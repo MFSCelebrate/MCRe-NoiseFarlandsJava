@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -100,7 +101,9 @@ public class BasaltColumnsFeature extends Feature<ColumnFeatureConfiguration> {
     }
 
     private static @Nullable BlockPos findSurface(final LevelAccessor level, final int lavaSeaLevel, final BlockPos.MutableBlockPos cursor, int limit) {
-        while (cursor.getY() > level.getMinY() + 1 && limit > 0) {
+        // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+        final int scanBottom = (int)Math.max((long)level.getMinY() + 1, (long)cursor.getY() - FarLandsYScan.MAX_BLOCK_SCAN);
+        while (cursor.getY() > scanBottom && limit > 0) {
             limit--;
             if (canPlaceAt(level, lavaSeaLevel, cursor)) {
                 return cursor;

@@ -67,7 +67,9 @@ public class CountOnEveryLayerPlacement extends PlacementModifier {
         int currentLayer = 0;
         BlockState currentBlock = context.getBlockState(currentPos);
 
-        for (int y = yStart; y >= context.getMinY() + 1; y--) {
+        // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+        final int scanBottom = (int)Math.max((long)context.getMinY() + 1, (long)yStart - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+        for (int y = yStart; y >= scanBottom; y--) {
             currentPos.setY(y - 1);
             BlockState belowBlock = context.getBlockState(currentPos);
             if (!isEmpty(belowBlock) && isEmpty(currentBlock) && !belowBlock.is(Blocks.BEDROCK)) {

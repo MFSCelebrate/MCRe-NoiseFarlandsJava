@@ -16,6 +16,7 @@ import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.CollisionGetter;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -88,14 +89,19 @@ public class PlayerSpawnFinder {
 
     private static Vec3 fixupSpawnHeight(final CollisionGetter level, final BlockPos spawnPos) {
         BlockPos.MutableBlockPos mutablePos = spawnPos.mutable();
+        // 🔧 MCRe：钳制扫描范围——超高世界的 getMinY()/getMaxY() 可达 ±21 亿，
+        // 原版这两个 while 会各迭代 10 亿次（世界创建「Selecting global world spawn」时直接卡死）。
+        // ±2048 格足够找到落脚点/脱离实心区。
+        final int scanTop = (int)Math.min((long)level.getMaxY(), (long)spawnPos.getY() + FarLandsYScan.MAX_BLOCK_SCAN);
+        final int scanBottom = (int)Math.max((long)level.getMinY(), (long)spawnPos.getY() - FarLandsYScan.MAX_BLOCK_SCAN);
 
-        while (!noCollisionNoLiquid(level, mutablePos) && mutablePos.getY() < level.getMaxY()) {
+        while (!noCollisionNoLiquid(level, mutablePos) && mutablePos.getY() < scanTop) {
             mutablePos.move(Direction.UP);
         }
 
         mutablePos.move(Direction.DOWN);
 
-        while (noCollisionNoLiquid(level, mutablePos) && mutablePos.getY() > level.getMinY()) {
+        while (noCollisionNoLiquid(level, mutablePos) && mutablePos.getY() > scanBottom) {
             mutablePos.move(Direction.DOWN);
         }
 
@@ -159,8 +165,10 @@ public class PlayerSpawnFinder {
         }
 
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        // 🔧 MCRe：钳制下扫范围——超高世界 getMinY() 可达 -21 亿，原版循环会迭代 10 亿次
+        final int scanBottom = (int)Math.max((long)level.getMinY(), (long)topY + 1 - FarLandsYScan.MAX_BLOCK_SCAN);
 
-        for (int y = topY + 1; y >= level.getMinY(); y--) {
+        for (int y = topY + 1; y >= scanBottom; y--) {
             pos.set(x, y, z);
             BlockState blockState = level.getBlockState(pos);
             if (!blockState.getFluidState().isEmpty()) {

@@ -380,7 +380,9 @@ public abstract class StructurePiece {
     protected void fillColumnDown(final WorldGenLevel level, final BlockState blockState, final int x, final int startY, final int z, final BoundingBox chunkBB) {
         BlockPos.MutableBlockPos pos = this.getWorldPos(x, startY, z);
         if (chunkBB.isInside(pos)) {
-            while (this.isReplaceableByStructures(level.getBlockState(pos)) && pos.getY() > level.getMinY() + 1) {
+            // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+            final int scanBottom = (int)Math.max((long)level.getMinY() + 1, (long)pos.getY() - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+            while (this.isReplaceableByStructures(level.getBlockState(pos)) && pos.getY() > scanBottom) {
                 level.setBlock(pos, blockState, 2);
                 pos.move(Direction.DOWN);
             }

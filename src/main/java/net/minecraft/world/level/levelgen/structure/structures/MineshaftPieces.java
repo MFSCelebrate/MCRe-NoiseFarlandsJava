@@ -13,6 +13,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.vehicle.minecart.MinecartChest;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.StructureManager;
@@ -487,7 +488,9 @@ public class MineshaftPieces {
             if (chunkBB.isInside(pos)) {
                 int worldY = pos.getY();
 
-                while (this.isReplaceableByStructures(level.getBlockState(pos)) && pos.getY() > level.getMinY() + 1) {
+                // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+                final int scanBottom = (int)Math.max((long)level.getMinY() + 1, (long)pos.getY() - FarLandsYScan.MAX_BLOCK_SCAN);
+                while (this.isReplaceableByStructures(level.getBlockState(pos)) && pos.getY() > scanBottom) {
                     pos.move(Direction.DOWN);
                 }
 

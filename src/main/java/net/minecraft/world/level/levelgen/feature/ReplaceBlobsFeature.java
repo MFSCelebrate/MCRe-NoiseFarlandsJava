@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -49,7 +50,9 @@ public class ReplaceBlobsFeature extends Feature<ReplaceSphereConfiguration> {
     }
 
     private static @Nullable BlockPos findTarget(final LevelAccessor level, final BlockPos.MutableBlockPos cursor, final Block target) {
-        while (cursor.getY() > level.getMinY() + 1) {
+        // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+        final int scanBottom = (int)Math.max((long)level.getMinY() + 1, (long)cursor.getY() - FarLandsYScan.MAX_BLOCK_SCAN);
+        while (cursor.getY() > scanBottom) {
             BlockState blockState = level.getBlockState(cursor);
             if (blockState.is(target)) {
                 return cursor;

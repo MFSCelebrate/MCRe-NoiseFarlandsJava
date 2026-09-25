@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Util;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityTypes;
@@ -31,7 +32,9 @@ public class DesertWellFeature extends Feature<NoneFeatureConfiguration> {
         BlockPos origin = context.origin();
         origin = origin.above();
 
-        while (level.isEmptyBlock(origin) && origin.getY() > level.getMinY() + 2) {
+        // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+        final int scanBottom = (int)Math.max((long)level.getMinY() + 2, (long)origin.getY() - FarLandsYScan.MAX_BLOCK_SCAN);
+        while (level.isEmptyBlock(origin) && origin.getY() > scanBottom) {
             origin = origin.below();
         }
 

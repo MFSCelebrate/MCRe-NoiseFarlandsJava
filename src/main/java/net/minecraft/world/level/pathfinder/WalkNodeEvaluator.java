@@ -71,7 +71,9 @@ public class WalkNodeEvaluator extends NodeEvaluator {
             } else {
                 reusablePos.set(this.mob.getX(), this.mob.getY() + 1.0, this.mob.getZ());
 
-                while (reusablePos.getY() > this.currentContext.level().getMinY()) {
+                // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+                final int scanBottom = (int)Math.max((long)this.currentContext.level().getMinY(), (long)reusablePos.getY() - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+                while (reusablePos.getY() > scanBottom) {
                     startY = reusablePos.getY();
                     reusablePos.setY(reusablePos.getY() - 1);
                     BlockState belowBlockState = this.currentContext.getBlockState(reusablePos);

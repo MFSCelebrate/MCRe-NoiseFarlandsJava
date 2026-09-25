@@ -1,4 +1,5 @@
 package net.minecraft.server.commands;
+import net.minecraft.world.level.FarLandsYScan;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -347,7 +348,9 @@ public class SpreadPlayersCommand {
             pos.move(Direction.DOWN);
             boolean air1Above = level.getBlockState(pos).isAir();
 
-            while (pos.getY() > level.getMinY()) {
+            // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+            final int scanBottom = (int)Math.max((long)level.getMinY(), (long)pos.getY() - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+            while (pos.getY() > scanBottom) {
                 pos.move(Direction.DOWN);
                 boolean currentIsAir = level.getBlockState(pos).isAir();
                 if (!currentIsAir && air1Above && air2Above) {

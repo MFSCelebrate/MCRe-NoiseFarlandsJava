@@ -65,7 +65,9 @@ public class PortalForcer {
             if (worldBorder.isWithinBounds(columnPos) && worldBorder.isWithinBounds(columnPos.move(direction, 1))) {
                 columnPos.move(direction.getOpposite(), 1);
 
-                for (int y = height; y >= this.level.getMinY(); y--) {
+                // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+                final int scanBottom = (int)Math.max((long)this.level.getMinY(), (long)height - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+                for (int y = height; y >= scanBottom; y--) {
                     columnPos.setY(y);
                     if (this.canPortalReplaceBlock(columnPos)) {
                         int firstEmptyY = y;

@@ -1,4 +1,5 @@
 package net.minecraft.world.entity;
+import net.minecraft.world.level.FarLandsYScan;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
@@ -3683,7 +3684,9 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
         if (level.hasChunkAt(pos)) {
             boolean landed = false;
 
-            while (!landed && pos.getY() > level.getMinY()) {
+            // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+            final int scanBottom = (int)Math.max((long)level.getMinY(), (long)pos.getY() - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+            while (!landed && pos.getY() > scanBottom) {
                 BlockPos below = pos.below();
                 BlockState state = level.getBlockState(below);
                 if (state.blocksMotion()) {

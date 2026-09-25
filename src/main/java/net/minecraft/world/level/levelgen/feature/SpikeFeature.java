@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.feature.configurations.SpikeConfiguration;
@@ -19,7 +20,9 @@ public class SpikeFeature extends Feature<SpikeConfiguration> {
         RandomSource random = context.random();
         WorldGenLevel level = context.level();
 
-        while (level.isEmptyBlock(origin) && origin.getY() > level.getMinY() + 2) {
+        // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+        final int scanBottom = (int)Math.max((long)level.getMinY() + 2, (long)origin.getY() - FarLandsYScan.MAX_BLOCK_SCAN);
+        while (level.isEmptyBlock(origin) && origin.getY() > scanBottom) {
             origin = origin.below();
         }
 

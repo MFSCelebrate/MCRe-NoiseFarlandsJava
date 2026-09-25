@@ -55,7 +55,10 @@ public class ChunkBorderRenderer implements DebugRenderer.SimpleDebugRenderer {
             Gizmos.line(new Vec3(xstart + 16.0, ymin, zstart + z), new Vec3(xstart + 16.0, ymax, zstart + z), color, 1.0F);
         }
 
-        for (int y = this.minecraft.level.getMinY(); y <= this.minecraft.level.getMaxY() + 1; y += 2) {
+        // 🔧 MCRe：钳制渲染范围（超高世界 minY..maxY 跨度 21 亿 → 原版会画 10 亿条线卡死）
+        final int borderMinY = (int)Math.max((long)this.minecraft.level.getMinY(), (long)this.minecraft.player.getBlockY() - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+        final int borderMaxY = (int)Math.min((long)this.minecraft.level.getMaxY() + 1, (long)this.minecraft.player.getBlockY() + net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+        for (int y = borderMinY; y <= borderMaxY; y += 2) {
             float yline = y;
             int color = y % 8 == 0 ? CELL_BORDER : YELLOW;
             Gizmos.line(new Vec3(xstart, yline, zstart), new Vec3(xstart, yline, zstart + 16.0), color, 1.0F);
@@ -83,7 +86,7 @@ public class ChunkBorderRenderer implements DebugRenderer.SimpleDebugRenderer {
             )
             .setAlwaysOnTop();
 
-        for (int y = this.minecraft.level.getMinY(); y <= this.minecraft.level.getMaxY() + 1; y += 16) {
+        for (int y = borderMinY; y <= borderMaxY; y += 16) {
             Gizmos.line(new Vec3(xstart, y, zstart), new Vec3(xstart, y, zstart + 16.0), MAJOR_LINES, 4.0F);
             Gizmos.line(new Vec3(xstart, y, zstart + 16.0), new Vec3(xstart + 16.0, y, zstart + 16.0), MAJOR_LINES, 4.0F);
             Gizmos.line(new Vec3(xstart + 16.0, y, zstart + 16.0), new Vec3(xstart + 16.0, y, zstart), MAJOR_LINES, 4.0F);

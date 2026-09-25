@@ -462,14 +462,17 @@ public final class NaturalSpawner {
     private static BlockPos getTopNonCollidingPos(final LevelReader level, final EntityType<?> type, final int x, final int z) {
         int levelHeight = level.getHeight(SpawnPlacements.getHeightmapType(type), x, z);
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, levelHeight, z);
+        // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+        final int scanBottom = (int)Math.max((long)level.getMinY(),
+                (long)levelHeight - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
         if (level.dimensionType().hasCeiling()) {
             do {
                 pos.move(Direction.DOWN);
-            } while (!level.getBlockState(pos).isAir());
+            } while (!level.getBlockState(pos).isAir() && pos.getY() > scanBottom);
 
             do {
                 pos.move(Direction.DOWN);
-            } while (level.getBlockState(pos).isAir() && pos.getY() > level.getMinY());
+            } while (level.getBlockState(pos).isAir() && pos.getY() > scanBottom);
         }
 
         return SpawnPlacements.getPlacementType(type).adjustSpawnPosition(level, pos.immutable());

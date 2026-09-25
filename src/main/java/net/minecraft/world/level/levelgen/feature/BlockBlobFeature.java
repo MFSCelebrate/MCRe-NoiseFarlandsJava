@@ -3,6 +3,7 @@ package net.minecraft.world.level.levelgen.feature;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.levelgen.feature.configurations.BlockBlobConfiguration;
 
@@ -18,11 +19,13 @@ public class BlockBlobFeature extends Feature<BlockBlobConfiguration> {
         RandomSource random = context.random();
         BlockBlobConfiguration config = context.config();
 
-        while (origin.getY() > level.getMinY() + 3 && !config.canPlaceOn().test(level, origin.below())) {
+        // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+        final int scanBottom = (int)Math.max((long)level.getMinY() + 3, (long)origin.getY() - FarLandsYScan.MAX_BLOCK_SCAN);
+        while (origin.getY() > scanBottom && !config.canPlaceOn().test(level, origin.below())) {
             origin = origin.below();
         }
 
-        if (origin.getY() <= level.getMinY() + 3) {
+        if (origin.getY() <= scanBottom) {
             return false;
         }
 

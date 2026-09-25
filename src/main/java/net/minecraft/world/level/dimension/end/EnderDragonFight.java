@@ -331,7 +331,9 @@ public class EnderDragonFight extends SavedData {
         BlockPos endPodiumLocation = EndPodiumFeature.getLocation(this.origin);
         int maxY = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, endPodiumLocation).getY();
 
-        for (int y = maxY; y >= this.level.getMinY(); y--) {
+        // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+        final int scanBottom = (int)Math.max((long)this.level.getMinY(), (long)maxY - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+        for (int y = maxY; y >= scanBottom; y--) {
             BlockPattern.BlockPatternMatch match = this.exitPortalPattern.find(this.level, new BlockPos(endPodiumLocation.getX(), y, endPodiumLocation.getZ()));
             if (match != null) {
                 if (this.exitPortalLocation == null) {

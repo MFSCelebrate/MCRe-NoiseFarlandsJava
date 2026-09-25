@@ -14,5 +14,8 @@
     },
     "argument2": "minecraft:overworld/offset"
   },
-  "when_out_of_range": "minecraft:overworld/offset"
+  "when_out_of_range": {
+    "type": "minecraft:constant",
+    "value": 0.0
+  }
 }

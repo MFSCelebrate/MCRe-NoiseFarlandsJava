@@ -1,4 +1,5 @@
 package net.minecraft.world.entity.monster;
+import net.minecraft.world.level.FarLandsYScan;
 
 import java.util.EnumSet;
 import java.util.Optional;
@@ -277,7 +278,9 @@ public class EnderMan extends Monster implements NeutralMob {
     private boolean teleport(final double x, final double y, final double z) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, y, z);
 
-        while (pos.getY() > this.level().getMinY() && !this.level().getBlockState(pos).blocksMotion()) {
+        // 🔧 MCRe：钳制下扫范围（超高世界 getMinY() 可达 -21 亿）
+        final int scanBottom = (int)Math.max((long)this.level().getMinY(), (long)pos.getY() - net.minecraft.world.level.FarLandsYScan.MAX_BLOCK_SCAN);
+        while (pos.getY() > scanBottom && !this.level().getBlockState(pos).blocksMotion()) {
             pos.move(Direction.DOWN);
         }
 
