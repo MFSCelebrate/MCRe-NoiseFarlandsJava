@@ -199,7 +199,7 @@ public class WorldMainSettingScreen extends Screen {
         // 3. 启用天空网格（开关）
         SwitchGrid.Builder skyGridBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
                 .withRowSpacing(4)
-                .withInfoUnderneath(4, true);
+                .withInfoUnderneathUnlimited(false);
         skyGridBuilder.addSwitch(
                 Component.literal("启用天空网格"),
                 () -> this.configData.enableSkyGrid,
@@ -313,7 +313,7 @@ public class WorldMainSettingScreen extends Screen {
 
         SwitchGrid.Builder fcBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
                 .withRowSpacing(3)
-                .withInfoUnderneath(4, false);
+                .withInfoUnderneathUnlimited(false);
         fcBuilder.addSwitch(
                 Component.literal("扩展数据包密度函数字面量限制"),
                 () -> this.configData.expandDatapackValueRange,

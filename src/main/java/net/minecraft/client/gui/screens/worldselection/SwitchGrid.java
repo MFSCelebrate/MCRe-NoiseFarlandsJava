@@ -98,10 +98,24 @@ class SwitchGrid {
             this.infoUnderneath = Optional.of(new SwitchGrid.InfoUnderneathSettings(maxRows, alwaysMaxHeight));
             return this;
         }
+
+        /** 🔧 MCRe：不限制 info 行数（自动高度）——适合长文本（如 8 行以上的重写按钮说明） */
+        public SwitchGrid.Builder withInfoUnderneathUnlimited(final boolean alwaysMaxHeight) {
+            this.infoUnderneath = Optional.of(new SwitchGrid.InfoUnderneathSettings(-1, alwaysMaxHeight));
+            return this;
+        }
     }
 
     @OnlyIn(Dist.CLIENT)
     private record InfoUnderneathSettings(int maxInfoRows, boolean alwaysMaxHeight) {
+        /** maxInfoRows <= 0 表示不限制行数（自动高度） */
+        public boolean isUnlimited() {
+            return this.maxInfoRows <= 0;
+        }
+
+        public int effectiveMaxRows() {
+            return this.isUnlimited() ? Integer.MAX_VALUE : this.maxInfoRows;
+        }
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -174,9 +188,12 @@ class SwitchGrid {
                         Font font = Minecraft.getInstance().font;
                         MultiLineTextWidget infoWidget = new MultiLineTextWidget(styledInfo, font);
                         infoWidget.setMaxWidth(switchGridBuilder.width - switchGridBuilder.paddingLeft - this.buttonWidth);
-                        infoWidget.setMaxRows(infoUnderneathSettings.maxInfoRows());
+                        infoWidget.setMaxRows(infoUnderneathSettings.effectiveMaxRows());
                         switchGridBuilder.increaseRow();
-                        int extraBottomPadding = infoUnderneathSettings.alwaysMaxHeight ? 9 * infoUnderneathSettings.maxInfoRows - infoWidget.getHeight() : 0;
+                        int extraBottomPadding = 0;
+                        if (infoUnderneathSettings.alwaysMaxHeight && !infoUnderneathSettings.isUnlimited()) {
+                            extraBottomPadding = 9 * infoUnderneathSettings.maxInfoRows - infoWidget.getHeight();
+                        }
                         gridLayout.addChild(
                             infoWidget,
                             switchGridBuilder.rowCount,
