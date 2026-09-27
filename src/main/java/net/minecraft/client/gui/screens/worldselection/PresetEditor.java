@@ -23,7 +23,7 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.presets.WorldPreset;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
-import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
+// WorldMainSettingScreen import removed - now opened from main menu
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -48,9 +48,7 @@ public interface PresetEditor {
                 );
             },
             Optional.of(WorldPresets.SINGLE_BIOME_SURFACE),
-            (parent, settings) -> new CreateBuffetWorldScreen(parent, settings, biome -> parent.getUiState().updateDimensions(fixedBiomeConfigurator(biome))),
-            Optional.of(WorldPresets.NORMAL),
-            (parent, settings) -> new WorldMainSettingScreen(parent, settings)
+            (parent, settings) -> new CreateBuffetWorldScreen(parent, settings, biome -> parent.getUiState().updateDimensions(fixedBiomeConfigurator(biome)))
     );
 
     Screen createEditScreen(final CreateWorldScreen parent, final WorldCreationContext settings);

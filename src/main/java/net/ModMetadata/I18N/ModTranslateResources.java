@@ -121,11 +121,13 @@ public class ModTranslateResources {
         zh_cn.put("generator.minecraft.floating_islands", "浮岛");
         zh_cn.put("generator.minecraft.1_18_1_overworld", "1.18.1 无限世界");
         zh_cn.put("generator.minecraft.so_high_overworld", "很高的主世界");
+        zh_cn.put("mcre.title.global_config", "全局配置");
         
         en_us.put("generator.minecraft.caves", "Caves");
         en_us.put("generator.minecraft.floating_islands", "Floating Islands");
         en_us.put("generator.minecraft.1_18_1_overworld", "1.18.1 Infinity World");
         en_us.put("generator.minecraft.so_high_overworld", "So High Overworld");
+        en_us.put("mcre.title.global_config", "Global Config");
 
         TRANSLATIONS.put("en_us", en_us);
         TRANSLATIONS.put("zh_cn", zh_cn);

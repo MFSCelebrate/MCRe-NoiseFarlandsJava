@@ -520,7 +520,7 @@ public final class ImprovedNoise {
 
     private static int floorToIntWithWrap(double val) {
         if (val >= Integer.MAX_VALUE || val <= Integer.MIN_VALUE) {
-            return Integer.MIN_VALUE;
+            return Integer.MAX_VALUE;
         }
         return (int) Math.floor(val);
     }

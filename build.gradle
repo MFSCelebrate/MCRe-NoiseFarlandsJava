@@ -195,18 +195,45 @@ tasks.named('compileJava').configure {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+
+    // ===== 关键：开启全量调试信息 =====
+    // source : 保留源文件名 (SourceFile 属性)
+    // lines  : 保留行号表 (LineNumberTable 属性)
+    // vars   : 保留局部变量表 (LocalVariableTable / LocalVariableTypeTable 属性)
+    options.debug = true
+    options.debugOptions.debugLevel = "source,lines,vars"
+
     options.compilerArgs += [
+        // 等价于上面 debugLevel 的显式写法，双保险（Gradle 与 javac 版本差异时也生效）
+        '-g:source,lines,vars',
+
+        // 保留方法参数名（Java 8+，用于反射/框架）
+        '-parameters',
+
+        // 保留注解处理信息
+        '-Xlint:processing',
         '-Xmaxerrs', '10000',
         '-Xmaxwarns', '0',
         '-Xlint:-unchecked',
         '-Xlint:-rawtypes',
         '-Xlint:-deprecation',
-        '-parameters',
+
+        // 尽量保留泛型签名（javac 默认写入 Signature 属性，这里显式声明不剥离）
+        // 注意：泛型擦除只发生在类型系统层面，Signature 属性本身由 javac 自动生成
+
         '--add-exports', 'java.base/sun.security.util=ALL-UNNAMED',
         '--add-exports', 'java.desktop/com.sun.imageio.plugins.png=ALL-UNNAMED'
     ]
+
+    // 编译时开启断言信息（class 中的 <clinit> 会带上 assert 检查，不会剥离）
+    options.compilerArgs += ['-Averbose=true']
+
     options.fork = true
     options.forkOptions.jvmArgs = ['-Xmx4G']
+
+    // 保留 Java 源文件与字节码的映射，不进行任何源码级优化
+    // javac 本身不做混淆/裁剪，所以这里不需要额外开关，
+    // 只需保证后续打包/混淆步骤不剥离属性
 }
 
 // ===== 修改：让 build 依赖 Jar =====

@@ -79,12 +79,17 @@ public class WorldMainSettingScreen extends Screen {
     private @Nullable StringWidget pageNumberWidget;
 
     // ==================== 构造函数 ====================
-    public WorldMainSettingScreen(final Screen parent, final WorldCreationContext settings) {
+    public WorldMainSettingScreen(final Screen parent, final @Nullable WorldCreationContext settings) {
         super(Component.literal("世界自定义设置 │ World custom settings"));
         this.parent = parent;
         this.settings = settings;
         // 🔧 MCRe：从 options.txt 同目录的 farlands_config.json 加载上次保存的全局配置
         this.configData = FarLandsConfigStorage.load(Minecraft.getInstance().gameDirectory);
+    }
+
+    /** 便捷构造函数：用于主菜单直接打开，无需 WorldCreationContext */
+    public WorldMainSettingScreen(final Screen parent) {
+        this(parent, null);
     }
 
     // ==================== 初始化 ====================
@@ -330,10 +335,10 @@ public class WorldMainSettingScreen extends Screen {
                 val -> this.configData.allowIllegalValuePlayerPosition = val
         ).withInfo(Component.literal("在原版中，游戏检测到玩家坐标是非法值，会判定非法发包导致崩溃\n打开此设置将会解决这个问题"));
         fcBuilder.addSwitch(
-                Component.literal("模拟回绕溢出"),
+                Component.literal("模拟饱和溢出"),
                 () -> this.configData.simulatedWraparoundOverflow,
                 val -> this.configData.simulatedWraparoundOverflow = val
-        ).withInfo(Component.literal("允许改版在运行部分世界生成器方法时使用回绕溢出而不是原版的饱和溢出\n§e用于模拟基岩版在多架构情况下的多种溢出\n§c[警告] 不保证世界生成器不会损坏"));
+        ).withInfo(Component.literal("允许改版在运行部分世界生成器方法时使用饱和溢出（向 Integer.MAX_VALUE 钳制）\n§e原版为饱和溢出，开启后大数直接钳到 Integer.MAX_VALUE\n§c[警告] 不保证世界生成器不会损坏"));
         this.scrollContent.addChild(fcBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第五组：结构生成 ==========

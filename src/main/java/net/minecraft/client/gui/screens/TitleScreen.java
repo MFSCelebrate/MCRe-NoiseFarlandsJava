@@ -26,6 +26,7 @@ import net.minecraft.client.gui.screens.options.LanguageSelectScreen;
 import net.minecraft.client.gui.screens.options.OnlineOptionsScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.Panorama;
@@ -192,6 +193,15 @@ public class TitleScreen extends Screen {
                             .build()
             );
         }
+
+        // 🔧 MCRe：全局配置按钮（位于 TW 按钮下方，宽度为原版按钮 1/4 = 50px）
+        this.addRenderableWidget(
+                Button.builder(Component.literal("全局配置"), button -> {
+                    this.minecraft.gui.setScreen(new WorldMainSettingScreen(this));
+                })
+                        .bounds(singleplayerButton.getX() + singleplayerButton.getWidth() + 2, topPos + spacing, 50, 20)
+                        .build()
+        );
 
         Component multiplayerDisabledReason = this.getMultiplayerDisabledReason();
         boolean multiplayerAllowed = multiplayerDisabledReason == null;

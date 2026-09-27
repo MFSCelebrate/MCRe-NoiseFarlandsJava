@@ -45,6 +45,76 @@ public final class LocalCommandExecutor {
     private LocalCommandExecutor() {
     }
 
+    /**
+     * 🔧 MCRe：在 gameDir/TestServer/ 目录下启动专用服务器，避免污染 gameDir 根目录。
+     * <p>所有服务端文件（server.properties、eula.txt、logs/、world/ 等）都会放在 TestServer 子目录。
+     * <p>通过向 Main.main 传递 {@code --universe TestServer} 实现。
+     */
+    private static void startDebugServer(final String[] cliArgs, final java.util.Properties propUpdates) {
+        try {
+            // 准备 TestServer 目录
+            java.nio.file.Path testServerDir = java.nio.file.Paths.get("TestServer");
+            if (!java.nio.file.Files.exists(testServerDir)) {
+                java.nio.file.Files.createDirectories(testServerDir);
+            }
+
+            // 写入/合并 server.properties 到 TestServer/
+            java.nio.file.Path propPath = testServerDir.resolve("server.properties");
+            java.util.Properties existing = new java.util.Properties();
+            if (java.nio.file.Files.exists(propPath)) {
+                try (java.io.InputStream in = java.nio.file.Files.newInputStream(propPath)) {
+                    existing.load(in);
+                }
+            }
+            if (!propUpdates.isEmpty()) {
+                existing.putAll(propUpdates);
+            }
+            try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(propPath)) {
+                existing.store(out, null);
+            }
+
+            // 确保 eula.txt 存在
+            java.nio.file.Path eulaPath = testServerDir.resolve("eula.txt");
+            if (!java.nio.file.Files.exists(eulaPath)) {
+                try (java.io.Writer writer = java.nio.file.Files.newBufferedWriter(eulaPath, java.nio.charset.StandardCharsets.UTF_8)) {
+                    writer.write("eula=true\n");
+                }
+            }
+
+            // 组装最终参数：加上 --universe TestServer
+            java.util.List<String> finalArgs = new java.util.ArrayList<>(java.util.Arrays.asList(cliArgs));
+            // 如果用户没显式指定 --universe，自动加上
+            boolean hasUniverse = false;
+            for (int i = 0; i < finalArgs.size(); i++) {
+                if ("--universe".equals(finalArgs.get(i))) {
+                    hasUniverse = true;
+                    // 替换后面的值为 TestServer
+                    if (i + 1 < finalArgs.size()) {
+                        finalArgs.set(i + 1, "TestServer");
+                    }
+                    break;
+                }
+            }
+            if (!hasUniverse) {
+                finalArgs.add("--universe");
+                finalArgs.add("TestServer");
+            }
+
+            // 在 TestServer 目录下启动（通过 universe 参数，Main 会自动用该目录）
+            // 注意：Main 里的相对路径都是基于 universe 目录解析的，所以不需要改 working dir
+            net.minecraft.server.Main.main(finalArgs.toArray(new String[0]));
+            runningServer = net.minecraft.server.Main.getRunningServer();
+            Minecraft.getInstance().gui.hud.getChat().addClientSystemMessage(
+                Component.literal("Server started in TestServer/").withStyle(ChatFormatting.GREEN)
+            );
+        } catch (Throwable t) {
+            Minecraft.getInstance().gui.hud.getChat().addClientSystemMessage(
+                Component.literal("Server start failed: " + t.getMessage()).withStyle(ChatFormatting.RED)
+            );
+            t.printStackTrace();
+        }
+    }
+
     static {
         DISPATCHER.register(
             LiteralArgumentBuilder.<SharedSuggestionProvider>literal("help").executes(ctx -> {
@@ -62,24 +132,21 @@ public final class LocalCommandExecutor {
                     Component.literal("/quit — 退出游戏").withStyle(ChatFormatting.GRAY)
                 );
                 minecraft.gui.hud.getChat().addClientSystemMessage(
-                    Component.literal("/server_debug <stop│start> <Options> — 用于调试改版在服务端层的改动").withStyle(ChatFormatting.GRAY)
+                    Component.literal("/server_debug <stop|start> <Options> — 用于调试改版在服务端层的改动").withStyle(ChatFormatting.GRAY)
                 );
                 return 1;
             })
         );
-        // Register the root "/server_debug" command with three sub‑commands:
+        // Register the root "/server_debug" command with three sub-commands:
         //   • /server_debug                →  prints usage help.
         //   • /server_debug stop           →  stops a running DedicatedServer (if any).
-        //   • /server_debug start [options] →  launches a server. Options are parsed as
-        //         key=value  →  CLI argument if the key is a known Main option, otherwise
-        //                         written to "server.properties" before start.
-        //         flag       →  same rule, a flag is passed as "--flag" if known, else set to true.
-        //   The command also keeps a volatile reference to the running server via
-        //   LocalCommandExecutor.runningServer and Main.runningServer.
+        //   • /server_debug start [options] →  launches a server in gameDir/TestServer/.
+        //         Options: key=value → CLI arg if known Main option, else written to server.properties.
+        //         Flags: --flag → passed as CLI if known, else set to true in properties.
+        //   All server files (properties, eula, logs, world/) go into gameDir/TestServer/.
         DISPATCHER.register(
             LiteralArgumentBuilder.<SharedSuggestionProvider>literal("server_debug")
                 .executes(ctx -> {
-                    // Show simple usage when the user only typed "/server_debug"
                     Minecraft mc = Minecraft.getInstance();
                     mc.gui.hud.getChat().addClientSystemMessage(
                         Component.literal("Usage: /server_debug <start|stop> [options]").withStyle(ChatFormatting.YELLOW)
@@ -108,37 +175,7 @@ public final class LocalCommandExecutor {
                 // ------------------- START -------------------
                 .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("start")
                     .executes(ctx -> {
-                        // No options: start server with default config (headless, no GUI)
-                        String[] argsArray = new String[]{"--nogui"};
-                        try {
-                            // Ensure required files exist with sane defaults
-                            java.nio.file.Path propPath = java.nio.file.Paths.get("server.properties");
-                            if (!java.nio.file.Files.exists(propPath)) {
-                                java.util.Properties empty = new java.util.Properties();
-                                try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(propPath)) {
-                                    empty.store(out, null);
-                                }
-                            }
-                            java.nio.file.Path eulaPath = java.nio.file.Paths.get("eula.txt");
-                            if (!java.nio.file.Files.exists(eulaPath)) {
-                                try (java.io.Writer writer = java.nio.file.Files.newBufferedWriter(eulaPath, java.nio.charset.StandardCharsets.UTF_8)) {
-                                    writer.write("eula=true\n");
-                                }
-                            }
-                            net.minecraft.server.Main.main(argsArray);
-                            runningServer = net.minecraft.server.Main.getRunningServer();
-                            Minecraft mc2 = Minecraft.getInstance();
-                            mc2.gui.hud.getChat().addClientSystemMessage(
-                                Component.literal("Server started.").withStyle(ChatFormatting.GREEN)
-                            );
-                        } catch (Throwable t) {
-                            Minecraft mc3 = Minecraft.getInstance();
-                            mc3.gui.hud.getChat().addClientSystemMessage(
-                                Component.literal("Server start failed: " + t.getMessage())
-                                    .withStyle(ChatFormatting.RED)
-                            );
-                            t.printStackTrace();
-                        }
+                        startDebugServer(new String[]{"--nogui"}, new java.util.Properties());
                         return 1;
                     })
                     .then(RequiredArgumentBuilder.<SharedSuggestionProvider, String>argument("options", StringArgumentType.greedyString())
@@ -146,7 +183,6 @@ public final class LocalCommandExecutor {
                             String optStr = StringArgumentType.getString(ctx, "options");
                             java.util.List<String> args = new java.util.ArrayList<>();
                             java.util.Properties propUpdates = new java.util.Properties();
-                            // Known CLI options accepted by net.minecraft.server.Main
                             java.util.Set<String> knownCli = java.util.Set.of(
                                 "nogui", "initSettings", "demo", "bonusChest",
                                 "forceUpgrade", "eraseCache", "recreateRegionFiles",
@@ -164,89 +200,27 @@ public final class LocalCommandExecutor {
                                             args.add("--" + key);
                                             args.add(value);
                                         } else {
-                                            // Store into server.properties (will be written later)
                                             propUpdates.setProperty(key, value);
                                         }
                                     } else {
-                                        // Flag without value
                                         if (knownCli.contains(token)) {
                                             args.add("--" + token);
                                         } else {
-                                            // For properties without explicit value we set "true"
                                             propUpdates.setProperty(token, "true");
                                         }
                                     }
                                 }
                             }
-                            // Write any property updates to server.properties before launching
-                            if (!propUpdates.isEmpty()) {
-                                try {
-                                    java.nio.file.Path propPath = java.nio.file.Paths.get("server.properties");
-                                    // Load existing properties if present
-                                    java.util.Properties existing = new java.util.Properties();
-                                    if (java.nio.file.Files.exists(propPath)) {
-                                        try (java.io.InputStream in = java.nio.file.Files.newInputStream(propPath)) {
-                                            existing.load(in);
-                                        }
-                                    }
-                                    // Merge updates
-                                    existing.putAll(propUpdates);
-                                    try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(propPath)) {
-                                        existing.store(out, null);
-                                    }
-                                } catch (Exception e) {
-                                    Minecraft mcErr = Minecraft.getInstance();
-                                    mcErr.gui.hud.getChat().addClientSystemMessage(
-                                        Component.literal("Failed to write server.properties: " + e.getMessage())
-                                            .withStyle(ChatFormatting.RED)
-                                    );
-                                    e.printStackTrace();
-                                }
+                            if (!args.contains("--nogui")) {
+                                args.add(0, "--nogui");
                             }
-                            String[] argsArray = args.toArray(new String[0]);
-                            // Ensure headless mode via --nogui if not already present
-                            if (!java.util.Arrays.asList(argsArray).contains("--nogui")) {
-                                java.util.List<String> tmp = new java.util.ArrayList<>(java.util.Arrays.asList(argsArray));
-                                tmp.add(0, "--nogui");
-                                argsArray = tmp.toArray(new String[0]);
-                            }
-                            try {
-                                // Ensure required files exist with sane defaults
-                                java.nio.file.Path propPath = java.nio.file.Paths.get("server.properties");
-                                if (!java.nio.file.Files.exists(propPath)) {
-                                    java.util.Properties empty = new java.util.Properties();
-                                    try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(propPath)) {
-                                        empty.store(out, null);
-                                    }
-                                }
-                                java.nio.file.Path eulaPath = java.nio.file.Paths.get("eula.txt");
-                                if (!java.nio.file.Files.exists(eulaPath)) {
-                                    try (java.io.Writer writer = java.nio.file.Files.newBufferedWriter(eulaPath, java.nio.charset.StandardCharsets.UTF_8)) {
-                                        writer.write("eula=true\n");
-                                    }
-                                }
-                                net.minecraft.server.Main.main(argsArray);
-                                // Store reference to the running server (Main already set its static field)
-                                runningServer = net.minecraft.server.Main.getRunningServer();
-                                Minecraft mc2 = Minecraft.getInstance();
-                                mc2.gui.hud.getChat().addClientSystemMessage(
-                                    Component.literal("Server started.").withStyle(ChatFormatting.GREEN)
-                                );
-                            } catch (Throwable t) {
-                                Minecraft mc3 = Minecraft.getInstance();
-                                mc3.gui.hud.getChat().addClientSystemMessage(
-                                    Component.literal("Server start failed: " + t.getMessage())
-                                        .withStyle(ChatFormatting.RED)
-                                );
-                                t.printStackTrace();
-                            }
+                            startDebugServer(args.toArray(new String[0]), propUpdates);
                             return 1;
                         })
                     )
                 )
         );
     }
-
 
     public static CommandDispatcher<SharedSuggestionProvider> getDispatcher() {
         return DISPATCHER;
