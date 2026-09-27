@@ -62,7 +62,7 @@ jobs:
       enable_nightly: ${{ steps.read_nightly_config.outputs.enable_nightly }}
       upload_lwiki_to_gwiki: ${{ steps.read_uwiki_config.outputs.upload_lwiki_to_gwiki }}
       minecraft_version: ${{ steps.read_version.outputs.version }}
-      do_not_build_minecraft: ${{ steps.read_uwiki_config.outputs.do_not_build_minecraft }}
+      do_not_build_minecraft: ${{ steps.read_do_not_build_config.outputs.do_not_build_minecraft }}
     steps:
       - name: 拉取代码
         uses: actions/checkout@v6
