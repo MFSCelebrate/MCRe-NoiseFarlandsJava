@@ -1,8 +1,0 @@
-# 用于是否启用 每日构建测试 ，用于开发版本的公开测试
-EnableTestNightlyRelease=true
-
-# 是否将本地 Wiki 文档上传到 Github Wiki
-UploadLocalWikiToGithubWiki=true
-
-# 不构建 Minecraft 26.2
-DoNotBuildMinecraft=true

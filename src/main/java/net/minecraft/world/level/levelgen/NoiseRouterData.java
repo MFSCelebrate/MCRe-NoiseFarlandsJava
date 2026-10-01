@@ -192,7 +192,21 @@ public class NoiseRouterData {
     }
 
     private static DensityFunction offsetToDepth(final DensityFunction offset) {
-        return DensityFunctions.add(DensityFunctions.yClampedGradient(-64, 320, 1.5, -1.5), offset);
+        // 🔧 修复（2026-10-01）：三层 depth —— 天空边境之地（Y ≥ 25101648）的 depth 不被 -1.5 钳死
+        // 【inf_farlands 指导】原版 b1.7.3 后噪声不生成天空边境之地的三道障碍：
+        //   ① 渐消项（顶 slide 240..256）—— so_high 数据包已挪到极端顶端 ✓
+        //   ② 溢出距离（噪声坐标在 25101648 = 2×12550824 处突破）—— 自然存在 ✓
+        //   ③ 新版本密度函数（本梯度 y>320 钳制 -1.5）—— 此处修复 ✗→✓
+        // 修复前：25101648+ 的 depth 恒 -1.5 → sloped_cheese 均值 -0.3~0.75 负 → squeeze 链恒负 → 无地形
+        // 修复后：25101648+ 的 depth = 0.5 + offset（原版 y=64 海平面深度）→ sloped_cheese 正负振荡 → 天空边境之地正常生成
+        //         Y < 320 保持原版梯度（正常世界逐字节不变）；320..25101648 由 final_density 虚空层压死（depth 值无关紧要）
+        DensityFunction vanillaDepth = DensityFunctions.add(DensityFunctions.yClampedGradient(-64, 320, 1.5, -1.5), offset);
+        DensityFunction farLandsDepth = DensityFunctions.add(DensityFunctions.constant(0.5), offset);
+        // Y 恒等函数：与注册的 minecraft:y 完全一致（yClampedGradient(MIN_Y, MAX_Y, MIN_Y, MAX_Y)），
+        // 内联构造避免向本方法传 HolderGetter（preliminarySurfaceLevel 处无 functions，避免签名级联）
+        DensityFunction y = DensityFunctions.yClampedGradient(
+            DimensionType.MIN_Y, DimensionType.MAX_Y, DimensionType.MIN_Y, DimensionType.MAX_Y);
+        return DensityFunctions.rangeChoice(y, 25101648, DimensionType.WAY_ABOVE_MAX_Y, farLandsDepth, vanillaDepth);
     }
 
     private static DensityFunction registerAndWrap(
