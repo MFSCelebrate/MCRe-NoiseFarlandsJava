@@ -58,7 +58,7 @@ public class DebugEntrySystemSpecs implements DebugScreenEntry {
             .text("x")
             .value(window.getScreenHeight())
             .text(" (")
-            .formattedValue("%.2f", window.getGuiScale())
+            .formattedValue("%.2f", (double) window.getGuiScale())
             .text("x pixel density)")
       );
       displayer.addToGroup(
