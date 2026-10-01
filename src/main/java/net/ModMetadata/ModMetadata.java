@@ -31,7 +31,7 @@ public final class ModMetadata {
     private static final int RESOURCE_MINOR = 0;
     private static final int DATA_MAJOR = 107;
     private static final int DATA_MINOR = 1;
-    private static final Date BUILD_TIME = Date.from(ZonedDateTime.parse("2026-09-27T06:11:34.918953041Z").toInstant());
+    private static final Date BUILD_TIME = Date.from(ZonedDateTime.parse("2026-10-01T00:12:18.352706131Z").toInstant());
     private static final boolean STABLE = true;
 
     // ==================== MCRe Mod 扩展字段（硬编码） ====================

@@ -5,4 +5,4 @@ EnableTestNightlyRelease=true
 UploadLocalWikiToGithubWiki=true
 
 # 不构建 Minecraft 26.2
-DoNotBuildMinecraft=false
+DoNotBuildMinecraft=true

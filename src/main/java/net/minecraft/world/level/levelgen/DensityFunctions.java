@@ -593,7 +593,17 @@ public final class DensityFunctions {
                 final BigInteger sumSq = sx8.multiply(sx8).add(sz8.multiply(sz8));
                 doffs = 100.0F - Mth.sqrt(sumSq.floatValue()) * 8.0F;
             } else {
-                doffs = 100.0F - Mth.sqrt(sectionX * sectionX + sectionZ * sectionZ) * 8.0F;
+                // 🔧 修复（2026-09-30）：base falloff 必须在 /8（section）域计算！
+                // 原版语义：compute 先 blockX/8 再进 getHeightValue，base falloff 用 section 坐标
+                // 本实现 compute 传原始 blockX（为在内部应用 WorldReposition 偏移），
+                // 所以这里必须先 reposition 再 /8 归约到 section 域，与 fixEndRingMode 路径同域。
+                // 【bug 根因】修复前直接用原始 blockX → 主岛半径 8 倍缩小（92 格 → 11.5 格）
+                //            → 中心密度 0.719 远超表面阈值 → 顶部平坦 → 末地岛变圆柱 ✗
+                // 【附带修复】BigInteger 无 int 溢出：修复前 x*x 对 |x|>46341 溢出为负 → sqrt NaN
+                final BigInteger sx8 = offsetX.divide(EIGHT);
+                final BigInteger sz8 = offsetZ.divide(EIGHT);
+                final BigInteger sumSq = sx8.multiply(sx8).add(sz8.multiply(sz8));
+                doffs = 100.0F - Mth.sqrt(sumSq.floatValue()) * 8.0F;
             }
             doffs = Mth.clamp(doffs, -100.0F, 80.0F);
 
