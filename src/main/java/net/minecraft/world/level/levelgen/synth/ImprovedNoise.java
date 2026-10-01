@@ -158,9 +158,17 @@ public final class ImprovedNoise {
             final BigDecimal _z,
             final BigDecimal yScale,
             final BigDecimal yFudge) {
-        final BigDecimal x = _x.add(this.exactXo());
-        final BigDecimal y = _y.add(this.exactYo());
-        final BigDecimal z = _z.add(this.exactZo());
+        // 🔧 Bedrock 模式适配：输入与 xo 偏移先量化到 float（模拟基岩单精度），再精确计算
+        // float 的值可精确表示为 BigDecimal → 精确计算无灾难性抵消 → 无地形拉伸
+        final BigDecimal bx = isBedrockMode() ? BigDecimal.valueOf(_x.floatValue()) : _x;
+        final BigDecimal by = isBedrockMode() ? BigDecimal.valueOf(_y.floatValue()) : _y;
+        final BigDecimal bz = isBedrockMode() ? BigDecimal.valueOf(_z.floatValue()) : _z;
+        final BigDecimal xoB = isBedrockMode() ? BigDecimal.valueOf((float) this.xo) : this.exactXo();
+        final BigDecimal yoB = isBedrockMode() ? BigDecimal.valueOf((float) this.yo) : this.exactYo();
+        final BigDecimal zoB = isBedrockMode() ? BigDecimal.valueOf((float) this.zo) : this.exactZo();
+        final BigDecimal x = bx.add(xoB);
+        final BigDecimal y = by.add(yoB);
+        final BigDecimal z = bz.add(zoB);
 
         // ⚠️ 保留 int 饱和（平面边境之地的来源）
         final int xf = ExactNoiseMath.floorToIntSaturated(x);

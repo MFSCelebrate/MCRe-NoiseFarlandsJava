@@ -140,6 +140,16 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
     @Override
     public double compute(final DensityFunction.FunctionContext context) {
         if (isBedrockMode()) {
+            // 🔧 Bedrock 模式 + 高精度模式：坐标大到 double 失真时走精确路径（Bedrock 适配在内部，无拉伸）
+            // 修复前：Bedrock 分支无条件拦截 → 高精度模式被绕过 → float 折叠的灾难性抵消 → 地形拉伸 ✗
+            if (ExactNoiseMath.enabled()) {
+                final double roughX = WorldReposition.reposition(context.blockX(), Direction.Axis.X);
+                final double roughY = WorldReposition.reposition(context.blockY(), Direction.Axis.Y);
+                final double roughZ = WorldReposition.reposition(context.blockZ(), Direction.Axis.Z);
+                if (ExactNoiseMath.needsExact(roughX, roughY, roughZ, this.xzMultiplier, this.yMultiplier)) {
+                    return this.computeExact(context);
+                }
+            }
             // === Bedrock 模式：全部使用 float 精度计算 ===
             // 🔧 MCRe：先施加 WorldReposition 偏移（newPos = pos * scale + shift），再乘 xzMultiplier/yMultiplier
             float limitX = (float)(WorldReposition.reposition(context.blockX(), Direction.Axis.X) * this.xzMultiplier);
@@ -293,9 +303,17 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
      */
     private double computeExact(final DensityFunction.FunctionContext context) {
         // ⚠️ 从**整数**方块坐标开始精确化——绝不经过 double（double 在 2^53 以上已无法区分相邻方块）
-        final BigDecimal posX = WorldReposition.reposition(BigDecimal.valueOf(context.blockX()), Direction.Axis.X);
-        final BigDecimal posY = WorldReposition.reposition(BigDecimal.valueOf(context.blockY()), Direction.Axis.Y);
-        final BigDecimal posZ = WorldReposition.reposition(BigDecimal.valueOf(context.blockZ()), Direction.Axis.Z);
+        BigDecimal posX = WorldReposition.reposition(BigDecimal.valueOf(context.blockX()), Direction.Axis.X);
+        BigDecimal posY = WorldReposition.reposition(BigDecimal.valueOf(context.blockY()), Direction.Axis.Y);
+        BigDecimal posZ = WorldReposition.reposition(BigDecimal.valueOf(context.blockZ()), Direction.Axis.Z);
+
+        // 🔧 Bedrock 模式适配：坐标先量化到 float（模拟基岩单精度输入量级），再精确计算
+        // float 的值可精确表示为 BigDecimal → 精确计算无灾难性抵消 → 无地形拉伸
+        if (isBedrockMode()) {
+            posX = BigDecimal.valueOf(posX.floatValue());
+            posY = BigDecimal.valueOf(posY.floatValue());
+            posZ = BigDecimal.valueOf(posZ.floatValue());
+        }
 
         final BigDecimal limitX = posX.multiply(this.xzMultiplierExact);
         final BigDecimal limitY = posY.multiply(this.yMultiplierExact);

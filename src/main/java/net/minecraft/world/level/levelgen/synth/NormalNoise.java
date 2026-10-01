@@ -156,10 +156,15 @@ public class NormalNoise {
      * 会被 PerlinNoise 内部的 {@code × 2^k} 放大 2^15 倍）。噪声输出仍用 double 加权求和。
      */
     public double getValueExact(final BigDecimal x, final BigDecimal y, final BigDecimal z) {
-        final BigDecimal x2 = x.multiply(INPUT_FACTOR_BD);
-        final BigDecimal y2 = y.multiply(INPUT_FACTOR_BD);
-        final BigDecimal z2 = z.multiply(INPUT_FACTOR_BD);
-        return (this.first.getValueExact(x, y, z) + this.second.getValueExact(x2, y2, z2)) * this.valueFactor;
+        // 🔧 Bedrock 模式适配：输入先量化到 float（模拟基岩单精度输入坐标），再精确计算
+        // float 的值可精确表示为 BigDecimal → 精确计算无灾难性抵消 → 无地形拉伸
+        final BigDecimal bx = isBedrockMode() ? BigDecimal.valueOf(x.floatValue()) : x;
+        final BigDecimal by = isBedrockMode() ? BigDecimal.valueOf(y.floatValue()) : y;
+        final BigDecimal bz = isBedrockMode() ? BigDecimal.valueOf(z.floatValue()) : z;
+        final BigDecimal x2 = bx.multiply(INPUT_FACTOR_BD);
+        final BigDecimal y2 = by.multiply(INPUT_FACTOR_BD);
+        final BigDecimal z2 = bz.multiply(INPUT_FACTOR_BD);
+        return (this.first.getValueExact(bx, by, bz) + this.second.getValueExact(x2, y2, z2)) * this.valueFactor;
     }
 
     public NormalNoise.NoiseParameters parameters() {

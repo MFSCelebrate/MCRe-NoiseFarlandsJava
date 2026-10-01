@@ -36,6 +36,12 @@ public class PerlinNoise {
         return config != null && config.limitReturnValue;
     }
 
+    /** 🔧 静态 Bedrock 模式判定（供 static wrap / wrapExact 使用） */
+    private static boolean isBedrockStatic() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
+    }
+
     private static final int ROUND_OFF = 33554432;
     /** 🔧 MCRe 精确路径：折叠周期 2^25 = 33554432（double 表示精确无损）。 */
     private static final BigDecimal PERIOD_BD = BigDecimal.valueOf(33554432L);
@@ -280,6 +286,11 @@ public class PerlinNoise {
             final BigDecimal z,
             final BigDecimal yScale,
             final BigDecimal yFudge) {
+        // 🔧 Bedrock 模式适配：输入先量化到 float（模拟基岩单精度输入坐标），再精确计算
+        // float 的值可精确表示为 BigDecimal → 精确计算无灾难性抵消 → 无地形拉伸
+        final BigDecimal bx = isBedrockMode() ? BigDecimal.valueOf(x.floatValue()) : x;
+        final BigDecimal by = isBedrockMode() ? BigDecimal.valueOf(y.floatValue()) : y;
+        final BigDecimal bz = isBedrockMode() ? BigDecimal.valueOf(z.floatValue()) : z;
         double value = 0.0;
         BigDecimal factor = this.exactInputFactor();
         double valueFactor = this.lowestFreqValueFactor;
@@ -290,9 +301,9 @@ public class PerlinNoise {
                 final BigDecimal factorYScale = yScale.multiply(factor);
                 final BigDecimal factorYFudge = yFudge.multiply(factor);
                 final double noiseVal = noise.noiseExact(
-                        wrapExact(x.multiply(factor)),
-                        wrapExact(y.multiply(factor)),
-                        wrapExact(z.multiply(factor)),
+                        wrapExact(bx.multiply(factor)),
+                        wrapExact(by.multiply(factor)),
+                        wrapExact(bz.multiply(factor)),
                         factorYScale,
                         factorYFudge);
                 value += this.amplitudes.getDouble(i) * noiseVal * valueFactor;
@@ -369,6 +380,31 @@ public class PerlinNoise {
         }
         double limitNoiseValue = config.limitReturnValueValue;
         String mode = config.precisionMode;
+        // 🔧 Bedrock 模式：全 float 精度折叠（模拟基岩版坐标量级，边境之地形态与基岩一致）
+        if (isBedrockStatic()) {
+            float folded;
+            switch (mode) {
+                case "64bit":
+                case "1.18-exp-64bit":
+                    folded = (float) x - Mth.lfloor((float) x / 3.3554432E7F + 0.5F) * 3.3554432E7F;
+                    break;
+                case "Release":
+                    folded = (float) computeReleaseValue((float) x);
+                    break;
+                default:
+                    folded = (float) x;
+                    break;
+            }
+            // 限制返回值（float 域，log10(0) = -Infinity 天然跳过）
+            if (limitReturnValueMode()) {
+                double abs = Math.abs((double) folded);
+                if (Math.log10(abs) > limitNoiseValue) {
+                    double logAbs = Math.log10(abs);
+                    folded = (float) (Math.pow(10, logAbs - Math.floor(logAbs - limitNoiseValue)) * Math.signum(folded));
+                }
+            }
+            return (float) folded;
+        }
         double folded;
         switch (mode) {
             case "64bit":
@@ -412,6 +448,42 @@ public class PerlinNoise {
         }
         double limitNoiseValue = config.limitReturnValueValue;
         String mode = config.precisionMode;
+        // 🔧 Bedrock 模式：先转 float（单精度输入坐标，模拟基岩输入量级），再用 BigDecimal 精确取模
+        // —— 避免地形拉伸（精确取模消除灾难性抵消）+ 完美模拟基岩版边境之地（float 输入量级）
+        if (isBedrockStatic()) {
+            final float fx = x.floatValue();
+            BigDecimal folded;
+            switch (mode) {
+                case "64bit":
+                case "1.18-exp-64bit": {
+                    // ① 商：BigDecimal 精确除法（不丢精度）
+                    final BigDecimal q = BigDecimal.valueOf(fx).divide(PERIOD_BD, ExactNoiseMath.DIVISION).add(HALF_BD);
+                    final long l = ExactNoiseMath.floorToLongSaturated(q);
+                    // ② 折叠：BigDecimal 精确相减（避免 float 减法的灾难性抵消 → 无地形拉伸）
+                    folded = BigDecimal.valueOf(fx).subtract(BigDecimal.valueOf(l).multiply(PERIOD_BD));
+                    break;
+                }
+                case "Release": {
+                    // float 输入 + 精确小数分离
+                    final long l = ExactNoiseMath.floorToLongSaturated(BigDecimal.valueOf(fx));
+                    final BigDecimal frac = BigDecimal.valueOf(fx).subtract(BigDecimal.valueOf(l));
+                    folded = frac.add(BigDecimal.valueOf(l % 16777216L));
+                    break;
+                }
+                default:
+                    folded = BigDecimal.valueOf(fx);
+                    break;
+            }
+            if (limitReturnValueMode()) {
+                final double fd = folded.doubleValue();
+                final double abs = Math.abs(fd);
+                if (Math.log10(abs) > limitNoiseValue) {
+                    final double logAbs = Math.log10(abs);
+                    folded = BigDecimal.valueOf(Math.pow(10, logAbs - Math.floor(logAbs - limitNoiseValue)) * Math.signum(fd));
+                }
+            }
+            return folded;
+        }
         BigDecimal folded;
         switch (mode) {
             case "64bit":

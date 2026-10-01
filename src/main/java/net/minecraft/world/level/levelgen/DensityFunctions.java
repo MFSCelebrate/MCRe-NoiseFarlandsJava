@@ -593,17 +593,17 @@ public final class DensityFunctions {
                 final BigInteger sumSq = sx8.multiply(sx8).add(sz8.multiply(sz8));
                 doffs = 100.0F - Mth.sqrt(sumSq.floatValue()) * 8.0F;
             } else {
-                // 🔧 修复（2026-09-30）：base falloff 必须在 /8（section）域计算！
+                // 🔧 修复 *8（2026-09-30）：base falloff 必须在 /8（section）域计算！
                 // 原版语义：compute 先 blockX/8 再进 getHeightValue，base falloff 用 section 坐标
-                // 本实现 compute 传原始 blockX（为在内部应用 WorldReposition 偏移），
-                // 所以这里必须先 reposition 再 /8 归约到 section 域，与 fixEndRingMode 路径同域。
+                // 本实现 compute 传原始 blockX，所以这里先 /8 归约到 section 域
                 // 【bug 根因】修复前直接用原始 blockX → 主岛半径 8 倍缩小（92 格 → 11.5 格）
                 //            → 中心密度 0.719 远超表面阈值 → 顶部平坦 → 末地岛变圆柱 ✗
-                // 【附带修复】BigInteger 无 int 溢出：修复前 x*x 对 |x|>46341 溢出为负 → sqrt NaN
-                final BigInteger sx8 = offsetX.divide(EIGHT);
-                final BigInteger sz8 = offsetZ.divide(EIGHT);
-                final BigInteger sumSq = sx8.multiply(sx8).add(sz8.multiply(sz8));
-                doffs = 100.0F - Mth.sqrt(sumSq.floatValue()) * 8.0F;
+                // 【保留原版行为】int 溢出 → NaN → 末地环（fixEndRings=false = 原版行为，勿用 BigInteger）：
+                //   sx8*sx8 对 |sx8|>46341（即 |blockX|>370728）int 溢出为负 → sqrt NaN → 末地环效果
+                //   fixEndRings=true 时走上面的 BigInteger 路径，无溢出无 NaN（修复末地环）
+                int sx8 = sectionX / 8;
+                int sz8 = sectionZ / 8;
+                doffs = 100.0F - Mth.sqrt(sx8 * sx8 + sz8 * sz8) * 8.0F;
             }
             doffs = Mth.clamp(doffs, -100.0F, 80.0F);
 
