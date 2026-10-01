@@ -921,6 +921,23 @@ public class Options {
         0,
         var1 -> this.minecraft.resizeGui()
     );
+    // 🔧 MCRe：26.4 Snapshot 2 移植 —— debugGuiScale（调试屏幕独立缩放：-1=跟随标准 / 0=自动减半 / n=指定）
+    public static final int DEBUG_GUI_SCALE_UNCHANGED = -1;
+    private final OptionInstance<Integer> debugGuiScale = new OptionInstance<>(
+        "options.debugGuiScale",
+        OptionInstance.noTooltip(),
+        (caption, value) -> switch (value) {
+            case -1 -> Component.literal("Default (follows GUI Scale)");
+            case 0 -> Component.literal("Auto (half of max)");
+            default -> Component.literal(Integer.toString(value));
+        },
+        new OptionInstance.ClampingLazyMaxIntRange(-1, () -> {
+            Minecraft minecraftx = Minecraft.getInstance();
+            return !minecraftx.isRunning() ? 2147483646 : minecraftx.getWindow().calculateScale(0, minecraftx.isEnforceUnicode());
+        }, 2147483646),
+        -1,
+        var0 -> {}
+    );
     private final OptionInstance<ParticleStatus> particles = new OptionInstance<>(
         "options.particles",
         OptionInstance.noTooltip(),
@@ -1446,6 +1463,11 @@ public class Options {
 
     public OptionInstance<Integer> guiScale() {
         return this.guiScale;
+    }
+
+    /** 🔧 MCRe：26.4 移植 —— debugGuiScale 访问器 */
+    public OptionInstance<Integer> debugGuiScale() {
+        return this.debugGuiScale;
     }
 
     public OptionInstance<ParticleStatus> particles() {

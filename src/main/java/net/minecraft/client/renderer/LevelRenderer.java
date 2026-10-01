@@ -531,6 +531,11 @@ public class LevelRenderer implements AutoCloseable {
     // MCRe：26.3 MultiDrawIndirect 移植——MultiDraw 可用性（Vulkan 支持 drawIndexedIndirect + nonZeroFirstInstance）
     private boolean isChunkRenderingUsesMultiDraw;
 
+    /** 🔧 MCRe：MultiDrawIndirect 是否启用（26.4 调试面板 Performance Impactors 用） */
+    public boolean multiDrawIndirectEnabled() {
+        return this.isChunkRenderingUsesMultiDraw;
+    }
+
     /** MCRe：26.3 MultiDrawIndirect 移植——按 vertex/index buffer 分组构建 ChunkDrawGroup */
     private int extractSectionDrawGroups(
         final List<DynamicUniforms.ChunkSectionInfo> sectionInfos,

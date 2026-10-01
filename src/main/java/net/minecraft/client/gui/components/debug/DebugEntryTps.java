@@ -9,66 +9,65 @@ import net.minecraft.server.ServerTickRateManager;
 import net.minecraft.world.TickRateManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
+import org.jspecify.annotations.Nullable;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jspecify.annotations.Nullable;
+
 
 @OnlyIn(Dist.CLIENT)
 public class DebugEntryTps implements DebugScreenEntry {
-    @Override
-    public void display(
-        final DebugScreenDisplayer displayer,
-        final @Nullable Level serverOrClientLevel,
-        final @Nullable LevelChunk clientChunk,
-        final @Nullable LevelChunk serverChunk
-    ) {
-        Minecraft minecraft = Minecraft.getInstance();
-        IntegratedServer server = minecraft.getSingleplayerServer();
-        ClientPacketListener connectionListener = minecraft.getConnection();
-        if (connectionListener != null && serverOrClientLevel != null) {
-            Connection connection = connectionListener.getConnection();
-            float averageSentPackets = connection.getAverageSentPackets();
-            float averageReceivedPackets = connection.getAverageReceivedPackets();
+   @Override
+   public void display(
+      final DebugScreenDisplayer displayer,
+      final @Nullable Level serverOrClientLevel,
+      final @Nullable LevelChunk clientChunk,
+      final @Nullable LevelChunk serverChunk
+   ) {
+      Minecraft minecraft = Minecraft.getInstance();
+      IntegratedServer server = minecraft.getSingleplayerServer();
+      ClientPacketListener connectionListener = minecraft.getConnection();
+      if (connectionListener != null && serverOrClientLevel != null) {
+         Connection connection = connectionListener.getConnection();
+         float averageSentPackets = connection.getAverageSentPackets();
+         float averageReceivedPackets = connection.getAverageReceivedPackets();
+         displayer.addFactToGroup(DebugGroups.MISC, "Server", fact -> {
             TickRateManager tickRateManager = serverOrClientLevel.tickRateManager();
             String runStatus;
             if (tickRateManager.isSteppingForward()) {
-                runStatus = " (frozen - stepping)";
+               runStatus = "frozen - stepping";
             } else if (tickRateManager.isFrozen()) {
-                runStatus = " (frozen)";
+               runStatus = "frozen";
             } else {
-                runStatus = "";
+               runStatus = "";
             }
 
-            String tps;
             if (server != null) {
-                ServerTickRateManager serverTickRateManager = server.tickRateManager();
-                boolean isSpriting = serverTickRateManager.isSprinting();
-                if (isSpriting) {
-                    runStatus = " (sprinting)";
-                }
+               ServerTickRateManager serverTickRateManager = server.tickRateManager();
+               boolean isSpriting = serverTickRateManager.isSprinting();
+               if (isSpriting) {
+                  runStatus = "sprinting";
+               }
 
-                String tpsTarget = isSpriting ? "-" : String.format(Locale.ROOT, "%.1f", tickRateManager.millisecondsPerTick());
-                tps = String.format(
-                    Locale.ROOT,
-                    "Integrated server @ %.1f/%s ms%s, %.0f tx, %.0f rx",
-                    server.getCurrentSmoothedTickTime(),
-                    tpsTarget,
-                    runStatus,
-                    averageSentPackets,
-                    averageReceivedPackets
-                );
+               String tpsTarget = isSpriting ? "-" : String.format(Locale.ROOT, "%.1f", tickRateManager.millisecondsPerTick());
+               fact.value("Integrated").text(" @ ").formattedValue("%.1f", server.getCurrentSmoothedTickTime()).text("/").value(tpsTarget).text(" ms");
             } else {
-                tps = String.format(
-                    Locale.ROOT, "\"%s\" server%s, %.0f tx, %.0f rx", connectionListener.serverBrand(), runStatus, averageSentPackets, averageReceivedPackets
-                );
+               fact.text("\"").value(connectionListener.serverBrand()).text("\"");
             }
 
-            displayer.addLine(tps);
-        }
-    }
+            if (!runStatus.isEmpty()) {
+               fact.text(" (").value(runStatus).text(")");
+            }
+         });
+         displayer.addFactToGroup(
+            DebugGroups.MISC,
+            "Packets",
+            fact -> fact.formattedValue("%.0f", averageSentPackets).text(" tx, ").formattedValue("%.0f", averageReceivedPackets).text(" rx")
+         );
+      }
+   }
 
-    @Override
-    public boolean isAllowed(final boolean reducedDebugInfo) {
-        return true;
-    }
+   @Override
+   public boolean isAllowed(final boolean reducedDebugInfo) {
+      return true;
+   }
 }

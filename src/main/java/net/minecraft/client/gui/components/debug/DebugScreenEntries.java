@@ -38,6 +38,9 @@ public class DebugScreenEntries {
     public static final Identifier SOUND_MOOD = register("sound_mood", new DebugEntrySoundMood());
     public static final Identifier SOUND_CACHE = register("sound_cache", new DebugEntrySoundCache());
     public static final Identifier POST_EFFECT = register("post_effect", new DebugEntryPostEffect());
+    // 🔧 MCRe：26.4 新条目（PlayerSpeed + PostEffects 26.4 版）
+    public static final Identifier PLAYER_SPEED = register("player_speed", new DebugEntryPlayerSpeed());
+    public static final Identifier POST_EFFECTS = register("post_effects", new DebugEntryPostEffects());
     public static final Identifier ENTITY_HITBOXES = register("entity_hitboxes", new DebugEntryNoop());
     public static final Identifier CHUNK_BORDERS = register("chunk_borders", new DebugEntryNoop());
     public static final Identifier THREE_DIMENSIONAL_CROSSHAIR = register("3d_crosshair", new DebugEntryNoop());

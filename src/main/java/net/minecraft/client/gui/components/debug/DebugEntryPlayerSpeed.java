@@ -1,9 +1,6 @@
 package net.minecraft.client.gui.components.debug;
 
-import java.util.ArrayList;
-import java.util.List;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.jspecify.annotations.Nullable;
@@ -12,7 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 
 @OnlyIn(Dist.CLIENT)
-public class DebugEntryLookingAtEntityTags implements DebugScreenEntry {
+public class DebugEntryPlayerSpeed implements DebugScreenEntry {
    @Override
    public void display(
       final DebugScreenDisplayer displayer,
@@ -20,15 +17,12 @@ public class DebugEntryLookingAtEntityTags implements DebugScreenEntry {
       final @Nullable LevelChunk clientChunk,
       final @Nullable LevelChunk serverChunk
    ) {
-      Minecraft minecraft = Minecraft.getInstance();
-      Entity entity = minecraft.crosshairPickEntity;
-      List<String> tags = new ArrayList<>();
-      if (entity != null) {
-         DebugEntryLookingAt.addTagEntries(tags, entity);
-      }
-
-      if (!tags.isEmpty()) {
-         displayer.addToGroup(DebugGroups.LOOKING_AT_ENTITY, tags);
+      if (Minecraft.getInstance().getCameraEntity() != null) {
+         displayer.addFactToGroup(
+            DebugGroups.POSITION,
+            "Speed",
+            fact -> fact.formattedValue("%.3f", Minecraft.getInstance().getCameraEntity().getKnownSpeed().length()).text(" blocks/tick")
+         );
       }
    }
 }

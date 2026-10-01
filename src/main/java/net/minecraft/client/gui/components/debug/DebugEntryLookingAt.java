@@ -2,183 +2,167 @@ package net.minecraft.client.gui.components.debug;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.ChatFormatting;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.TypedInstance;
-import net.minecraft.resources.Identifier;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateHolder;
-import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import org.jspecify.annotations.Nullable;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jspecify.annotations.Nullable;
 
-@OnlyIn(Dist.CLIENT)
+
 public abstract class DebugEntryLookingAt implements DebugScreenEntry {
-    private static final int RANGE = 20;
-    private static final Identifier BLOCK_GROUP = Identifier.withDefaultNamespace("looking_at_block");
-    private static final Identifier FLUID_GROUP = Identifier.withDefaultNamespace("looking_at_fluid");
+   private static final int RANGE = 20;
 
-    @Override
-    public void display(
-        final DebugScreenDisplayer displayer,
-        final @Nullable Level serverOrClientLevel,
-        final @Nullable LevelChunk clientChunk,
-        final @Nullable LevelChunk serverChunk
-    ) {
-        Entity cameraEntity = Minecraft.getInstance().getCameraEntity();
-        Level clientOrServerLevel = SharedConstants.DEBUG_SHOW_SERVER_DEBUG_VALUES ? serverOrClientLevel : Minecraft.getInstance().level;
-        if (cameraEntity != null && clientOrServerLevel != null) {
-            HitResult block = this.getHitResult(cameraEntity);
-            List<String> result = new ArrayList<>();
-            if (block.getType() == HitResult.Type.BLOCK) {
-                BlockPos pos = ((BlockHitResult)block).getBlockPos();
-                this.extractInfo(result, clientOrServerLevel, pos);
-            }
+   @Override
+   public void display(
+      final DebugScreenDisplayer displayer,
+      final @Nullable Level serverOrClientLevel,
+      final @Nullable LevelChunk clientChunk,
+      final @Nullable LevelChunk serverChunk
+   ) {
+      Entity cameraEntity = Minecraft.getInstance().getCameraEntity();
+      Level clientOrServerLevel = SharedConstants.DEBUG_SHOW_SERVER_DEBUG_VALUES ? serverOrClientLevel : Minecraft.getInstance().level;
+      if (cameraEntity != null && clientOrServerLevel != null) {
+         HitResult block = this.getHitResult(cameraEntity);
+         List<String> tags = new ArrayList<>();
+         if (block.getType() == HitResult.Type.BLOCK) {
+            BlockPos pos = ((BlockHitResult)block).getBlockPos();
+            this.extractInfo(displayer, tags, clientOrServerLevel, pos);
+         }
 
-            displayer.addToGroup(this.group(), result);
-        }
-    }
+         if (!tags.isEmpty()) {
+            displayer.addToGroup(this.group(), tags);
+         }
+      }
+   }
 
-    public abstract HitResult getHitResult(final Entity cameraEntity);
+   public abstract HitResult getHitResult(final Entity cameraEntity);
 
-    public abstract void extractInfo(List<String> result, Level level, BlockPos pos);
+   public abstract void extractInfo(final DebugScreenDisplayer displayer, List<String> result, Level level, BlockPos pos);
 
-    public abstract Identifier group();
+   public abstract DebugGroup group();
 
-    public static void addTagEntries(final List<String> result, final TypedInstance<?> instance) {
-        instance.tags().map(e -> "#" + e.location()).forEach(result::add);
-    }
+   public static void addTagEntries(final List<String> result, final TypedInstance<?> instance) {
+      instance.tags().map(e -> "#" + e.location()).forEach(result::add);
+   }
 
-    @OnlyIn(Dist.CLIENT)
-    public static class BlockStateInfo extends DebugEntryLookingAt.DebugEntryLookingAtState<Block, BlockState> {
-        protected BlockStateInfo() {
-            super("Targeted Block");
-        }
+   public static class BlockStateInfo extends DebugEntryLookingAt.DebugEntryLookingAtState<Block, BlockState> {
+      protected BlockStateInfo() {
+      }
 
-        @Override
-        public HitResult getHitResult(final Entity cameraEntity) {
-            return cameraEntity.pick(20.0, 0.0F, false);
-        }
+      @Override
+      public HitResult getHitResult(final Entity cameraEntity) {
+         return cameraEntity.pick(20.0, 0.0F, false);
+      }
 
-        public BlockState getInstance(final Level level, final BlockPos pos) {
-            return level.getBlockState(pos);
-        }
+      public BlockState getInstance(final Level level, final BlockPos pos) {
+         return level.getBlockState(pos);
+      }
 
-        @Override
-        public Identifier group() {
-            return DebugEntryLookingAt.BLOCK_GROUP;
-        }
-    }
+      @Override
+      public DebugGroup group() {
+         return DebugGroups.LOOKING_AT_BLOCK;
+      }
+   }
 
-    @OnlyIn(Dist.CLIENT)
-    public static class BlockTagInfo extends DebugEntryLookingAt.DebugEntryLookingAtTags<BlockState> {
-        @Override
-        public HitResult getHitResult(final Entity cameraEntity) {
-            return cameraEntity.pick(20.0, 0.0F, false);
-        }
+   public static class BlockTagInfo extends DebugEntryLookingAt.DebugEntryLookingAtTags<BlockState> {
+      @Override
+      public HitResult getHitResult(final Entity cameraEntity) {
+         return cameraEntity.pick(20.0, 0.0F, false);
+      }
 
-        public BlockState getInstance(final Level level, final BlockPos pos) {
-            return level.getBlockState(pos);
-        }
+      public BlockState getInstance(final Level level, final BlockPos pos) {
+         return level.getBlockState(pos);
+      }
 
-        @Override
-        public Identifier group() {
-            return DebugEntryLookingAt.BLOCK_GROUP;
-        }
-    }
+      @Override
+      public DebugGroup group() {
+         return DebugGroups.LOOKING_AT_BLOCK;
+      }
+   }
 
-    @OnlyIn(Dist.CLIENT)
-    public abstract static class DebugEntryLookingAtState<OwnerType, StateType extends StateHolder<OwnerType, StateType> & TypedInstance<OwnerType>>
-        extends DebugEntryLookingAt {
-        private final String prefix;
+   public abstract static class DebugEntryLookingAtState<OwnerType, StateType extends StateHolder<OwnerType, StateType> & TypedInstance<OwnerType>>
+      extends DebugEntryLookingAt {
+      protected DebugEntryLookingAtState() {
+      }
 
-        protected DebugEntryLookingAtState(final String prefix) {
-            this.prefix = prefix;
-        }
+      protected abstract StateType getInstance(Level level, BlockPos pos);
 
-        protected abstract StateType getInstance(Level level, BlockPos pos);
+      @Override
+      public void extractInfo(final DebugScreenDisplayer displayer, final List<String> result, final Level level, final BlockPos pos) {
+         StateType stateInstance = this.getInstance(level, pos);
+         displayer.addFactToGroup(this.group(), "Coordinates", fact -> fact.value(pos.getX()).text(", ").value(pos.getY()).text(", ").value(pos.getZ()));
+         displayer.addFactToGroup(this.group(), "Type", fact -> fact.value(stateInstance.typeHolder().getRegisteredName()));
+         this.addStateProperties(displayer, stateInstance);
+      }
 
-        @Override
-        public void extractInfo(final List<String> result, final Level level, final BlockPos pos) {
-            StateType stateInstance = this.getInstance(level, pos);
-            result.add(ChatFormatting.UNDERLINE + this.prefix + ": " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ());
-            result.add(stateInstance.typeHolder().getRegisteredName());
-            addStateProperties(result, stateInstance);
-        }
-
-        private static void addStateProperties(final List<String> result, final StateHolder<?, ?> stateHolder) {
-            stateHolder.getValues().forEach(entry -> result.add(getPropertyValueString((Property.Value<?>)entry)));
-        }
-
-        private static String getPropertyValueString(final Property.Value<?> entry) {
-            String valueString = entry.valueName();
+      private void addStateProperties(final DebugScreenDisplayer displayer, final StateHolder<?, ?> stateHolder) {
+         stateHolder.getValues().forEach(entry -> displayer.addFactToGroup(this.group(), entry.property().getName(), fact -> {
             if (Boolean.TRUE.equals(entry.value())) {
-                valueString = ChatFormatting.GREEN + valueString;
+               fact.text(Component.literal("true").withColor(-16711936));
             } else if (Boolean.FALSE.equals(entry.value())) {
-                valueString = ChatFormatting.RED + valueString;
+               fact.text(Component.literal("false").withColor(-65536));
+            } else {
+               fact.value(entry.valueName());
             }
+         }));
+      }
+   }
 
-            return entry.property().getName() + ": " + valueString;
-        }
-    }
+   public abstract static class DebugEntryLookingAtTags<T extends TypedInstance<?>> extends DebugEntryLookingAt {
+      protected abstract T getInstance(Level level, BlockPos pos);
 
-    @OnlyIn(Dist.CLIENT)
-    public abstract static class DebugEntryLookingAtTags<T extends TypedInstance<?>> extends DebugEntryLookingAt {
-        protected abstract T getInstance(Level level, BlockPos pos);
+      @Override
+      public void extractInfo(final DebugScreenDisplayer displayer, final List<String> tags, final Level level, final BlockPos pos) {
+         T instance = this.getInstance(level, pos);
+         addTagEntries(tags, instance);
+      }
+   }
 
-        @Override
-        public void extractInfo(final List<String> result, final Level level, final BlockPos pos) {
-            T instance = this.getInstance(level, pos);
-            addTagEntries(result, instance);
-        }
-    }
+   public static class FluidStateInfo extends DebugEntryLookingAt.DebugEntryLookingAtState<Fluid, FluidState> {
+      protected FluidStateInfo() {
+      }
 
-    @OnlyIn(Dist.CLIENT)
-    public static class FluidStateInfo extends DebugEntryLookingAt.DebugEntryLookingAtState<Fluid, FluidState> {
-        protected FluidStateInfo() {
-            super("Targeted Fluid");
-        }
+      @Override
+      public HitResult getHitResult(final Entity cameraEntity) {
+         return cameraEntity.pick(20.0, 0.0F, true);
+      }
 
-        @Override
-        public HitResult getHitResult(final Entity cameraEntity) {
-            return cameraEntity.pick(20.0, 0.0F, true);
-        }
+      public FluidState getInstance(final Level level, final BlockPos pos) {
+         return level.getFluidState(pos);
+      }
 
-        public FluidState getInstance(final Level level, final BlockPos pos) {
-            return level.getFluidState(pos);
-        }
+      @Override
+      public DebugGroup group() {
+         return DebugGroups.LOOKING_AT_FLUID;
+      }
+   }
 
-        @Override
-        public Identifier group() {
-            return DebugEntryLookingAt.FLUID_GROUP;
-        }
-    }
+   public static class FluidTagInfo extends DebugEntryLookingAt.DebugEntryLookingAtTags<FluidState> {
+      @Override
+      public HitResult getHitResult(final Entity cameraEntity) {
+         return cameraEntity.pick(20.0, 0.0F, true);
+      }
 
-    @OnlyIn(Dist.CLIENT)
-    public static class FluidTagInfo extends DebugEntryLookingAt.DebugEntryLookingAtTags<FluidState> {
-        @Override
-        public HitResult getHitResult(final Entity cameraEntity) {
-            return cameraEntity.pick(20.0, 0.0F, true);
-        }
+      public FluidState getInstance(final Level level, final BlockPos pos) {
+         return level.getFluidState(pos);
+      }
 
-        public FluidState getInstance(final Level level, final BlockPos pos) {
-            return level.getFluidState(pos);
-        }
-
-        @Override
-        public Identifier group() {
-            return DebugEntryLookingAt.FLUID_GROUP;
-        }
-    }
+      @Override
+      public DebugGroup group() {
+         return DebugGroups.LOOKING_AT_FLUID;
+      }
+   }
 }

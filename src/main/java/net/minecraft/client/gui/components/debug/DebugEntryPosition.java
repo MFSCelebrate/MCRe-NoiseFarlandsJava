@@ -1,6 +1,5 @@
 package net.minecraft.client.gui.components.debug;
 
-import java.util.List;
 import java.util.Locale;
 import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 import net.MinecraftTools.Math.DynamicAccuracy.BigInteger;
@@ -22,9 +21,26 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.MinecraftTools.Math._256Bit.Float256;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * 🔧 MCRe：Position 条目 —— 移植 26.4 Snapshot 2 全新架构（{@link DebugFact} 名字右对齐 + 值的对齐显示），
+ * <b>完整保留 MCRe 全部自定义</b>（26 处）：
+ * <ul>
+ *   <li>256-bit 精确坐标显示（{@code Float256.toExactString} + 限长省略）</li>
+ *   <li>XYZ(Camera)（正确的摄像机获取：{@code mainCamera()}）</li>
+ *   <li>Terrain XYZ(BigInteger)（玩家坐标经 WorldReposition 偏移缩放，无精度损失）</li>
+ *   <li>Current precision（基于 Terrain XYZ 的 bit 长度推算 double/float 精度 + 颜色码）</li>
+ * </ul>
+ *
+ * @since 2026-10-01
+ */
 @OnlyIn(Dist.CLIENT)
 public class DebugEntryPosition implements DebugScreenEntry {
+
+    /** 26.2 旧组名常量（过渡期兼容：DebugEntrySectionPosition 引用；迁移完成后移除） */
+    @Deprecated
     public static final Identifier GROUP = Identifier.withDefaultNamespace("position");
+
+    // ==================== 🔧 MCRe 自定义：精确显示辅助 ====================
 
     /** 精确显示小数部分的最大位数（超出截断 + 省略号） */
     private static final int MAX_FRAC_DIGITS = 14;
@@ -64,6 +80,18 @@ public class DebugEntryPosition implements DebugScreenEntry {
         };
     }
 
+    private static char getColorCodeFromPrecision(double precision) {
+        if (precision <= 0.03125) {
+            return 'a';
+        } else if (precision > 0.25) {
+            return 'c';
+        } else {
+            return 'e';
+        }
+    }
+
+    // ==================== 26.4 新架构：display（Fact 对齐） ====================
+
     @Override
     public void display(
         final DebugScreenDisplayer displayer,
@@ -78,7 +106,7 @@ public class DebugEntryPosition implements DebugScreenEntry {
             ChunkPos chunkPos = ChunkPos.containing(feetPos);
             Direction direction = entity.getDirection();
 
-            // ===== 正确的摄像机获取方式 =====
+            // ===== 🔧 MCRe：正确的摄像机获取方式 =====
             Camera camera = minecraft.gameRenderer.mainCamera();
             double camX = camera.position().x;
             double camY = camera.position().y;
@@ -91,62 +119,82 @@ public class DebugEntryPosition implements DebugScreenEntry {
                 case EAST -> "Towards positive X";
                 default -> "Invalid";
             };
-            java.util.Set<ChunkPos> chunks = serverOrClientLevel instanceof ServerLevel serverLevel ? serverLevel.getForceLoadedChunks() : java.util.Set.of();
+            java.util.Set<ChunkPos> chunks = serverOrClientLevel instanceof ServerLevel serverLevel
+                    ? serverLevel.getForceLoadedChunks()
+                    : java.util.Set.of();
 
-            // ===== 🔧 MCRe：计算 Terrain XYZ（玩家坐标经 WorldReposition 偏移缩放）=====
+            // ===== 🔧 MCRe：Terrain XYZ + 精度计算 =====
             final BigInteger[] terrainXYZ = computeTerrainXYZ(entity.getX(), entity.getY(), entity.getZ());
-
-            // ===== 精度计算（基于 Terrain XYZ 的 BigInteger 值，反映玩家坐标在「地形生成器世界」里的实际精度）=====
             final BigInteger maxAbs = terrainXYZ[0].abs().max(terrainXYZ[1].abs()).max(terrainXYZ[2].abs());
             final int bitLen = maxAbs.bitLength();  // 最高位 1 的位置（等价于 64 - Long.numberOfLeadingZeros）
-            final double doublePrecision = Math.pow(2.0, (double)(bitLen - 53));
-            final double floatPrecision = Math.pow(2.0, (double)(bitLen - 24));
-            final String precisionString = "Current precision: §" + getColorCodeFromPrecision(doublePrecision) + doublePrecision
-                                   + "§r (float: §" + getColorCodeFromPrecision(floatPrecision) + floatPrecision + "§r)";
+            final double doublePrecision = Math.pow(2.0, (double) (bitLen - 53));
+            final double floatPrecision = Math.pow(2.0, (double) (bitLen - 24));
 
-            displayer.addToGroup(
-                GROUP,
-                List.of(
-                    // ===== 256-bit 精确坐标（完整展开 double 的 52-bit 尾数） =====
-                    "XYZ: " + fmtExact(entity.getX()) + " / " + fmtExact(entity.getY()) + " / " + fmtExact(entity.getZ()),
-                    // ===== 256-bit 精确摄像机坐标 =====
-                    "XYZ(Camera): " + fmtExact(camX) + " / " + fmtExact(camY) + " / " + fmtExact(camZ),
-                    // ===== 🔧 MCRe：地形生成器坐标（玩家坐标经偏移缩放，无精度损失 BigInteger）=====
-                    "Terrain XYZ(BigInteger): " + fmtBigInt(terrainXYZ[0]) + " / " + fmtBigInt(terrainXYZ[1]) + " / " + fmtBigInt(terrainXYZ[2]),
-                    String.format(Locale.ROOT, "Block: %d %d %d", feetPos.getX(), feetPos.getY(), feetPos.getZ()),
-                    String.format(
-                        Locale.ROOT,
-                        "Chunk: %d %d %d [%d %d in r.%d.%d.mca]",
-                        (int)chunkPos.x(),
-                        SectionPos.blockToSectionCoord(feetPos.getY()),
-                        (int)chunkPos.z(),
-                        (int)chunkPos.getRegionLocalX(),
-                        (int)chunkPos.getRegionLocalZ(),
-                        (int)chunkPos.getRegionX(),
-                        (int)chunkPos.getRegionZ()
-                    ),
-                    precisionString,
-                    String.format(
-                        Locale.ROOT,
-                        "Facing: %s (%s) (%.1f / %.1f)",
-                        direction,
-                        faceString,
-                        Mth.wrapDegrees(entity.getYRot()),
-                        Mth.wrapDegrees(entity.getXRot())
-                    ),
-                    minecraft.level.dimension().identifier() + " FC: " + chunks.size()
+            // ===== 26.4 Fact 风格：名字右对齐 + 值（DebugGroups.POSITION，白强调色）=====
+            displayer.addFactToGroup(
+                DebugGroups.POSITION,
+                "XYZ",
+                fact -> fact.value(fmtExact(entity.getX())).text(" / ").value(fmtExact(entity.getY())).text(" / ").value(fmtExact(entity.getZ()))
+            );
+            displayer.addFactToGroup(
+                DebugGroups.POSITION,
+                "XYZ(Camera)",
+                fact -> fact.value(fmtExact(camX)).text(" / ").value(fmtExact(camY)).text(" / ").value(fmtExact(camZ))
+            );
+            displayer.addFactToGroup(
+                DebugGroups.POSITION,
+                "Terrain XYZ(BigInteger)",
+                fact -> fact.value(fmtBigInt(terrainXYZ[0])).text(" / ").value(fmtBigInt(terrainXYZ[1])).text(" / ").value(fmtBigInt(terrainXYZ[2]))
+            );
+            displayer.addFactToGroup(
+                DebugGroups.POSITION,
+                "Block",
+                fact -> fact.value(feetPos.getX()).text(" ").value(feetPos.getY()).text(" ").value(feetPos.getZ())
+            );
+            displayer.addFactToGroup(
+                DebugGroups.POSITION,
+                "Chunk",
+                fact -> fact.value(chunkPos.x())
+                    .text(" ")
+                    .value(SectionPos.blockToSectionCoord(feetPos.getY()))
+                    .text(" ")
+                    .value(chunkPos.z())
+                    .text(" [")
+                    .value(chunkPos.getRegionLocalX())
+                    .text(" ")
+                    .value(chunkPos.getRegionLocalZ())
+                    .text(" in ")
+                    .formattedValue("r.%d.%d.mca", chunkPos.getRegionX(), chunkPos.getRegionZ())
+                    .text("]")
+            );
+            displayer.addFactToGroup(
+                DebugGroups.POSITION,
+                "Current precision",
+                fact -> fact.text(
+                    "§" + getColorCodeFromPrecision(doublePrecision) + doublePrecision
+                    + "§r (float: §" + getColorCodeFromPrecision(floatPrecision) + floatPrecision + "§r)"
                 )
             );
-        }
-    }
-
-    private static char getColorCodeFromPrecision(double precision) {
-        if (precision <= 0.03125) {
-            return 'a';
-        } else if (precision > 0.25) {
-            return 'c';
-        } else {
-            return 'e';
+            displayer.addFactToGroup(
+                DebugGroups.POSITION,
+                "Facing",
+                fact -> fact.value(direction.toString())
+                    .text(" (")
+                    .value(faceString)
+                    .text(") (")
+                    .formattedValue("%.1f", Mth.wrapDegrees(entity.getYRot()))
+                    .text(" / ")
+                    .formattedValue("%.1f", Mth.wrapDegrees(entity.getXRot()))
+                    .text(")")
+            );
+            displayer.addFactToGroup(
+                DebugGroups.POSITION,
+                "Dimension",
+                fact -> fact.value(minecraft.level.dimension().identifier().toString())
+            );
+            if (!chunks.isEmpty()) {
+                displayer.addFactToGroup(DebugGroups.POSITION, "Forced Chunks", fact -> fact.value(chunks.size()));
+            }
         }
     }
 }

@@ -1,7 +1,10 @@
 package net.minecraft.client.gui.components.debug;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Collections;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.jspecify.annotations.Nullable;
@@ -10,7 +13,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 
 @OnlyIn(Dist.CLIENT)
-public class DebugEntryLookingAtEntity implements DebugScreenEntry {
+public class DebugEntryPostEffects implements DebugScreenEntry {
    @Override
    public void display(
       final DebugScreenDisplayer displayer,
@@ -19,18 +22,13 @@ public class DebugEntryLookingAtEntity implements DebugScreenEntry {
       final @Nullable LevelChunk serverChunk
    ) {
       Minecraft minecraft = Minecraft.getInstance();
-      Entity entity = minecraft.crosshairPickEntity;
-      if (entity != null) {
+      // 🔧 26.2 API：currentPostEffect()（26.4 的 getAppliedPostEffects() 26.2 无）
+      Identifier effectId = minecraft.gameRenderer.currentPostEffect();
+      List<Identifier> effectIds = effectId != null ? java.util.List.of(effectId) : java.util.Collections.emptyList();
+      if (!effectIds.isEmpty()) {
          displayer.addFactToGroup(
-            DebugGroups.LOOKING_AT_ENTITY,
-            "Coordinates",
-            fact -> fact.formattedValue("%.2f", entity.getX())
-               .text(", ")
-               .formattedValue("%.2f", entity.getY())
-               .text(", ")
-               .formattedValue("%.2f", entity.getZ())
+            DebugGroups.MISC, "Post Effects", fact -> fact.value(effectIds.stream().map(Identifier::toString).collect(Collectors.joining(", ")))
          );
-         displayer.addFactToGroup(DebugGroups.LOOKING_AT_ENTITY, "Type", fact -> fact.value(entity.typeHolder().getRegisteredName()));
       }
    }
 }

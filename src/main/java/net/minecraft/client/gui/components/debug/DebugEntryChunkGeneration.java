@@ -18,6 +18,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * 🔧 MCRe：Chunk Generation 条目 —— 26.4 分组架构（{@link DebugGroups#CHUNK_GENERATION}）。
+ * 26.4 反编译版依赖 {@code densityfunction.SamplerContext}（26.4 新包）/ BiConsumer 版
+ * {@code addDebugScreenInfo}（26.2 无），此处保留 26.2 的 List 逻辑 + 26.4 分组风格。
+ */
 @OnlyIn(Dist.CLIENT)
 public class DebugEntryChunkGeneration implements DebugScreenEntry {
     private static final Identifier GROUP = Identifier.withDefaultNamespace("chunk_generation");
@@ -40,7 +45,7 @@ public class DebugEntryChunkGeneration implements DebugScreenEntry {
                 this.update(serverChunk, feetPos, serverLevel);
             }
 
-            displayer.addToGroup(GROUP, this.result);
+            displayer.addToGroup(DebugGroups.CHUNK_GENERATION, this.result);
         }
     }
 

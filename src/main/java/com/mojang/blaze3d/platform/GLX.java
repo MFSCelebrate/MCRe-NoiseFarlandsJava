@@ -93,10 +93,52 @@ public class GLX {
                 cpuInfo = String.format(Locale.ROOT, "%dx %s", processor.getLogicalProcessorCount(), processor.getProcessorIdentifier().getName())
                     .replaceAll("\\s+", " ");
             } catch (Throwable var1) {
+                // 🔧 MCRe：Android 回退 —— oshi 的 LinuxCentralProcessor.readTopologyFromSysfs 走
+                // FileTreeWalker 遍历 /sys/devices/system/cpu/，Android 的 SELinux 策略拒绝访问
+                // （AccessDeniedException: /sys/devices/system/cpu/memlat/c4_memlat/cpu4-cpu-l3-lat，
+                // 高通 memlat 调度节点），oshi 不处理该异常 → UncheckedIOException 抛出。
+                // 桌面 /sys 可读所以正常；Android 用 android.os.Build 回退（反射，避免编译期 Android 依赖）
+                cpuInfo = androidCpuInfo();
             }
         }
 
         return cpuInfo;
+    }
+
+    /**
+     * 🔧 MCRe：Android CPU 信息回退（反射 {@code android.os.Build}，无编译期 Android 依赖）。
+     *
+     * <p>优先级：SOC_MODEL（API 31+，SoC 型号如 "Snapdragon 7 Gen 1"）
+     * → SOC_MANUFACTURER → HARDWARE（硬件平台如 "qcom"）→ 核数兜底。
+     */
+    public static String androidCpuInfo() {
+        int cores = Runtime.getRuntime().availableProcessors();
+        try {
+            Class<?> build = Class.forName("android.os.Build");
+            String socModel = getStringField(build, "SOC_MODEL");
+            if (socModel != null && !socModel.isEmpty() && !"unknown".equals(socModel)) {
+                String socMaker = getStringField(build, "SOC_MANUFACTURER");
+                return String.format(Locale.ROOT, "%dx %s", cores,
+                        socMaker != null && !socMaker.isEmpty() && !"unknown".equals(socMaker)
+                                ? socMaker + " " + socModel : socModel);
+            }
+            String hardware = getStringField(build, "HARDWARE");
+            if (hardware != null && !hardware.isEmpty() && !"unknown".equals(hardware)) {
+                return String.format(Locale.ROOT, "%dx %s", cores, hardware);
+            }
+        } catch (Throwable ignored) {
+        }
+        return String.format(Locale.ROOT, "%dx cores", cores);
+    }
+
+    /** 反射读 Build 的静态 String 字段（缺失/异常返回 null） */
+    private static String getStringField(Class<?> clazz, String name) {
+        try {
+            Object v = clazz.getField(name).get(null);
+            return v instanceof String s ? s : null;
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 
     public static <T> T make(final Supplier<T> factory) {

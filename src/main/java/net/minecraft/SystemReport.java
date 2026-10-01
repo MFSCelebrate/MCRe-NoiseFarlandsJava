@@ -100,9 +100,38 @@ public class SystemReport {
         }
     }
 
+    /** 🔧 MCRe：Android CPU 信息回退（反射 android.os.Build，无编译期 Android 依赖，与 GLX 同款） */
+    private static String androidCpuInfo() {
+        int cores = Runtime.getRuntime().availableProcessors();
+        try {
+            Class<?> build = Class.forName("android.os.Build");
+            Object soc = build.getField("SOC_MODEL").get(null);
+            if (soc instanceof String s2 && !s2.isEmpty() && !"unknown".equals(s2)) {
+                return String.format(Locale.ROOT, "%dx %s", cores, s2);
+            }
+            Object hw = build.getField("HARDWARE").get(null);
+            if (hw instanceof String s2 && !s2.isEmpty() && !"unknown".equals(s2)) {
+                return String.format(Locale.ROOT, "%dx %s", cores, s2);
+            }
+        } catch (Throwable ignored) {
+        }
+        return String.format(Locale.ROOT, "%dx cores", cores);
+    }
+
     private void putHardware(final SystemInfo systemInfo) {
         HardwareAbstractionLayer hardware = systemInfo.getHardware();
-        this.ignoreErrors("processor", () -> this.putProcessor(hardware.getProcessor()));
+        // 🔧 MCRe：Android 上 oshi 读 /sys/devices/system/cpu/ 被 SELinux 拒绝（AccessDeniedException），
+        // getProcessor 抛 UncheckedIOException → processor 组整体缺失。回退 android.os.Build（反射）。
+        this.ignoreErrors("processor", () -> {
+            CentralProcessor processor;
+            try {
+                processor = hardware.getProcessor();
+            } catch (Throwable androidFailure) {
+                this.setDetail("Processor", androidCpuInfo());
+                return;
+            }
+            this.putProcessor(processor);
+        });
         this.ignoreErrors("graphics", () -> this.putGraphics(hardware.getGraphicsCards()));
         this.ignoreErrors("memory", () -> this.putMemory(hardware.getMemory()));
         this.ignoreErrors("storage", this::putStorage);
