@@ -10,29 +10,18 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.jspecify.annotations.Nullable;
-import oshi.SystemInfo;
-import oshi.hardware.CentralProcessor;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 
 @OnlyIn(Dist.CLIENT)
 public class DebugEntrySystemSpecs implements DebugScreenEntry {
-   private static @Nullable String cpuInfo;
 
    public static String getCpuInfo() {
-      if (cpuInfo == null) {
-         cpuInfo = "<unknown>";
-
-         try {
-            CentralProcessor processor = new SystemInfo().getHardware().getProcessor();
-            cpuInfo = String.format(Locale.ROOT, "%dx %s", processor.getLogicalProcessorCount(), processor.getProcessorIdentifier().getName())
-               .replaceAll("\\s+", " ");
-         } catch (Throwable var1) {
-         }
-      }
-
-      return cpuInfo;
+      // 🔧 MCRe：委托 GLX._getCpuInfo()（含 Android 回退链 SOC_MODEL→HARDWARE→核数兜底）。
+      // 修复前本方法是旧 GLX 代码的副本且 catch 块为空 → oshi 在 Android 上读 /sys 被 SELinux
+      // 拒绝（AccessDeniedException）→ 恒 <unknown>。GLX 自带 cpuInfo 缓存，零开销。
+      return com.mojang.blaze3d.platform.GLX._getCpuInfo();
    }
 
    @Override

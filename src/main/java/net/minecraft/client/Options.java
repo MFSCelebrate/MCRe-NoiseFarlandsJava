@@ -921,21 +921,23 @@ public class Options {
         0,
         var1 -> this.minecraft.resizeGui()
     );
-    // 🔧 MCRe：26.4 Snapshot 2 移植 —— debugGuiScale（调试屏幕独立缩放：-1=跟随标准 / 0=自动减半 / n=指定）
-    public static final int DEBUG_GUI_SCALE_UNCHANGED = -1;
+    // 🔧 MCRe：26.4 Snapshot 2 移植 —— debugGuiScale（调试屏幕独立缩放：-1=不变 / 0=自动减半 / n=指定）
+    // 对齐 26.4：caption 复用 "options.guiScale"、tooltip 常量缓存、文案走 translatable（zh_cn/en_us 已备）、默认值 0、持久化由 process 区注册
+    public static final int DEBUG_GUI_SCALE_UNCHANGED = 0;
+    private static final Component DEBUG_GUI_SCALE_TOOLTIP = Component.translatable("options.debugGuiScale.tooltip");
     private final OptionInstance<Integer> debugGuiScale = new OptionInstance<>(
-        "options.debugGuiScale",
-        OptionInstance.noTooltip(),
+        "options.guiScale",
+        OptionInstance.cachedConstantTooltip(DEBUG_GUI_SCALE_TOOLTIP),
         (caption, value) -> switch (value) {
-            case -1 -> Component.literal("Default (follows GUI Scale)");
-            case 0 -> Component.literal("Auto (half of max)");
+            case -1 -> Component.translatable("options.debugGuiScale.unchanged");
+            case 0 -> Component.translatable("options.guiScale.auto");
             default -> Component.literal(Integer.toString(value));
         },
         new OptionInstance.ClampingLazyMaxIntRange(-1, () -> {
             Minecraft minecraftx = Minecraft.getInstance();
             return !minecraftx.isRunning() ? 2147483646 : minecraftx.getWindow().calculateScale(0, minecraftx.isEnforceUnicode());
         }, 2147483646),
-        -1,
+        0,
         var0 -> {}
     );
     private final OptionInstance<ParticleStatus> particles = new OptionInstance<>(
@@ -1553,6 +1555,7 @@ public class Options {
         access.process("exclusiveFullscreen", this.exclusiveFullscreen);
         access.process("gamma", this.gamma);
         access.process("guiScale", this.guiScale);
+        access.process("debugGuiScale", this.debugGuiScale);
         access.process("maxAnisotropyBit", this.maxAnisotropyBit);
         access.process("textureFiltering", this.textureFiltering);
         access.process("maxFps", this.framerateLimit);

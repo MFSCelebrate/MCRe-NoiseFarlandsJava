@@ -122,12 +122,16 @@ public class ModTranslateResources {
         zh_cn.put("generator.minecraft.1_18_1_overworld", "1.18.1 无限世界");
         zh_cn.put("generator.minecraft.so_high_overworld", "很高的主世界");
         zh_cn.put("mcre.title.global_config", "全局配置");
+        zh_cn.put("options.debugGuiScale.tooltip", "为调试叠加层单独设置与游戏其他界面不同的界面尺寸");
+        zh_cn.put("options.debugGuiScale.unchanged", "不变");
         
         en_us.put("generator.minecraft.caves", "Caves");
         en_us.put("generator.minecraft.floating_islands", "Floating Islands");
         en_us.put("generator.minecraft.1_18_1_overworld", "1.18.1 Infinity World");
         en_us.put("generator.minecraft.so_high_overworld", "So High Overworld");
         en_us.put("mcre.title.global_config", "Global Config");
+        en_us.put("options.debugGuiScale.tooltip", "Set a separate GUI scale for the debug overlay");
+        en_us.put("options.debugGuiScale.unchanged", "Unchanged");
 
         TRANSLATIONS.put("en_us", en_us);
         TRANSLATIONS.put("zh_cn", zh_cn);
