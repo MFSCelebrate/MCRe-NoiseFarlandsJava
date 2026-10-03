@@ -19,16 +19,8 @@ public class MathUtil {
     }
 
     // 类似于原版的 Mth.lerp，但是添加了对 delta == 0 的特殊处理，使得天空网格能够生成
-    // 🔧 Inf 防护（受 enableSkyGrid 天然控制：本方法仅在 enableSkyGrid 分支被调用）：
-    //   start 为 ±Inf 时原样输出——防 Inf-Inf → NaN（start=+Inf、end=-Inf 时 end-start=-Inf、Inf+(-Inf)=NaN）
-    //   end 为 ±Inf、start 有限时原样输出 end——与算术自然传播（start + delta*±Inf = ±Inf）等价；
-    //   delta == 0 优先级最高（纯 start 点，不进 Inf 逻辑，与原版 Mth.lerp 语义一致）
     public static double lerp(double delta, double start, double end) {
-        if (Double.isInfinite(start)) {
-            return start;
-        }
-
-        return delta == 0 ? start : (Double.isInfinite(end) ? end : start + delta * (end - start));
+        return delta == 0 ? start : start + delta * (end - start);
     }
 
     /**

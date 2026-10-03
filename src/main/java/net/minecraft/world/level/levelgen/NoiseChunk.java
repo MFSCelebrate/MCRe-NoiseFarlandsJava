@@ -26,6 +26,8 @@ import org.jspecify.annotations.Nullable;
 
 public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunction.ContextProvider {
     private final int cellCountXZ;
+    // 🔧 MCRe（窗口感知限制器）：生成高度域（钳制到生成窗口的 NoiseSettings），供 WindowedDepthGradient 窗口感知
+    private final NoiseSettings generationNoiseSettings;
     private final int cellCountY;
     private final int cellNoiseMinY;
     private final int firstCellX;
@@ -113,6 +115,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     ) {
         this.cellWidth = noiseSettings.getCellWidth();
         this.cellHeight = noiseSettings.getCellHeight();
+        this.generationNoiseSettings = noiseSettings; // 🔧 MCRe（窗口感知限制器）：存钳制到生成窗口的 NoiseSettings
         this.cellCountXZ = cellCountXZ;
         this.cellCountY = Mth.floorDiv(noiseSettings.height(), this.cellHeight);
         this.cellNoiseMinY = Mth.floorDiv(noiseSettings.minY(), this.cellHeight);
@@ -376,6 +379,11 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         Blender.BlendingOutput output = this.blender.blendOffsetAndFactor(blockX, blockZ);
         this.lastBlendingOutput = output;
         return output;
+    }
+
+    /** 🔧 MCRe（窗口感知限制器）：生成窗口的 NoiseSettings（minY/height = 生成窗口），供 WindowedDepthGradient 用 */
+    public NoiseSettings generationNoiseSettings() {
+        return this.generationNoiseSettings;
     }
 
     protected DensityFunction wrap(final DensityFunction function) {

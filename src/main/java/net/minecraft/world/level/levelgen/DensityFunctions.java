@@ -44,12 +44,6 @@ public final class DensityFunctions {
         return config != null && config.forceSkyGrid;
     }
 
-    // 🔧 MCRe（C2ME 天空网格）：enableSkyGrid 开关（平滑器/加乘链的 Inf 原样传播防护）
-    private static boolean isEnableSkyGrid() {
-        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && config.enableSkyGrid;
-    }
-
     private static boolean fixEndRingMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
         return config != null && config.fixEndRings;
@@ -335,31 +329,6 @@ public final class DensityFunctions {
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
             double v1 = this.argument1.compute(context);
-
-            if (isEnableSkyGrid()) {
-                // 🔧 MCRe（C2ME 天空网格）：Inf 原样传播——防 Inf±Inf / Inf×0 → NaN（天空网格保留的关键）
-                return switch (this.type) {
-                    case ADD -> {
-                        double v2 = this.argument2.compute(context);
-                        double result = v1 + v2;
-                        yield Double.isNaN(result) ? (Double.isInfinite(v1) ? v1 : v2) : result;
-                    }
-                    case MUL -> {
-                        if (v1 == 0.0) {
-                            double v2 = this.argument2.compute(context);
-                            yield Double.isInfinite(v2) ? v2 : 0.0;
-                        }
-
-                        double v2 = this.argument2.compute(context);
-                        double result = v1 * v2;
-                        yield Double.isNaN(result) ? (Double.isInfinite(v1) ? v1 : v2) : result;
-                    }
-                    case MIN ->
-                            v1 < this.argument2.minValue() ? v1 : Math.min(v1, this.argument2.compute(context));
-                    case MAX ->
-                            v1 > this.argument2.maxValue() ? v1 : Math.max(v1, this.argument2.compute(context));
-                };
-            }
 
             return switch (this.type) {
                 case ADD -> v1 + this.argument2.compute(context);
@@ -1032,35 +1001,6 @@ public final class DensityFunctions {
 
         @Override
         public double transform(final double input) {
-            if (isEnableSkyGrid()) {
-                // 🔧 MCRe（C2ME 天空网格）：Inf 原样传播——防 0×Inf / Inf±Inf → NaN（天空网格保留的关键）
-                return switch (this.specificType) {
-                    case MUL -> {
-                        if (Double.isInfinite(input)) {
-                            yield input;
-                        }
-
-                        if (input == 0.0 && Double.isInfinite(this.argument)) {
-                            yield this.argument;
-                        }
-
-                        double result = input * this.argument;
-                        yield Double.isNaN(result) ? input : result;
-                    }
-                    case ADD -> {
-                        if (Double.isInfinite(input)) {
-                            yield input;
-                        }
-
-                        if (Double.isInfinite(this.argument)) {
-                            yield this.argument;
-                        }
-
-                        yield input + this.argument;
-                    }
-                };
-            }
-
             return switch (this.specificType) {
                 case MUL -> input * this.argument;
                 case ADD -> input + this.argument;
@@ -1631,6 +1571,51 @@ public final class DensityFunctions {
             public String getSerializedName() {
                 return this.name;
             }
+        }
+    }
+
+    /**
+     * 🔧 MCRe（窗口感知限制器，理论来源：冒险家岐哥）—— depth 限制器的窗口感知版。
+     * <p>原版 depth 的限制器 = {@code yClampedGradient(-64, 320, 1.5, -1.5)}：把"削峰补枯"梯度
+     * （世界底 +1.5 / 世界顶 -1.5）硬编码在原版世界 -64..320 上。超高世界的地形生成高度远超此范围，
+     * 但限制器只在 -64..319 —— Y >= 320 时限制器失效，空岛自然生成出来。</p>
+     * <p>本版把梯度铺在<b>生成窗口</b>上（NoiseChunk 的钳制后 NoiseSettings：窗口底 +1.5 → 窗口顶 -1.5）——
+     * 窗口跟随分层生成移动，任意高度段的空岛/深沟都被削掉，根治 Y >= 320 的空岛地形问题（不修改数据包）。
+     * 正常世界窗口 = 原版世界高度，行为与原版一致。</p>
+     * <p>代码专用（仅 NoiseRouterData.offsetToDepth 构造），不支持序列化。
+     * Y 轴输入与 YClampedGradient 同款：enabledYClampedGradientOffset 开启时走 reposition。</p>
+     */
+    static final class WindowedDepthGradient implements DensityFunction.SimpleFunction {
+        static final DensityFunctions.WindowedDepthGradient INSTANCE = new DensityFunctions.WindowedDepthGradient();
+
+        @Override
+        public double compute(final DensityFunction.FunctionContext context) {
+            final double y = WorldReposition.isYClampedGradientOffsetEnabled()
+                    ? WorldReposition.reposition(context.blockY(), Direction.Axis.Y)
+                    : context.blockY();
+            if (context instanceof NoiseChunk noiseChunk) {
+                // 窗口感知：梯度铺在生成窗口上（窗口底 +1.5 → 窗口顶 -1.5，窗外钳制到端值）
+                NoiseSettings settings = noiseChunk.generationNoiseSettings();
+                return Mth.clampedMap(y, settings.minY(), settings.minY() + settings.height(), 1.5, -1.5);
+            }
+
+            // fallback：非 NoiseChunk 上下文（非生成路径）→ 原版世界梯度
+            return Mth.clampedMap(y, -64, 320, 1.5, -1.5);
+        }
+
+        @Override
+        public double minValue() {
+            return -1.5;
+        }
+
+        @Override
+        public double maxValue() {
+            return 1.5;
+        }
+
+        @Override
+        public KeyDispatchDataCodec<? extends DensityFunction> codec() {
+            throw new UnsupportedOperationException("WindowedDepthGradient is code-only (constructed by NoiseRouterData.offsetToDepth)");
         }
     }
 
