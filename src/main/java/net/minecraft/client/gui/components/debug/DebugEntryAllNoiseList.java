@@ -73,7 +73,9 @@ public class DebugEntryAllNoiseList implements DebugScreenEntry {
         for (Map.Entry<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> entry : sorted) {
             String name = entry.getKey().identifier().toString();
             double value = entry.getValue().getValue(sampleX, sampleY, sampleZ);
-            this.result.add(name + ": " + String.format("%.4f", value));
+            // 🔧 用 Double.toString（String.valueOf）：大值自动转科学记数法（1.14514191981E113），
+            // 有效数字全保留、末尾的无效零全部省略；NaN/Inf 显示为 NaN/Infinity；小值保持十进制（0.1934）
+            this.result.add(name + ": " + String.valueOf(value));
         }
     }
 }
