@@ -47,6 +47,8 @@ public class DebugGroups {
    public static final DebugGroup HEIGHTMAP = DebugGroup.Builder.titled("Heightmap").withAccentColor(43775).build();
    public static final DebugGroup CHUNK_GENERATION = DebugGroup.Builder.titled("Chunk Generation").withAccentColor(10092458).build();
    public static final DebugGroup SPAWN_COUNTS = DebugGroup.Builder.titled("Entity Spawn Counts").withAccentColor(16729156).build();
+   // 🔧 MCRe：地形噪声组（DebugEntryAllNoiseList 条目用）
+   public static final DebugGroup TERRAIN_NOISES = DebugGroup.Builder.titled("Terrain Noises").withAccentColor(65535).build();
 
     // 🔧 MCRe：26.2 旧组名（Identifier）→ 26.4 分组的映射（过渡期兼容用）
     private static final Map<Identifier, DebugGroup> BY_NAME = new HashMap<>();
@@ -70,6 +72,7 @@ public class DebugGroups {
         register("heightmap", HEIGHTMAP);
         register("chunk_generation", CHUNK_GENERATION);
         register("spawn_counts", SPAWN_COUNTS);
+        register("terrain_noises", TERRAIN_NOISES);
         // 26.2 条目分组：biome 在 26.4 并入 Position 面板（Biome: minecraft:plains 显示在 Position 内）
         register("biome", POSITION);
         register("post_effect", MISC);

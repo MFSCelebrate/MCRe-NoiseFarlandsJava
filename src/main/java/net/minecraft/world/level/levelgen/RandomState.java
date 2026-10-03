@@ -113,6 +113,11 @@ public final class RandomState {
         return this.noiseIntances.computeIfAbsent(noise, key -> Noises.instantiate(this.noises, this.random, noise));
     }
 
+    /** 🔧 MCRe：噪声实例缓存视图（调试屏幕 AllNoiseList 条目遍历用）——地形生成器用到的噪声全部经 getOrCreateNoise 实例化 */
+    public Map<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseInstances() {
+        return this.noiseIntances;
+    }
+
     public PositionalRandomFactory getOrCreateRandomFactory(final Identifier name) {
         return this.positionalRandoms.computeIfAbsent(name, key -> this.random.fromHashOf(name).forkPositional());
     }
