@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerChunkCache;
@@ -14,6 +15,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.RandomState;
+import net.minecraft.world.level.levelgen.WorldReposition;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -60,12 +62,17 @@ public class DebugEntryAllNoiseList implements DebugScreenEntry {
         this.lastPos = feetPos;
         ServerChunkCache chunkSource = serverLevel.getChunkSource();
         RandomState randomState = chunkSource.randomState();
+        // 🔧 修复：采样坐标 = 偏移缩放后的地形坐标（Terrain XYZ）——与 NoiseRouter 的实际采样一致；
+        // 玩家实际坐标直接采样会绕过偏移缩放（1e50 缩放下该显示 NaN 的位置会错误地显示 -1.5~1.5 的正常值）
+        double sampleX = WorldReposition.reposition((double)feetPos.getX(), Direction.Axis.X);
+        double sampleY = WorldReposition.reposition((double)feetPos.getY(), Direction.Axis.Y);
+        double sampleZ = WorldReposition.reposition((double)feetPos.getZ(), Direction.Axis.Z);
         Map<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noises = randomState.noiseInstances();
         List<Map.Entry<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise>> sorted = new ArrayList<>(noises.entrySet());
         sorted.sort(Comparator.comparing(e -> e.getKey().identifier().toString()));
         for (Map.Entry<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> entry : sorted) {
             String name = entry.getKey().identifier().toString();
-            double value = entry.getValue().getValue((double)feetPos.getX(), (double)feetPos.getY(), (double)feetPos.getZ());
+            double value = entry.getValue().getValue(sampleX, sampleY, sampleZ);
             this.result.add(name + ": " + String.format("%.4f", value));
         }
     }
