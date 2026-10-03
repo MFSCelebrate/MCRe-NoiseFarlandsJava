@@ -915,6 +915,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             }
         }
 
+        // 🔧 MCRe（C2ME idle autosave 移植）：空闲间隙渐进式保存一个未保存区块（防 tick 内全量自动保存卡顿尖峰）
+        if (!this.tickRateManager.isSprinting() && this.haveTime()) {
+            for (ServerLevel level : this.getAllLevels()) {
+                if (level.getChunkSource().saveNextIdleChunk()) {
+                    return false;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -964,6 +973,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     public boolean isPaused() {
         return false;
     }
+
+    // 🔧 MCRe（C2ME mid-tick 移植）：区块主线程执行器任务在 tick 中间偷跑（间隔控制，降区块相关卡顿尖峰）
+    private static final long MID_TICK_CHUNK_TASKS_INTERVAL_NANOS = 2_000_000L;
+    private long midTickLastRunNanos = System.nanoTime();
 
     protected void tickServer(final BooleanSupplier haveTime) {
         long nano = Util.getNanos();
@@ -1116,6 +1129,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         this.updateEffectiveRespawnData();
 
         for (ServerLevel level : this.getAllLevels()) {
+            // 🔧 MCRe（C2ME mid-tick 移植）：每个 world tick 前偷跑一次区块主线程任务（2ms 间隔内只跑一次）
+            if (System.nanoTime() - this.midTickLastRunNanos >= MID_TICK_CHUNK_TASKS_INTERVAL_NANOS) {
+                this.midTickLastRunNanos = System.nanoTime();
+                level.getChunkSource().pollTask();
+            }
+
             profiler.push(() -> level + " " + level.dimension().identifier());
             profiler.push("tick");
 

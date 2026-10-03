@@ -9,7 +9,9 @@ import net.minecraft.SharedConstants;
 import net.minecraft.util.Unit;
 import net.minecraft.util.thread.PriorityConsecutiveExecutor;
 import net.minecraft.util.thread.StrictQueue;
+import net.minecraft.util.thread.GlobalWorldGenExecutors;
 import net.minecraft.util.thread.TaskScheduler;
+import net.minecraft.util.thread.WorldGenLocks;
 import net.minecraft.world.level.ChunkPos;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -21,12 +23,14 @@ public class ChunkTaskDispatcher implements ChunkHolder.LevelChangeListener, Aut
     private final TaskScheduler<Runnable> executor;
     private final PriorityConsecutiveExecutor dispatcher;
     protected boolean sleeping;
+    private final boolean parallel;
 
-    public ChunkTaskDispatcher(final TaskScheduler<Runnable> executor, final Executor dispatcherExecutor) {
+    public ChunkTaskDispatcher(final TaskScheduler<Runnable> executor, final Executor dispatcherExecutor, final boolean parallel) {
         this.queue = new ChunkTaskPriorityQueue(executor.name() + "_queue");
         this.executor = executor;
         this.dispatcher = new PriorityConsecutiveExecutor(4, dispatcherExecutor, "dispatcher");
         this.sleeping = true;
+        this.parallel = parallel;
     }
 
     public boolean hasWork() {
@@ -86,10 +90,26 @@ public class ChunkTaskDispatcher implements ChunkHolder.LevelChangeListener, Aut
     }
 
     protected void scheduleForExecution(final ChunkTaskPriorityQueue.TasksForChunk tasksForChunk) {
-        CompletableFuture.allOf(tasksForChunk.tasks().stream().map(message -> this.executor.scheduleWithResult(future -> {
-            message.run();
-            future.complete(Unit.INSTANCE);
-        })).toArray(CompletableFuture[]::new)).thenAccept(r -> this.pollTask());
+        if (!this.parallel) {
+            // 原版串行链：light dispatcher 保持串行（光照引擎共享状态非线程安全，并行会竞争）
+            CompletableFuture.allOf(tasksForChunk.tasks().stream().map(message -> this.executor.scheduleWithResult(future -> {
+                message.run();
+                future.complete(Unit.INSTANCE);
+            })).toArray(CompletableFuture[]::new)).thenAccept(r -> this.pollTask());
+            return;
+        }
+
+        // 🔧 MCRe（C2ME A2 简化版移植）：破除批间串行 —— 批提交到全局并行池（写入半径锁互斥：
+        // 同 chunk 跨批串行 + 结构 piece 跨 chunk 写入防竞争），立即 pollTask 补货（队列驱动无栈递归）
+        // → 多个 chunk 的生成任务并行执行。原版：allOf 等批完成 + ConsecutiveExecutor 一次一个 = 全局串行。
+        final long lockCenterX = tasksForChunk.chunkPos().x();
+        final long lockCenterZ = tasksForChunk.chunkPos().z();
+        GlobalWorldGenExecutors.execute(() -> WorldGenLocks.runLocked(lockCenterX, lockCenterZ, () -> {
+            for (Runnable task : tasksForChunk.tasks()) {
+                task.run();
+            }
+        }));
+        this.pollTask();
     }
 
     protected void onRelease(final ChunkPos key) {

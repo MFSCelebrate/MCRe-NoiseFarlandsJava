@@ -285,6 +285,11 @@ public class ServerChunkCache extends ChunkSource {
         return this.mainThreadProcessor.pollTask();
     }
 
+    // 🔧 MCRe（C2ME idle autosave 移植）：空闲间隙渐进式保存一个未保存区块
+    public boolean saveNextIdleChunk() {
+        return this.chunkMap.saveNextIdleChunk();
+    }
+
     boolean runDistanceManagerUpdates() {
         boolean updated = this.distanceManager.runAllUpdates(this.chunkMap);
         boolean promoted = this.chunkMap.promoteChunkMap();

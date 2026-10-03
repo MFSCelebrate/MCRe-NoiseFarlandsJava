@@ -35,6 +35,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.AbortableIterationConsumer;
 import net.minecraft.util.Mth;
+import net.minecraft.util.CheckedRandomSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.util.profiling.Profiler;
@@ -126,7 +127,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     protected float rainLevel;
     protected float oThunderLevel;
     protected float thunderLevel;
-    protected final RandomSource random = RandomSource.create();
+    // 🔧 MCRe（C2ME 多线程地基移植）：世界随机带线程属主检查（owner = 世界主线程；异步线程乱用自动 FALLBACK + 去重报警）
+    // blank final 的 thread 不能在字段初始化 lambda 里简单引用（JLS definite assignment）→ 经实例方法间接读取
+    protected final RandomSource random = new CheckedRandomSource(RandomSource.create(), () -> this.worldThread());
+
+    private Thread worldThread() {
+        return this.thread;
+    }
     @Deprecated private final RandomSource soundSeedGenerator = RandomSource.createThreadSafe();
     private final Holder<DimensionType> dimensionTypeRegistration;
     protected final WritableLevelData levelData;

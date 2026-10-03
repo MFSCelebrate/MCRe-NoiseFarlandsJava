@@ -1,5 +1,6 @@
 package net.minecraft.world.level.levelgen.structure.structures;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -30,10 +31,10 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 public class JungleTemplePiece extends ScatteredFeaturePiece {
     public static final int WIDTH = 12;
     public static final int DEPTH = 15;
-    private boolean placedMainChest;
-    private boolean placedHiddenChest;
-    private boolean placedTrap1;
-    private boolean placedTrap2;
+    private final AtomicBoolean placedMainChest = new AtomicBoolean();
+    private final AtomicBoolean placedHiddenChest = new AtomicBoolean();
+    private final AtomicBoolean placedTrap1 = new AtomicBoolean();
+    private final AtomicBoolean placedTrap2 = new AtomicBoolean();
     private static final JungleTemplePiece.MossStoneSelector STONE_SELECTOR = new JungleTemplePiece.MossStoneSelector();
 
     public JungleTemplePiece(final RandomSource random, final int west, final int north) {
@@ -42,19 +43,19 @@ public class JungleTemplePiece extends ScatteredFeaturePiece {
 
     public JungleTemplePiece(final CompoundTag tag) {
         super(StructurePieceType.JUNGLE_PYRAMID_PIECE, tag);
-        this.placedMainChest = tag.getBooleanOr("placedMainChest", false);
-        this.placedHiddenChest = tag.getBooleanOr("placedHiddenChest", false);
-        this.placedTrap1 = tag.getBooleanOr("placedTrap1", false);
-        this.placedTrap2 = tag.getBooleanOr("placedTrap2", false);
+        this.placedMainChest.set(tag.getBooleanOr("placedMainChest", false));
+        this.placedHiddenChest.set(tag.getBooleanOr("placedHiddenChest", false));
+        this.placedTrap1.set(tag.getBooleanOr("placedTrap1", false));
+        this.placedTrap2.set(tag.getBooleanOr("placedTrap2", false));
     }
 
     @Override
     protected void addAdditionalSaveData(final StructurePieceSerializationContext context, final CompoundTag tag) {
         super.addAdditionalSaveData(context, tag);
-        tag.putBoolean("placedMainChest", this.placedMainChest);
-        tag.putBoolean("placedHiddenChest", this.placedHiddenChest);
-        tag.putBoolean("placedTrap1", this.placedTrap1);
-        tag.putBoolean("placedTrap2", this.placedTrap2);
+        tag.putBoolean("placedMainChest", this.placedMainChest.get());
+        tag.putBoolean("placedHiddenChest", this.placedHiddenChest.get());
+        tag.putBoolean("placedTrap1", this.placedTrap1.get());
+        tag.putBoolean("placedTrap2", this.placedTrap2.get());
     }
 
     @Override
@@ -242,8 +243,8 @@ public class JungleTemplePiece extends ScatteredFeaturePiece {
                 chunkBB
             );
             this.placeBlock(level, Blocks.MOSSY_COBBLESTONE.defaultBlockState(), 3, -3, 1, chunkBB);
-            if (!this.placedTrap1) {
-                this.placedTrap1 = this.createDispenser(level, chunkBB, random, 3, -2, 1, Direction.NORTH, BuiltInLootTables.JUNGLE_TEMPLE_DISPENSER);
+            if (!this.placedTrap1.get()) {
+                this.placedTrap1.set(this.createDispenser(level, chunkBB, random, 3, -2, 1, Direction.NORTH, BuiltInLootTables.JUNGLE_TEMPLE_DISPENSER));
             }
 
             this.placeBlock(level, Blocks.VINE.defaultBlockState().setValue(VineBlock.SOUTH, true), 3, -2, 2, chunkBB);
@@ -334,14 +335,14 @@ public class JungleTemplePiece extends ScatteredFeaturePiece {
             );
             this.placeBlock(level, Blocks.MOSSY_COBBLESTONE.defaultBlockState(), 9, -3, 4, chunkBB);
             this.placeBlock(level, redstoneWireNS, 9, -2, 4, chunkBB);
-            if (!this.placedTrap2) {
-                this.placedTrap2 = this.createDispenser(level, chunkBB, random, 9, -2, 3, Direction.WEST, BuiltInLootTables.JUNGLE_TEMPLE_DISPENSER);
+            if (!this.placedTrap2.get()) {
+                this.placedTrap2.set(this.createDispenser(level, chunkBB, random, 9, -2, 3, Direction.WEST, BuiltInLootTables.JUNGLE_TEMPLE_DISPENSER));
             }
 
             this.placeBlock(level, Blocks.VINE.defaultBlockState().setValue(VineBlock.EAST, true), 8, -1, 3, chunkBB);
             this.placeBlock(level, Blocks.VINE.defaultBlockState().setValue(VineBlock.EAST, true), 8, -2, 3, chunkBB);
-            if (!this.placedMainChest) {
-                this.placedMainChest = this.createChest(level, chunkBB, random, 8, -3, 3, BuiltInLootTables.JUNGLE_TEMPLE);
+            if (!this.placedMainChest.get()) {
+                this.placedMainChest.set(this.createChest(level, chunkBB, random, 8, -3, 3, BuiltInLootTables.JUNGLE_TEMPLE));
             }
 
             this.placeBlock(level, Blocks.MOSSY_COBBLESTONE.defaultBlockState(), 9, -3, 2, chunkBB);
@@ -384,8 +385,8 @@ public class JungleTemplePiece extends ScatteredFeaturePiece {
             this.placeBlock(level, Blocks.STICKY_PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.WEST), 10, -2, 8, chunkBB);
             this.placeBlock(level, Blocks.STICKY_PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.WEST), 10, -1, 8, chunkBB);
             this.placeBlock(level, Blocks.REPEATER.defaultBlockState().setValue(RepeaterBlock.FACING, Direction.NORTH), 10, -2, 10, chunkBB);
-            if (!this.placedHiddenChest) {
-                this.placedHiddenChest = this.createChest(level, chunkBB, random, 9, -3, 10, BuiltInLootTables.JUNGLE_TEMPLE);
+            if (!this.placedHiddenChest.get()) {
+                this.placedHiddenChest.set(this.createChest(level, chunkBB, random, 9, -3, 10, BuiltInLootTables.JUNGLE_TEMPLE));
             }
         }
     }

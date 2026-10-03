@@ -184,8 +184,9 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         ConsecutiveExecutor worldgen = new ConsecutiveExecutor(executor, "worldgen");
         this.chunkStatusListener = chunkStatusListener;
         ConsecutiveExecutor light = new ConsecutiveExecutor(executor, "light");
-        this.worldgenTaskDispatcher = new ChunkTaskDispatcher(worldgen, executor);
-        this.lightTaskDispatcher = new ChunkTaskDispatcher(light, executor);
+        // 🔧 MCRe（A2 简化版）：worldgen 并行化（全局池 + 写入半径锁）；light 保持串行（光照引擎共享状态非线程安全）
+        this.worldgenTaskDispatcher = new ChunkTaskDispatcher(worldgen, executor, true);
+        this.lightTaskDispatcher = new ChunkTaskDispatcher(light, executor, false);
         this.lightEngine = new ThreadedLevelLightEngine(chunkGetter, this, this.level.dimensionType().hasSkyLight(), light, this.lightTaskDispatcher);
         this.distanceManager = new ChunkMap.DistanceManager(ticketStorage, executor, mainThreadExecutor);
         this.ticketStorage = ticketStorage;
@@ -737,6 +738,34 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         } else {
             return false;
         }
+    }
+
+    // 🔧 MCRe（C2ME idle autosave 移植）：空闲间隙渐进式保存一个未保存区块（防 tick 内全量自动保存卡顿尖峰）
+    // 语义对齐 saveAllChunks：filter(wasAccessibleSinceLastSave) → refreshAccessibility（先重置标志）→ save
+    public boolean saveNextIdleChunk() {
+        int searched = 0;
+        for (ChunkHolder chunkHolder : this.visibleChunkMap.values()) {
+            if (searched++ >= 256) {
+                break;
+            }
+
+            if (!chunkHolder.wasAccessibleSinceLastSave() || !chunkHolder.isReadyForSaving()) {
+                continue;
+            }
+
+            chunkHolder.refreshAccessibility();
+
+            ChunkAccess chunk = chunkHolder.getLatestChunk();
+            if (chunk == null || !(chunk instanceof ImposterProtoChunk || chunk instanceof LevelChunk)) {
+                continue;
+            }
+
+            if (this.save(chunk)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean save(final ChunkAccess chunk) {

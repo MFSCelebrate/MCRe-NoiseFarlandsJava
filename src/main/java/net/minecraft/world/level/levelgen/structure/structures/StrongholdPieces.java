@@ -65,33 +65,36 @@ public class StrongholdPieces {
             }
         }
     };
-    private static List<StrongholdPieces.PieceWeight> currentPieces;
-    private static @Nullable Class<? extends StrongholdPieces.StrongholdPiece> imposedPiece;
-    private static int totalWeight;
+    // 🔧 C2ME 多线程地基：static 共享状态 → ThreadLocal 副本（多线程同时生成要塞 chunk 时隔离竞争，防结构概率偏差）
+    private static final ThreadLocal<List<StrongholdPieces.PieceWeight>> currentPieces = ThreadLocal.withInitial(Lists::newArrayList);
+    private static final ThreadLocal<@Nullable Class<? extends StrongholdPieces.StrongholdPiece>> imposedPiece = new ThreadLocal<>();
+    private static final ThreadLocal<Integer> totalWeight = ThreadLocal.withInitial(() -> 0);
     private static final StrongholdPieces.SmoothStoneSelector SMOOTH_STONE_SELECTOR = new StrongholdPieces.SmoothStoneSelector();
 
     public static void resetPieces() {
-        currentPieces = Lists.newArrayList();
+        currentPieces.set(Lists.newArrayList());
 
         for (StrongholdPieces.PieceWeight piece : STRONGHOLD_PIECE_WEIGHTS) {
-            piece.placeCount = 0;
-            currentPieces.add(piece);
+            piece.setPlaceCount(0);
+            currentPieces.get().add(piece);
         }
 
-        imposedPiece = null;
+        imposedPiece.set(null);
     }
 
     private static boolean updatePieceWeight() {
         boolean hasAnyPieces = false;
-        totalWeight = 0;
+        int weight = 0;
 
-        for (StrongholdPieces.PieceWeight piece : currentPieces) {
-            if (piece.maxPlaceCount > 0 && piece.placeCount < piece.maxPlaceCount) {
+        for (StrongholdPieces.PieceWeight piece : currentPieces.get()) {
+            if (piece.maxPlaceCount > 0 && piece.getPlaceCount() < piece.maxPlaceCount) {
                 hasAnyPieces = true;
             }
 
-            totalWeight = totalWeight + piece.weight;
+            weight = weight + piece.weight;
         }
+
+        totalWeight.set(weight);
 
         return hasAnyPieces;
     }
@@ -148,11 +151,11 @@ public class StrongholdPieces {
             return null;
         }
 
-        if (imposedPiece != null) {
+        if (imposedPiece.get() != null) {
             StrongholdPieces.StrongholdPiece strongholdPiece = findAndCreatePieceFactory(
-                imposedPiece, structurePieceAccessor, random, footX, footY, footZ, direction, depth
+                imposedPiece.get(), structurePieceAccessor, random, footX, footY, footZ, direction, depth
             );
-            imposedPiece = null;
+            imposedPiece.set(null);
             if (strongholdPiece != null) {
                 return strongholdPiece;
             }
@@ -162,9 +165,9 @@ public class StrongholdPieces {
 
         while (numAttempts < 5) {
             numAttempts++;
-            int weightSelection = random.nextInt(totalWeight);
+            int weightSelection = random.nextInt(totalWeight.get());
 
-            for (StrongholdPieces.PieceWeight piece : currentPieces) {
+            for (StrongholdPieces.PieceWeight piece : currentPieces.get()) {
                 weightSelection -= piece.weight;
                 if (weightSelection < 0) {
                     if (!piece.doPlace(depth) || piece == startPiece.previousPiece) {
@@ -175,10 +178,10 @@ public class StrongholdPieces {
                         piece.pieceClass, structurePieceAccessor, random, footX, footY, footZ, direction, depth
                     );
                     if (strongholdPiece != null) {
-                        piece.placeCount++;
+                        piece.setPlaceCount(piece.getPlaceCount() + 1);
                         startPiece.previousPiece = piece;
                         if (!piece.isValid()) {
-                            currentPieces.remove(piece);
+                            currentPieces.get().remove(piece);
                         }
 
                         return strongholdPiece;
@@ -222,7 +225,7 @@ public class StrongholdPieces {
         private static final int WIDTH = 5;
         private static final int HEIGHT = 5;
         private static final int DEPTH = 7;
-        private boolean hasPlacedChest;
+        private volatile boolean hasPlacedChest;
 
         public ChestCorridor(final int genDepth, final RandomSource random, final BoundingBox boundingBox, final Direction direction) {
             super(StructurePieceType.STRONGHOLD_CHEST_CORRIDOR, genDepth, boundingBox);
@@ -753,7 +756,8 @@ public class StrongholdPieces {
     private static class PieceWeight {
         public final Class<? extends StrongholdPieces.StrongholdPiece> pieceClass;
         public final int weight;
-        public int placeCount;
+        // 🔧 C2ME 多线程地基：placeCount → 每实例每线程独立计数（PieceWeight 实例是 static 共享，防概率竞争）
+        private final ThreadLocal<Integer> placeCount = ThreadLocal.withInitial(() -> 0);
         public final int maxPlaceCount;
 
         public PieceWeight(final Class<? extends StrongholdPieces.StrongholdPiece> pieceClass, final int weight, final int maxPlaceCount) {
@@ -762,12 +766,24 @@ public class StrongholdPieces {
             this.maxPlaceCount = maxPlaceCount;
         }
 
+        public int getPlaceCount() {
+            return this.placeCount.get();
+        }
+
+        public void setPlaceCount(final int value) {
+            if (value == 0) {
+                this.placeCount.remove();
+            } else {
+                this.placeCount.set(value);
+            }
+        }
+
         public boolean doPlace(final int depth) {
-            return this.maxPlaceCount == 0 || this.placeCount < this.maxPlaceCount;
+            return this.maxPlaceCount == 0 || this.getPlaceCount() < this.maxPlaceCount;
         }
 
         public boolean isValid() {
-            return this.maxPlaceCount == 0 || this.placeCount < this.maxPlaceCount;
+            return this.maxPlaceCount == 0 || this.getPlaceCount() < this.maxPlaceCount;
         }
     }
 
@@ -775,7 +791,7 @@ public class StrongholdPieces {
         protected static final int WIDTH = 11;
         protected static final int HEIGHT = 8;
         protected static final int DEPTH = 16;
-        private boolean hasPlacedSpawner;
+        private volatile boolean hasPlacedSpawner;
 
         public PortalRoom(final int genDepth, final BoundingBox boundingBox, final Direction direction) {
             super(StructurePieceType.STRONGHOLD_PORTAL_ROOM, genDepth, boundingBox);
@@ -1267,7 +1283,7 @@ public class StrongholdPieces {
         @Override
         public void addChildren(final StructurePiece startPiece, final StructurePieceAccessor structurePieceAccessor, final RandomSource random) {
             if (this.isSource) {
-                StrongholdPieces.imposedPiece = StrongholdPieces.FiveCrossing.class;
+                StrongholdPieces.imposedPiece.set(StrongholdPieces.FiveCrossing.class);
             }
 
             this.generateSmallDoorChildForward((StrongholdPieces.StartPiece)startPiece, structurePieceAccessor, random, 1, 1);

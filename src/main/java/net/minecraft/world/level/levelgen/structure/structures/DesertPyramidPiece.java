@@ -2,6 +2,7 @@ package net.minecraft.world.level.levelgen.structure.structures;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -23,7 +24,7 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 public class DesertPyramidPiece extends ScatteredFeaturePiece {
     public static final int WIDTH = 21;
     public static final int DEPTH = 21;
-    private final boolean[] hasPlacedChest = new boolean[4];
+    private final AtomicIntegerArray hasPlacedChest = new AtomicIntegerArray(4);
     private final List<BlockPos> potentialSuspiciousSandWorldPositions = new ArrayList<>();
     private BlockPos randomCollapsedRoofPos = BlockPos.ZERO;
 
@@ -33,19 +34,19 @@ public class DesertPyramidPiece extends ScatteredFeaturePiece {
 
     public DesertPyramidPiece(final CompoundTag tag) {
         super(StructurePieceType.DESERT_PYRAMID_PIECE, tag);
-        this.hasPlacedChest[0] = tag.getBooleanOr("hasPlacedChest0", false);
-        this.hasPlacedChest[1] = tag.getBooleanOr("hasPlacedChest1", false);
-        this.hasPlacedChest[2] = tag.getBooleanOr("hasPlacedChest2", false);
-        this.hasPlacedChest[3] = tag.getBooleanOr("hasPlacedChest3", false);
+        this.hasPlacedChest.set(0, tag.getBooleanOr("hasPlacedChest0", false) ? 1 : 0);
+        this.hasPlacedChest.set(1, tag.getBooleanOr("hasPlacedChest1", false) ? 1 : 0);
+        this.hasPlacedChest.set(2, tag.getBooleanOr("hasPlacedChest2", false) ? 1 : 0);
+        this.hasPlacedChest.set(3, tag.getBooleanOr("hasPlacedChest3", false) ? 1 : 0);
     }
 
     @Override
     protected void addAdditionalSaveData(final StructurePieceSerializationContext context, final CompoundTag tag) {
         super.addAdditionalSaveData(context, tag);
-        tag.putBoolean("hasPlacedChest0", this.hasPlacedChest[0]);
-        tag.putBoolean("hasPlacedChest1", this.hasPlacedChest[1]);
-        tag.putBoolean("hasPlacedChest2", this.hasPlacedChest[2]);
-        tag.putBoolean("hasPlacedChest3", this.hasPlacedChest[3]);
+        tag.putBoolean("hasPlacedChest0", this.hasPlacedChest.get(0) != 0);
+        tag.putBoolean("hasPlacedChest1", this.hasPlacedChest.get(1) != 0);
+        tag.putBoolean("hasPlacedChest2", this.hasPlacedChest.get(2) != 0);
+        tag.putBoolean("hasPlacedChest3", this.hasPlacedChest.get(3) != 0);
     }
 
     @Override
@@ -293,11 +294,13 @@ public class DesertPyramidPiece extends ScatteredFeaturePiece {
             this.placeBlock(level, Blocks.CUT_SANDSTONE.defaultBlockState(), 10, -11, 13, chunkBB);
 
             for (Direction direction : Direction.Plane.HORIZONTAL) {
-                if (!this.hasPlacedChest[direction.get2DDataValue()]) {
+                if (this.hasPlacedChest.get(direction.get2DDataValue()) == 0) {
                     int xo = direction.getStepX() * 2;
                     int zo = direction.getStepZ() * 2;
-                    this.hasPlacedChest[direction.get2DDataValue()] = this.createChest(
-                        level, chunkBB, random, 10 + xo, -11, 10 + zo, BuiltInLootTables.DESERT_PYRAMID
+                    this.hasPlacedChest.set(
+                        direction.get2DDataValue(), this.createChest(
+                            level, chunkBB, random, 10 + xo, -11, 10 + zo, BuiltInLootTables.DESERT_PYRAMID
+                        ) ? 1 : 0
                     );
                 }
             }

@@ -701,7 +701,7 @@ public class NetherFortressPieces {
         private static final int WIDTH = 5;
         private static final int HEIGHT = 7;
         private static final int DEPTH = 5;
-        private boolean isNeedingChest;
+        private volatile boolean isNeedingChest;
 
         public CastleSmallCorridorLeftTurnPiece(final int genDepth, final RandomSource random, final BoundingBox boundingBox, final Direction direction) {
             super(StructurePieceType.NETHER_FORTRESS_CASTLE_SMALL_CORRIDOR_LEFT_TURN, genDepth, boundingBox);
@@ -842,7 +842,7 @@ public class NetherFortressPieces {
         private static final int WIDTH = 5;
         private static final int HEIGHT = 7;
         private static final int DEPTH = 5;
-        private boolean isNeedingChest;
+        private volatile boolean isNeedingChest;
 
         public CastleSmallCorridorRightTurnPiece(final int genDepth, final RandomSource random, final BoundingBox boundingBox, final Direction direction) {
             super(StructurePieceType.NETHER_FORTRESS_CASTLE_SMALL_CORRIDOR_RIGHT_TURN, genDepth, boundingBox);
@@ -1090,7 +1090,7 @@ public class NetherFortressPieces {
         private static final int WIDTH = 7;
         private static final int HEIGHT = 8;
         private static final int DEPTH = 9;
-        private boolean hasPlacedSpawner;
+        private volatile boolean hasPlacedSpawner;
 
         public MonsterThrone(final int genDepth, final BoundingBox boundingBox, final Direction direction) {
             super(StructurePieceType.NETHER_FORTRESS_MONSTER_THRONE, genDepth, boundingBox);
@@ -1206,7 +1206,7 @@ public class NetherFortressPieces {
             int totalWeight = 0;
 
             for (NetherFortressPieces.PieceWeight piece : currentPieces) {
-                if (piece.maxPlaceCount > 0 && piece.placeCount < piece.maxPlaceCount) {
+                if (piece.maxPlaceCount > 0 && piece.getPlaceCount() < piece.maxPlaceCount) {
                     hasAnyPieces = true;
                 }
 
@@ -1246,7 +1246,7 @@ public class NetherFortressPieces {
                             piece, structurePieceAccessor, random, footX, footY, footZ, direction, depth
                         );
                         if (structurePiece != null) {
-                            piece.placeCount++;
+                            piece.setPlaceCount(piece.getPlaceCount() + 1);
                             startPiece.previousPiece = piece;
                             if (!piece.isValid()) {
                                 currentPieces.remove(piece);
@@ -1495,7 +1495,8 @@ public class NetherFortressPieces {
     private static class PieceWeight {
         public final Class<? extends NetherFortressPieces.NetherBridgePiece> pieceClass;
         public final int weight;
-        public int placeCount;
+        // 🔧 C2ME 多线程地基：placeCount → 每实例每线程独立计数（BRIDGE/CASTLE_PIECE_WEIGHTS 是 static 共享实例，防概率竞争）
+        private final ThreadLocal<Integer> placeCount = ThreadLocal.withInitial(() -> 0);
         public final int maxPlaceCount;
         public final boolean allowInRow;
 
@@ -1512,12 +1513,24 @@ public class NetherFortressPieces {
             this(pieceClass, weight, maxPlaceCount, false);
         }
 
+        public int getPlaceCount() {
+            return this.placeCount.get();
+        }
+
+        public void setPlaceCount(final int value) {
+            if (value == 0) {
+                this.placeCount.remove();
+            } else {
+                this.placeCount.set(value);
+            }
+        }
+
         public boolean doPlace(final int depth) {
-            return this.maxPlaceCount == 0 || this.placeCount < this.maxPlaceCount;
+            return this.maxPlaceCount == 0 || this.getPlaceCount() < this.maxPlaceCount;
         }
 
         public boolean isValid() {
-            return this.maxPlaceCount == 0 || this.placeCount < this.maxPlaceCount;
+            return this.maxPlaceCount == 0 || this.getPlaceCount() < this.maxPlaceCount;
         }
     }
 
@@ -1678,12 +1691,12 @@ public class NetherFortressPieces {
             super(west, north, getRandomHorizontalDirection(random));
 
             for (NetherFortressPieces.PieceWeight piece : NetherFortressPieces.BRIDGE_PIECE_WEIGHTS) {
-                piece.placeCount = 0;
+                piece.setPlaceCount(0);
                 this.availableBridgePieces.add(piece);
             }
 
             for (NetherFortressPieces.PieceWeight piece : NetherFortressPieces.CASTLE_PIECE_WEIGHTS) {
-                piece.placeCount = 0;
+                piece.setPlaceCount(0);
                 this.availableCastlePieces.add(piece);
             }
         }

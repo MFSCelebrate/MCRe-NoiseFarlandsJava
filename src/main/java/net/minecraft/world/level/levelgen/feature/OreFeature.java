@@ -5,6 +5,7 @@ import java.util.BitSet;
 import java.util.function.Function;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.util.BitSetCacheUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
@@ -69,7 +70,7 @@ public class OreFeature extends Feature<OreConfiguration> {
         final int sizeY
     ) {
         int placed = 0;
-        BitSet tested = new BitSet(sizeXZ * sizeY * sizeXZ);
+        BitSet tested = BitSetCacheUtil.getCachedOrNewBitSet(sizeXZ * sizeY * sizeXZ);
         BlockPos.MutableBlockPos orePos = new BlockPos.MutableBlockPos();
         int size = config.size;
         double[] data = new double[size * 4];

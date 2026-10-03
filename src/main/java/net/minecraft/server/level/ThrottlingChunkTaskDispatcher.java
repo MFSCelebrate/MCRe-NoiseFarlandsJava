@@ -18,7 +18,8 @@ public class ThrottlingChunkTaskDispatcher extends ChunkTaskDispatcher {
     private final String executorSchedulerName;
 
     public ThrottlingChunkTaskDispatcher(final TaskScheduler<Runnable> executor, final Executor dispatcherExecutor, final int maxChunksInExecution) {
-        super(executor, dispatcherExecutor);
+        // 🔧 MCRe（A2 简化版）：票调度器保持原版串行语义（parallel=false）
+        super(executor, dispatcherExecutor, false);
         this.maxChunksInExecution = maxChunksInExecution;
         this.executorSchedulerName = executor.name();
     }

@@ -112,7 +112,7 @@ public class MineshaftPieces {
     public static class MineShaftCorridor extends MineshaftPieces.MineShaftPiece {
         private final boolean hasRails;
         private final boolean spiderCorridor;
-        private boolean hasPlacedSpider;
+        private volatile boolean hasPlacedSpider;
         private final int numSections;
 
         public MineShaftCorridor(final CompoundTag tag) {

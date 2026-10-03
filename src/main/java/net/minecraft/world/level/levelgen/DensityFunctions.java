@@ -44,6 +44,12 @@ public final class DensityFunctions {
         return config != null && config.forceSkyGrid;
     }
 
+    // 🔧 MCRe（C2ME 天空网格）：enableSkyGrid 开关（平滑器/加乘链的 Inf 原样传播防护）
+    private static boolean isEnableSkyGrid() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.enableSkyGrid;
+    }
+
     private static boolean fixEndRingMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
         return config != null && config.fixEndRings;
@@ -329,6 +335,31 @@ public final class DensityFunctions {
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
             double v1 = this.argument1.compute(context);
+
+            if (isEnableSkyGrid()) {
+                // 🔧 MCRe（C2ME 天空网格）：Inf 原样传播——防 Inf±Inf / Inf×0 → NaN（天空网格保留的关键）
+                return switch (this.type) {
+                    case ADD -> {
+                        double v2 = this.argument2.compute(context);
+                        double result = v1 + v2;
+                        yield Double.isNaN(result) ? (Double.isInfinite(v1) ? v1 : v2) : result;
+                    }
+                    case MUL -> {
+                        if (v1 == 0.0) {
+                            double v2 = this.argument2.compute(context);
+                            yield Double.isInfinite(v2) ? v2 : 0.0;
+                        }
+
+                        double v2 = this.argument2.compute(context);
+                        double result = v1 * v2;
+                        yield Double.isNaN(result) ? (Double.isInfinite(v1) ? v1 : v2) : result;
+                    }
+                    case MIN ->
+                            v1 < this.argument2.minValue() ? v1 : Math.min(v1, this.argument2.compute(context));
+                    case MAX ->
+                            v1 > this.argument2.maxValue() ? v1 : Math.max(v1, this.argument2.compute(context));
+                };
+            }
 
             return switch (this.type) {
                 case ADD -> v1 + this.argument2.compute(context);
@@ -1001,6 +1032,35 @@ public final class DensityFunctions {
 
         @Override
         public double transform(final double input) {
+            if (isEnableSkyGrid()) {
+                // 🔧 MCRe（C2ME 天空网格）：Inf 原样传播——防 0×Inf / Inf±Inf → NaN（天空网格保留的关键）
+                return switch (this.specificType) {
+                    case MUL -> {
+                        if (Double.isInfinite(input)) {
+                            yield input;
+                        }
+
+                        if (input == 0.0 && Double.isInfinite(this.argument)) {
+                            yield this.argument;
+                        }
+
+                        double result = input * this.argument;
+                        yield Double.isNaN(result) ? input : result;
+                    }
+                    case ADD -> {
+                        if (Double.isInfinite(input)) {
+                            yield input;
+                        }
+
+                        if (Double.isInfinite(this.argument)) {
+                            yield this.argument;
+                        }
+
+                        yield input + this.argument;
+                    }
+                };
+            }
+
             return switch (this.specificType) {
                 case MUL -> input * this.argument;
                 case ADD -> input + this.argument;

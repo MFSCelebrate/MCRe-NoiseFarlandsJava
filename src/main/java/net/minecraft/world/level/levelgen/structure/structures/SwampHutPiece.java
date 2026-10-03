@@ -23,8 +23,8 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSeriali
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 
 public class SwampHutPiece extends ScatteredFeaturePiece {
-    private boolean spawnedWitch;
-    private boolean spawnedCat;
+    private volatile boolean spawnedWitch;
+    private volatile boolean spawnedCat;
 
     public SwampHutPiece(final RandomSource random, final int west, final int north) {
         super(StructurePieceType.SWAMPLAND_HUT, west, 64, north, 7, 7, 9, getRandomHorizontalDirection(random));
