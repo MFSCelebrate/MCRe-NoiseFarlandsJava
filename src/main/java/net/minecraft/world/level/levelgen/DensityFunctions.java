@@ -1586,7 +1586,12 @@ public final class DensityFunctions {
      * Y 轴输入与 YClampedGradient 同款：enabledYClampedGradientOffset 开启时走 reposition。</p>
      */
     static final class WindowedDepthGradient implements DensityFunction.SimpleFunction {
-        static final DensityFunctions.WindowedDepthGradient INSTANCE = new DensityFunctions.WindowedDepthGradient();
+        // 🔧 MCRe：offset 参与（窗外补偿用）——offsetToDepth = add(this, offset)，窗外把 offset 抵消 → depth 恒 ±1.5
+        private final DensityFunction offset;
+
+        WindowedDepthGradient(final DensityFunction offset) {
+            this.offset = offset;
+        }
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
@@ -1594,9 +1599,22 @@ public final class DensityFunctions {
                     ? WorldReposition.reposition(context.blockY(), Direction.Axis.Y)
                     : context.blockY();
             if (context instanceof NoiseChunk noiseChunk) {
-                // 窗口感知：梯度铺在生成窗口上（窗口底 +1.5 → 窗口顶 -1.5，窗外钳制到端值）
                 NoiseSettings settings = noiseChunk.generationNoiseSettings();
-                return Mth.clampedMap(y, settings.minY(), settings.minY() + settings.height(), 1.5, -1.5);
+                int windowMinY = settings.minY();
+                int windowMaxY = settings.minY() + settings.height();
+                if (y >= windowMaxY) {
+                    // 🔧 窗口顶"削峰"：offset（如 +1.5）会抵消梯度端值（实测 D=0：-1.5+1.5=0 → 削不住 base3d 振荡 → 空岛）；
+                    // 这里补偿 offset → depth = offset + (-1.5 - offset) = -1.5 恒负 → 空岛根治
+                    return -1.5 - this.offset.compute(context);
+                }
+
+                if (y < windowMinY) {
+                    // 🔧 窗口底"补枯"：对称补偿 → depth = 1.5 - offset 恒正 → 深沟根治
+                    return 1.5 - this.offset.compute(context);
+                }
+
+                // 窗口内：正常梯度（+1.5 → -1.5）+ offset 照常参与（offsetToDepth 的 add）
+                return Mth.clampedMap(y, windowMinY, windowMaxY, 1.5, -1.5);
             }
 
             // fallback：非 NoiseChunk 上下文（非生成路径）→ 原版世界梯度
@@ -1605,12 +1623,13 @@ public final class DensityFunctions {
 
         @Override
         public double minValue() {
-            return -1.5;
+            // 窗外恒 -1.5 - offset.max；窗口内 ≥ 同款下界 → 全域下界（min/max 供 MIN/MAX 短路优化用，必须算准）
+            return -1.5 - this.offset.maxValue();
         }
 
         @Override
         public double maxValue() {
-            return 1.5;
+            return 1.5 - this.offset.minValue();
         }
 
         @Override

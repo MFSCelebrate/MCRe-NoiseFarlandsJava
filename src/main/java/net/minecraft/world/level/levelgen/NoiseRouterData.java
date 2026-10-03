@@ -192,10 +192,11 @@ public class NoiseRouterData {
     }
 
     private static DensityFunction offsetToDepth(final DensityFunction offset) {
-        // 🔧 MCRe（窗口感知限制器，理论：冒险家岐哥）：depth 的"削峰补枯"梯度（+1.5 → -1.5）从硬编码 -64..320
-        // 改为铺在生成窗口上（窗口底 +1.5 / 窗口顶 -1.5）——窗口跟随分层生成移动，任意高度段限制器都生效，
-        // 根治 Y >= 320 空岛（不修改数据包）；正常世界窗口 = 原版世界高度，与原版行为一致
-        return DensityFunctions.add(DensityFunctions.WindowedDepthGradient.INSTANCE, offset);
+        // 🔧 MCRe（窗口感知限制器，理论：冒险家岐哥）：depth 的"削峰补枯"梯度（+1.5 → -1.5）铺在生成窗口上，
+        // 窗口跟随分层生成移动，任意高度段限制器都生效，根治 Y >= 320 空岛（不修改数据包）。
+        // 窗外补偿：offset 会抵消梯度端值（实测 D=0：-1.5+offset1.5=0 → 削不住 base3d 振荡 → 空岛），
+        // 窗口版构造带 offset，窗外输出 -1.5 - offset → depth 恒 ±1.5（全力削峰补枯）
+        return DensityFunctions.add(new DensityFunctions.WindowedDepthGradient(offset), offset);
     }
 
     private static DensityFunction registerAndWrap(
