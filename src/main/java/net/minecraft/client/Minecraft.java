@@ -107,7 +107,9 @@ import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 import net.minecraft.client.gui.screens.social.PlayerSocialManager;
 import net.minecraft.client.gui.screens.social.RemoteFriendListUpdateHandler;
 import net.minecraft.client.gui.screens.worldselection.WorldOpenFlows;
+import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 import net.minecraft.client.gui.screens.worldselection.FarLandsConfigStorage;
+import net.minecraft.world.level.levelgen.WorldReposition;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import net.minecraft.client.main.GameConfig;
 import net.minecraft.client.model.geom.EntityModelSet;
@@ -427,7 +429,20 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
         this.gameThread = Thread.currentThread();
         this.options = new Options(this, this.gameDirectory);
         // 🔧 MCRe：启动时加载 FarLands 全局配置（文件缺失时自动写默认配置一次）
-        WorldMainSettingScreen.FarLandsConfigData.activeConfig = FarLandsConfigStorage.load(this.gameDirectory);
+        WorldMainSettingScreen.FarLandsConfigData activeCfg = FarLandsConfigStorage.load(this.gameDirectory);
+        WorldMainSettingScreen.FarLandsConfigData.activeConfig = activeCfg;
+        // 🔧 修复：启动时同步 WorldReposition 运行期配置（缩放/偏移/开关）——否则不打开设置界面时
+        // WorldReposition 的 SCALE/SHIFT 静态数组保持默认值，噪声/表面偏移与 farlands_config.json 实际不符
+        WorldReposition.refresh(new WorldReposition.RepositionConfig(
+                activeCfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(activeCfg.xWorldScaler, BigDecimal.ONE) : BigDecimal.ONE,
+                activeCfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(activeCfg.yWorldScaler, BigDecimal.ONE) : BigDecimal.ONE,
+                activeCfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(activeCfg.zWorldScaler, BigDecimal.ONE) : BigDecimal.ONE,
+                activeCfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(activeCfg.xWorldOffset, BigDecimal.ZERO) : BigDecimal.ZERO,
+                activeCfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(activeCfg.yWorldOffset, BigDecimal.ZERO) : BigDecimal.ZERO,
+                activeCfg.enabledTerrainOffsets ? WorldReposition.parseOrFallback(activeCfg.zWorldOffset, BigDecimal.ZERO) : BigDecimal.ZERO,
+                activeCfg.enabledYClampedGradientOffset,
+                activeCfg.surfaceNoiseOffset
+        ));
         this.debugEntries = new DebugScreenEntryList(this.gameDirectory, this.fixerUpper);
         boolean lastStartWasClean = this.options.startedCleanly;
         this.options.startedCleanly = false;

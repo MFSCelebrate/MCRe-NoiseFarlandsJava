@@ -10,6 +10,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.FarLandsYScan;
 import net.minecraft.world.level.LevelHeightAccessor;
@@ -356,6 +357,14 @@ public class SurfaceSystem {
         int offset = (int)Math.round(this.clayBandsOffsetNoise.getValue(
                 WorldReposition.repositionSurface(worldX, Direction.Axis.X), 0.0,
                 WorldReposition.repositionSurface(worldZ, Direction.Axis.Z)) * 4.0);
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        if (config != null && config.fixChunkOutOfBounds) {
+            // 🔧 越界防护（fixChunkOutOfBounds）：reposition 缩放（如 z×1e12）后黏土带噪声可能输出野值/±Inf →
+            // offset 巨大 → (y+offset+length)%length 对大负值返回负数 → 数组越界崩溃（实测 Index -102 / length 192）。
+            // floorMod = 正确的环形取模（任何整数都返回非负）：正常 offset ±4 与原版逐位一致；正野值保持原版环形语义；负野值不崩
+            return this.clayBands[Math.floorMod(y + offset, this.clayBands.length)];
+        }
+
         return this.clayBands[(y + offset + this.clayBands.length) % this.clayBands.length];
     }
 }

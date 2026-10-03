@@ -6135,6 +6135,8 @@
   "options.graphicsApi.vulkan": "Prefer Vulkan (Experimental)",
   "options.guiScale": "GUI Scale",
   "options.guiScale.auto": "Auto",
+  "options.debugGuiScale.tooltip": "Set a separate GUI scale for the debug overlay",
+  "options.debugGuiScale.unchanged": "Unchanged",
   "options.hidden": "Hidden",
   "options.hideLightningFlashes": "Hide Sky Flashes",
   "options.hideLightningFlashes.tooltip": "Prevents Lightning Bolts or other environmental effects from making the sky flash. The sources of flashes themselves will still be visible.",

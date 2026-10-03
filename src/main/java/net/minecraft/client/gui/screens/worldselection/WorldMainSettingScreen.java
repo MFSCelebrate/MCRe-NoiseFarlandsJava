@@ -80,7 +80,7 @@ public class WorldMainSettingScreen extends Screen {
 
     // ==================== 构造函数 ====================
     public WorldMainSettingScreen(final Screen parent, final @Nullable WorldCreationContext settings) {
-        super(Component.literal("世界自定义设置 │ World custom settings"));
+        super(Component.literal("世界自定义设置"));
         this.parent = parent;
         this.settings = settings;
         // 🔧 MCRe：从 options.txt 同目录的 farlands_config.json 加载上次保存的全局配置
@@ -101,7 +101,7 @@ public class WorldMainSettingScreen extends Screen {
         this.titleWidget = new StringWidget(this.title.copy().withStyle(ChatFormatting.BOLD), this.font);
         header.addChild(this.titleWidget);
         this.subtitleWidget = new StringWidget(
-        Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"),
+        Component.literal("§7进行对世界生成器的自定义"),
         this.font
         );
         header.addChild(this.subtitleWidget);
@@ -244,22 +244,22 @@ public class WorldMainSettingScreen extends Screen {
 
         SwitchGrid.Builder borderBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20).withRowSpacing(4);
         borderBuilder.addSwitch(
-                Component.literal("修复在 33552992 生成区块时的非法状态异常"),
+                Component.literal("修复在 33552992 生成区块时的非法状态异常 和 表面噪声与规则崩溃问题"),
                 () -> this.configData.fixChunkOutOfBounds,
                 val -> this.configData.fixChunkOutOfBounds = val
-        ).withInfo(Component.literal("从 1.21.2 开始，在 X/Z 超过 ±33552992 的位置生成区块时，会导致游戏崩溃。\n抛出的异常为：IllegalStateException(\"Trying to create chunk out of reasonable bounds: \" + pos)\n这很明显是人为限制。"));
+        ).withInfo(Component.literal("从 1.21.2 开始，在 X/Z 超过 ±33552992 的位置生成区块时，会导致游戏崩溃。\n抛出的异常为：IllegalStateException(\"Trying to create chunk out of reasonable bounds: \" + pos)\n这很明显是人为限制。\n\n2026-10-03 Update: 此设置现在可以控制在偏移缩放表面噪声与规则时是否需要修复 Bit Length 大缩放溢出崩溃问题"));
         borderBuilder.addSwitch(
                 Component.literal("修复 MineshaftPieces 取平均值导致的 int 溢出崩溃"),
                 () -> this.configData.fixAverageFunctionOverFlow,
                 val -> this.configData.fixAverageFunctionOverFlow = val
         ).withInfo(Component.literal("当原版的取平均值方法在尝试取 1073741824 以上的平均值时会崩溃\n开启这个设置会解决这个问题"));
         borderBuilder.addSwitch(
-                Component.literal("修复末地环"),
+                Component.literal("修复 末地环"),
                 () -> this.configData.fixEndRings,
                 val -> this.configData.fixEndRings = val
         ).withInfo(Component.literal("修复在密度函数 getHeightValue 计算距离时导致的 NaN 非法值"));
         borderBuilder.addSwitch(
-                Component.literal("修复 在Float精度丢失过大时生成除玩家外实体导致的崩溃"),
+                Component.literal("§c[无效开关] §f修复 在Float精度丢失过大时生成除玩家外实体导致的崩溃"),
                 () -> this.configData.fixFloatOverFlowCrash,
                 val -> this.configData.fixFloatOverFlowCrash = val
         ).withInfo(Component.literal("从某个版本开始，游戏生成的实体必定会强加载一次区块，由于 Float 精度丢失，导致强加载区块必定会崩溃，此设置会修复这个问题。"));
@@ -280,7 +280,7 @@ public class WorldMainSettingScreen extends Screen {
                             Component.literal("1.18 Experimental Snapshot 4 (64bit Ver)");
                     default -> Component.literal(mode);
                 },
-                "32bit"
+                this.configData.precisionMode
         )
                 .withInfo(Component.literal("§e控制边境之地的位置\n§fBeta: ±12550821\nVanilla: 2^88/171.103\nRelease: 2^63/171.103\n1.18 Experimental Snapshot 4: 1606505088\n\n§eBeta 属于 infdev 20100327~beta 1.7.3之间的边境之地距离配置\n§eVanilla 属于1.18.2+后边境之地后的距离配置\n§eRelease 属于beta 1.8.1~1.13.2 的边境之地距离配置\n§e1.18 Experimental Snapshot 4: 包含64bit Ver版本，都是只在实验性快照出现的边境之地距离配置"))
                 .withValues("32bit", "64bit", "Release", "1.18-exp-32bit", "1.18-exp-64bit")
@@ -297,7 +297,7 @@ public class WorldMainSettingScreen extends Screen {
                     case "Bedrock-Edition" -> Component.literal("Bedrock Edition 1.17.20+");
                     default -> Component.literal(mode);
                 },
-                "Java-1.18.2+"
+                this.configData.farlandsStyle
         )
                 .withInfo(Component.literal("§e控制边境之地的样式\n§fJava 1.18.2+: 类似高原地形，从溢出开始形成巨大高墙\nBedrock Edition: 模拟基岩版1.17.20之后的边境之地"))
                 .withValues("Java-1.18.2+", "Bedrock-Edition")
@@ -453,9 +453,9 @@ public class WorldMainSettingScreen extends Screen {
                 val -> this.configData.surfaceNoiseOffset = val
         ).withInfo(Component.literal(
                 "控制表面噪声与规则（SurfaceSystem/SurfaceRules）是否也应用偏移缩放。\n"
-                        + "§e启用后：§r表面材质（草/石/沙/黏土/恶地/冰山）与地形形状保持一致的偏移缩放，\\n"
-                        + "        极远坐标下材质不会因精度丢失而错乱\\n"
-                        + "§7关闭后：§r表面材质按原始坐标采样（等同 UltimateScaler 行为），\\n"
+                        + "§e启用后：§r表面材质（草/石/沙/黏土/恶地/冰山）与地形形状保持一致的偏移缩放，\n"
+                        + "        极远坐标下材质不会因精度丢失而错乱\n"
+                        + "§7关闭后：§r表面材质按原始坐标采样（等同 UltimateScaler 行为），\n"
                         + "        地形形状仍受偏移缩放影响"
         ));
         this.scrollContent.addChild(surfaceNoiseBuilder.build().layout(), s -> s.paddingHorizontal(10));
@@ -486,7 +486,7 @@ public class WorldMainSettingScreen extends Screen {
                 () -> this.configData.disableOffsetNoise,
                 val -> this.configData.disableOffsetNoise = val
         ).withInfo(Component.literal(
-                "此开关用于禁用噪声 Offset，可以用来解决渐消之地导致的地形消失，\\n"
+                "此开关用于禁用噪声 Offset，可以用来解决渐消之地导致的地形消失，\n"
                         + "展现渐消之后更多的边境层"
         ));
         this.scrollContent.addChild(disableOffsetBuilder.build().layout(), s -> s.paddingHorizontal(10));
@@ -930,44 +930,42 @@ public class WorldMainSettingScreen extends Screen {
             this.setMaxLength(Integer.MAX_VALUE);
         }
 
-        /** 校验在 cursor 位置插入 c 后是否仍为合法科学记数法前缀 */
-        private boolean canInsertAtCursor(final char c) {
-            String v = this.getValue();
-            int cursor = this.getCursorPosition();
-            // 构造插入后的字符串
-            StringBuilder sb = new StringBuilder(v);
-            sb.insert(cursor, c);
-            String candidate = sb.toString();
-            // 快速校验：只含 0-9 . - + e/E，且结构合法
-            // 允许的前缀模式：[数字]* [.]? [数字]* [eE]? [+-]? [数字]*
-            // 逐字符状态机校验
+        /** 校验 candidate 是否为合法 BigDecimal（含科学记数法）的合法前缀——输入过程的中间态（如 "1e"、"1."、"1e-"）也放行 */
+        private boolean isValidPrefix(final String candidate) {
+            if (candidate.isEmpty()) {
+                return true;
+            }
+
             boolean hasDigit = false;
             boolean hasDot = false;
             boolean hasE = false;
-            boolean eSeen = false;
             for (int i = 0; i < candidate.length(); i++) {
                 char ch = candidate.charAt(i);
                 if (ch >= '0' && ch <= '9') {
                     hasDigit = true;
-                    if (eSeen) continue;
                 } else if (ch == '.') {
+                    // 小数点只能出现一次，且不能出现在指数部分（e/E 之后）
                     if (hasDot || hasE) return false;
                     hasDot = true;
                 } else if (ch == 'e' || ch == 'E') {
-                    if (hasE || !hasDigit) return false; // e 前必须有数字
+                    // e 只能出现一次，且前面必须有数字（"1e" 是 "1e12" 的前缀 ✓ 放行）
+                    if (hasE || !hasDigit) return false;
                     hasE = true;
-                    eSeen = true;
                 } else if (ch == '-' || ch == '+') {
-                    // 符号只能出现在开头或 e/E 后
-                    if (i != 0 && candidate.charAt(i - 1) != 'e' && candidate.charAt(i - 1) != 'E')
-                        return false;
+                    // 符号只能出现在开头或 e/E 之后（"-1"、"1e-5" 的前缀 ✓ 放行）
+                    if (i != 0 && candidate.charAt(i - 1) != 'e' && candidate.charAt(i - 1) != 'E') return false;
                 } else {
-                    return false; // 非法字符
+                    return false;
                 }
             }
-            // 不能以 . 结尾、不能以 e/E 结尾、不能以 +/- 结尾
-            char last = candidate.charAt(candidate.length() - 1);
-            return last != '.' && last != 'e' && last != 'E' && last != '-' && last != '+';
+
+            return true;
+        }
+
+        private boolean canInsertAtCursor(final char c) {
+            StringBuilder sb = new StringBuilder(this.getValue());
+            sb.insert(this.getCursorPosition(), c);
+            return isValidPrefix(sb.toString());
         }
 
         @Override
@@ -981,14 +979,22 @@ public class WorldMainSettingScreen extends Screen {
 
         @Override
         public void insertText(final String input) {
-            StringBuilder filtered = new StringBuilder();
+            // 🔧 修复：逐字符累积校验（前序字符计入 candidate）——粘贴 "1e12"/"1.5" 整串时
+            // 每个字符都能看到前文（否则 "12e5" 粘贴时 'e' 前无数字被误拒）
+            StringBuilder candidate = new StringBuilder(this.getValue());
+            int cursor = this.getCursorPosition();
+            StringBuilder accepted = new StringBuilder();
             for (int i = 0; i < input.length(); i++) {
                 char c = input.charAt(i);
-                if (canInsertAtCursor(c)) {
-                    filtered.append(c);
+                candidate.insert(cursor + accepted.length(), c);
+                if (isValidPrefix(candidate.toString())) {
+                    accepted.append(c);
+                } else {
+                    candidate.deleteCharAt(cursor + accepted.length());
                 }
             }
-            super.insertText(filtered.toString());
+
+            super.insertText(accepted.toString());
         }
     }
 }

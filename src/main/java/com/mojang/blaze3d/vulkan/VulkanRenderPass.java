@@ -367,26 +367,13 @@ public class VulkanRenderPass implements RenderPassBackend {
                             throw new IllegalStateException("Missing uniform " + entry.name() + " (should be " + entry.type() + ")");
                         }
 
-                        LongBuffer bufferViewPtr = stack.callocLong(1);
-
-                        try (MemoryStack var9 = stack.push()) {
-                            assert entry.texelBufferFormat() != null;
-                            VkBufferViewCreateInfo viewCreateInfo = VkBufferViewCreateInfo.calloc(stack).sType$Default();
-                            viewCreateInfo.buffer(((VulkanGpuBuffer)value.buffer()).vkBuffer());
-                            viewCreateInfo.offset(value.offset());
-                            viewCreateInfo.range(value.length());
-                            viewCreateInfo.format(VulkanConst.toVk(entry.texelBufferFormat()));
-                            VulkanUtils.crashIfFailure(
-                                this.device,
-                                VK12.vkCreateBufferView(this.device.vkDevice(), viewCreateInfo, null, bufferViewPtr),
-                                "Couldn't create buffer view for texel buffer"
-                            );
-                            long bufferViewHandle = bufferViewPtr.get(0);
-                            this.encoder.queueForDestroy(() -> VK12.vkDestroyBufferView(this.device.vkDevice(), bufferViewHandle, null));
-                        }
+                        // 🔧 MCRe（C2ME 一档优化）：BufferView 缓存复用——原版每次推送新建+销毁排队（云渲染 CloudFaces 每帧重建）
+                        long bufferViewHandle = ((VulkanGpuBuffer)value.buffer()).getOrCreateBufferView(
+                            this.device, value.offset(), value.length(), VulkanConst.toVk(entry.texelBufferFormat())
+                        );
 
                         set.descriptorType(4);
-                        set.pTexelBufferView(bufferViewPtr);
+                        set.pTexelBufferView(stack.longs(bufferViewHandle));
                     }
                 }
 

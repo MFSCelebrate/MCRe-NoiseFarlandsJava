@@ -6,8 +6,9 @@
 > 实际的理想来源于我的另一项目 [MFSCelebrate/MCRe-NoiseFarlands](https://github.com/MFSCelebrate/MCRe-NoiseFarlands) 的携带版边境之地 Mod
 
 > [!TIP]
-> 该版本全权由 MFSCelebrate 制作，遵循 [GNU General Public License](./LICENSE) 协议之后才能进行对该项目的其他操作与管理  
-> 作者本人: [MFSCelebrate(Bilibili)](https://b23.tv/hTl7eI5)
+> 此仓库遵循 [GNU General Public License](./LICENSE) 协议  
+> 作者本人: [MFSCelebrate(Bilibili)](https://b23.tv/hTl7eI5)  
+> 已知协作者: [__Infinitive__(BiliBili)](https://space.bilibili.com/1196843580)
 
 > [!WARNING]
 > 该版本较不稳定，Mojang 在该版本正式引用了 Vulkan 渲染，所有关于原版的 Bug (特性)与该改版无关  
@@ -63,10 +64,10 @@ cd MCRe-NoiseFarlandsJava
 这些版本包含了最新的测试改动，但也有不稳定性和存档损坏风险
 
 ## 未来规划
-此顺序不代表更新的优先级。
+此顺序不代表更新的优先级，并且此目录将会迁移到 Wiki 页面。
 - [X] 对 F3 调试面板做进一步调整
 - [X] 修复 33554432 问题
-- [X] 解决 世界边界/界限 限制，参考 [INF32768/UltimateScaler](https://github.com/INF32768/UltimateScaler)
+- [X] 解决 世界边界/界限 限制，参考 [终极缩放器 INF32768/UltimateScaler](https://github.com/INF32768/UltimateScaler)
 - [ ] 突破32位整数限制
 - [X] 加入缩放，偏移等一系列功能，参考同上
 - [X] 加入世界的自定义设置 (参考 [边境旅者 SmallmanSeries/FarLandsTraveler](https://github.com/SmallmanSeries/FarLandsTraveler))

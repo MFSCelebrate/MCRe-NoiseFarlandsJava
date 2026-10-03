@@ -30,10 +30,10 @@ public class SoHighThreeLayerTest {
         return c * 0.5 - c * c * c / 12.0;
     }
 
-    /** depth：三层分段（本方案） */
+    /** depth：与代码 offsetToDepth 修复一致（25101648+ 用原版地形深度，其余原版梯度） */
     static double depthThreeLayer(double y, double offset) {
-        if (y >= VOID_START && y < FAR_LANDS_Y) return -100.0;   // 空层：深负压死噪声
-        return gradient(y, -64, 320, 1.5, -1.5) + offset;         // 其余：原版
+        if (y >= FAR_LANDS_Y) return 0.5 + offset;                // 25101648+：原版 y=64 地形深度（边境之地）
+        return gradient(y, -64, 320, 1.5, -1.5) + offset;         // 其余：原版梯度（y>320 钳制 -1.5）
     }
 
     /** depth：修复前（无分段，原版梯度钳制） */
@@ -41,8 +41,10 @@ public class SoHighThreeLayerTest {
         return gradient(y, -64, 320, 1.5, -1.5) + offset;
     }
 
-    /** final_density 链（噪声项=0，slopedCheese 由 depth 推导） */
-    static double finalDensity(double y, double depth, double factor) {
+    /** final_density 链（噪声项=0，slopedCheese 由 depth 推导）；带数据包虚空层包裹 */
+    static double finalDensity(double y, double depth, double factor, boolean hasVoidLayer) {
+        // 🔧 数据包修复：final_density 外层 range_choice([320, 25101648) → -1.0)
+        if (hasVoidLayer && y >= VOID_START && y < FAR_LANDS_Y) return -1.0;
         double bottomSlide = gradient(y, -64, -40, 0.0, 1.0);
         double topSlide = gradient(y, 2147483311, 2147483567, 1.0, 0.0);   // 极端顶端 = 恒 1
         double jagged = 0.0;
@@ -73,8 +75,8 @@ public class SoHighThreeLayerTest {
 
         for (double y : ys) {
             String layer = y < VOID_START ? "正常地形" : (y < FAR_LANDS_Y ? "空层(应虚空)" : "天空边境之地");
-            double broken = finalDensity(y, depthBroken(y, offset), factor);
-            double fixed = finalDensity(y, depthThreeLayer(y, offset), factor);
+            double broken = finalDensity(y, depthBroken(y, offset), factor, false);
+            double fixed = finalDensity(y, depthThreeLayer(y, offset), factor, true);
 
             boolean ok;
             if (y < VOID_START) {
@@ -82,7 +84,8 @@ public class SoHighThreeLayerTest {
             } else if (y < FAR_LANDS_Y) {
                 ok = fixed < broken && fixed < 0;                   // 空层：比修复前更深负 → 噪声穿不过 0
             } else {
-                ok = Math.abs(fixed - broken) < 1e-9;              // 边境之地：与原版一致（链活着）
+                // 边境之地：depth=0.5+offset → 密度必须为正（地形可生成，区别于修复前的恒负虚空）
+                ok = fixed > 0;
             }
             if (!ok) fail++;
 
