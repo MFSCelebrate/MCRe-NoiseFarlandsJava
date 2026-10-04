@@ -115,12 +115,20 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            double value = this.delegate.compute(context);
-            if (recording()) {
-                record(this.name, value);
+            // 🔧 修复：双检查限流（记录窗口开着 + display 触发了快照请求）——只有要被采样的那一次根计算链
+            // 才走 begin/end/record；其余所有 compute 一次 volatile 读后直接委托，零开销（修卡爆）
+            if (recording() && snapshotRequested) {
+                begin();
+                try {
+                    double value = this.delegate.compute(context);
+                    record(this.name, value);
+                    return value;
+                } finally {
+                    end();
+                }
             }
 
-            return value;
+            return this.delegate.compute(context);
         }
 
         @Override
