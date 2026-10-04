@@ -2,11 +2,16 @@ package net.minecraft.client.gui.components.debug;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Util;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.DensityFunction;
 import net.minecraft.world.level.levelgen.DensityFunctions;
+import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.Nullable;
@@ -14,25 +19,26 @@ import org.jspecify.annotations.Nullable;
 /**
  * 🔧 MCRe：Density Functions Monitor 条目 —— 监测密度函数（DensityFunctions 全部类型）计算的每个步骤、
  * 所有节点的返回值（"看看到底是到哪一步算出了 NaN" 的调试工具）。
- * <p>监测机制：NoiseChunk.wrapNew 的返回处包 {@link MonitoringDensityFunction}（mapAll 后序遍历使全树每节点
- * 均被包装），每次根 compute 完成时按需快照"最近一次计算链"，条目显示快照。每行 = 计算步骤N [类型名]: 值
- * （Double.toString 科学记数法）；NaN/Infinity 整行标红（§c）。</p>
- * <p>记录窗口：条目开启时 display 更新时间戳，1 秒窗口外自动停止记录（平时仅一次 volatile 读，零开销）。</p>
+ * <p>监测机制：条目开启时在<b>玩家位置（Terrain XYZ 的实际玩家坐标）</b>离线 compute 一次 final_density
+ * 密度函数树——全树经 mapAll 包 {@link MonitoringDensityFunction}（randomState 不变时缓存复用，位置变化才重算）。
+ * 各噪声节点内部自行 reposition 到偏移缩放后的地形坐标采样，所以步骤值 = 地形实际采样的值。</p>
+ * <p>每行 = DFM/Steps-N- (类型名): 值（Double.toString 科学记数法）；NaN/Infinity 整行标红（§c）。</p>
+ * <p>记录窗口：display 后 1 秒内有效（条目关自动失效，平时仅一次 volatile 读零开销）。
+ * 不再监测生成中的任意区块 cell。</p>
  */
 @OnlyIn(Dist.CLIENT)
 public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
     private static volatile long lastRecordWindowMs = 0L;
-    private static volatile boolean snapshotRequested = false;
-    private static volatile List<String> lastSnapshot = List.of();
     private static final ThreadLocal<Integer> DEPTH = ThreadLocal.withInitial(() -> 0);
     private static final ThreadLocal<List<String>> STEPS = ThreadLocal.withInitial(ArrayList::new);
+    private static volatile List<String> lastSnapshot = List.of();
+    private static volatile DensityFunction cachedTree = null;
+    private static volatile RandomState lastRandomState = null;
 
-    /** 记录窗口：display 后 1 秒内有效（条目关闭/屏幕关闭自动失效，无需显式清理） */
     public static boolean recording() {
         return Util.getMillis() - lastRecordWindowMs < 1000L;
     }
 
-    /** 计算链进入：根（DEPTH 0→1）清空重记，只保留最近一次计算链 */
     public static void begin() {
         if (DEPTH.get() == 0) {
             STEPS.get().clear();
@@ -41,17 +47,14 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
         DEPTH.set(DEPTH.get() + 1);
     }
 
-    /** 计算链返回：根完成时按需快照（跨线程：生成线程 copy → volatile 发布 → 渲染线程读） */
     public static void end() {
         int depth = DEPTH.get() - 1;
         DEPTH.set(depth);
-        if (depth == 0 && snapshotRequested) {
+        if (depth == 0) {
             lastSnapshot = List.copyOf(STEPS.get());
-            snapshotRequested = false;
         }
     }
 
-    /** 记录一步：类型名 + 返回值（科学记数法；NaN/Inf 整行红） */
     public static void record(final String name, final double value) {
         if (!recording()) {
             return;
@@ -60,16 +63,18 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
         List<String> steps = STEPS.get();
         String formatted = String.valueOf(value);
         if (Double.isNaN(value) || Double.isInfinite(value)) {
-            steps.add("§cDFM/Steps [-" + (steps.size() + 1) + "-] (" + name + "): " + formatted);
+            steps.add("§cDFM/Steps-" + (steps.size() + 1) + "- (" + name + "): " + formatted);
         } else {
-            steps.add("DFM/Steps [-" + (steps.size() + 1) + "-] (" + name + "): " + formatted);
+            steps.add("DFM/Steps-" + (steps.size() + 1) + "- (" + name + "): " + formatted);
         }
     }
 
-    /** 🔧 MCRe：包装节点（NoiseChunk.wrapNew 返回处调用） */
+    /** 🔧 MCRe：包装节点（离线 mapAll 的 visitor 用） */
     public static DensityFunction monitor(final DensityFunction function) {
         return new MonitoringDensityFunction(function);
     }
+
+    private @Nullable BlockPos lastPos = null;
 
     @Override
     public void display(
@@ -80,16 +85,57 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
     ) {
         if (serverOrClientLevel != null) {
             lastRecordWindowMs = Util.getMillis();
-            snapshotRequested = true;
+            Entity entity = Minecraft.getInstance().getCameraEntity();
+            if (entity != null) {
+                BlockPos feetPos = entity.blockPosition();
+                if (!feetPos.equals(this.lastPos)) {
+                    this.update(serverOrClientLevel, feetPos);
+                }
+            }
         }
 
         displayer.addToGroup(DebugGroups.DENSITY_FUNCTIONS_MONITOR, lastSnapshot);
     }
 
+    /** 🔧 MCRe：离线监测——在玩家 block 坐标上 compute 一次 final_density 树，每步记录 */
+    private void update(final Level level, final BlockPos feetPos) {
+        this.lastPos = feetPos;
+        ServerLevel serverLevel = level instanceof ServerLevel sl ? sl : null;
+        if (serverLevel == null) {
+            return;
+        }
+
+        RandomState randomState = serverLevel.getChunkSource().randomState();
+        // final_density 全树包 Monitoring；randomState 不变时复用缓存（避免每帧 mapAll 重构）
+        if (this.cachedTree == null || this.lastRandomState != randomState) {
+            this.cachedTree = randomState.router().finalDensity().mapAll(DebugEntryDensityFunctionsMonitor::monitor);
+            this.lastRandomState = randomState;
+        }
+
+        // 在 Terrain XYZ（玩家 block 坐标）上离线 compute——各噪声节点内部自行 reposition 到地形坐标
+        this.cachedTree.compute(new DensityFunction.FunctionContext() {
+            @Override
+            public int blockX() {
+                return (int)feetPos.getX();
+            }
+
+            @Override
+            public int blockY() {
+                return (int)feetPos.getY();
+            }
+
+            @Override
+            public int blockZ() {
+                return (int)feetPos.getZ();
+            }
+        });
+        // compute 完成后 lastSnapshot 已发布（end 的根快照），display 直接显示
+    }
+
     /**
-     * 🔧 MCRe：密度函数监测包装——包住 wrap 后的每个节点，compute 时记录类型名 + 返回值。
+     * 🔧 MCRe：密度函数监测包装——compute 时记录类型名 + 返回值。
      * 类型名：二元（add/mul/min/max）与 Marker（interpolated/flat_cache/...）取类型串，其余取类简名。
-     * fillArray 透传（内部子节点各自带监测，cache 类的值与其子节点同值不重复记录）。
+     * fillArray/mapChildren/minValue/maxValue/codec 全透传（Cache 类的值与其子节点同值不重复记录）。
      */
     public static class MonitoringDensityFunction implements DensityFunction {
         private final DensityFunction delegate;
@@ -115,9 +161,8 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
 
         @Override
         public double compute(final DensityFunction.FunctionContext context) {
-            // 🔧 修复：双检查限流（记录窗口开着 + display 触发了快照请求）——只有要被采样的那一次根计算链
-            // 才走 begin/end/record；其余所有 compute 一次 volatile 读后直接委托，零开销（修卡爆）
-            if (recording() && snapshotRequested) {
+            // 🔧 双检查限流：只有记录窗口开着才走 begin/end/record，其余直接委托零开销
+            if (recording()) {
                 begin();
                 try {
                     double value = this.delegate.compute(context);

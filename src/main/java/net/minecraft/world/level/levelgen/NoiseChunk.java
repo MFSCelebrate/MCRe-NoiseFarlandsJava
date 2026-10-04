@@ -393,9 +393,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     }
 
     private DensityFunction wrapNew(final DensityFunction function) {
-        // 🔧 MCRe（密度函数监视器）：mapAll 后序遍历使每个函数都经过本方法，返回处包 Monitoring
-        // → 全树每节点的 compute 都被记录（计算步骤 + 返回值），实现"看到底是到哪一步算出了 NaN"
-        return DebugEntryDensityFunctionsMonitor.monitor(switch (function) {
+        return switch (function) {
             case DensityFunctions.Marker(DensityFunctions.Marker.Type type, DensityFunction wrapped) -> {
                 switch (type) {
                     case Interpolated:
@@ -422,7 +420,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
                         ? this.blendOffset
                         : (function == DensityFunctions.BeardifierMarker.INSTANCE ? this.beardifier : function)
                 );
-        });
+        };
     }
 
     private class BlendAlpha implements NoiseChunk.NoiseChunkDensityFunction {
