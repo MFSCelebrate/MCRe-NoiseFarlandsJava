@@ -173,6 +173,17 @@ public class VulkanDevice implements GpuDeviceBackend {
         return this.transferQueue;
     }
 
+    // ===== 🔧 MCRe（Vulkan 二期）：transfer 队列分离的 sharing mode 决策 =====
+    // transfer 家族索引 ≠ graphics 家族索引（离散 GPU DMA 队列/独立 compute 家族）→ 返回两个家族索引（CONCURRENT 模式，
+    // 跨家族免 QFO barriers——Synchronization2 semaphore 提供全内存依赖）；
+    // 同家族（含 graphics-only 家族兼任 transfer——exclusive 按家族判定无需 QFO）或回退链合并 → 返回 null（EXCLUSIVE，原版行为）
+    // ⚠️ 必须比较家族索引而非 record 引用：CONCURRENT 要求 ≥2 个不同家族，同家族两次非法
+    public int[] sharingModeFamilies() {
+        return this.transferQueue.queueFamilyIndex() != this.graphicsQueue.queueFamilyIndex()
+            ? new int[] {this.graphicsQueue.queueFamilyIndex(), this.transferQueue.queueFamilyIndex()}
+            : null;
+    }
+
     public long vma() {
         return this.vma;
     }

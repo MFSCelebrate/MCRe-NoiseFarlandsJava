@@ -1,7 +1,9 @@
 package net.minecraft.client.gui.components.debug;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -31,6 +33,8 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
     private static volatile long lastRecordWindowMs = 0L;
     private static final ThreadLocal<Integer> DEPTH = ThreadLocal.withInitial(() -> 0);
     private static final ThreadLocal<List<String>> STEPS = ThreadLocal.withInitial(ArrayList::new);
+    // 🔧 值完全一样的行去重：同"名称+值"只记录首次（O(1) 集合判重、保序）——必要数据不被顶下屏幕
+    private static final ThreadLocal<Set<String>> SEEN_KEYS = ThreadLocal.withInitial(HashSet::new);
     private static volatile List<String> lastSnapshot = List.of();
     private static volatile DensityFunction cachedTree = null;
     private static volatile RandomState lastRandomState = null;
@@ -42,6 +46,7 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
     public static void begin() {
         if (DEPTH.get() == 0) {
             STEPS.get().clear();
+            SEEN_KEYS.get().clear();
         }
 
         DEPTH.set(DEPTH.get() + 1);
@@ -59,6 +64,12 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
 
     public static void record(final String name, final double value) {
         if (!recording()) {
+            return;
+        }
+
+        // 🔧 值完全一样的行不显示：同"名称+值"只保留首次（步骤号不同但内容相同 = 无显示价值）
+        String key = "(" + name + "): " + String.valueOf(value);
+        if (!SEEN_KEYS.get().add(key)) {
             return;
         }
 

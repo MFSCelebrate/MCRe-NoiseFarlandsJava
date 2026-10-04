@@ -63,6 +63,21 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
     private @Nullable VkCommandBuffer currentCommandBuffer;
     private @Nullable VulkanRenderPass currentRenderPass;
 
+    // ===== 🔧 MCRe（Vulkan 二期）：transfer 队列分离 =====
+    // transfer 家族独立于 graphics（离散 GPU 的 DMA 队列/独立 compute 家族）时 true；
+    // 回退链合并到 graphics 时 false → copy 命令仍走 graphics 缓冲（原版行为零变化，零开销）
+    private final boolean useSeparateTransfer;
+    // transfer timeline 信号（独立值域，与 submitSemaphore 分离；跨队列可见性 = Synchronization2 semaphore 全内存依赖，免 QFO barriers）
+    private final long transferSemaphore;
+    // rule 1（graphics 等最后一个实际 transfer）+ rule 2（transfer 链式等待上一个）共同保证：
+    // staging 块销毁（3 帧深度 destruction 队列）与 transfer 命令池 reset 的安全链
+    private long lastTransferValue = 1L;
+    private long nextTransferValue = 2L;
+    private final VulkanCommandPool[] transferCommandPools = new VulkanCommandPool[MAX_SUBMITS_IN_FLIGHT];
+    private @Nullable VkCommandBuffer currentTransferCommandBuffer;
+    private @Nullable VulkanQueue.Submission transferSubmissionBuilder;
+    private boolean transferCommandRecorded = false;
+
     public VulkanCommandEncoder(final VulkanDevice device) {
         this.device = device;
         this.transientMemory = new VulkanTransientMemory(device, this);
@@ -87,6 +102,35 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             this.commandPools[i] = new VulkanCommandPool(device, device.graphicsQueue());
         }
 
+        // ===== 🔧 MCRe（Vulkan 二期）：transfer 队列分离初始化 =====
+        this.useSeparateTransfer = device.transferQueue() != device.graphicsQueue();
+        long transferSemaphoreHandle = 0L;
+        if (this.useSeparateTransfer) {
+            try (MemoryStack stack = baseStack.push()) {
+                // Timeline Semaphore（transfer 独立值域；初始值 1 = lastTransferValue → 首次链式 wait 为 no-op）
+                VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = VkSemaphoreTypeCreateInfo.calloc(stack).sType$Default();
+                semaphoreTypeCreateInfo.semaphoreType(1);
+                semaphoreTypeCreateInfo.initialValue(1L);
+                VkSemaphoreCreateInfo semaphoreCreateInfo = VkSemaphoreCreateInfo.calloc(stack).sType$Default();
+                semaphoreCreateInfo.pNext(semaphoreTypeCreateInfo);
+                LongBuffer semaphoreHandlePtr = stack.callocLong(1);
+                VulkanUtils.crashIfFailure(
+                    device, VK12.vkCreateSemaphore(device.vkDevice(), semaphoreCreateInfo, null, semaphoreHandlePtr), "Failed to create transfer VkSemaphore"
+                );
+                transferSemaphoreHandle = semaphoreHandlePtr.get(0);
+            }
+
+            // transfer 命令池按帧数组（与 graphics 池对称：录制帧 F 用 pool[F%3]，submit F+1 时 reset pool[(F+1)%3]——上次用于帧 S-2，
+            // await graphics S-2 完成 → transfer S-2 完成（rule 1+2 链）→ 安全 reset）
+            for (int i = 0; i < MAX_SUBMITS_IN_FLIGHT; i++) {
+                this.transferCommandPools[i] = new VulkanCommandPool(device, device.transferQueue());
+            }
+
+            this.transferSubmissionBuilder = device.transferQueue().beginSubmit();
+        }
+
+        this.transferSemaphore = transferSemaphoreHandle;
+
         this.checkpointStorage = device.checkpointExtension().createStorage(device, device.graphicsQueue(), MAX_SUBMITS_IN_FLIGHT);
         this.submissionBuilder = device.graphicsQueue().beginSubmit();
         this.transientMemory.beginSubmit();
@@ -95,6 +139,14 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
     @Override
     public void destroy() {
         this.transientMemory.endSubmit();
+
+        // ===== 🔧 MCRe（Vulkan 二期）：transfer 清理（先关 transfer 提交并等队列空闲，再销毁池/信号量）=====
+        if (this.useSeparateTransfer) {
+            this.endTransferCommandBuffer();
+            this.transferSubmissionBuilder.close();
+            this.device.transferQueue().waitIdle();
+        }
+
         this.submissionBuilder.close();
         this.device.graphicsQueue().waitIdle();
         this.destroyQueue.close();
@@ -103,6 +155,14 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
 
         for (int i = 0; i < MAX_SUBMITS_IN_FLIGHT; i++) {
             this.commandPools[i].destroy();
+        }
+
+        if (this.useSeparateTransfer) {
+            for (int i = 0; i < MAX_SUBMITS_IN_FLIGHT; i++) {
+                this.transferCommandPools[i].destroy();
+            }
+
+            VK12.vkDestroySemaphore(this.device.vkDevice(), this.transferSemaphore, null);
         }
 
         VK12.vkDestroySemaphore(this.device.vkDevice(), this.submitSemaphore, null);
@@ -124,6 +184,42 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             beginInfo.flags(1);
             VulkanUtils.crashIfFailure(this.device, VK12.vkBeginCommandBuffer(commandBuffer, beginInfo), "Failed to begin VkCommandBuffer");
             return commandBuffer;
+        }
+    }
+
+    // ===== 🔧 MCRe（Vulkan 二期）：copy 命令统一入口 =====
+    // useSeparateTransfer = true → copy 命令进 transfer 队列独立命令缓冲（与渲染并行，DMA 引擎）；
+    // false（回退设备）→ 原版 graphics 命令缓冲（行为零变化）
+    private VkCommandBuffer recordCopyCommandBuffer() {
+        return this.useSeparateTransfer ? this.transferCommandBuffer() : this.commandBuffer();
+    }
+
+    private VkCommandBuffer transferCommandBuffer() {
+        if (this.currentTransferCommandBuffer != null) {
+            return this.currentTransferCommandBuffer;
+        }
+
+        this.currentTransferCommandBuffer = this.allocateAndBeginTransferCommandBuffer();
+        this.transferSubmissionBuilder.executeCommands(this.currentTransferCommandBuffer);
+        this.transferCommandRecorded = true;
+        return this.currentTransferCommandBuffer;
+    }
+
+    private VkCommandBuffer allocateAndBeginTransferCommandBuffer() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            // 录制时刻 currentSubmitIndex = 当前帧号 → 按帧数组取模（与 graphics 命令池完全对称）
+            VkCommandBuffer commandBuffer = this.transferCommandPools[(int)(this.currentSubmitIndex % MAX_SUBMITS_IN_FLIGHT)].allocateBuffer();
+            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack).sType$Default();
+            beginInfo.flags(1);
+            VulkanUtils.crashIfFailure(this.device, VK12.vkBeginCommandBuffer(commandBuffer, beginInfo), "Failed to begin transfer VkCommandBuffer");
+            return commandBuffer;
+        }
+    }
+
+    private void endTransferCommandBuffer() {
+        if (this.currentTransferCommandBuffer != null) {
+            VulkanUtils.crashIfFailure(this.device, VK12.vkEndCommandBuffer(this.currentTransferCommandBuffer), "Failed to end transfer VkCommandBuffer");
+            this.currentTransferCommandBuffer = null;
         }
     }
 
@@ -187,6 +283,12 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         memoryBarrier(this.commandBuffer(), stack);
     }
 
+    // ===== 🔧 MCRe（Vulkan 二期）：copy 域 barrier（记录进 copy 命令所在的缓冲——transfer 或 graphics）=====
+    // copy 方法专用；clear 方法仍走 graphics 域（this.memoryBarrier）
+    private void copyMemoryBarrier(final MemoryStack stack) {
+        memoryBarrier(this.recordCopyCommandBuffer(), stack);
+    }
+
     public static void memoryBarrier(final VkCommandBuffer commandBuffer, final MemoryStack stack) {
         Buffer memoryBarrier = VkMemoryBarrier2.calloc(1, stack).sType$Default();
         memoryBarrier.srcStageMask(65536L);
@@ -202,6 +304,29 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
     public void submit() {
         this.endCommandBuffer();
         this.transientMemory.endSubmit();
+
+        // ===== 🔧 MCRe（Vulkan 二期）：transfer 队列分离提交 =====
+        // 顺序：transfer 提交（DMA 引擎先启动，与上一帧 graphics 尾部并行）→ graphics 等最后一个 transfer → graphics 提交
+        if (this.useSeparateTransfer) {
+            this.endTransferCommandBuffer();
+
+            if (this.transferCommandRecorded) {
+                // rule 2：链式等待上一个实际 transfer（保护 staging 块/命令池 reset 安全链）；首次 wait 初始值 1 = no-op
+                this.transferSubmissionBuilder.waitSemaphore(this.transferSemaphore, this.lastTransferValue, 65536L);
+                this.transferSubmissionBuilder.signalSemaphore(this.transferSemaphore, this.nextTransferValue, 65536L);
+                this.transferSubmissionBuilder.close();
+                // Submission 是 one-shot：close 后必须重新 beginSubmit（下一帧的 copy 命令才能继续入队）
+                this.transferSubmissionBuilder = this.device.transferQueue().beginSubmit();
+                this.lastTransferValue = this.nextTransferValue;
+                this.nextTransferValue++;
+                this.transferCommandRecorded = false;
+            }
+
+            // rule 1：graphics 等最后一个实际 transfer（semaphore = 全内存依赖，免 QFO barriers）；
+            // 无条件 wait（已完成时 no-op）——保证 3 帧深度 destruction 队列的安全链
+            this.submissionBuilder.waitSemaphore(this.transferSemaphore, this.lastTransferValue, 65536L);
+        }
+
         this.signalSemaphore(this.submitSemaphore, this.currentSubmitIndex, 65536L);
         this.submissionBuilder.close();
         this.submissionBuilder = this.device.graphicsQueue().beginSubmit();
@@ -214,6 +339,13 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         }
 
         this.currentCommandPool().reset();
+
+        // ===== 🔧 MCRe（Vulkan 二期）：transfer 命令池按帧重置（与 graphics 池对称；
+        // 索引 = 已递增的 currentSubmitIndex → 上次用于帧 S-2，await graphics S-2 完成 → transfer S-2 完成（rule 1+2 链）→ 安全）=====
+        if (this.useSeparateTransfer) {
+            this.transferCommandPools[(int)(this.currentSubmitIndex % MAX_SUBMITS_IN_FLIGHT)].reset();
+        }
+
         this.destroyQueue.rotate();
         this.checkpointStorage.rotate();
         this.transientMemory.beginSubmit();
@@ -446,8 +578,8 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
                 .srcOffset(stagingBuffer.offset())
                 .dstOffset(destination.offset())
                 .size(data.remaining());
-            VK12.vkCmdCopyBuffer(this.commandBuffer(), ((VulkanGpuBuffer)stagingBuffer.buffer()).vkBuffer(), destBuffer.vkBuffer(), regions);
-            this.memoryBarrier(stack);
+            VK12.vkCmdCopyBuffer(this.recordCopyCommandBuffer(), ((VulkanGpuBuffer)stagingBuffer.buffer()).vkBuffer(), destBuffer.vkBuffer(), regions);
+            this.copyMemoryBarrier(stack);
         }
     }
 
@@ -458,8 +590,8 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             copyInfo.srcOffset(source.offset());
             copyInfo.dstOffset(target.offset());
             copyInfo.size(source.length());
-            VK12.vkCmdCopyBuffer(this.commandBuffer(), ((VulkanGpuBuffer)source.buffer()).vkBuffer(), ((VulkanGpuBuffer)target.buffer()).vkBuffer(), copyInfo);
-            this.memoryBarrier(stack);
+            VK12.vkCmdCopyBuffer(this.recordCopyCommandBuffer(), ((VulkanGpuBuffer)source.buffer()).vkBuffer(), ((VulkanGpuBuffer)target.buffer()).vkBuffer(), copyInfo);
+            this.copyMemoryBarrier(stack);
         }
     }
 
@@ -489,9 +621,9 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             region.imageOffset().set(destX, destY, 0);
             region.imageExtent().set(width, height, 1);
             VK12.vkCmdCopyBufferToImage(
-                this.commandBuffer(), ((VulkanGpuBuffer)stagingBuffer.buffer()).vkBuffer(), ((VulkanGpuTexture)destination).vkImage(), 1, region
+                this.recordCopyCommandBuffer(), ((VulkanGpuBuffer)stagingBuffer.buffer()).vkBuffer(), ((VulkanGpuTexture)destination).vkImage(), 1, region
             );
-            this.memoryBarrier(stack);
+            this.copyMemoryBarrier(stack);
         }
     }
 
@@ -527,9 +659,9 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             region.imageOffset().set(destinationX, destinationY, 0);
             region.imageExtent().set(copyWidth, copyHeight, 1);
             VK12.vkCmdCopyBufferToImage(
-                this.commandBuffer(), ((VulkanGpuBuffer)source.buffer()).vkBuffer(), ((VulkanGpuTexture)destination).vkImage(), 1, region
+                this.recordCopyCommandBuffer(), ((VulkanGpuBuffer)source.buffer()).vkBuffer(), ((VulkanGpuTexture)destination).vkImage(), 1, region
             );
-            this.memoryBarrier(stack);
+            this.copyMemoryBarrier(stack);
         }
     }
 
@@ -562,8 +694,8 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             copy.imageExtent().set(width, height, 1);
             copy.bufferRowLength(width);
             copy.bufferImageHeight(height);
-            VK12.vkCmdCopyImageToBuffer(this.commandBuffer(), ((VulkanGpuTexture)source).vkImage(), 1, ((VulkanGpuBuffer)destination).vkBuffer(), copy);
-            this.memoryBarrier(stack);
+            VK12.vkCmdCopyImageToBuffer(this.recordCopyCommandBuffer(), ((VulkanGpuTexture)source).vkImage(), 1, ((VulkanGpuBuffer)destination).vkBuffer(), copy);
+            this.copyMemoryBarrier(stack);
         }
 
         this.queueForDestroy(callback::run);
@@ -596,8 +728,8 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
             regions.extent().set(width, height, 1);
             regions.srcSubresource(subresourceLayers);
             regions.dstSubresource(subresourceLayers);
-            VK12.vkCmdCopyImage(this.commandBuffer(), vulkanSrc.vkImage(), 1, vulkanDst.vkImage(), 1, regions);
-            this.memoryBarrier(stack);
+            VK12.vkCmdCopyImage(this.recordCopyCommandBuffer(), vulkanSrc.vkImage(), 1, vulkanDst.vkImage(), 1, regions);
+            this.copyMemoryBarrier(stack);
         }
     }
 

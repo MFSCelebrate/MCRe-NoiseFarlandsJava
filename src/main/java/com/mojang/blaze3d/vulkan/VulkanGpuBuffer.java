@@ -111,8 +111,10 @@ public abstract class VulkanGpuBuffer extends GpuBuffer implements Destroyable {
                 VkBufferCreateInfo bufferCreateInfo = VkBufferCreateInfo.calloc(stack).sType$Default();
                 bufferCreateInfo.size(size);
                 bufferCreateInfo.usage(VulkanConst.bufferUsageToVk(usage));
-                bufferCreateInfo.sharingMode(0);
-                bufferCreateInfo.pQueueFamilyIndices(null);
+                // 🔧 MCRe（Vulkan 二期）：transfer 队列分离时 CONCURRENT 双家族（跨队列免 QFO barriers）；回退设备 EXCLUSIVE（原样）
+                int[] sharingFamilies = device.sharingModeFamilies();
+                bufferCreateInfo.sharingMode(sharingFamilies != null ? 2 : 0);
+                bufferCreateInfo.pQueueFamilyIndices(sharingFamilies != null ? stack.ints(sharingFamilies) : null);
                 
                 VmaAllocationCreateInfo allocCreateInfo = VmaAllocationCreateInfo.calloc(stack);
                 allocCreateInfo.usage(vmaUsage);

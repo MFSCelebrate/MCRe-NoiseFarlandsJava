@@ -158,8 +158,10 @@ public class VulkanTransientMemory implements TransientMemory, Destroyable {
             VkBufferCreateInfo bufferCreateInfo = VkBufferCreateInfo.calloc(stack).sType$Default();
             bufferCreateInfo.size(size);
             bufferCreateInfo.usage(471);
-            bufferCreateInfo.sharingMode(0);
-            bufferCreateInfo.pQueueFamilyIndices(null);
+            // 🔧 MCRe（Vulkan 二期）：transfer 队列分离时 CONCURRENT 双家族（staging 被 transfer 队列读，跨队列免 QFO）；回退 EXCLUSIVE（原样）
+            int[] sharingFamilies = this.device.sharingModeFamilies();
+            bufferCreateInfo.sharingMode(sharingFamilies != null ? 2 : 0);
+            bufferCreateInfo.pQueueFamilyIndices(sharingFamilies != null ? stack.ints(sharingFamilies) : null);
             VmaAllocationCreateInfo allocCreateInfo = VmaAllocationCreateInfo.calloc(stack);
             if (staging) {
                 allocCreateInfo.usage(9);

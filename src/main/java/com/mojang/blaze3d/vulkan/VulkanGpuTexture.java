@@ -46,7 +46,10 @@ public class VulkanGpuTexture extends GpuTexture implements Destroyable {
             imageCreateInfo.tiling(0);
             imageCreateInfo.initialLayout(0);
             imageCreateInfo.usage(VulkanConst.textureUsageToVk(usage, format));
-            imageCreateInfo.sharingMode(0);
+            // 🔧 MCRe（Vulkan 二期）：transfer 队列分离时 CONCURRENT 双家族（copy 命令走 transfer 队列，跨队列免 QFO）；回退 EXCLUSIVE（原样）
+            int[] sharingFamilies = device.sharingModeFamilies();
+            imageCreateInfo.sharingMode(sharingFamilies != null ? 2 : 0);
+            imageCreateInfo.pQueueFamilyIndices(sharingFamilies != null ? stack.ints(sharingFamilies) : null);
             imageCreateInfo.samples(1);
             imageCreateInfo.flags(VulkanUtils.hasAnyBit(usage, 16) ? 16 : 0);
             VmaAllocationCreateInfo allocationCreateInfo = VmaAllocationCreateInfo.calloc(stack);
