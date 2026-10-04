@@ -51,6 +51,8 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
         int depth = DEPTH.get() - 1;
         DEPTH.set(depth);
         if (depth == 0) {
+            // 保持计算顺序（后序遍历）：NaN/Inf 行的缩进层级 + 前后步骤 = 判断非法值来自哪条计算链的特征，
+            // 置顶会切断这个链上下文（大佬裁定）——非法值只靠红色行首 §c 标记
             lastSnapshot = List.copyOf(STEPS.get());
         }
     }
@@ -61,16 +63,24 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
         }
 
         List<String> steps = STEPS.get();
+        // 🔧 树深度缩进（record 时 DEPTH 已 begin+1 = 当前节点层级）：根无缩进，每深一层缩进两格——父子关系直观
+        String indent = "  ".repeat(Math.max(0, DEPTH.get() - 1));
         String formatted = String.valueOf(value);
         if (Double.isNaN(value) || Double.isInfinite(value)) {
-            steps.add("§cDFM/Steps-" + (steps.size() + 1) + "- (" + name + "): " + formatted);
+            steps.add("§c" + indent + "DFM/Steps-" + (steps.size() + 1) + "- (" + name + "): " + formatted);
         } else {
-            steps.add("DFM/Steps-" + (steps.size() + 1) + "- (" + name + "): " + formatted);
+            steps.add(indent + "DFM/Steps-" + (steps.size() + 1) + "- (" + name + "): " + formatted);
         }
     }
 
-    /** 🔧 MCRe：包装节点（离线 mapAll 的 visitor 用） */
+    /** 🔧 MCRe：包装节点（离线 mapAll 的 visitor 用）——透传类（值=子节点值）跳过不包，消除同值重复行 */
     public static DensityFunction monitor(final DensityFunction function) {
+        if (function instanceof DensityFunctions.MarkerOrMarked) {
+            // interpolated/flat_cache/cache_2d/cache_once/cache_all_in_cell/blend_density 等 Marker 包装：
+            // compute 只是把子节点的值透传上来，记录它们只会产生同值重复行——直接返回 delegate 不包
+            return function;
+        }
+
         return new MonitoringDensityFunction(function);
     }
 
