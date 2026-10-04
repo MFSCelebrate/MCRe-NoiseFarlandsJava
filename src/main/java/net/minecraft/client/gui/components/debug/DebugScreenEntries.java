@@ -43,6 +43,8 @@ public class DebugScreenEntries {
     public static final Identifier POST_EFFECTS = register("post_effects", new DebugEntryPostEffects());
     // 🔧 MCRe：地形噪声全列表条目（组 Terrain Noises，F3+F6 编辑页面可控）
     public static final Identifier ALL_NOISE_LIST = register("all_noise_list", new DebugEntryAllNoiseList());
+    // 🔧 MCRe：密度函数监视器条目（组 Density Functions Monitor，F3+F6 编辑页面可控）
+    public static final Identifier DENSITY_FUNCTIONS_MONITOR = register("density_functions_monitor", new DebugEntryDensityFunctionsMonitor());
     public static final Identifier ENTITY_HITBOXES = register("entity_hitboxes", new DebugEntryNoop());
     public static final Identifier CHUNK_BORDERS = register("chunk_borders", new DebugEntryNoop());
     public static final Identifier THREE_DIMENSIONAL_CROSSHAIR = register("3d_crosshair", new DebugEntryNoop());

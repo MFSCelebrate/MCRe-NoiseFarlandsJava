@@ -16,6 +16,7 @@ import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.util.Mth;
 import net.minecraft.util.MathUtil;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
+import net.minecraft.client.gui.components.debug.DebugEntryDensityFunctionsMonitor;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,6 +26,7 @@ import net.minecraft.world.level.levelgen.material.MaterialRuleList;
 import org.jspecify.annotations.Nullable;
 
 public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunction.ContextProvider {
+    // 🔧 MCRe（密度函数监视器）：wrap 时包 MonitoringDensityFunction，监测全树每节点的返回值
     private final int cellCountXZ;
     // 🔧 MCRe（窗口感知限制器）：生成高度域（钳制到生成窗口的 NoiseSettings），供 WindowedDepthGradient 窗口感知
     private final NoiseSettings generationNoiseSettings;
@@ -391,7 +393,9 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     }
 
     private DensityFunction wrapNew(final DensityFunction function) {
-        return switch (function) {
+        // 🔧 MCRe（密度函数监视器）：mapAll 后序遍历使每个函数都经过本方法，返回处包 Monitoring
+        // → 全树每节点的 compute 都被记录（计算步骤 + 返回值），实现"看到底是到哪一步算出了 NaN"
+        return DebugEntryDensityFunctionsMonitor.monitor(switch (function) {
             case DensityFunctions.Marker(DensityFunctions.Marker.Type type, DensityFunction wrapped) -> {
                 switch (type) {
                     case Interpolated:
@@ -418,7 +422,7 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
                         ? this.blendOffset
                         : (function == DensityFunctions.BeardifierMarker.INSTANCE ? this.beardifier : function)
                 );
-        };
+        });
     }
 
     private class BlendAlpha implements NoiseChunk.NoiseChunkDensityFunction {
