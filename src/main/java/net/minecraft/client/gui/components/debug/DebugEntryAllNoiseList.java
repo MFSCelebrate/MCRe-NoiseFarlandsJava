@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.WorldReposition;
+import net.minecraft.world.level.levelgen.synth.NoiseOverflowUtil;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -73,9 +74,11 @@ public class DebugEntryAllNoiseList implements DebugScreenEntry {
         for (Map.Entry<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> entry : sorted) {
             String name = entry.getKey().identifier().toString();
             double value = entry.getValue().getValue(sampleX, sampleY, sampleZ);
-            // 🔧 用 Double.toString（String.valueOf）：大值自动转科学记数法（1.14514191981E113），
-            // 有效数字全保留、末尾的无效零全部省略；NaN/Inf 显示为 NaN/Infinity；小值保持十进制（0.1934）
-            this.result.add(name + ": " + String.valueOf(value));
+            // 🔧 用 Double.toString（String.valueOf）：大值自动科学记数法（1.14514191981E113），
+            // 有效数字全保留、末尾无效零全部省略；NaN/Inf 显示为 NaN/Infinity；小值保持十进制
+            // 🔧 方案 B 溢出监测：复刻检测器定位首个饱和的组/倍频（F3=first 第3倍频/S5=second 第5倍频），饱和标红
+            String saturate = NoiseOverflowUtil.detectFirstSaturate(entry.getValue(), sampleX, sampleY, sampleZ);
+            this.result.add(name + ": " + String.valueOf(value) + (saturate != null ? " §c[S@" + saturate + "]" : ""));
         }
     }
 }
