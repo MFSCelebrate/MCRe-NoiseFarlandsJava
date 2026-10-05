@@ -242,7 +242,7 @@ cd MCRe-NoiseFarlandsJava
 ## 联系方式
 
 - **作者**：[MFSCelebrate（Bilibili）](https://b23.tv/hTl7eI5)
-- **已知协作者 (请勿打扰，谢谢)**：[__Infinitive__（Bilibili）](https://space.bilibili.com/1196843580)
+- **已知协作者 (请勿打扰，谢谢)**：[\_\_Infinitive\_\_（Bilibili）](https://space.bilibili.com/1196843580)
 - **问题反馈**：请优先使用 GitHub Issues
 
 感谢你的贡献！
