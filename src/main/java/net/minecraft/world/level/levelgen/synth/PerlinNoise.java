@@ -232,48 +232,50 @@ public class PerlinNoise {
             float fyScale = (float) yScale;
             float fyFudge = (float) yFudge;
 
-            // 🔧 MCRe：expandBedrockSinglePrecision 开关（大佬 10-05 派活）——三条产生线 double 化：
-            // wrap 的 float 折叠（基岩模拟核心）保留，插值/累加/最终返回 double 域 → 推迟 NaN 炸点（1e30 → 1e39 wrap 溢出）
-            if (expandSinglePrecision()) {
-                double valueExp = 0.0;
-                float factorExp = (float) this.lowestFreqInputFactor;
-                float valueFactorExp = (float) this.lowestFreqValueFactor;
+            // 🔧 MCRe：expandSinglePrecision + BedrockMode 双开启 = 三条链彻底走 double（wrap float 折叠保留，上游 double 化）
+            // 仅 BedrockMode 开启 = 原基岩 float 全链
+            if (!expandSinglePrecision()) {
+                // === 原基岩模式：全部使用 float 精度计算 ===
+                float value = 0.0f;
+                float factor = (float) this.lowestFreqInputFactor;
+                float valueFactor = (float) this.lowestFreqValueFactor;
 
                 for (int i = 0; i < this.noiseLevels.length; i++) {
                     ImprovedNoise noise = this.noiseLevels[i];
                     if (noise != null) {
-                        // wrap 的 float 折叠保留（基岩模拟）：wrapX/wrapY/wrapZ 仍为 float 量化
-                        float wrapX = (float) wrap(fx * factorExp);
-                        float wrapY = (float) wrap(fy * factorExp);
-                        float wrapZ = (float) wrap(fz * factorExp);
-                        // 噪声返回 double（插值链 double 化），累加/返回 double——不再 (float) 截断
-                        double noiseVal = noise.noise(wrapX, wrapY, wrapZ, fyScale * factorExp, fyFudge * factorExp);
-                        valueExp += this.amplitudes.getDouble(i) * noiseVal * valueFactorExp;
+                        // 注意 wrap 返回 double，但此处我们强制转为 float 参与乘法，模拟单精度计算
+                        float wrapX = (float) wrap(fx * factor);
+                        float wrapY = (float) wrap(fy * factor);
+                        float wrapZ = (float) wrap(fz * factor);
+                        float noiseVal = (float) noise.noise(wrapX, wrapY, wrapZ, fyScale * factor, fyFudge * factor);
+                        value += (float) (this.amplitudes.getDouble(i) * noiseVal * valueFactor);
                     }
-                    factorExp *= 2.0f;
-                    valueFactorExp /= 2.0f;
+                    factor *= 2.0f;
+                    valueFactor /= 2.0f;
                 }
-                return valueExp;
+                return (float) value;
             }
 
-            float value = 0.0f;
-            float factor = (float) this.lowestFreqInputFactor;
-            float valueFactor = (float) this.lowestFreqValueFactor;
+            // === expandSinglePrecision 开启：上游 double + wrap float 折叠保留 + double 累加/返回 ===
+            double valueExp = 0.0;
+            double factorExp = this.lowestFreqInputFactor;
+            double valueFactorExp = this.lowestFreqValueFactor;
 
             for (int i = 0; i < this.noiseLevels.length; i++) {
                 ImprovedNoise noise = this.noiseLevels[i];
                 if (noise != null) {
-                    // 注意 wrap 返回 double，但此处我们强制转为 float 参与乘法，模拟单精度计算
-                    float wrapX = (float) wrap(fx * factor);
-                    float wrapY = (float) wrap(fy * factor);
-                    float wrapZ = (float) wrap(fz * factor);
-                    float noiseVal = (float) noise.noise(wrapX, wrapY, wrapZ, fyScale * factor, fyFudge * factor);
-                    value += (float) (this.amplitudes.getDouble(i) * noiseVal * valueFactor);
+                    // wrap 的 float 折叠保留（基岩模拟核心）
+                    float wrapX = (float) wrap(x * factorExp);
+                    float wrapY = (float) wrap(y * factorExp);
+                    float wrapZ = (float) wrap(z * factorExp);
+                    // 噪声返回 double（插值链 double 化），累加/返回 double
+                    double noiseVal = noise.noise(wrapX, wrapY, wrapZ, yScale * factorExp, yFudge * factorExp);
+                    valueExp += this.amplitudes.getDouble(i) * noiseVal * valueFactorExp;
                 }
-                factor *= 2.0f;
-                valueFactor /= 2.0f;
+                factorExp *= 2.0;
+                valueFactorExp /= 2.0;
             }
-            return (float) value;
+            return valueExp;
         }
 
         // === 原 double 实现 ===
@@ -411,8 +413,6 @@ public class PerlinNoise {
         double limitNoiseValue = config.limitReturnValueValue;
         String mode = config.precisionMode;
         // 🔧 Bedrock 模式：全 float 精度折叠（模拟基岩版坐标量级，边境之地形态与基岩一致）
-        // 🔧 MCRe：expandBedrockSinglePrecision 开启 = 跳过 float 强转/折叠，走下面 double 分支
-        //（实测锤：炸点 1e39 → 1e61，推迟 22 个数量级；地形从突变墙变渐变墙，后个层边境层可见）
         if (isBedrockStatic() && !expandSinglePrecision()) {
             float folded;
             switch (mode) {

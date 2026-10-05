@@ -61,7 +61,6 @@ public final class ImprovedNoise {
     }
 
     public double noise(final double _x, final double _y, final double _z) {
-        // 🔧 MCRe：expandSinglePrecision 开启 = Bedrock float 化跳过（含 (float) 截断），走 double 实现
         if (isBedrockMode()) {
             return (float) this.noise(_x, _y, _z, 0.0, 0.0);
         }
@@ -69,8 +68,10 @@ public final class ImprovedNoise {
     }
 
     public double noise(final double _x, final double _y, final double _z, final double yScale, final double yFudge) {
-        if (isBedrockMode()) {
-            // === Bedrock 模式：全部使用 float 精度 ===
+        // 🔧 MCRe：expandSinglePrecision + BedrockMode 双开启 = 三条链彻底走 double（不保留任何 float）
+        // 仅 BedrockMode 开启 = 原基岩 float 全链
+        if (isBedrockMode() && !expandSinglePrecision()) {
+            // === 原基岩模式：全部使用 float 精度 ===
             float x = (float) (_x + this.xo);
             float y = (float) (_y + this.yo);
             float z = (float) (_z + this.zo);
@@ -104,17 +105,11 @@ public final class ImprovedNoise {
                 yrFudge = 0.0f;
             }
 
-            if (expandSinglePrecision()) {
-                // 🔧 MCRe：开关开启 = 最终返回线 double 化——插值链保持 double（推迟 NaN 炸点）；
-                // 基岩坐标量化（float 域 x/xr/yrFudge）保留 = 基岩模拟效果不变
-                return this.sampleAndLerp(xf, yf, zf, xr, yr - yrFudge, zr, yr);
-            }
-
             float result = (float) this.sampleAndLerp(xf, yf, zf, xr, yr - yrFudge, zr, yr);
             return (float) result;
         }
 
-        // === 原 double 实现 ===
+        // === expandSinglePrecision 开启 或 非 BedrockMode：走 double 实现（与原版 double 行为一致） ===
         double x = _x + this.xo;
         double y = _y + this.yo;
         double z = _z + this.zo;
@@ -146,8 +141,7 @@ public final class ImprovedNoise {
             yrFudge = 0.0;
         }
 
-        double result = this.sampleAndLerp(xf, yf, zf, xr, yr - yrFudge, zr, yr);
-        return result;
+        return this.sampleAndLerp(xf, yf, zf, xr, yr - yrFudge, zr, yr);
     }
 
     /**
@@ -245,9 +239,10 @@ public final class ImprovedNoise {
     }
 
     public double noiseWithDerivative(final double _x, final double _y, final double _z, final double[] derivativeOut) {
-        if (isBedrockMode()) {
-            // Bedrock 模式：全部使用 float，但 derivativeOut 保留 double 数组签名（外部可能期望 double）
-            // 内部计算用 float，最后赋值时强转回 double
+        // 🔧 MCRe：expandSinglePrecision + BedrockMode 双开启 = 三条链彻底走 double（不保留任何 float）
+        // 仅 BedrockMode 开启 = 原基岩 float 全链
+        if (isBedrockMode() && !expandSinglePrecision()) {
+            // Bedrock 模式：全部使用 float，但 derivativeOut 保留 double 数组签名
             float x = (float) (_x + this.xo);
             float y = (float) (_y + this.yo);
             float z = (float) (_z + this.zo);
@@ -258,17 +253,7 @@ public final class ImprovedNoise {
             float yr = y - yf;
             float zr = z - zf;
 
-            // 临时 float 数组用于内部计算
             double[] derivTemp = new double[3];
-            // 🔧 MCRe：expandSinglePrecision 开启 = 最终返回线 double 化（derivative 路径同步）
-            if (expandSinglePrecision()) {
-                double resultD = this.sampleWithDerivative(xf, yf, zf, xr, yr, zr, derivTemp);
-                derivativeOut[0] += derivTemp[0];
-                derivativeOut[1] += derivTemp[1];
-                derivativeOut[2] += derivTemp[2];
-                return resultD;
-            }
-
             float result = (float) this.sampleWithDerivative(xf, yf, zf, xr, yr, zr, derivTemp);
             derivativeOut[0] += derivTemp[0];
             derivativeOut[1] += derivTemp[1];
@@ -276,7 +261,7 @@ public final class ImprovedNoise {
             return (float) result;
         }
 
-        // 原 double 实现
+        // expandSinglePrecision 开启 或 非 BedrockMode：走 double 实现
         double x = _x + this.xo;
         double y = _y + this.yo;
         double z = _z + this.zo;
