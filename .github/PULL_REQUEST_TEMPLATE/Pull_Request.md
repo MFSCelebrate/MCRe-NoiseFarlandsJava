@@ -1,13 +1,11 @@
 ## Pull Request
 我们欢迎您为 MCRe-NoiseFarlandsJava 发送 Pull Request ，这将促进我们项目的完善，并且可能会将您加入到我们的贡献者列表内。
 
----
-name: 
-about: 提交代码、文档或其他更改
-title: '[类型] 简短描述'
-labels: ''
-assignees: ''
----
+name:  
+about: 提交代码、文档或其他更改  
+title: '[类型] 简短描述'  
+labels: ''  
+assignees: ''  
 
 ## 变更说明
 
