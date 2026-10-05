@@ -1,0 +1,81 @@
+name: "🪲 Bug Report"
+description: "Report a reproducible bug or unexpected behavior"
+title: "[Bug]: "
+labels: ["pending-bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for submitting a bug report!
+        Please fill out the information below as thoroughly as possible. This will help us locate and fix the issue more quickly.
+        ---
+
+  - type: checkboxes
+    id: validation
+    attributes:
+      label: "🚨 Please confirm before submitting"
+      description: "Please confirm and check each item below to ensure your bug report meets the requirements."
+      options:
+        - label: "I am using the latest stable release or latest nightly build, and have not made any modifications."
+        - label: "I believe this issue is not expected behavior caused by vanilla or configuration, nor a known issue that will not be fixed."
+        - label: "This bug is reproducible with only the required dependencies and this mod installed."
+        - label: "I have checked the Wiki and found no solution."
+        - label: "There is no existing issue in the issue list that duplicates this problem."
+
+  - type: dropdown
+    id: mod_version
+    attributes:
+      label: "Version"
+      description: "Select the mod version you were using when the issue occurred."
+      options:
+        - "Latest stable release"
+        - "Latest nightly build"
+    validations:
+      required: true
+
+  - type: textarea
+    id: content
+    attributes:
+      label: "Bug Summary"
+      description: "Briefly describe the bug and its symptoms."
+      placeholder: |
+        Example: When using the command /example, the console displays "An unexpected error occurred while trying to execute this command".
+
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: "Reproduction Steps"
+      description: "Clearly describe, step by step, how to make this bug occur."
+      placeholder: |
+        Example:
+        1. Launch the game and load a world...
+        2. Use the command /example ...
+        3. Check the console and notice the error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: "Expected Behavior"
+      description: "Describe what you expected to happen normally."
+      placeholder: "Example: The console should not report an error."
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Relevant Logs/Screenshots"
+      description: |
+        Please provide the latest crash report or game log (a [gist](https://gist.github.com) is recommended). You may also attach screenshots that help identify the issue.
+      placeholder: |
+        Log example:
+        [20:35:10] [Render thread/ERROR]: Something went wrong!
+        at com.example.ModClass.method(ModClass.java:123)
+
+  - type: textarea
+    id: extra_notes
+    attributes:
+      label: "Additional Notes"
+      description: "Any other information you think would be helpful."
+      placeholder: "Example: This bug seems to occur only in a specific dimension..."

@@ -1,12 +1,13 @@
 ![Logo](/docs/images/MCRe-NoiseFarlandsJava-Logo.png)
 
 # MCRe-NoiseFarlandsJava
+=> **简体中文** / [English](./docs/README.en.md) <=
 > 基于 Minecraft Java 版未混淆版本构建的边境之地 Mod  
 > 源码来源于 [Hexeption/MCP-Reborn](https://github.com/Hexeption/MCP-Reborn/)  
 > 实际的理想来源于我的另一项目 [MFSCelebrate/MCRe-NoiseFarlands](https://github.com/MFSCelebrate/MCRe-NoiseFarlands) 的携带版边境之地 Mod
 
 > [!TIP]
-> 此仓库遵循 [GNU General Public License](./LICENSE) 协议  
+> 此仓库遵循 [MIT License (MIT)](./LICENSE) 协议  
 > 作者本人: [MFSCelebrate(Bilibili)](https://b23.tv/hTl7eI5)  
 > 已知协作者: [\_\_Infinitive\_\_(BiliBili)](https://space.bilibili.com/1196843580)
 
@@ -14,7 +15,7 @@
 > 该版本较不稳定，Mojang 在该版本正式引用了 Vulkan 渲染，所有关于原版的 Bug (特性)与该改版无关  
 > 由于该改版使用了特殊的 version.json 用来支持 点对点联机，请你在测试版 Release 或者是 Github Actions 下载该文件并放在和 jar 同目录中
 
-## 源代码方面的警告 
+## 源代码  
 对于该项目的 Minecraft Java 源码，您需要注意以下几点:  
  1. 该项目完全使用了 Minecraft Java 的源码，并且 Mojang 完全移除了 26.1+ 的混淆，开放了 Minecraft 的修改  
  2. 但由于 [Minecraft Eula](https://www.minecraft.net/zh-hans/eula) 明确规定了如下内容  
@@ -24,7 +25,7 @@
       - 3. 直接盈利：试图利用我们的任何作品赚钱。  
       - 4. 不公访问：以不公平或不合理的方式允许他人访问我们的内容。  
  
- 所以，您不得付费售卖、变相卖出该项目的源码，大幅度公开该改版，以及任何违反GNU General Public License和Minecraft Eula的行为。 (但是如果你付费买的你就是被骗了，傻得）  
+ 所以，您不得付费售卖、变相卖出该项目的源码，大幅度公开该改版，以及任何违反Minecraft Eula的行为。  
    
  3. 该项目作为个人为了学习或开发 Mod 的基础，阅读、修改这些代码，就是官方默许或者鼓励的行为，不构成 [Minecraft Eula](https://www.minecraft.net/zh-hans/eula) 中的“破解”或“非正当访问”。  
    
@@ -50,11 +51,12 @@ cd MCRe-NoiseFarlandsJava
 
 ./gradlew build
 ```
-此时你可以在 `build/lib` 里看见产物，如果是在 Github 仓库，产物和信息会自动上传到 Github Actions 的 WorkFlows
+此时你可以在 `build/lib` 里看见产物，如果是在 Github 仓库，产物和信息会自动上传到 Github Actions 的 WorkFlows  
+**贡献**： 我们欢迎包括问题报告、功能建议和代码提交在内的所有贡献。在开始前，请阅读 [贡献指南](./docs/CONTRIBUTING.md)。
 
 ## 改版兼容性说明
 - **支持版本**: ![Minecraft 26.2](https://img.shields.io/badge/Minecraft-26.2-blue)
-- **兼容性**: 目前还没有引入专门给改版使用的 Fabric 加载器，先告一段落
+- **兼容性**: 不兼容多人联机 (但可以进入改版本身就可开启的测试服务器)
 
 ## 每日构建版本
 想要体验我们的最新改动 / 最新的功能？如果当天我们有代码改动，我们会上传到 [这里](https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/tag/nightly)
@@ -83,4 +85,4 @@ cd MCRe-NoiseFarlandsJava
 - [X] 加入该改版仓库的 Wiki 页面，参考 [终极缩放器 INF32768/UltimateScaler](https://github.com/INF32768/UltimateScaler)
 
 ## 许可证
-本项目依据 GNU General Public License 协议开源，详见 [LICENSE](./LICENSE) 文件
+本项目依据 MIT License (MIT) 许可证开源，详见 [LICENSE](./LICENSE) 文件
