@@ -42,6 +42,12 @@ public class PerlinNoise {
         return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
     }
 
+    /** 🔧 MCRe：扩展基岩版边境之地单精度范围判定（大佬 10-05 派活）——最终返回线 double 化（推迟 NaN） */
+    private static boolean expandSinglePrecision() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.expandBedrockSinglePrecision;
+    }
+
     private static final int ROUND_OFF = 33554432;
     /** 🔧 MCRe 精确路径：折叠周期 2^25 = 33554432（double 表示精确无损）。 */
     private static final BigDecimal PERIOD_BD = BigDecimal.valueOf(33554432L);
@@ -225,6 +231,30 @@ public class PerlinNoise {
             float fz = (float) z;
             float fyScale = (float) yScale;
             float fyFudge = (float) yFudge;
+
+            // 🔧 MCRe：expandBedrockSinglePrecision 开关（大佬 10-05 派活）——三条产生线 double 化：
+            // wrap 的 float 折叠（基岩模拟核心）保留，插值/累加/最终返回 double 域 → 推迟 NaN 炸点（1e30 → 1e39 wrap 溢出）
+            if (expandSinglePrecision()) {
+                double valueExp = 0.0;
+                float factorExp = (float) this.lowestFreqInputFactor;
+                float valueFactorExp = (float) this.lowestFreqValueFactor;
+
+                for (int i = 0; i < this.noiseLevels.length; i++) {
+                    ImprovedNoise noise = this.noiseLevels[i];
+                    if (noise != null) {
+                        // wrap 的 float 折叠保留（基岩模拟）：wrapX/wrapY/wrapZ 仍为 float 量化
+                        float wrapX = (float) wrap(fx * factorExp);
+                        float wrapY = (float) wrap(fy * factorExp);
+                        float wrapZ = (float) wrap(fz * factorExp);
+                        // 噪声返回 double（插值链 double 化），累加/返回 double——不再 (float) 截断
+                        double noiseVal = noise.noise(wrapX, wrapY, wrapZ, fyScale * factorExp, fyFudge * factorExp);
+                        valueExp += this.amplitudes.getDouble(i) * noiseVal * valueFactorExp;
+                    }
+                    factorExp *= 2.0f;
+                    valueFactorExp /= 2.0f;
+                }
+                return valueExp;
+            }
 
             float value = 0.0f;
             float factor = (float) this.lowestFreqInputFactor;

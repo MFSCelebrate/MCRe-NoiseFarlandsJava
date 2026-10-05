@@ -311,6 +311,17 @@ public class WorldMainSettingScreen extends Screen {
         this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20).paddingBottom(4));
 
+        // ========== 🔧 MCRe：扩展基岩版边境之地单精度范围（边境之地样式按钮下）==========
+        SwitchGrid.Builder spBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
+                .withRowSpacing(3)
+                .withInfoUnderneathUnlimited(false);
+        spBuilder.addSwitch(
+                Component.literal("扩展基岩版边境之地单精度范围"),
+                () -> this.configData.expandBedrockSinglePrecision,
+                val -> this.configData.expandBedrockSinglePrecision = val
+        ).withInfo(Component.literal("用于在使用 Bedrock Edition 1.17.20+ 边境之地样式时扩展单精度范围到双精度，推迟边缘之地的生成，做到有可能看到后个层边境层的效果"));
+        this.scrollContent.addChild(spBuilder.build().layout(), s -> s.paddingHorizontal(10));
+
         // ========== 第四组：假区块设置 ==========
         this.scrollContent.addChild(this.createSectionHeader(
                 Component.literal("§d§l扩展设置")
@@ -823,6 +834,9 @@ public class WorldMainSettingScreen extends Screen {
 
         public String precisionMode = "32bit";
         public String farlandsStyle = "Java-1.18.2+";
+        // 🔧 MCRe：扩展基岩版边境之地单精度范围（大佬 10-05 派活）——BedrockMode 插值链三条产生线 double 化，
+        // 推迟边缘之地的生成（NaN 炸点 1e30 → 1e39 wrap 溢出），wrap 的 float 折叠保留（基岩模拟效果不变）
+        public boolean expandBedrockSinglePrecision = false;
 
         public boolean fixEndRings = false;
         public boolean fixFloatOverFlowCrash = true;

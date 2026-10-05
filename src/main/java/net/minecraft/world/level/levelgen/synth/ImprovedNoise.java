@@ -34,6 +34,14 @@ public final class ImprovedNoise {
         return config != null && config.simulatedWraparoundOverflow;
     }
 
+    // ===== 🔧 MCRe（大佬 10-05 派活）：扩展基岩版边境之地单精度范围 =====
+    // 开启 = BedrockMode 插值链三条产生线 double 化（sampleAndLerp 强转 / lerp3 / 最终返回），
+    // 推迟边缘之地的生成；基岩坐标量化（wrap float 折叠 / xr = x - xf）保留 = 基岩模拟效果不变
+    private static boolean expandSinglePrecision() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.expandBedrockSinglePrecision;
+    }
+
     public ImprovedNoise(final RandomSource random) {
         this.xo = random.nextDouble() * 256.0;
         this.yo = random.nextDouble() * 256.0;
@@ -54,7 +62,8 @@ public final class ImprovedNoise {
 
     public double noise(final double _x, final double _y, final double _z) {
         if (isBedrockMode()) {
-            return (float) this.noise(_x, _y, _z, 0.0, 0.0);
+            // 🔧 MCRe：expandSinglePrecision 开启 = 最终返回线 double 化（不 (float) 截断）
+            return expandSinglePrecision() ? this.noise(_x, _y, _z, 0.0, 0.0) : (float) this.noise(_x, _y, _z, 0.0, 0.0);
         }
         return this.noise(_x, _y, _z, 0.0, 0.0);
     }
@@ -93,6 +102,12 @@ public final class ImprovedNoise {
                 yrFudge = Mth.floor(fudgeLimit / fYScale + 1.0E-7F) * fYScale;
             } else {
                 yrFudge = 0.0f;
+            }
+
+            if (expandSinglePrecision()) {
+                // 🔧 MCRe：开关开启 = 最终返回线 double 化——插值链保持 double（推迟 NaN 炸点）；
+                // 基岩坐标量化（float 域 x/xr/yrFudge）保留 = 基岩模拟效果不变
+                return this.sampleAndLerp(xf, yf, zf, xr, yr - yrFudge, zr, yr);
             }
 
             float result = (float) this.sampleAndLerp(xf, yf, zf, xr, yr - yrFudge, zr, yr);
@@ -245,6 +260,15 @@ public final class ImprovedNoise {
 
             // 临时 float 数组用于内部计算
             double[] derivTemp = new double[3];
+            // 🔧 MCRe：expandSinglePrecision 开启 = 最终返回线 double 化（derivative 路径同步）
+            if (expandSinglePrecision()) {
+                double resultD = this.sampleWithDerivative(xf, yf, zf, xr, yr, zr, derivTemp);
+                derivativeOut[0] += derivTemp[0];
+                derivativeOut[1] += derivTemp[1];
+                derivativeOut[2] += derivTemp[2];
+                return resultD;
+            }
+
             float result = (float) this.sampleWithDerivative(xf, yf, zf, xr, yr, zr, derivTemp);
             derivativeOut[0] += derivTemp[0];
             derivativeOut[1] += derivTemp[1];
@@ -309,7 +333,8 @@ public final class ImprovedNoise {
     private static double lerp3(double delta1, double delta2, double delta3,
             double v000, double v100, double v010, double v110,
             double v001, double v101, double v011, double v111) {
-        if (isBedrockMode()) {
+        // 🔧 MCRe：expandSinglePrecision 开启 = 插值线 double 化（走原版 double lerp，推迟 NaN）；关闭 = 原基岩 float 域 7 次 lerp
+        if (isBedrockMode() && !expandSinglePrecision()) {
             float fDelta1 = (float) delta1;
             float fDelta2 = (float) delta2;
             float fDelta3 = (float) delta3;
@@ -351,7 +376,8 @@ public final class ImprovedNoise {
         double yAlpha = Mth.smoothstep(yrOriginal);
         double zAlpha = Mth.smoothstep(zr);
 
-        if (isBedrockMode()) {
+        // 🔧 MCRe：expandSinglePrecision 开启 = 跳过 11 值 (float) 强转（插值线 double 化，推迟 Inf 炸点）；关闭 = 原基岩 float 化插值
+        if (isBedrockMode() && !expandSinglePrecision()) {
             return (float) ImprovedNoise.lerp3(
                             (float) xAlpha, (float) yAlpha, (float) zAlpha,
                             (float) d000, (float) d100, (float) d010, (float) d110,
