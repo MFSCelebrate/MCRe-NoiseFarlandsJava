@@ -65,24 +65,5 @@ Nightly build files are all uploaded to **a single unified GitHub Release page**
 
 These versions contain the latest test changes, but also carry instability and save corruption risks.
 
-## Future Plans
-This order does not represent update priority, and this list will be migrated to the Wiki page.
-- [X] Further adjustments to the F3 debug screen
-- [X] Fix the 33554432 issue
-- [X] Resolve the world border/limit restrictions, referencing [UltimateScaler INF32768/UltimateScaler](https://github.com/INF32768/UltimateScaler)
-- [ ] Break through the 32-bit integer limit
-- [X] Add a series of features such as scaling and offset, referencing the same as above
-- [X] Add custom world settings (referencing [FarLandsTraveler SmallmanSeries/FarLandsTraveler](https://github.com/SmallmanSeries/FarLandsTraveler))
-   - Refactor the layout to make it more visually appealing, and add a scroll panel to support more settings
-   - Toggle controls for the sky grid
-   - Strengthen precision control implementation
-   - Remove some settings from FarLandsTraveler and rename them
-   - High-precision implementation of offset and scaling
-   - Coming soon: refactor the sky grid settings, no longer implementing MathUtil entirely based on FarLandsTraveler
-   - Progressive Far Lands for higher versions
-   - Coming soon: refactor the settings page, add paging, and add a new-version-compatible [Custom World Type](https://zh.minecraft.wiki/w/%E8%87%AA%E5%AE%9A%E4%B9%89/Java%E7%89%881.13%E5%89%8D)
-- [ ] Use the [debug tool](https://zh.minecraft.wiki/w/%E8%B0%83%E8%AF%95%E5%B7%A5%E5%85%B7) to control some debug environments / internal switches that cannot normally be enabled
-- [X] Add a Wiki page for this mod repository, referencing [UltimateScaler INF32768/UltimateScaler](https://github.com/INF32768/UltimateScaler)
-
 ## License
 This project is open-sourced under the MIT License (MIT). See the [LICENSE](../LICENSE) file for details.

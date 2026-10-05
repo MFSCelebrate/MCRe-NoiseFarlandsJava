@@ -78,9 +78,9 @@ public class DebugEntryDensityFunctionsMonitor implements DebugScreenEntry {
         String indent = "  ".repeat(Math.max(0, DEPTH.get() - 1));
         String formatted = String.valueOf(value);
         if (Double.isNaN(value) || Double.isInfinite(value)) {
-            steps.add("§c" + indent + "DFM/Steps-" + (steps.size() + 1) + "- (" + name + "): " + formatted);
+            steps.add("§c" + indent + "DFM/Steps [-" + (steps.size() + 1) + "-] (" + name + "): " + formatted);
         } else {
-            steps.add(indent + "DFM/Steps-" + (steps.size() + 1) + "- (" + name + "): " + formatted);
+            steps.add(indent + "DFM/Steps [-" + (steps.size() + 1) + "-] (" + name + "): " + formatted);
         }
     }
 

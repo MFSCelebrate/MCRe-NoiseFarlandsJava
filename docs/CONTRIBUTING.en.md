@@ -11,6 +11,7 @@ Before you start contributing, please read this guide, the project [README](./RE
 ## Table of Contents
 
 - [How You Can Contribute](#how-you-can-contribute)
+- [Quick Practice](#quick-practice)
 - [Development Environment](#development-environment)
 - [Building and Testing](#building-and-testing)
 - [Reporting Issues](#reporting-issues)
@@ -37,7 +38,7 @@ You can participate in the following ways:
 
 ---
 
-## Report an Issue / Provide Feedback
+## Quick Practice
 
 Whether you're reporting a bug or suggesting a new feature, you're welcome to **submit an Issue**! To help us understand and respond efficiently, we've prepared two convenient structured templates for you:
 
