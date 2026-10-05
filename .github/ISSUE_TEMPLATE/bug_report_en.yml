@@ -19,7 +19,6 @@ body:
       options:
         - label: "I am using the latest stable release or latest nightly build, and have not made any modifications."
         - label: "I believe this issue is not expected behavior caused by vanilla or configuration, nor a known issue that will not be fixed."
-        - label: "This bug is reproducible with only the required dependencies and this mod installed."
         - label: "I have checked the Wiki and found no solution."
         - label: "There is no existing issue in the issue list that duplicates this problem."
 
