@@ -61,9 +61,9 @@ public final class ImprovedNoise {
     }
 
     public double noise(final double _x, final double _y, final double _z) {
+        // 🔧 MCRe：expandSinglePrecision 开启 = Bedrock float 化跳过（含 (float) 截断），走 double 实现
         if (isBedrockMode()) {
-            // 🔧 MCRe：expandSinglePrecision 开启 = 最终返回线 double 化（不 (float) 截断）
-            return expandSinglePrecision() ? this.noise(_x, _y, _z, 0.0, 0.0) : (float) this.noise(_x, _y, _z, 0.0, 0.0);
+            return (float) this.noise(_x, _y, _z, 0.0, 0.0);
         }
         return this.noise(_x, _y, _z, 0.0, 0.0);
     }

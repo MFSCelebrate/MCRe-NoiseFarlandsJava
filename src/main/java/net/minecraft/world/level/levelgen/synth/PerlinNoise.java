@@ -411,7 +411,9 @@ public class PerlinNoise {
         double limitNoiseValue = config.limitReturnValueValue;
         String mode = config.precisionMode;
         // 🔧 Bedrock 模式：全 float 精度折叠（模拟基岩版坐标量级，边境之地形态与基岩一致）
-        if (isBedrockStatic()) {
+        // 🔧 MCRe：expandBedrockSinglePrecision 开启 = 跳过 float 强转/折叠，走下面 double 分支
+        //（实测锤：炸点 1e39 → 1e61，推迟 22 个数量级；地形从突变墙变渐变墙，后个层边境层可见）
+        if (isBedrockStatic() && !expandSinglePrecision()) {
             float folded;
             switch (mode) {
                 case "64bit":
@@ -480,7 +482,7 @@ public class PerlinNoise {
         String mode = config.precisionMode;
         // 🔧 Bedrock 模式：先转 float（单精度输入坐标，模拟基岩输入量级），再用 BigDecimal 精确取模
         // —— 避免地形拉伸（精确取模消除灾难性抵消）+ 完美模拟基岩版边境之地（float 输入量级）
-        if (isBedrockStatic()) {
+        if (isBedrockStatic() && !expandSinglePrecision()) {
             final float fx = x.floatValue();
             BigDecimal folded;
             switch (mode) {
