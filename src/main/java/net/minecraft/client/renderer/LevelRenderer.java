@@ -1045,9 +1045,18 @@ public class LevelRenderer implements AutoCloseable {
         }
 
         SectionRenderDispatcher.RenderSection renderSection = this.viewArea.getRenderSectionAt(blockPos);
-        // MCRe：遮挡剔除——区块必须处于当前可见集合（被遮挡区块内的实体不渲染计算）
-        return renderSection != null
-            && renderSection.sectionMesh.get() != CompiledSectionMesh.UNCOMPILED
+        if (renderSection == null) {
+            return false;
+        }
+
+        // 🔧 MCRe：空区块（EMPTY mesh）放行——遮挡图有意排除空区块（不收集进 sectionTree → 不在 visibleSectionSet），
+        // 但空区块里可能有实体（玩家飞在空中）——若走下面的遮挡剔除会被误杀（实体在空区块内不渲染）
+        if (renderSection.sectionMesh.get() == CompiledSectionMesh.EMPTY) {
+            return true;
+        }
+
+        // MCRe：遮挡剔除——实心区块必须处于当前可见集合（被遮挡区块内的实体不渲染计算）
+        return renderSection.sectionMesh.get() != CompiledSectionMesh.UNCOMPILED
             && this.visibleSectionSet.contains(renderSection)
             ? renderSection.getVisibility(Util.getMillis()) >= 0.3F
             : false;
