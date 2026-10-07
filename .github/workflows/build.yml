@@ -229,7 +229,7 @@ jobs:
           name: MinecraftVersionJson
           path: |
             MainProjectCatalogue/MinecraftVersionJson/26.2/26.2-Permanent.json
-            MainProjectCatalogue/MinecraftVersionJson/26.2/26.2-Permanent-Fabric.json
+            MainProjectCatalogue/MinecraftVersionJson/26.2-fabric/26.2-Permanent-Fabric.json
           if-no-files-found: error
 
       # ========== 构建摘要 ==========
