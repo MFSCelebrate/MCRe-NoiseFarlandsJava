@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.QuartPos;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.levelgen.DensityFunction;
@@ -78,8 +79,34 @@ public class Climate {
         return (long)(coord * 10000.0F);
     }
 
+    // 🔧 MCRe（大佬 10-07 派活）：double 量化重载——气候通道开关开启时用（跳过 (float) 强转 + float 乘法，
+    // 大坐标下温度分布从 8×10000 粗台阶恢复到 1.5e-4 细台阶）
+    public static long quantizeCoord(final double coord) {
+        return (long)(coord * 10000.0);
+    }
+
     public static float unquantizeCoord(final long coord) {
         return (float)coord / 10000.0F;
+    }
+
+    // 🔧 MCRe：气候通道 Float 精度丢失修复开关判定（照 ImprovedNoise.isBedrockMode 风格）
+    private static boolean fixClimateFloatPrecision() {
+        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.fixClimateFloatPrecision;
+    }
+
+    // 🔧 MCRe：target 的 double 版本（开关开启时 Sampler.sample 走这里——不经过 (float) 强转）
+    public static Climate.TargetPoint target(
+        final double temperature, final double humidity, final double continentalness, final double erosion, final double depth, final double weirdness
+    ) {
+        return new Climate.TargetPoint(
+            quantizeCoord(temperature),
+            quantizeCoord(humidity),
+            quantizeCoord(continentalness),
+            quantizeCoord(erosion),
+            quantizeCoord(depth),
+            quantizeCoord(weirdness)
+        );
     }
 
     public static Climate.Sampler empty() {
@@ -493,6 +520,17 @@ public class Climate {
             int blockY = QuartPos.toBlock(quartY);
             int blockZ = QuartPos.toBlock(quartZ);
             DensityFunction.SinglePointContext context = new DensityFunction.SinglePointContext(blockX, blockY, blockZ);
+            // 🔧 MCRe：开关开启 = 6 个气候通道跳过 (float) 强转，直接 double 量化（修复极远处生物群系异常）
+            if (fixClimateFloatPrecision()) {
+                return Climate.target(
+                    this.temperature.compute(context),
+                    this.humidity.compute(context),
+                    this.continentalness.compute(context),
+                    this.erosion.compute(context),
+                    this.depth.compute(context),
+                    this.weirdness.compute(context)
+                );
+            }
             return Climate.target(
                 (float)this.temperature.compute(context),
                 (float)this.humidity.compute(context),

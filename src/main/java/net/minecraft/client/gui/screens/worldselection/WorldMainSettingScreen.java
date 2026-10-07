@@ -243,6 +243,12 @@ public class WorldMainSettingScreen extends Screen {
         ));
 
         SwitchGrid.Builder borderBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20).withRowSpacing(4);
+        // 🔧 MCRe（大佬 10-07 派活）：修复 6 个气候通道的 Float 精度丢失（Climate.java 的 (float) 强转 + float 量化）
+        borderBuilder.addSwitch(
+                Component.literal("修复 在 Float ULP 过大时导致的 生物群系气候通道 精度丢失"),
+                () -> this.configData.fixClimateFloatPrecision,
+                val -> this.configData.fixClimateFloatPrecision = val
+        ).withInfo(Component.literal("原版生物群系的 6 个气候通道会以double计算后强转float，导致在极远处时生物群系异常，开启这个设置将解决这个问题。"));
         borderBuilder.addSwitch(
                 Component.literal("修复在 33552992 生成区块时的非法状态异常 和 表面噪声与规则崩溃问题"),
                 () -> this.configData.fixChunkOutOfBounds,
@@ -831,6 +837,9 @@ public class WorldMainSettingScreen extends Screen {
         public boolean exactTerrainRewrite = false;
         public boolean fixChunkOutOfBounds = true;
         public boolean fixAverageFunctionOverFlow = true;
+        // 🔧 MCRe（大佬 10-07 派活）：修复 6 个气候通道的 Float 精度丢失——Climate.Sampler.sample 的 (float) 强转
+        // + quantizeCoord 的 float 乘法 → 开关开启时全走 double 量化（TargetPoint 仍存 long，整数比较架构不变）
+        public boolean fixClimateFloatPrecision = false;
 
         public String precisionMode = "32bit";
         public String farlandsStyle = "Java-1.18.2+";
