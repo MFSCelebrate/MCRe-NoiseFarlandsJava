@@ -222,14 +222,20 @@ jobs:
           path: 26.2-Permanent.jar
           if-no-files-found: error
 
-      - name: 上传版本 JSON 元数据
+      - name: 上传 26.2-Permanent.json
         if: success()
         uses: actions/upload-artifact@v6
         with:
           name: MinecraftVersionJson
-          path: |
-            MainProjectCatalogue/MinecraftVersionJson/26.2/26.2-Permanent.json
-            MainProjectCatalogue/MinecraftVersionJson/26.2-fabric/26.2-Permanent-Fabric.json
+          path: MainProjectCatalogue/MinecraftVersionJson/26.2/26.2-Permanent.json
+          if-no-files-found: error
+
+      - name: 上传 26.2-Permanent-Fabric.json
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: MinecraftVersionJsonFabric
+          path: MainProjectCatalogue/MinecraftVersionJson/26.2-fabric/26.2-Permanent-Fabric.json
           if-no-files-found: error
 
       # ========== 构建摘要 ==========
@@ -362,6 +368,11 @@ jobs:
             echo "- 📄 **版本元数据**: `26.2-Permanent.json` 已同步上传" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ **版本元数据**: 未找到 `26.2-Permanent.json`，请检查构建步骤" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "artifacts/26.2-Permanent-Fabric.json" ]; then
+            echo "- 📄 **Fabric 版本元数据**: `26.2-Permanent-Fabric.json` 已同步上传" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **Fabric 版本元数据**: 未找到 `26.2-Permanent-Fabric.json`，请检查构建步骤" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ⏱️ 运行信息" >> $GITHUB_STEP_SUMMARY
