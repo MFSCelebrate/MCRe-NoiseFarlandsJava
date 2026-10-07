@@ -227,7 +227,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: MinecraftVersionJson
-          path: MainProjectCatalogue/MinecraftVersionJson/26.2/26.2-Permanent.json
+          path: |
+            MainProjectCatalogue/MinecraftVersionJson/26.2/26.2-Permanent.json
+            MainProjectCatalogue/MinecraftVersionJson/26.2/26.2-Permanent-Fabric.json
           if-no-files-found: error
 
       # ========== 构建摘要 ==========
@@ -317,13 +319,24 @@ jobs:
             可能 Github 原生的下载速度过慢，需要快速下载的请点击下面的链接
             - [这里下载 26.2-Permanent.jar](https://v6.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.jar)
             - [这里下载 26.2-Permanent.json](https://v6.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.json)
+            下面的下载链接如果需要 Fabric Loader 支持，请下载它，并按照“Fabric 版本的使用”安装。
+            - [这里下载 26.2-Permanent-Fabric.json](https://v6.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent-Fabric.json)
             
-            - CDN 线路: 
+            CDN 线路: 
                - [26.2-Permanent.jar](https://cdn.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.jar)
                - [26.2-Permanent.json](https://cdn.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.json)
+               下面的下载链接如果需要 Fabric Loader 支持，请下载它，并按照“Fabric 版本的使用”安装。
+               - [26.2-Permanent-Fabric.json](https://cdn.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent-Fabric.json)
+              
+            ### 🔗 Fabric 版本的使用
+            你需要下载`26.2-Permanent-Fabric.json`和`26.2-Permanent.jar`，并把 **Jar** 重命名成`26.2-Permanent-Fabric.jar`  
+            随后，安装**有 Fabric Loader 0.19.5 及以上版本模组加载器的原版 26.2**，名字叫 **26.2-Permanent-Fabric.jar**，方便替换。  
+            把下载的 `26.2-Permanent-Fabric.json`和`26.2-Permanent.jar` 替换掉原版同名的 **Json 和 Jar**，开启启动器对版本的**“不检查版本完整性”**，大功告成，可以启动游戏了。  
+              
           files: |
             artifacts/26.2-Permanent.jar
             artifacts/26.2-Permanent.json
+            artifacts/26.2-Permanent-Fabric.json
 
       # ========== 发布摘要 ==========
       - name: 生成发布摘要
