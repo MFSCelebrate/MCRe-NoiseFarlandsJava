@@ -216,8 +216,9 @@ public class TeleportCommand {
    }
 
    /**
-    * 🔧 MCRe：超出 int 窗口的世界重定位——设置偏移 + 重载世界。
-    * 复用 MCRe 已有的 WorldReposition 偏移系统（enabledTerrainOffsets + x/y/zWorldOffset）。
+    * 🔧 MCRe：超出 int 窗口的世界重定位——重建世界（非重开）。
+    * 流程：读旧世界配置 → 更新偏移 → 断开（保存） → 删除旧世界 → createFreshLevel（偏移已生效）
+    * 玩家在本地 (0, y, 0) 出生 = 真实坐标 (targetX, y, targetZ)
     */
    private static int triggerWorldRelocation(final CommandSourceStack source,
          final java.math.BigDecimal x, final java.math.BigDecimal z, final int y) {
@@ -238,13 +239,11 @@ public class TeleportCommand {
       config.yWorldOffset = String.valueOf(y);
       config.zWorldOffset = z.toPlainString();
 
-      // 3. 保存配置到 farlands_config.json（世界重载后会重新加载此配置）
+      // 3. 保存配置到 farlands_config.json
       net.minecraft.client.gui.screens.worldselection.FarLandsConfigStorage.save(
           mc.gameDirectory, config);
 
-      // 3.5 🔧 MCRe：调用 WorldReposition.refresh() 让 SCALE/SHIFT 立即生效！
-      //（根因：refresh 只在游戏启动和 WorldMainSettingScreen.onDone 时调用，
-      //  /tp real 的 disconnect + openWorld 流程不会触发这两个路径）
+      // 3.5 调用 WorldReposition.refresh() 让 SCALE/SHIFT 静态数组立即生效
       net.MinecraftTools.Math.DynamicAccuracy.BigDecimal _one =
           net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.ONE;
       net.MinecraftTools.Math.DynamicAccuracy.BigDecimal _zero =
@@ -262,26 +261,48 @@ public class TeleportCommand {
           config.surfaceNoiseOffset
       ));
 
-      // 4. 获取 levelId（世界重载后用此 ID 重开世界）
+      // 4. 获取 levelId
       String levelId = server.getStorageSource().getLevelId();
 
-      // 5. 设置挂起重载（Minecraft.disconnect 完成后自动重开世界）
-      mc.pendingWorldReloadLevelId = levelId;
-
-      // 6. 通知玩家 + 调度断开（断开 = 保存世界 + 触发重定位流程）
+      // 5. 通知玩家
       source.sendSuccess(() -> Component.literal(
-          "§e目标超出 int 窗口，正在设置偏移并重新加载世界...\n"
+          "§e目标超出 int 窗口，正在重建世界...\n"
           + "§7偏移: X=" + x.toPlainString() + "  Z=" + z.toPlainString() + "\n"
-          + "§7世界重载后将在目标位置附近生成地形"), false);
-      net.minecraft.server.level.ServerPlayer player = source.getPlayer();
-      if (player != null) {
-         System.out.println("[MCRe] /tp real relocation: levelId=" + levelId
-             + " offset=(" + config.xWorldOffset + "," + config.yWorldOffset + "," + config.zWorldOffset + ")");
-      }
+          + "§7旧世界数据将被清除，新世界将在目标位置生成地形"), false);
 
-      // 7. 在客户端线程调度断开（保存世界 → disconnect → 检测 pendingWorldReload → 重开）
+      // 6. 在客户端线程调度完整的世界重建流程
+      final net.minecraft.server.MinecraftServer srv = server;
       mc.execute(() -> {
-         mc.disconnectWithSavingScreen();
+         try {
+            // ── Step A: 读取旧世界配置（在断开前，服务端还活着时）──
+            var flows = mc.createWorldOpenFlows();
+            var access = mc.getLevelSource().validateAndCreateAccess(levelId);
+            var old = flows.recreateWorldData(access);
+            var levelSettings = old.getFirst();       // 游戏模式/难度/游戏规则等
+            var creationContext = old.getSecond();    // 种子/维度/数据包等
+            access.close();
+
+            // ── Step B: 断开世界（保存 → halt server → 清除 level，阻塞直到完成）──
+            mc.disconnectWithSavingScreen();
+            // 此时服务端已停止，level 目录已解锁
+
+            // ── Step C: 删除旧世界目录（彻底消去旧地形）──
+            try (var delAccess = mc.getLevelSource().validateAndCreateAccess(levelId)) {
+               delAccess.deleteLevel();
+            }
+
+            // ── Step D: 用旧配置 + 新偏移创建全新世界 ──
+            // WorldReposition 已刷新 → 噪声生成器在目标位置采样
+            // 玩家在本地 (0, y, 0) 出生 = 真实 (targetX, y, targetZ)
+            flows.createFreshLevel(levelId, levelSettings, creationContext.options(),
+                provider -> creationContext.selectedDimensions(), null);
+
+            System.out.println("[MCRe] /tp real world recreated: levelId=" + levelId
+                + " offset=(" + config.xWorldOffset + "," + config.zWorldOffset + ")");
+         } catch (Exception e) {
+            System.err.println("[MCRe] World relocation failed: " + e.getMessage());
+            e.printStackTrace();
+         }
       });
 
       return 1;
