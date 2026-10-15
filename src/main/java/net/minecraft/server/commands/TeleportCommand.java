@@ -147,21 +147,22 @@ public class TeleportCommand {
                            )
                         )
                   )
-                  // 🔧 MCRe（大佬 10-15 派活）：/tp real <x> <y> <z>——支持科学记数法的无限精度传送
+            )
+            // 🔧 MCRe（大佬 10-15 派活）：/tp real <x> <y> <z>——支持科学记数法的无限精度传送
+            // ⚠️ 必须是 teleport 的顶层子命令（不能嵌套在 targets 里面，否则 "real" 会被当作实体选择器解析）
+            .then(
+               Commands.literal("real")
                   .then(
-                     Commands.literal("real")
-                        .then(
-                           Commands.argument("x", StringArgumentType.word())
-                              .then(Commands.argument("y", StringArgumentType.word())
-                                 .then(Commands.argument("z", StringArgumentType.word())
-                                    .executes(ctx -> realTeleport(
-                                       StringArgumentType.getString(ctx, "x"),
-                                       StringArgumentType.getString(ctx, "y"),
-                                       StringArgumentType.getString(ctx, "z"),
-                                       (CommandSourceStack)ctx.getSource()
-                                    ))
-                                 )
-                              )
+                     Commands.argument("x", StringArgumentType.word())
+                        .then(Commands.argument("y", StringArgumentType.word())
+                           .then(Commands.argument("z", StringArgumentType.word())
+                              .executes(ctx -> realTeleport(
+                                 StringArgumentType.getString(ctx, "x"),
+                                 StringArgumentType.getString(ctx, "y"),
+                                 StringArgumentType.getString(ctx, "z"),
+                                 (CommandSourceStack)ctx.getSource()
+                              ))
+                           )
                         )
                   )
             )
