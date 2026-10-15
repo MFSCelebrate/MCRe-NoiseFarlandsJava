@@ -727,6 +727,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         mag = toMagArray(val);
     }
 
+    // 🔧 MCRe（2026-10-15 性能优化）：从 mag[] 还原 long 值（仅 mag.length ≤ 2 时调用）
+    // 调用方必须确保 mag.length ≤ 2 且 signum != 0
+    private long toLong() {
+        if (mag.length == 1) {
+            long v = mag[0] & LONG_MASK;
+            return signum < 0 ? -v : v;
+        }
+        // mag.length == 2
+        long v = ((long) mag[0] << 32) | (mag[1] & LONG_MASK);
+        return signum < 0 ? -v : v;
+    }
+
     private static int[] toMagArray(long mag) {
         int highWord = (int) (mag >>> 32);
         return highWord == 0
@@ -785,6 +797,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     public static final BigInteger TEN = valueOf(10);
 
     public BigInteger add(BigInteger val) {
+        // 🔧 MCRe（2026-10-15 性能优化）：小值快速路径——mag.length ≤ 2 时直接 long 运算零分配
+        if (mag.length <= 2 && val.mag.length <= 2 && signum != 0 && val.signum != 0) {
+            long a = toLong();
+            long b = val.toLong();
+            long sum = a + b;
+            // 检查 long 溢出：同号相加结果符号应与操作数一致
+            if (((a ^ sum) & (b ^ sum)) >= 0) {
+                return valueOf(sum);
+            }
+            // long 溢出 → 走标准路径
+        }
         if (val.signum == 0)
             return this;
         if (signum == 0)
@@ -956,6 +979,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     public BigInteger subtract(BigInteger val) {
+        // 🔧 MCRe（2026-10-15 性能优化）：小值快速路径
+        if (mag.length <= 2 && val.mag.length <= 2 && signum != 0 && val.signum != 0) {
+            long a = toLong();
+            long b = val.toLong();
+            long diff = a - b;
+            // 检查 long 溢出：异号相减结果符号应与被减数一致（或结果为零）
+            if (((a ^ diff) & (~b ^ diff)) >= 0) {
+                return valueOf(diff);
+            }
+            // long 溢出 → 走标准路径
+        }
         if (val.signum == 0)
             return this;
         if (signum == 0)
@@ -1056,7 +1090,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return new BigInteger(result, resultSign);
         } else {
             if ((xlen < TOOM_COOK_THRESHOLD) && (ylen < TOOM_COOK_THRESHOLD)) {
-                return multiplyKaratsuba(this, val);
+                // 🔧 MCRe（2026-10-15）：Karatsuba 并行传播（parallelMultiply 的并行标志穿透）
+                return multiplyKaratsuba(this, val, parallel, depth);
             } else {
 
                 if (!isRecursion) {
@@ -1184,6 +1219,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     private static BigInteger multiplyKaratsuba(BigInteger x, BigInteger y) {
+        return multiplyKaratsuba(x, y, false, 0);
+    }
+
+    // 🔧 MCRe（2026-10-15 性能优化）：Karatsuba 并行传播——三个子乘法递归走 parallel 路径
+    private static BigInteger multiplyKaratsuba(BigInteger x, BigInteger y, boolean parallel, int depth) {
         int xlen = x.mag.length;
         int ylen = y.mag.length;
 
@@ -1194,10 +1234,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         BigInteger yl = y.getLower(half);
         BigInteger yh = y.getUpper(half);
 
-        BigInteger p1 = xh.multiply(yh);
-        BigInteger p2 = xl.multiply(yl);
+        BigInteger p1 = xh.multiply(yh, true, parallel, depth + 1);
+        BigInteger p2 = xl.multiply(yl, true, parallel, depth + 1);
 
-        BigInteger p3 = xh.add(xl).multiply(yh.add(yl));
+        BigInteger p3 = xh.add(xl).multiply(yh.add(yl), true, parallel, depth + 1);
 
         BigInteger result = p1.shiftLeft(32 * half).add(p3.subtract(p1).subtract(p2)).shiftLeft(32 * half).add(p2);
 

@@ -306,6 +306,9 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
     private final Proxy proxy;
     private final boolean offlineDeveloperMode;
     private final LevelStorageSource levelSource;
+
+    /** 🔧 MCRe（/tp real 世界重定位）：挂起的世界重载 ID——disconnect 完成后自动重开该世界 */
+    public @Nullable String pendingWorldReloadLevelId;
     private final boolean demo;
     private final boolean allowsMultiplayer;
     private final boolean allowsChat;
@@ -2187,6 +2190,19 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
             this.isLocalServer = false;
             this.updateLevelInEngines(null, stopSound);
             this.player = null;
+
+            // 🔧 MCRe（/tp real 世界重定位）：disconnect 完成后检查挂起的世界重载
+            if (this.pendingWorldReloadLevelId != null) {
+                String reloadId = this.pendingWorldReloadLevelId;
+                this.pendingWorldReloadLevelId = null;
+                LOGGER.info("[MCRe] World reload pending: reopening world '{}'", reloadId);
+                // 延迟一帧执行，确保 disconnect 流程完全结束
+                this.execute(() -> {
+                    this.createWorldOpenFlows().openWorld(reloadId, () -> {
+                        LOGGER.error("[MCRe] Failed to reopen world '{}' after relocation", reloadId);
+                    });
+                });
+            }
         } finally {
             this.gui.setClientLevelTeardownInProgress(false);
         }

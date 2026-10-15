@@ -216,6 +216,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     public static final NameAndId ANONYMOUS_PLAYER_PROFILE = new NameAndId(Util.NIL_UUID, "Anonymous Player");
     public static final String SERVER_THREAD_NAME = "Server thread";
     protected final LevelStorageSource.LevelStorageAccess storageSource;
+
+    /** 🔧 MCRe：公开 storageSource 访问器（/tp real 世界重定位需要获取 levelId） */
+    public LevelStorageSource.LevelStorageAccess getStorageSource() {
+        return this.storageSource;
+    }
     protected final PlayerDataStorage playerDataStorage;
     private final SavedDataStorage savedDataStorage;
     private final List<Runnable> tickables = Lists.newArrayList();

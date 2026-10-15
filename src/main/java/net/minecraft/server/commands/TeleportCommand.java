@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import java.util.Collection;
 import java.util.Collections;
@@ -146,12 +147,123 @@ public class TeleportCommand {
                            )
                         )
                   )
+                  // 🔧 MCRe（大佬 10-15 派活）：/tp real <x> <y> <z>——支持科学记数法的无限精度传送
+                  .then(
+                     Commands.literal("real")
+                        .then(
+                           Commands.argument("x", StringArgumentType.word())
+                              .then(Commands.argument("y", StringArgumentType.word())
+                                 .then(Commands.argument("z", StringArgumentType.word())
+                                    .executes(ctx -> realTeleport(
+                                       StringArgumentType.getString(ctx, "x"),
+                                       StringArgumentType.getString(ctx, "y"),
+                                       StringArgumentType.getString(ctx, "z"),
+                                       (CommandSourceStack)ctx.getSource()
+                                    ))
+                                 )
+                              )
+                        )
+                  )
             )
       );
       dispatcher.register(
          (LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal("tp").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)))
             .redirect(teleport)
       );
+   }
+
+   /**
+    * 🔧 MCRe（大佬 10-15 派活）：/tp real <x> <y> <z>——支持科学记数法的无限精度传送。
+    * 坐标 ≤ 2^31 - 3647 时正常传送；超过时设置世界偏移并触发世界重载。
+    */
+   private static int realTeleport(final String xs, final String ys, final String zs,
+         final CommandSourceStack source) throws CommandSyntaxException {
+      java.math.BigDecimal x;
+      java.math.BigDecimal z;
+      int y;
+      try {
+         x = new java.math.BigDecimal(xs);
+         z = new java.math.BigDecimal(zs);
+         y = new java.math.BigDecimal(ys).intValueExact();
+      } catch (ArithmeticException | NumberFormatException e) {
+         source.sendFailure(Component.literal("§c坐标解析失败: " + e.getMessage()));
+         return 0;
+      }
+
+      // ── 判断是否超出 int 窗口（2^31 - 3647 = 2147480000）──
+      java.math.BigInteger intLimit = java.math.BigInteger.valueOf(2147483647L - 3647L);
+      boolean inWindow = x.toBigInteger().abs().compareTo(intLimit) <= 0
+          && z.toBigInteger().abs().compareTo(intLimit) <= 0;
+
+      if (inWindow) {
+         // ── 正常传送（转为 double，与原版 /tp 行为一致）──
+         double dx = x.doubleValue();
+         double dz = z.doubleValue();
+         Entity entity = source.getEntityOrException();
+         if (entity instanceof net.minecraft.server.level.ServerPlayer sp) {
+            sp.teleportTo(dx, y, dz);
+         } else {
+            entity.absSnapTo(dx, y, dz);
+         }
+         source.sendSuccess(() -> Component.literal(
+             "§a已传送到 (" + x.toPlainString() + ", " + y + ", " + z.toPlainString() + ")"), false);
+         return 1;
+      }
+
+      // ── 超出 int 窗口 → 设置世界偏移 + 触发世界重载 ──
+      return triggerWorldRelocation(source, x, z, y);
+   }
+
+   /**
+    * 🔧 MCRe：超出 int 窗口的世界重定位——设置偏移 + 重载世界。
+    * 复用 MCRe 已有的 WorldReposition 偏移系统（enabledTerrainOffsets + x/y/zWorldOffset）。
+    */
+   private static int triggerWorldRelocation(final CommandSourceStack source,
+         final java.math.BigDecimal x, final java.math.BigDecimal z, final int y) {
+      net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+      net.minecraft.server.MinecraftServer server = source.getServer();
+
+      // 1. 获取 configData
+      net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData config =
+          net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+      if (config == null) {
+         source.sendFailure(Component.literal("§c无法获取 FarLands 配置"));
+         return 0;
+      }
+
+      // 2. 更新偏移配置
+      config.enabledTerrainOffsets = true;
+      config.xWorldOffset = x.toPlainString();
+      config.yWorldOffset = String.valueOf(y);
+      config.zWorldOffset = z.toPlainString();
+
+      // 3. 保存配置到 farlands_config.json（世界重载后会重新加载此配置）
+      net.minecraft.client.gui.screens.worldselection.FarLandsConfigStorage.save(
+          mc.gameDirectory, config);
+
+      // 4. 获取 levelId（世界重载后用此 ID 重开世界）
+      String levelId = server.getStorageSource().getLevelId();
+
+      // 5. 设置挂起重载（Minecraft.disconnect 完成后自动重开世界）
+      mc.pendingWorldReloadLevelId = levelId;
+
+      // 6. 通知玩家 + 调度断开（断开 = 保存世界 + 触发重定位流程）
+      source.sendSuccess(() -> Component.literal(
+          "§e目标超出 int 窗口，正在设置偏移并重新加载世界...\n"
+          + "§7偏移: X=" + x.toPlainString() + "  Z=" + z.toPlainString() + "\n"
+          + "§7世界重载后将在目标位置附近生成地形"), false);
+      net.minecraft.server.level.ServerPlayer player = source.getPlayer();
+      if (player != null) {
+         System.out.println("[MCRe] /tp real relocation: levelId=" + levelId
+             + " offset=(" + config.xWorldOffset + "," + config.yWorldOffset + "," + config.zWorldOffset + ")");
+      }
+
+      // 7. 在客户端线程调度断开（保存世界 → disconnect → 检测 pendingWorldReload → 重开）
+      mc.execute(() -> {
+         mc.disconnectWithSavingScreen();
+      });
+
+      return 1;
    }
 
    private static int teleportToEntity(final CommandSourceStack source, final Collection<? extends Entity> entities, final Entity destination) throws CommandSyntaxException {

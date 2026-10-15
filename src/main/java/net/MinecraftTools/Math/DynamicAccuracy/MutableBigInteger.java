@@ -54,15 +54,15 @@ class MutableBigInteger {
             MutableBigInteger> TL_TEMP_C = ThreadLocal.withInitial(MutableBigInteger::new);
 
     // ══════════════════════════════════════════════════════════════════
-    // 🔧 MCRe NoiseFarlands：通用 ThreadLocal 借用池
+    // 🔧 MCRe NoiseFarlands：通用 ThreadLocal 借用池（2026-10-15 优化：容量 4→16）
     // 用法：BigInteger.divideKnuth / remainderKnuth / divideAndRemainderKnuth / gcd
-    //       等“单线程、非重入”热路径借取临时 MutableBigInteger，用完 release 归还。
+    //       multiply / square 等所有"单线程、非重入"热路径借取临时 MutableBigInteger。
     // ⚠️ 安全约束：
     //  1. acquire/release 必须成对，且不跨递归（嵌套借用会自动分配新实例，不会互相踩踏）。
     //  2. 归还前不得再持有该实例内部数组的任何引用（用 toBigIntegerCopy 强制拷贝产出）。
     //  3. release 只复位 offset/intLen，不清数组内容（下轮 copyValue 覆盖）。
     // ══════════════════════════════════════════════════════════════════
-    private static final int TL_POOL_CAPACITY = 4;
+    private static final int TL_POOL_CAPACITY = 16; // 4 → 16（2026-10-15 优化）
 
     private static final ThreadLocal<MutableBigInteger[]> TL_POOL =
             ThreadLocal.withInitial(() -> new MutableBigInteger[TL_POOL_CAPACITY]);
@@ -79,6 +79,13 @@ class MutableBigInteger {
             return m;
         }
         return new MutableBigInteger();
+    }
+
+    /** 🔧 借取一个保证内部数组 ≥ minCapacity 的 MutableBigInteger（避免中途扩容） */
+    static MutableBigInteger acquire(int minCapacity) {
+        MutableBigInteger m = acquire();
+        m.ensureCapacity(minCapacity);
+        return m;
     }
 
     /** 🔧 归还实例（调用方保证不再引用其内部数组） */
@@ -331,7 +338,11 @@ class MutableBigInteger {
 
     private final void ensureCapacity(int len) {
         if (value.length < len) {
-            value = new int[len];
+            // 🔧 MCRe（2026-10-15 性能优化）：旧数组归还 IntArrayPool，新数组从池中借取
+            if (value.length >= 16) {
+                IntArrayPool.release(value);
+            }
+            value = IntArrayPool.acquire(len);
             offset = 0;
             intLen = len;
         }
@@ -1040,9 +1051,12 @@ class MutableBigInteger {
             int n = j * m;
             long n32 = 32L * n;
             int sigma = (int) Math.max(0, n32 - b.bitLength());
-            MutableBigInteger bShifted = new MutableBigInteger(b);
+            // 🔧 MCRe（2026-10-15 性能优化）：BZ 循环用 acquire/release 池化，消除每次迭代的 new 分配
+            MutableBigInteger bShifted = MutableBigInteger.acquire(b.intLen + (sigma >>> 5) + 1);
+            bShifted.copyValue(b);
             bShifted.safeLeftShift(sigma);
-            MutableBigInteger aShifted = new MutableBigInteger(this);
+            MutableBigInteger aShifted = MutableBigInteger.acquire(intLen + (sigma >>> 5) + 1);
+            aShifted.copyValue(this);
             aShifted.safeLeftShift(sigma);
 
             int t = (int) ((aShifted.bitLength() + n32) / n32);
@@ -1055,7 +1069,7 @@ class MutableBigInteger {
             MutableBigInteger z = aShifted.getBlock(t - 2, t, n);
             z.addDisjoint(a1, n);
 
-            MutableBigInteger qi = new MutableBigInteger();
+            MutableBigInteger qi = MutableBigInteger.acquire();
             MutableBigInteger ri;
             for (int i = t - 2; i > 0; i--) {
 
@@ -1070,6 +1084,11 @@ class MutableBigInteger {
             quotient.add(qi);
 
             ri.rightShift(sigma);
+            // 🔧 MCRe：归还池化对象（aShifted/bShifted/qi 不再需要，内容已拷贝到 quotient/ri）
+            MutableBigInteger.release(bShifted);
+            MutableBigInteger.release(aShifted);
+            MutableBigInteger.release(qi);
+            MutableBigInteger.release(a1);
             return ri;
         }
     }
