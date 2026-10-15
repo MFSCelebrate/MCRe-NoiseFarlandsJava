@@ -242,6 +242,26 @@ public class TeleportCommand {
       net.minecraft.client.gui.screens.worldselection.FarLandsConfigStorage.save(
           mc.gameDirectory, config);
 
+      // 3.5 🔧 MCRe：调用 WorldReposition.refresh() 让 SCALE/SHIFT 立即生效！
+      //（根因：refresh 只在游戏启动和 WorldMainSettingScreen.onDone 时调用，
+      //  /tp real 的 disconnect + openWorld 流程不会触发这两个路径）
+      net.MinecraftTools.Math.DynamicAccuracy.BigDecimal _one =
+          net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.ONE;
+      net.MinecraftTools.Math.DynamicAccuracy.BigDecimal _zero =
+          net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.ZERO;
+      config.enabledTerrainOffsets = true;
+      net.minecraft.world.level.levelgen.WorldReposition.refresh(
+          new net.minecraft.world.level.levelgen.WorldReposition.RepositionConfig(
+          config.enabledTerrainScaler ? net.minecraft.world.level.levelgen.WorldReposition.parseOrFallback(config.xWorldScaler, _one) : _one,
+          config.enabledTerrainScaler ? net.minecraft.world.level.levelgen.WorldReposition.parseOrFallback(config.yWorldScaler, _one) : _one,
+          config.enabledTerrainScaler ? net.minecraft.world.level.levelgen.WorldReposition.parseOrFallback(config.zWorldScaler, _one) : _one,
+          config.enabledTerrainOffsets ? net.minecraft.world.level.levelgen.WorldReposition.parseOrFallback(config.xWorldOffset, _zero) : _zero,
+          config.enabledTerrainOffsets ? net.minecraft.world.level.levelgen.WorldReposition.parseOrFallback(config.yWorldOffset, _zero) : _zero,
+          config.enabledTerrainOffsets ? net.minecraft.world.level.levelgen.WorldReposition.parseOrFallback(config.zWorldOffset, _zero) : _zero,
+          config.enabledYClampedGradientOffset,
+          config.surfaceNoiseOffset
+      ));
+
       // 4. 获取 levelId（世界重载后用此 ID 重开世界）
       String levelId = server.getStorageSource().getLevelId();
 
