@@ -266,46 +266,72 @@ public class TeleportCommand {
 
       // 5. 通知玩家
       source.sendSuccess(() -> Component.literal(
-          "§e目标超出 int 窗口，正在重建世界...\n"
-          + "§7偏移: X=" + x.toPlainString() + "  Z=" + z.toPlainString() + "\n"
-          + "§7旧世界数据将被清除，新世界将在目标位置生成地形"), false);
+          "§e目标超出 int 窗口，正在重建世界（旧地形将被清除）...\n"
+          + "§7偏移: X=" + x.toPlainString() + "  Z=" + z.toPlainString()), false);
 
-      // 6. 在客户端线程调度完整的世界重建流程
-      final net.minecraft.server.MinecraftServer srv = server;
+      // 6. 在客户端线程调度：断开（保存）→ 删除旧区块数据 → 重开世界（全新地形）
       mc.execute(() -> {
+         // ── Step 1: 断开世界（保存 + 停止服务端，阻塞直到完成）──
+         mc.disconnectWithSavingScreen();
+         // 此时服务端已停止，level 目录已解锁
+
+         // ── Step 2: 删除旧地形数据（26.1+ 存档结构）──
+         // 地形数据在 dimensions/<namespace>/<dim>/ 下面的 region/entities/poi
+         // 根目录的 data/ 是世界元数据（scoreboard/raids 等）不能删！
+         // 根目录的 players/ 存玩家数据（gamemode/inventory）要删（玩家在偏移原点重新出生）
          try {
-            // ── Step A: 读取旧世界配置（在断开前，服务端还活着时）──
-            var flows = mc.createWorldOpenFlows();
-            var access = mc.getLevelSource().validateAndCreateAccess(levelId);
-            var old = flows.recreateWorldData(access);
-            var levelSettings = old.getFirst();       // 游戏模式/难度/游戏规则等
-            var creationContext = old.getSecond();    // 种子/维度/数据包等
-            access.close();
-
-            // ── Step B: 断开世界（保存 → halt server → 清除 level，阻塞直到完成）──
-            mc.disconnectWithSavingScreen();
-            // 此时服务端已停止，level 目录已解锁
-
-            // ── Step C: 删除旧世界目录（彻底消去旧地形）──
-            try (var delAccess = mc.getLevelSource().validateAndCreateAccess(levelId)) {
-               delAccess.deleteLevel();
+            var levelDir = mc.gameDirectory.toPath()
+                .resolve("saves").resolve(levelId);
+            // 删除三个维度的 region/entities/poi（overworld + the_nether + the_end）
+            for (String dim : new String[]{
+                    "dimensions/minecraft/overworld",
+                    "dimensions/minecraft/the_nether",
+                    "dimensions/minecraft/the_end"}) {
+               for (String sub : new String[]{"region", "entities", "poi"}) {
+                  var subDir = levelDir.resolve(dim).resolve(sub);
+                  if (java.nio.file.Files.exists(subDir)) {
+                     deleteDirectoryRecursively(subDir);
+                     System.out.println("[MCRe] /tp real: deleted " + subDir);
+                  }
+               }
             }
-
-            // ── Step D: 用旧配置 + 新偏移创建全新世界 ──
-            // WorldReposition 已刷新 → 噪声生成器在目标位置采样
-            // 玩家在本地 (0, y, 0) 出生 = 真实 (targetX, y, targetZ)
-            flows.createFreshLevel(levelId, levelSettings, creationContext.options(),
-                provider -> creationContext.selectedDimensions(), null);
-
-            System.out.println("[MCRe] /tp real world recreated: levelId=" + levelId
-                + " offset=(" + config.xWorldOffset + "," + config.zWorldOffset + ")");
+            // 删除根目录的 players/ 文件夹（玩家数据：gamemode/inventory/位置）
+            // → 玩家在偏移原点 (0, y, 0) 重新出生
+            var playersDir = levelDir.resolve("players");
+            if (java.nio.file.Files.exists(playersDir)) {
+               deleteDirectoryRecursively(playersDir);
+               System.out.println("[MCRe] /tp real: deleted players/");
+            }
+            System.out.println("[MCRe] /tp real: old terrain data deleted for level " + levelId);
          } catch (Exception e) {
-            System.err.println("[MCRe] World relocation failed: " + e.getMessage());
+            System.err.println("[MCRe] /tp real: failed to delete old terrain data: " + e.getMessage());
             e.printStackTrace();
          }
+
+         // ── Step 3: 重开世界（所有区块重新生成，偏移已生效）──
+         System.out.println("[MCRe] /tp real: reopening world " + levelId);
+         mc.createWorldOpenFlows().openWorld(levelId, () -> {
+            System.err.println("[MCRe] /tp real: failed to reopen world " + levelId);
+         });
       });
 
       return 1;
+   }
+
+   /** 🔧 MCRe：递归删除目录（/tp real 清除旧地形用） */
+   private static void deleteDirectoryRecursively(java.nio.file.Path dir) throws java.io.IOException {
+      if (java.nio.file.Files.isDirectory(dir)) {
+         try (var stream = java.nio.file.Files.list(dir)) {
+            for (var entry : stream.toList()) {
+               if (java.nio.file.Files.isDirectory(entry)) {
+                  deleteDirectoryRecursively(entry);
+               } else {
+                  java.nio.file.Files.delete(entry);
+               }
+            }
+         }
+      }
+      java.nio.file.Files.deleteIfExists(dir);
    }
 
    private static int teleportToEntity(final CommandSourceStack source, final Collection<? extends Entity> entities, final Entity destination) throws CommandSyntaxException {
