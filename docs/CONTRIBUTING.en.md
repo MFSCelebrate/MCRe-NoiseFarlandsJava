@@ -243,7 +243,7 @@ This mod uses self-implemented 256-bit signed/unsigned integer, floating-point, 
 ## Contact
 
 - **Author**: [MFSCelebrate (Bilibili)](https://b23.tv/hTl7eI5)
-- **Known collaborator (please do not disturb, thank you)**: [\_\_Infinitive\_\_ (Bilibili)](https://space.bilibili.com/1196843580)
+- **Known collaborator (please do not disturb, thank you)**: [AxorBisInfinitive (Bilibili)](https://space.bilibili.com/1196843580)
 - **Issue feedback**: Please prioritize GitHub Issues
 
 Thank you for your contribution!

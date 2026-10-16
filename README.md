@@ -9,7 +9,7 @@
 > [!TIP]
 > 此仓库遵循 [MIT License (MIT)](./LICENSE) 协议  
 > 作者本人: [MFSCelebrate(Bilibili)](https://b23.tv/hTl7eI5)  
-> 已知协作者: [\_\_Infinitive\_\_(BiliBili)](https://space.bilibili.com/1196843580)
+> 已知协作者: [AxorBisInfinitive(BiliBili)](https://space.bilibili.com/1196843580)
 
 > [!WARNING]
 > 该版本较不稳定，Mojang 在该版本正式引用了 Vulkan 渲染，所有关于原版的 Bug (特性)与该改版无关  

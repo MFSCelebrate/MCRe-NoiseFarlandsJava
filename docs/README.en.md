@@ -9,7 +9,7 @@
 > [!TIP]
 > This repository follows the [MIT License (MIT)](../LICENSE)  
 > Author: [MFSCelebrate(Bilibili)](https://b23.tv/hTl7eI5)  
-> Known collaborator: [\_\_Infinitive\_\_(BiliBili)](https://space.bilibili.com/1196843580)
+> Known collaborator: [AxorBisInfinitive(BiliBili)](https://space.bilibili.com/1196843580)
 
 > [!WARNING]
 > This version is relatively unstable. Mojang officially introduced Vulkan rendering in this version, so all vanilla bugs (features) are unrelated to this mod.  
