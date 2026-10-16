@@ -118,10 +118,12 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
     public CompletableFuture<ChunkAccess> createBiomes(
         final RandomState randomState, final Blender blender, final StructureManager structureManager, final ChunkAccess protoChunk
     ) {
-        return CompletableFuture.supplyAsync(() -> {
-            this.doCreateBiomes(blender, randomState, structureManager, protoChunk);
-            return protoChunk;
-        }, Util.backgroundExecutor().forName("init_biomes"));
+        // 🔧 MCRe（C2ME 并行生成修复）：去掉 supplyAsync(backgroundExecutor)，同步跑 doCreateBiomes
+        // 根因：原版异步到 backgroundExecutor，与 fillFromNoise（ForkJoinPool）并发共享同一 NoiseChunk
+        // （可变 cell 状态/interpolators/cellCaches/wrapped HashMap 全非线程安全）→ 气候通道值错乱
+        // → 山地雪片/冷水海洋暖水群系。同步后批内顺序执行：BIOMES 完成才 NOISE
+        this.doCreateBiomes(blender, randomState, structureManager, protoChunk);
+        return CompletableFuture.completedFuture(protoChunk);
     }
 
     private void doCreateBiomes(final Blender blender, final RandomState randomState, final StructureManager structureManager, final ChunkAccess protoChunk) {

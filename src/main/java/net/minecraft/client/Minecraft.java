@@ -2840,6 +2840,12 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
 
                 this.player.yRotO = this.player.getYRot();
                 this.player.xRotO = this.player.getXRot();
+                // 🔧 MCRe（大佬 10-16 派活）：全景图旋转后手动失效遮挡图
+                // 根因：SectionOcclusionGraph.invalidateIfNeeded() 只检查位置/FOV，不检查旋转
+                // → 全景图位置不变只旋转 → 遮挡图不失效 → 用旧方向可见性数据 → 剔除边界错乱 + 未加载区块可见
+                if (this.levelRenderer != null) {
+                    this.levelRenderer.sectionOcclusionGraph().invalidate();
+                }
                 this.gameRenderer.update(DeltaTracker.ONE);
                 this.gameRenderer.extract(DeltaTracker.ONE, true);
                 this.gameRenderer.renderLevel(DeltaTracker.ONE);

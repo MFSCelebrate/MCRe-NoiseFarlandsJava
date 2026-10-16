@@ -68,11 +68,12 @@ public abstract class GenerationChunkHolder {
                 if (exception != null) {
                     CrashReport report = CrashReport.forThrowable(exception, "Exception chunk generation/loading");
                     BlockableEventLoop.relayDelayCrash(report);
-                } else {
+                } else if (chunk != null) {
                     this.completeFuture(step.targetStatus(), chunk);
                 }
-
-                return ChunkResult.of(chunk);
+                // 🔧 MCRe（大佬 10-16 派活）：chunk == null = preventGenerationFails 开启时生成失败被跳过
+                // 返回 error 结果（不完成 future、不崩溃），区块调度层会后续重试或放弃
+                return chunk != null ? ChunkResult.of(chunk) : UNLOADED_CHUNK;
             }) : this.getOrCreateFuture(step.targetStatus());
         }
     }

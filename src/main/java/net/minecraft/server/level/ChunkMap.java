@@ -637,6 +637,21 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
                 return step.apply(this.worldGenContext, cache, centerChunk);
             }
         } catch (Exception e) {
+            // 🔧 MCRe（大佬 10-16 派活）：阻止游戏在区块生成失败时崩溃
+            // 开启后像区块读取失败那样在右上角显示弹窗并继续运行，而不是直接崩溃
+            if (net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData.activeConfig != null
+                    && net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData.activeConfig.preventGenerationFails) {
+                LOGGER.error("[MCRe] Chunk generation failed at {} ({}), skipping crash", pos, step.targetStatus().getName(), e);
+                // 在客户端线程显示弹窗（SystemToast 需要客户端线程）
+                net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                if (mc != null) {
+                    final ChunkPos toastPos = pos;
+                    mc.execute(() -> net.minecraft.client.gui.components.toasts.SystemToast.onChunkLoadFailure(mc, toastPos));
+                }
+                // 返回空的完成 Future（区块保持当前状态，不完成该步，继续运行）
+                return CompletableFuture.completedFuture(null);
+            }
+            // 原版行为：生成 CrashReport 并崩溃
             e.getStackTrace();
             CrashReport report = CrashReport.forThrowable(e, "Exception generating new chunk");
             CrashReportCategory category = report.addCategory("Chunk to be generated");

@@ -69,8 +69,8 @@ public class WorldMainSettingScreen extends Screen {
     /** 当前页码（0 起），进入界面默认为第一页 */
     private int currentPage = 0;
 
-    /** 总页数（目前仅 1、2 两页，等待扩展） */
-    private static final int PAGE_COUNT = 2;
+    /** 总页数（1=世界自定义、2=地形偏移与缩放、3=服务端） */
+    private static final int PAGE_COUNT = 3;
 
     private @Nullable Button prevPageButton;
     private @Nullable Button nextPageButton;
@@ -148,6 +148,7 @@ public class WorldMainSettingScreen extends Screen {
         switch (this.currentPage) {
             case 0 -> this.buildPage1Content();
             case 1 -> this.buildPage2Content();
+            case 2 -> this.buildPage3Content();
             default -> {}
         }
     }
@@ -662,6 +663,26 @@ public class WorldMainSettingScreen extends Screen {
 
     // ==================== 分页逻辑 ====================
 
+    // 第 3 页：服务端设置
+    private void buildPage3Content() {
+        this.scrollContent.defaultCellSetting().alignHorizontallyCenter();
+
+        // ========== 第一组：区块生成 ==========
+        this.scrollContent.addChild(this.createSectionHeader(
+                Component.literal("§6§l区块生成")
+        ));
+
+        SwitchGrid.Builder serverBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
+                .withRowSpacing(4)
+                .withInfoUnderneathUnlimited(false);
+        serverBuilder.addSwitch(
+                Component.literal("阻止 游戏在区块生成失败时崩溃"),
+                () -> this.configData.preventGenerationFails,
+                val -> this.configData.preventGenerationFails = val
+        ).withInfo(Component.literal("开启后，如果在生成区块时出现错误，游戏会像区块读取失败那样在右上角显示弹窗并继续运行，而不是直接崩溃"));
+        this.scrollContent.addChild(serverBuilder.build().layout(), s -> s.paddingHorizontal(10));
+    }
+
     private void switchPage(final int delta) {
         int newPage = this.currentPage + delta;
         if (newPage < 0 || newPage >= PAGE_COUNT) {
@@ -692,6 +713,9 @@ public class WorldMainSettingScreen extends Screen {
             if (this.currentPage == 1) {
                 this.titleWidget.setMessage(Component.literal("地形偏移与缩放").withStyle(ChatFormatting.BOLD));
                 this.subtitleWidget.setMessage(Component.literal("§7用于在 32 位整数限制下探索更远的地形"));
+            } else if (this.currentPage == 2) {
+                this.titleWidget.setMessage(Component.literal("服务端").withStyle(ChatFormatting.BOLD));
+                this.subtitleWidget.setMessage(Component.literal("§7控制 Minecraft 服务端线程，得到想要的效果"));
             } else {
                 this.titleWidget.setMessage(this.title.copy().withStyle(ChatFormatting.BOLD));
                 this.subtitleWidget.setMessage(Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"));
@@ -862,6 +886,9 @@ public class WorldMainSettingScreen extends Screen {
 
         public boolean disabledStructureSpawn = false;
         public boolean disabledEntitySpawn = false;
+
+        // 🔧 MCRe（大佬 10-16 派活）：阻止游戏在区块生成失败时崩溃
+        public boolean preventGenerationFails = false;
 
         // 🔧 MCRe：第二页「地形偏移与缩放」——
         // scaler 默认 1（无缩放），offset 默认 0（无偏移）。用 String 存 BigDecimal.toString()，
