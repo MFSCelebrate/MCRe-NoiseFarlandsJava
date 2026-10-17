@@ -180,12 +180,13 @@ public class TeleportCommand {
    private static int realTeleport(final String xs, final String ys, final String zs,
          final CommandSourceStack source) throws CommandSyntaxException {
       java.math.BigDecimal x;
+      java.math.BigDecimal y;
       java.math.BigDecimal z;
-      int y;
+      
       try {
          x = new java.math.BigDecimal(xs);
          z = new java.math.BigDecimal(zs);
-         y = new java.math.BigDecimal(ys).intValueExact();
+         y = new java.math.BigDecimal(ys);
       } catch (ArithmeticException | NumberFormatException e) {
          source.sendFailure(Component.literal("§c坐标解析失败: " + e.getMessage()));
          return 0;
@@ -194,20 +195,22 @@ public class TeleportCommand {
       // ── 判断是否超出 int 窗口（2^31 - 3647 = 2147480000）──
       java.math.BigInteger intLimit = java.math.BigInteger.valueOf(2147483647L - 3647L);
       boolean inWindow = x.toBigInteger().abs().compareTo(intLimit) <= 0
-          && z.toBigInteger().abs().compareTo(intLimit) <= 0;
+          && z.toBigInteger().abs().compareTo(intLimit) <= 0
+          && y.toBigInteger().abs().compareTo(intLimit) <= 0;
 
       if (inWindow) {
          // ── 正常传送（转为 double，与原版 /tp 行为一致）──
          double dx = x.doubleValue();
+         double dy = y.doubleValue();
          double dz = z.doubleValue();
          Entity entity = source.getEntityOrException();
          if (entity instanceof net.minecraft.server.level.ServerPlayer sp) {
-            sp.teleportTo(dx, y, dz);
+            sp.teleportTo(dx, dy, dz);
          } else {
-            entity.absSnapTo(dx, y, dz);
+            entity.absSnapTo(dx, dy, dz);
          }
          source.sendSuccess(() -> Component.literal(
-             "§a已传送到 (" + x.toPlainString() + ", " + y + ", " + z.toPlainString() + ")"), false);
+             "§a已传送到 (" + x.toPlainString() + ", " + y.toPlainString() + ", " + z.toPlainString() + ")"), false);
          return 1;
       }
 
@@ -221,7 +224,7 @@ public class TeleportCommand {
     * 玩家在本地 (0, y, 0) 出生 = 真实坐标 (targetX, y, targetZ)
     */
    private static int triggerWorldRelocation(final CommandSourceStack source,
-         final java.math.BigDecimal x, final java.math.BigDecimal z, final int y) {
+         final java.math.BigDecimal x, final java.math.BigDecimal z, final java.math.BigDecimal y) {
       net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
       net.minecraft.server.MinecraftServer server = source.getServer();
 
@@ -236,7 +239,7 @@ public class TeleportCommand {
       // 2. 更新偏移配置
       config.enabledTerrainOffsets = true;
       config.xWorldOffset = x.toPlainString();
-      config.yWorldOffset = String.valueOf(y);
+      config.yWorldOffset = y.toPlainString();
       config.zWorldOffset = z.toPlainString();
 
       // 3. 保存配置到 farlands_config.json
@@ -267,7 +270,7 @@ public class TeleportCommand {
       // 5. 通知玩家
       source.sendSuccess(() -> Component.literal(
           "§e目标超出 int 窗口，正在重建世界（旧地形将被清除）...\n"
-          + "§7偏移: X=" + x.toPlainString() + "  Z=" + z.toPlainString()), false);
+          + "§7偏移: X=" + x.toPlainString() + "  Y=" + y.toPlainString() + "  Z=" + z.toPlainString()), false);
 
       // 6. 在客户端线程调度：断开（保存）→ 删除旧区块数据 → 重开世界（全新地形）
       mc.execute(() -> {
