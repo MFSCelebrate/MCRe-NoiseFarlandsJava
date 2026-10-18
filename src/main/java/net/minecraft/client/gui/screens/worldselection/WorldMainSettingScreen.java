@@ -29,7 +29,7 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>将 FarLandsTraveler 模组的所有配置项移植到世界创建流程中， 允许玩家在创建世界时直接配置边境之地相关参数。
  *
- * @author MCRe Ultimate Scaler
+ * @author MCRe NoiseFarlandsJava
  * @since 2026-08-04
  */
 @OnlyIn(Dist.CLIENT)

@@ -288,13 +288,16 @@ public final class ImprovedNoise {
 
     // ========== 插值工具 ==========
     private static double lerp(double delta, double start, double end) {
-        if (isProgressiveFarlands()) {
+        if (isProgressiveFarlands() &&! isBedrockMode()) {
             return start;
         }
         if (isBedrockMode()) {
             float fDelta = (float) delta;
             float fStart = (float) start;
             float fEnd = (float) end;
+            if (isProgressiveFarlands() && isBedrockMode()) {
+                return (float) (fStart + (fEnd - fStart);
+            }
             return (float) (fStart + fDelta * (fEnd - fStart));
         }
         return start + delta * (end - start);
