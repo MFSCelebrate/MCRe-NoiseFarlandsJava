@@ -8,14 +8,18 @@ import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 
 public final class ImprovedNoise {
     private static final float SHIFT_UP_EPSILON = 1.0E-7F;
+
     /** 🔧 MCRe 精确路径：原版 {@code 1.0E-7F} 是 float 字面量，取它的精确值参与精确运算。 */
     private static final BigDecimal FLOAT_EPS_1E7 = ExactNoiseMath.ofFloat(1.0E-7F);
+
     private final byte[] p;
     public final double xo;
     public final double yo;
     public final double zo;
+
     /** 🔧 MCRe 精确路径：xo/yo/zo 的精确值缓存（BigDecimal 不可变，惰性初始化并发安全）。 */
     private BigDecimal xoExact;
+
     private BigDecimal yoExact;
     private BigDecimal zoExact;
 
@@ -147,18 +151,18 @@ public final class ImprovedNoise {
     /**
      * 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」——精确版噪声。
      *
-     * <p>与原版 {@link #noise(double, double, double, double, double)} 的唯一区别：
-     * 坐标 {@code x = _x + xo}、晶格定位 {@code floor} 与小数部分 {@code xr = x - xf}
-     * 全部用精确运算，彻底消除「大坐标 → ULP 量化 → 台阶（拉伸）」。
+     * <p>与原版 {@link #noise(double, double, double, double, double)} 的唯一区别： 坐标 {@code x = _x +
+     * xo}、晶格定位 {@code floor} 与小数部分 {@code xr = x - xf} 全部用精确运算，彻底消除「大坐标 → ULP 量化 → 台阶（拉伸）」。
      *
      * <p><b>刻意保留的溢出语义</b>（这些是边境之地的成因，不是 bug）：
+     *
      * <ul>
-     *   <li>{@code xf = (int) Math.floor(x)} 的<b>饱和</b>——坐标超过 ±2^31 后所有采样点
-     *       落到同一晶格角 → 平面边境之地；</li>
-     *   <li>{@code xr = x - xf} 中 {@code xf} 用的是**饱和后**的 int，所以超大坐标下
-     *       {@code xr} 会变成巨大的数（插值权重失真）——与 double 版行为一致；</li>
-     *   <li>{@code Mth.floor(fudgeLimit / yScale + 1.0E-7F)} 的 int 饱和。</li>
+     *   <li>{@code xf = (int) Math.floor(x)} 的<b>饱和</b>——坐标超过 ±2^31 后所有采样点 落到同一晶格角 → 平面边境之地；
+     *   <li>{@code xr = x - xf} 中 {@code xf} 用的是**饱和后**的 int，所以超大坐标下 {@code xr} 会变成巨大的数（插值权重失真）——与
+     *       double 版行为一致；
+     *   <li>{@code Mth.floor(fudgeLimit / yScale + 1.0E-7F)} 的 int 饱和。
      * </ul>
+     *
      * 梯度点积与三线性插值仍用 double（输出值域 [-1,1]，精度绰绰有余），保证性能可控。
      */
     public double noiseExact(
@@ -288,7 +292,7 @@ public final class ImprovedNoise {
 
     // ========== 插值工具 ==========
     private static double lerp(double delta, double start, double end) {
-        if (isProgressiveFarlands() &&! isBedrockMode()) {
+        if (isProgressiveFarlands() && !isBedrockMode()) {
             return start;
         }
         if (isBedrockMode()) {
@@ -296,7 +300,7 @@ public final class ImprovedNoise {
             float fStart = (float) start;
             float fEnd = (float) end;
             if (isProgressiveFarlands() && isBedrockMode()) {
-                return (float) (fStart + (fEnd - fStart);
+                return (float) fStart;
             }
             return (float) (fStart + fDelta * (fEnd - fStart));
         }
@@ -321,7 +325,8 @@ public final class ImprovedNoise {
     private static double lerp3(double delta1, double delta2, double delta3,
             double v000, double v100, double v010, double v110,
             double v001, double v101, double v011, double v111) {
-        // 🔧 MCRe：expandSinglePrecision 开启 = 插值线 double 化（走原版 double lerp，推迟 NaN）；关闭 = 原基岩 float 域 7 次 lerp
+        // 🔧 MCRe：expandSinglePrecision 开启 = 插值线 double 化（走原版 double lerp，推迟 NaN）；关闭 = 原基岩 float 域
+        // 7 次 lerp
         if (isBedrockMode() && !expandSinglePrecision()) {
             float fDelta1 = (float) delta1;
             float fDelta2 = (float) delta2;
@@ -364,7 +369,8 @@ public final class ImprovedNoise {
         double yAlpha = Mth.smoothstep(yrOriginal);
         double zAlpha = Mth.smoothstep(zr);
 
-        // 🔧 MCRe：expandSinglePrecision 开启 = 跳过 11 值 (float) 强转（插值线 double 化，推迟 Inf 炸点）；关闭 = 原基岩 float 化插值
+        // 🔧 MCRe：expandSinglePrecision 开启 = 跳过 11 值 (float) 强转（插值线 double 化，推迟 Inf 炸点）；关闭 = 原基岩
+        // float 化插值
         if (isBedrockMode() && !expandSinglePrecision()) {
             return (float) ImprovedNoise.lerp3(
                             (float) xAlpha, (float) yAlpha, (float) zAlpha,
@@ -506,9 +512,9 @@ public final class ImprovedNoise {
     // ========== Float 版插值辅助（仅 Bedrock 模式使用） ==========
     private static float lerpFloat(float delta, float start, float end) {
         if (isProgressiveFarlands()) {
-            return start;
+            return (float) start;
         }
-        return start + delta * (end - start);
+        return (float) (start + delta * (end - start));
     }
 
     private static float lerp2Float(float delta1, float delta2,
