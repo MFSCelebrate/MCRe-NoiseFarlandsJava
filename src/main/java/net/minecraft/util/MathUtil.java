@@ -19,38 +19,33 @@ public class MathUtil {
     }
 
     /**
-     * 线性插值，保留无穷值。
-     *
-     * <p>与原版 {@link Mth#lerp} 的区别：
-     *
+     * 线性插值，角点保留 Inf，内部不扩散 Inf。
+     * <p>行为：
      * <ul>
-     *   <li>{@code delta == 0}/{@code delta == 1} 直接返回端点，避免 {@code 0 * Inf = NaN}；
-     *   <li>同号 {@code Inf} 两端相等，提前返回，避免 {@code Inf - Inf = NaN}；
-     *   <li>单端 {@code Inf} 时无穷大主导，返回该 {@code Inf}；
-     *   <li>异号 {@code Inf}（数学上无定义）返回 {@code NaN}；
-     *   <li>任一端 {@code NaN} 传播 {@code NaN}。
+     *     <li>{@code delta == 0}：返回 {@code start}（含 {@code ±Inf}）；</li>
+     *     <li>{@code delta == 1}：返回 {@code end}（含 {@code ±Inf}）；</li>
+     *     <li>{@code 0 < delta < 1}：任一端 {@code NaN} → {@code NaN}；</li>
+     *     <li>{@code 0 < delta < 1}：任一端 {@code ±Inf} → {@code NaN}（不扩散）；</li>
+     *     <li>{@code 0 < delta < 1}：有限等值 → 该值；</li>
+     *     <li>{@code 0 < delta < 1}：有限非等值 → 普通线性插值。</li>
      * </ul>
-     *
      * 注意：{@code delta} 假定位于 {@code [0, 1]}；调用方不得传入 {@code NaN}。
      */
     public static double lerp(double delta, double start, double end) {
-        // 等值：同时覆盖普通等值、+Inf 与 +Inf、-Inf 与 -Inf、±0.0
-        if (start == end) return start;
-        // 端点：先于无穷检查，保证 delta=0/1 时按端点取
+        // 端点：优先于一切，保留原始值（含 Inf）
         if (delta == 0.0) return start;
         if (delta == 1.0) return end;
-
-        // NaN 传播（同号 Inf 已被上面的 start == end 拦掉，此处不会误伤）
+    
+        // 内部：NaN 传播
         if (Double.isNaN(start) || Double.isNaN(end)) return Double.NaN;
-
-        // 走到这里，两端若都是 Inf 则必为异号（+Inf 与 -Inf），无定义
-        if (Double.isInfinite(start) && Double.isInfinite(end)) return Double.NaN;
-
-        // 单端 Inf：0 < delta < 1 时无穷大主导
-        if (Double.isInfinite(start)) return start;
-        if (Double.isInfinite(end)) return end;
-
-        // 普通有限值：与原版公式一致
+    
+        // 内部：任一端 Inf → NaN，不让 Inf 扩散到 cell 内
+        if (Double.isInfinite(start) || Double.isInfinite(end)) return Double.NaN;
+    
+        // 内部：有限等值可提前返回（含 ±0.0）
+        if (start == end) return start;
+    
+        // 内部：普通线性插值
         return start + delta * (end - start);
     }
 
