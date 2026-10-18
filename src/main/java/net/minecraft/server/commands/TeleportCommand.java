@@ -194,9 +194,10 @@ public class TeleportCommand {
 
       // ── 判断是否超出 int 窗口（2^31 - 3647 = 2147480000）──
       java.math.BigInteger intLimit = java.math.BigInteger.valueOf(2147483647L - 3647L);
+      java.math.BigInteger intYAxisLimit = java.math.BigInteger.valueOf(512L);
       boolean inWindow = x.toBigInteger().abs().compareTo(intLimit) <= 0
           && z.toBigInteger().abs().compareTo(intLimit) <= 0
-          && y.toBigInteger().abs().compareTo(intLimit) <= 0;
+          && y.toBigInteger().abs().compareTo(intYAxisLimit) <= 0;
 
       if (inWindow) {
          // ── 正常传送（转为 double，与原版 /tp 行为一致）──
