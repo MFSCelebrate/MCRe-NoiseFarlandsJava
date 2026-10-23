@@ -531,6 +531,18 @@ public class LevelRenderer implements AutoCloseable {
     // MCRe：26.3 MultiDrawIndirect 移植——MultiDraw 可用性（Vulkan 支持 drawIndexedIndirect + nonZeroFirstInstance）
     private boolean isChunkRenderingUsesMultiDraw;
 
+    // 🔧 MCRe 2b'（GPU 面板实测：回头看时 CPU Extract/Render 段 3~35ms，主因 = extractSectionDrawGroups 每帧全量重组+海量分配+锁拉锯）：
+    // 快照列表（锁内最小收集）+ 对象池（IndexedDraw/ChunkSectionInfo 每帧几千个实例 → 零分配复用）+ drawGroupCache 复用
+    private final List<SectionRenderDispatcher.RenderSection> snapSections = new ArrayList<>();
+    private final List<SectionRenderDispatcher.RenderSectionBufferSlice> snapSlices = new ArrayList<>();
+    private final List<ChunkSectionLayer> snapLayers = new ArrayList<>();
+    private final List<SectionMesh.SectionDraw> snapDraws = new ArrayList<>();
+    private final Int2ObjectOpenHashMap<LevelRenderer.ChunkDrawGroup> drawGroupCache = new Int2ObjectOpenHashMap<>();
+    private final ArrayList<DynamicUniforms.IndexedDraw> indexedDrawPool = new ArrayList<>();
+    private int indexedDrawPoolCursor;
+    private final ArrayList<DynamicUniforms.ChunkSectionInfo> sectionInfoPool = new ArrayList<>();
+    private int sectionInfoPoolCursor;
+
     /** 🔧 MCRe：MultiDrawIndirect 是否启用（26.4 调试面板 Performance Impactors 用） */
     public boolean multiDrawIndirectEnabled() {
         return this.isChunkRenderingUsesMultiDraw;
@@ -542,82 +554,129 @@ public class LevelRenderer implements AutoCloseable {
         final EnumMap<ChunkSectionLayer, List<LevelRenderer.ChunkDrawGroup>> drawGroups
     ) {
         int largestIndexCount = 0;
-        Int2ObjectOpenHashMap<LevelRenderer.ChunkDrawGroup> drawGroupCache = new Int2ObjectOpenHashMap<>();
+        // 🔧 MCRe 2b'：每帧入口重置池游标 + 组缓存（prepareChunkRenders/Indirect 两路互斥，此处为唯一收口）
+        this.drawGroupCache.clear();
+        this.indexedDrawPoolCursor = 0;
+        this.sectionInfoPoolCursor = 0;
         if (this.sectionRenderDispatcher != null) {
+            // 🔧 MCRe 2b'：锁内只做 O(1) 快照读取（mesh/slice/draw 引用），分组与对象构建全部挪锁外——
+            // 回头看时 mesh 编译线程密集持锁，渲染线程长持锁会形成锁拉锯（实测卡顿主因之一）。
+            // slice 的释放走 stagedAllocations 延迟机制，本帧快照安全。
+            this.snapSections.clear();
+            this.snapSlices.clear();
+            this.snapLayers.clear();
+            this.snapDraws.clear();
             this.sectionRenderDispatcher.lock();
-            long now = Util.getMillis();
-            Vec3 cameraPos = this.levelRenderState.cameraRenderState.pos;
-            long camFloorX = Mth.lfloor(cameraPos.x);
-            long camFloorY = Mth.lfloor(cameraPos.y);
-            long camFloorZ = Mth.lfloor(cameraPos.z);
-
             try {
                 for (SectionRenderDispatcher.RenderSection section : this.visibleSections) {
                     SectionMesh sectionMesh = section.getSectionMesh();
-                    Vec3 renderOffset = section.getRenderOrigin();
-                    int sectionInfoDataIndex = -1;
-
                     for (ChunkSectionLayer layer : ChunkSectionLayer.values()) {
                         SectionMesh.SectionDraw draw = sectionMesh.getSectionDraw(layer);
                         SectionRenderDispatcher.RenderSectionBufferSlice slice = this.sectionRenderDispatcher.getRenderSectionSlice(sectionMesh, layer);
                         if (slice != null && draw != null && (!draw.hasCustomIndexBuffer() || slice.indexBuffer() != null)) {
-                            if (sectionInfoDataIndex == -1) {
-                                sectionInfoDataIndex = sectionInfos.size();
-                                // MCRe：相机相对偏移（far lands 防 int 溢出），shader 里 + CameraOffset 还原
-                                sectionInfos.add(
-                                    new DynamicUniforms.ChunkSectionInfo(
-                                        (int)(renderOffset.x - camFloorX),
-                                        (int)(renderOffset.y - camFloorY),
-                                        (int)(renderOffset.z - camFloorZ),
-                                        section.getVisibility(now)
-                                    )
-                                );
-                            }
-
-                            int combinedHash = 173;
-                            VertexFormat vertexFormat = layer.pipeline().getVertexFormatBinding(0);
-                            GpuBuffer vertexBuffer = slice.vertexBuffer();
-                            combinedHash = 31 * combinedHash + vertexBuffer.hashCode();
-                            int firstIndex = 0;
-                            GpuBuffer indexBuffer;
-                            IndexType indexType;
-                            if (!draw.hasCustomIndexBuffer()) {
-                                if (draw.indexCount() > largestIndexCount) {
-                                    largestIndexCount = draw.indexCount();
-                                }
-
-                                indexBuffer = null;
-                                indexType = null;
-                            } else {
-                                indexBuffer = slice.indexBuffer();
-                                indexType = draw.indexType();
-                                combinedHash = 31 * combinedHash + indexBuffer.hashCode();
-                                combinedHash = 31 * combinedHash + indexType.hashCode();
-                                firstIndex = (int)(slice.indexBufferOffset() / indexType.bytes);
-                            }
-
-                            int baseVertex = (int)(slice.vertexBufferOffset() / vertexFormat.getVertexSize());
-                            LevelRenderer.ChunkDrawGroup drawGroup = drawGroupCache.get(combinedHash);
-                            if (drawGroup == null) {
-                                drawGroup = new LevelRenderer.ChunkDrawGroup(
-                                    vertexBuffer.slice(), indexBuffer != null ? indexBuffer.slice() : null, indexType, new ArrayList<>()
-                                );
-                                drawGroupCache.put(combinedHash, drawGroup);
-                                drawGroups.get(layer).add(drawGroup);
-                            }
-
-                            drawGroup.draws().add(
-                                new DynamicUniforms.IndexedDraw(draw.indexCount(), 1, firstIndex, baseVertex, sectionInfoDataIndex)
-                            );
+                            this.snapSections.add(section);
+                            this.snapSlices.add(slice);
+                            this.snapLayers.add(layer);
+                            this.snapDraws.add(draw);
                         }
                     }
                 }
             } finally {
                 this.sectionRenderDispatcher.unlock();
             }
+
+            // 锁外：分组 + 池化对象构建（零 new，除组级对象）
+            long now = Util.getMillis();
+            Vec3 cameraPos = this.levelRenderState.cameraRenderState.pos;
+            long camFloorX = Mth.lfloor(cameraPos.x);
+            long camFloorY = Mth.lfloor(cameraPos.y);
+            long camFloorZ = Mth.lfloor(cameraPos.z);
+            SectionRenderDispatcher.RenderSection prevSection = null;
+            int sectionInfoDataIndex = -1;
+
+            for (int i = 0; i < this.snapSections.size(); i++) {
+                SectionRenderDispatcher.RenderSection section = this.snapSections.get(i);
+                if (section != prevSection) {
+                    prevSection = section;
+                    Vec3 renderOffset = section.getRenderOrigin();
+                    sectionInfoDataIndex = sectionInfos.size();
+                    sectionInfos.add(
+                        this.nextSectionInfo().set(
+                            (int)(renderOffset.x - camFloorX),
+                            (int)(renderOffset.y - camFloorY),
+                            (int)(renderOffset.z - camFloorZ),
+                            section.getVisibility(now)
+                        )
+                    );
+                }
+
+                SectionMesh.SectionDraw draw = this.snapDraws.get(i);
+                SectionRenderDispatcher.RenderSectionBufferSlice slice = this.snapSlices.get(i);
+                ChunkSectionLayer layer = this.snapLayers.get(i);
+
+                int combinedHash = 173;
+                VertexFormat vertexFormat = layer.pipeline().getVertexFormatBinding(0);
+                GpuBuffer vertexBuffer = slice.vertexBuffer();
+                combinedHash = 31 * combinedHash + vertexBuffer.hashCode();
+                int firstIndex = 0;
+                GpuBuffer indexBuffer;
+                IndexType indexType;
+                if (!draw.hasCustomIndexBuffer()) {
+                    if (draw.indexCount() > largestIndexCount) {
+                        largestIndexCount = draw.indexCount();
+                    }
+
+                    indexBuffer = null;
+                    indexType = null;
+                } else {
+                    indexBuffer = slice.indexBuffer();
+                    indexType = draw.indexType();
+                    combinedHash = 31 * combinedHash + indexBuffer.hashCode();
+                    combinedHash = 31 * combinedHash + indexType.hashCode();
+                    firstIndex = (int)(slice.indexBufferOffset() / indexType.bytes);
+                }
+
+                int baseVertex = (int)(slice.vertexBufferOffset() / vertexFormat.getVertexSize());
+                LevelRenderer.ChunkDrawGroup drawGroup = this.drawGroupCache.get(combinedHash);
+                if (drawGroup == null) {
+                    drawGroup = new LevelRenderer.ChunkDrawGroup(
+                        vertexBuffer.slice(), indexBuffer != null ? indexBuffer.slice() : null, indexType, new ArrayList<>()
+                    );
+                    this.drawGroupCache.put(combinedHash, drawGroup);
+                    drawGroups.get(layer).add(drawGroup);
+                }
+
+                drawGroup.draws().add(
+                    this.nextIndexedDraw().set(draw.indexCount(), 1, firstIndex, baseVertex, sectionInfoDataIndex)
+                );
+            }
         }
 
         return largestIndexCount;
+    }
+
+    /** 🔧 MCRe 2b'：IndexedDraw 对象池（每帧游标复用，跨帧保留容量） */
+    private DynamicUniforms.IndexedDraw nextIndexedDraw() {
+        if (this.indexedDrawPoolCursor < this.indexedDrawPool.size()) {
+            return this.indexedDrawPool.get(this.indexedDrawPoolCursor++);
+        }
+
+        DynamicUniforms.IndexedDraw draw = new DynamicUniforms.IndexedDraw();
+        this.indexedDrawPool.add(draw);
+        this.indexedDrawPoolCursor++;
+        return draw;
+    }
+
+    /** 🔧 MCRe 2b'：ChunkSectionInfo 对象池（同上） */
+    private DynamicUniforms.ChunkSectionInfo nextSectionInfo() {
+        if (this.sectionInfoPoolCursor < this.sectionInfoPool.size()) {
+            return this.sectionInfoPool.get(this.sectionInfoPoolCursor++);
+        }
+
+        DynamicUniforms.ChunkSectionInfo info = new DynamicUniforms.ChunkSectionInfo();
+        this.sectionInfoPool.add(info);
+        this.sectionInfoPoolCursor++;
+        return info;
     }
 
     public ChunkSectionsToRender prepareChunkRenders(final Matrix4fc modelViewMatrix) {

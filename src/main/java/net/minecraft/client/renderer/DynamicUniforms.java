@@ -96,8 +96,43 @@ public class DynamicUniforms implements AutoCloseable {
         return this.chunkSectionCommands.writeDataBatchedMultiple(draws);
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public record ChunkSectionInfo(int x, int y, int z, float visibility) implements DynamicUniformStorage.DynamicUniform, DynamicGpuDataStorage.DynamicGpuData {
+    /**
+     * MCRe 2b'：record → 可变类 + 对象池（extractSectionDrawGroups 每帧几千个实例，回头看时 GC 压力大）。
+     * 保留 record 风格 accessor（indexCount() 等），调用点零改动；池化见 LevelRenderer。
+     */
+    public static final class ChunkSectionInfo implements DynamicUniformStorage.DynamicUniform, DynamicGpuDataStorage.DynamicGpuData {
+        private int x;
+        private int y;
+        private int z;
+        private float visibility;
+
+        public ChunkSectionInfo() {
+        }
+
+        public ChunkSectionInfo set(final int x, final int y, final int z, final float visibility) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.visibility = visibility;
+            return this;
+        }
+
+        public int x() {
+            return this.x;
+        }
+
+        public int y() {
+            return this.y;
+        }
+
+        public int z() {
+            return this.z;
+        }
+
+        public float visibility() {
+            return this.visibility;
+        }
+
         @Override
         public void write(final ByteBuffer buffer) {
             buffer.putInt(this.x).putInt(this.y).putInt(this.z).putFloat(this.visibility);
@@ -113,9 +148,46 @@ public class DynamicUniforms implements AutoCloseable {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public record IndexedDraw(int indexCount, int instanceCount, int firstIndex, int baseVertex, int baseInstance)
-        implements DynamicGpuDataStorage.DynamicGpuData {
+    /** MCRe 2b'：record → 可变类 + 对象池（同 ChunkSectionInfo）。 */
+    public static final class IndexedDraw implements DynamicGpuDataStorage.DynamicGpuData {
+        private int indexCount;
+        private int instanceCount;
+        private int firstIndex;
+        private int baseVertex;
+        private int baseInstance;
+
+        public IndexedDraw() {
+        }
+
+        public IndexedDraw set(final int indexCount, final int instanceCount, final int firstIndex, final int baseVertex, final int baseInstance) {
+            this.indexCount = indexCount;
+            this.instanceCount = instanceCount;
+            this.firstIndex = firstIndex;
+            this.baseVertex = baseVertex;
+            this.baseInstance = baseInstance;
+            return this;
+        }
+
+        public int indexCount() {
+            return this.indexCount;
+        }
+
+        public int instanceCount() {
+            return this.instanceCount;
+        }
+
+        public int firstIndex() {
+            return this.firstIndex;
+        }
+
+        public int baseVertex() {
+            return this.baseVertex;
+        }
+
+        public int baseInstance() {
+            return this.baseInstance;
+        }
+
         @Override
         public void write(final ByteBuffer buffer) {
             buffer.putInt(this.indexCount).putInt(this.instanceCount).putInt(this.firstIndex).putInt(this.baseVertex).putInt(this.baseInstance);
