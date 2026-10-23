@@ -62,6 +62,8 @@ public class VulkanDevice implements GpuDeviceBackend {
     private final VulkanQueue computeQueue;
     private final VulkanQueue transferQueue;
     private final boolean isIntegratedIntelMoltenVK;
+    // 🔧 MCRe：原始 vendorID（0x8086=Intel）——兼容性降级判定用（physicalDevice 构造后 close，需提前存）
+    private final int vendorId;
     private final VulkanCommandEncoder commandEncoder;
     private final CheckpointExtension checkpointExtension;
 
@@ -133,6 +135,8 @@ public class VulkanDevice implements GpuDeviceBackend {
         this.isIntegratedIntelMoltenVK = physicalDevice.vkPhysicalDeviceProperties().deviceType() == 1
             && physicalDevice.vkPhysicalDeviceProperties().vendorID() == 32902
             && physicalDevice.vkPhysicalDeviceDriverProperties().driverID() == 14;
+        // 🔧 MCRe：缓存 vendorId（physicalDevice.close() 前读取）
+        this.vendorId = physicalDevice.vendorId();
         physicalDevice.close();
         this.commandEncoder = new VulkanCommandEncoder(this);
     }
@@ -171,6 +175,11 @@ public class VulkanDevice implements GpuDeviceBackend {
 
     public VulkanQueue transferQueue() {
         return this.transferQueue;
+    }
+
+    /** 🔧 MCRe：原始 vendorID（0x8086=Intel 0x10DE=NVIDIA 0x1002=AMD）——兼容性降级判定用 */
+    public int vendorId() {
+        return this.vendorId;
     }
 
     // ===== 🔧 MCRe（Vulkan 二期）：transfer 队列分离的 sharing mode 决策 =====

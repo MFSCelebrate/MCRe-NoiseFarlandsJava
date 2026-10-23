@@ -135,6 +135,11 @@ public class VulkanPhysicalDevice implements AutoCloseable {
         return this.vkPhysicalDeviceProperties.properties().deviceNameString();
     }
 
+    /** 🔧 MCRe：原始 vendorID（兼容性降级判定用，0x8086=Intel 0x10DE=NVIDIA 0x1002=AMD） */
+    public int vendorId() {
+        return this.vkPhysicalDeviceProperties.properties().vendorID();
+    }
+
     public String vendorName() {
         int vendorId = this.vkPhysicalDeviceProperties.properties().vendorID();
 

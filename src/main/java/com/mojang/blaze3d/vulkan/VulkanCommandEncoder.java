@@ -103,7 +103,10 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         }
 
         // ===== 🔧 MCRe（Vulkan 二期）：transfer 队列分离初始化 =====
-        this.useSeparateTransfer = device.transferQueue() != device.graphicsQueue();
+        // 🔧 MCRe 兼容性降级：Intel ANV 的独立 transfer(DMA) 队列上 buffer→image 跨队列拷贝 + timeline semaphore
+        // 同步存在兼容性问题（实测部分 Intel iGPU：UI 贴图全透明、地形全黑、半透明透明、天空正常=不采样纹理）
+        // → Intel 默认回退合并路径（copy 走 graphics，原版行为）；-Dmcre.vulkan.separateTransfer=true/false 可强制覆盖诊断
+        this.useSeparateTransfer = resolveSeparateTransfer(device);
         long transferSemaphoreHandle = 0L;
         if (this.useSeparateTransfer) {
             try (MemoryStack stack = baseStack.push()) {
@@ -166,6 +169,27 @@ public class VulkanCommandEncoder implements CommandEncoderBackend, Destroyable 
         }
 
         VK12.vkDestroySemaphore(this.device.vkDevice(), this.submitSemaphore, null);
+    }
+
+    /**
+     * 🔧 MCRe：transfer 队列分离启用判定。
+     * <ul>
+     *   <li>transferQueue == graphicsQueue（引用相同）→ 无分离必要；</li>
+     *   <li>Intel（vendorId 0x8086）→ 默认关闭：ANV 独立 DMA 队列的跨队列纹理拷贝同步有兼容性问题；</li>
+     *   <li>系统属性 -Dmcre.vulkan.separateTransfer=true/false 最高优先级（诊断/逐项排除用）。</li>
+     * </ul>
+     */
+    private static boolean resolveSeparateTransfer(final VulkanDevice device) {
+        final String force = System.getProperty("mcre.vulkan.separateTransfer");
+        if (force != null && !force.isEmpty()) {
+            return Boolean.parseBoolean(force);
+        }
+
+        if (device.transferQueue() == device.graphicsQueue()) {
+            return false;
+        }
+
+        return device.vendorId() != 0x8086;
     }
 
     public void queueForDestroy(final Destroyable destroyable) {
