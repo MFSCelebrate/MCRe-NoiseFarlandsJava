@@ -108,32 +108,69 @@ public final class FarLandsBandGenerator {
                         continue;
                     }
 
-                    // 安全网：带内已有非空 section（玩家先放了方块）→ 跳过填充，直接标记，避免覆盖建筑
-                    if (this.hasNonEmptySectionInBand(chunk, bandMin, bandMax)) {
-                        chunk.markBandGenerated(bandMin, bandMax);
+                    // 🔧 MCRe 窗口化审计修复（分层生成 Bug）：原实现的安全网是带级粒度——带内**任一**
+                    // 非空 section（初始生成的地形）就把**整带** markBandGenerated 跳过。
+                    // 飞行跨越窗口边界时带与初始生成区重叠（如带 [13,47] 与初始 [-4,29] 重叠 13..29），
+                    // 重叠段非空 → 整带被标记 → 30..47 永远不生成 → 玩家飞出边界后新层地形缺失；
+                    // 而传送跨多带时带与已生成区不重叠 → 安全网不命中 → 正常生成。完美解释实测。
+                    // 修复：①非空段（初始地形/玩家建筑）单独 per-section 标记（防 fill 覆盖）；
+                    // ②未标记段切成连续子区间，逐区间提交带任务（fill 只填该区间）。
+                    final java.util.List<int[]> pendingRanges = this.computePendingRanges(chunk, bandMin, bandMax);
+                    if (pendingRanges.isEmpty()) {
                         continue;
                     }
 
-                    if (!this.inFlight.add(pos)) {
-                        continue;
-                    }
+                    for (final int[] range : pendingRanges) {
+                        if (budget <= 0) {
+                            break;
+                        }
+                        if (!this.inFlight.add(pos)) {
+                            break;
+                        }
 
-                    budget--;
-                    this.submit(chunk, pos, bandMin, bandMax);
+                        budget--;
+                        this.submit(chunk, pos, range[0], range[1]);
+                    }
                 }
             }
         }
     }
 
-    /** 目标带内是否存在非空 section（已生成/玩家建筑）。 */
-    private boolean hasNonEmptySectionInBand(final LevelChunk chunk, final int bandMin, final int bandMax) {
+    /**
+     * 🔧 MCRe 窗口化审计修复：计算带内未生成段的连续子区间。
+     * <p>已生成的判定 = {@code generatedSectionYs} 标记过，或段非空（初始地形/玩家建筑——安全网，
+     * 单独 per-section 标记防止后续 fill 覆盖）。剩余未标记段切成连续区间，每段区间独立提交。
+     * <p>主线程调用（tick 内），{@code getSectionAt} 不物化、并发集合写安全。
+     */
+    private java.util.List<int[]> computePendingRanges(final LevelChunk chunk, final int bandMin, final int bandMax) {
+        final java.util.List<int[]> ranges = new java.util.ArrayList<>();
+        int start = -1;
         for (int sy = bandMin; sy <= bandMax; sy++) {
-            final LevelChunkSection section = chunk.getSectionAt(sy);
-            if (section != null && !section.hasOnlyAir()) {
-                return true;
+            boolean generated = chunk.isBandGenerated(sy, sy);
+            if (!generated) {
+                // 安全网（per-section）：非空段 = 初始地形/玩家建筑，标记后跳过（fill 不得覆盖）
+                final LevelChunkSection section = chunk.getSectionAt(sy);
+                if (section != null && !section.hasOnlyAir()) {
+                    chunk.markBandGenerated(sy, sy);
+                    generated = true;
+                }
+            }
+
+            if (!generated) {
+                if (start < 0) {
+                    start = sy;
+                }
+            } else if (start >= 0) {
+                ranges.add(new int[] {start, sy - 1});
+                start = -1;
             }
         }
-        return false;
+
+        if (start >= 0) {
+            ranges.add(new int[] {start, bandMax});
+        }
+
+        return ranges;
     }
 
     /** 提交一次异步带任务（fill → surface → carve）。 */
