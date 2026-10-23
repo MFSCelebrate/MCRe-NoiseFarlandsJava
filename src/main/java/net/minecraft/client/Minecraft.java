@@ -234,6 +234,7 @@ import net.minecraft.util.profiling.metrics.profiling.ActiveMetricsRecorder;
 import net.minecraft.util.profiling.metrics.profiling.InactiveMetricsRecorder;
 import net.minecraft.util.profiling.metrics.profiling.MetricsRecorder;
 import net.minecraft.util.profiling.metrics.storage.MetricsPersister;
+import net.minecraft.util.thread.GlobalWorldGenExecutors;
 import net.minecraft.util.thread.ReentrantBlockableEventLoop;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -362,6 +363,11 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
     private volatile boolean running;
     private static int fps;
     private long frameTimeNs;
+    // 🔧 MCRe Vulkan 三期 step2a：渲染线程分段计时（跑图卡顿归因：Game=world tick/pick，Extract=提取，Render=渲染+present）
+    public long frameGameNs;
+    public long frameExtractNs;
+    public long frameRenderNs;
+    private long frameSegmentStartNs;
     private final FramerateLimitTracker framerateLimitTracker;
     public boolean wireframe;
     public boolean smartCull = true;
@@ -1318,6 +1324,8 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
                 }
 
                 renderStartTimer = Util.getNanos();
+                this.frameSegmentStartNs = renderStartTimer;
+                GlobalWorldGenExecutors.beginRenderCritical();
                 this.pauseIfInactive();
                 this.gui.update();
                 if (this.isGameLoadFinished() && advanceGameTime && this.level != null) {
@@ -1327,11 +1335,15 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
                 this.gameRenderer.update(this.deltaTracker);
                 float worldPartialTicks = this.deltaTracker.getGameTimeDeltaPartialTick(false);
                 this.pick(worldPartialTicks);
+                this.frameGameNs = Util.getNanos() - this.frameSegmentStartNs;
+                this.frameSegmentStartNs = Util.getNanos();
                 profiler.popPush("extract");
                 this.gameRenderer.gameRenderState().framerateLimit = this.framerateLimitTracker.getFramerateLimit();
                 this.gameRenderer.extract(this.deltaTracker, advanceGameTime);
             }
 
+            this.frameExtractNs = Util.getNanos() - this.frameSegmentStartNs;
+            this.frameSegmentStartNs = Util.getNanos();
             try (Gizmos.TemporaryCollection ignored = this.levelRenderer.collectPerFrameRenderThreadGizmos()) {
                 profiler.popPush("gpuAsync");
                 RenderSystem.executePendingTasks();
@@ -1350,6 +1362,8 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
             }
 
             this.frameTimeNs = Util.getNanos() - renderStartTimer;
+            this.frameRenderNs = Util.getNanos() - this.frameSegmentStartNs;
+            GlobalWorldGenExecutors.endRenderCritical();
             if (recordGpuUtilization) {
                 this.timerQuery.endProfile();
             }

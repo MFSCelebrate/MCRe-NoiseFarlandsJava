@@ -45,11 +45,28 @@ public class DebugEntryGpuPassTimings implements DebugScreenEntry {
 
         long spanNs = GpuPassProfiler.spanNs();
         long totalNs = GpuPassProfiler.totalNs();
+        long gapNs = Math.max(0L, spanNs - totalNs);
         displayer.addFactToGroup(DebugGroups.GPU_PASS_TIMINGS, "GPU Frame Span", fact ->
             fact.text(Component.literal(formatMs(spanNs)).withColor(timingColor(spanNs)))
         );
         displayer.addFactToGroup(DebugGroups.GPU_PASS_TIMINGS, "Sum of Passes", fact ->
             fact.text(Component.literal(formatMs(totalNs)).withColor(timingColor(totalNs)))
+        );
+        // Pass 间空隙 = GPU 饿等 CPU 提交的时间；Gap 大 → CPU-bound（提交断档），Gap 小 → GPU-bound
+        displayer.addFactToGroup(DebugGroups.GPU_PASS_TIMINGS, "Pass Gap", fact ->
+            fact.text(Component.literal(formatMs(gapNs)).withColor(timingColor(gapNs)))
+        );
+
+        // CPU Timeline 三段（渲染线程）：Game=world tick/pick，Extract=提取，Render=渲染+present
+        // 与 GPU 三行对照：卡顿时看 CPU 哪段吃掉时间（worldgen 抢占 → Game 大；mesh 上传 → Render 大）
+        displayer.addFactToGroup(DebugGroups.GPU_PASS_TIMINGS, "CPU Game", fact ->
+            fact.text(Component.literal(formatMs(minecraft.frameGameNs)).withColor(timingColor(minecraft.frameGameNs)))
+        );
+        displayer.addFactToGroup(DebugGroups.GPU_PASS_TIMINGS, "CPU Extract", fact ->
+            fact.text(Component.literal(formatMs(minecraft.frameExtractNs)).withColor(timingColor(minecraft.frameExtractNs)))
+        );
+        displayer.addFactToGroup(DebugGroups.GPU_PASS_TIMINGS, "CPU Render", fact ->
+            fact.text(Component.literal(formatMs(minecraft.frameRenderNs)).withColor(timingColor(minecraft.frameRenderNs)))
         );
 
         List<GpuPassProfiler.PassTiming> sorted = new ArrayList<>(timings);
