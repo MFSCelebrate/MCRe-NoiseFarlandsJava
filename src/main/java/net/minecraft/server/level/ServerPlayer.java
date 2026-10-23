@@ -651,7 +651,7 @@ public class ServerPlayer extends Player {
 
     /** 🔧 MCRe 窗口化审计修复（Bug4）：服务端窗口体系——玩家 tick 驱动 tracking 范围内 chunk 窗口跟随。 */
     private void updateServerChunkWindows() {
-        final int centerSectionY = this.blockPosition().y() >> 4;
+        final int centerSectionY = (int) (this.blockPosition().getY() >> 4);
         if (centerSectionY == this.lastWindowCenterSectionY) {
             return;
         }
@@ -659,7 +659,7 @@ public class ServerPlayer extends Player {
         this.lastWindowCenterSectionY = centerSectionY;
         final ServerLevel level = this.level();
         this.getChunkTrackingView().forEach(chunkPos -> {
-            final LevelChunk chunk = level.getChunkSource().getChunkNow(chunkPos.x(), chunkPos.z());
+            final LevelChunk chunk = level.getChunkSource().getChunkNow((int) chunkPos.x(), (int) chunkPos.z());
             if (chunk != null) {
                 ((WindowedChunk) chunk).moveWindowTo(centerSectionY);
             }
@@ -667,6 +667,9 @@ public class ServerPlayer extends Player {
     }
 
     public void doTick() {
+        // 🔧 MCRe 窗口化审计修复（Bug4）：服务端窗口体系——服务端玩家 tick 驱动（渲染层绝不参与窗口移动）
+        this.updateServerChunkWindows();
+        try {
             if (!this.isSpectator() || !this.touchingUnloadedChunk()) {
                 super.tick();
                 if (!this.containerMenu.stillValid(this)) {
