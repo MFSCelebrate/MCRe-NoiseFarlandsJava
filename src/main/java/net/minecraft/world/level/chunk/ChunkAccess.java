@@ -48,7 +48,9 @@ import net.minecraft.world.level.levelgen.NoiseChunk;
 import net.minecraft.world.level.levelgen.blending.BlendingData;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.lighting.ChunkSkyLightSources;
+import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.ticks.SavedTick;
 import net.minecraft.world.ticks.TickContainerAccess;
@@ -333,6 +335,47 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
             }
         }
         this.buildWindow(centerSectionY - halfBelow, centerSectionY + halfAbove);
+        // 🔧 MCRe 窗口化审计修复（Bug3，对齐 infs-farlands）：释放并入移动这一步——
+        // 容器恒等于窗口加余量，不再随竖直移动单调增长。服务端自动跳过（内部判客户端 only，
+        // 服务端段释放必须先 per-section 落盘，当前由 SerializableChunkData 全量写盘兜底保数据安全）。
+        this.releaseSectionsOutsideWindow(WindowedChunk.SECTION_RELEASE_MARGIN);
+    }
+
+    /** 🔧 MCRe 窗口化审计修复（Bug3）：释放窗口加 margin 之外的段及其光照层。仅客户端——服务端段释放必须先落盘。 */
+    public void releaseSectionsOutsideWindow(final int margin) {
+        if (!(this instanceof LevelChunk lc)) {
+            return;
+        }
+
+        final Level level = lc.getLevel();
+        if (level == null || !level.isClientSide()) {
+            return;
+        }
+
+        final int min = this.getWindowMinY() - margin;
+        final int max = this.getWindowMaxY() + margin;
+        java.util.List<Integer> stale = null;
+        for (final Integer sy : this.allSections.keySet()) {
+            if (sy < min || sy > max) {
+                if (stale == null) {
+                    stale = new java.util.ArrayList<>();
+                }
+                stale.add(sy);
+            }
+        }
+
+        if (stale == null) {
+            return;
+        }
+
+        final LevelLightEngine lightEngine = level.getLightEngine();
+        for (final int sy : stale) {
+            this.allSections.remove(sy);
+            // 同步清光照层——"只删段不删光照层等于没释放"，光层每段 2048 字节
+            if (lightEngine != null) {
+                lightEngine.clearSectionLightData(SectionPos.of(this.chunkPos, sy));
+            }
+        }
     }
 
     /** 🔧 MCRe：确保 sectionY 在窗口内（窗口外则滑窗） */
@@ -446,7 +489,11 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
         }
 
         for (int y = yStartInclusive; y <= yEndInclusive; y += 16) {
-            if (!this.getSection(this.getSectionIndex(y)).hasOnlyAir()) {
+            // 🔧 MCRe 窗口化审计修复（对齐 infs-farlands）：读路径不物化——缺段即全空气，
+            // 与"建一个空段读出 hasOnlyAir"同值。原实现 getSection 懒物化：刷怪等按整列
+            // 随机取 Y 的调用每次都在窗口外造段 → allSections 无界膨胀。
+            LevelChunkSection s = this.getSectionAt(y >> 4);
+            if (s != null && !s.hasOnlyAir()) {
                 return false;
             }
         }
@@ -554,8 +601,13 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     public void findBlocks(final Predicate<BlockState> predicate, final BiConsumer<BlockPos, BlockState> consumer) {
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
-        for (int sectionY = this.getMinSectionY(); sectionY <= this.getMaxSectionY(); sectionY++) {
-            LevelChunkSection section = this.getSection(this.getSectionIndexFromSectionY(sectionY));
+        // 🔧 MCRe 窗口化审计修复（对齐 infs-farlands）：读路径不物化——遍历 allSections 实际存在的段
+        // （排序保持确定性输出），缺段跳过。原实现按窗口范围 getSection 会把空段物化出来。
+        // 语义不变：仓库里没有的段必然没有方块可匹配。
+        final List<Integer> sectionYs = new java.util.ArrayList<>(this.allSections.keySet());
+        sectionYs.sort(Integer::compareTo);
+        for (final int sectionY : sectionYs) {
+            LevelChunkSection section = this.allSections.get(sectionY);
             if (section.maybeHas(predicate)) {
                 BlockPos origin = SectionPos.of(this.chunkPos, sectionY).origin();
 
@@ -671,18 +723,17 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     @Override
     public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
         try {
-            // 🔧 MCRe P4b+：超高世界 dimensionType.height=2147000000，世界域 getMinY/getHeight 会让
-            // clamp 后的 quartY 仍是世界域值，转 sectionIndex 后远超 sections.length=34 而越界。
-            // 改用窗口化高度域（与 getHeightAccessorForGeneration / NoiseChunk / carve 一致），
-            // quartY 钳制到 [windowMinY, windowMaxY] 范围内，sectionIndex 落在 [0, WINDOW_SECTIONS) 内。
-            // 同时 this.sections[sectionIndex] 改走 this.getSection(sectionIndex) 懒创建（与
-            // LevelChunk.getBlockState/getFluidState 同思路），杜绝任何 sectionIndex 越界。
-            LevelHeightAccessor ha = this.getHeightAccessorForGeneration();
-            int quartMinY = QuartPos.fromBlock(ha.getMinY());
-            int quartMaxY = quartMinY + QuartPos.fromBlock(ha.getHeight()) - 1;
-            int clampedQuartY = Mth.clamp(quartY, quartMinY, quartMaxY);
-            int sectionIndex = this.getSectionIndex(QuartPos.toBlock(clampedQuartY));
-            return this.getSection(sectionIndex).getNoiseBiome(quartX & 3, clampedQuartY & 3, quartZ & 3);
+            // 🔧 MCRe 窗口化审计修复（对齐 infs-farlands）：读路径不物化 + 不钳制。
+            // 原实现把 quartY 钳制到窗口范围再 getSection 懒物化——任意 Y 的群系查询（刷怪/随机刻
+            // 按整列随机取 Y）全部折到窗口边界段：群系分布错乱 + 边界段被写爆 + 无界造段。
+            // 现在直接按原始 quart Y 查 allSections（quartY>>2 = sectionY，段内偏移用未 clamp 的 y&3，
+            // 索引与偏移同源）；缺段返回 defaultBiome——与"建一个空段再读它的群系"逐字等价
+            // （空段的 biome 容器就是 defaultBiome），但不在读路径造段。
+            LevelChunkSection s = this.allSections.get(quartY >> 2);
+            if (s != null) {
+                return s.getNoiseBiome(quartX & 3, quartY & 3, quartZ & 3);
+            }
+            return this.containerFactory.defaultBiome();
         } catch (Throwable t) {
             CrashReport report = CrashReport.forThrowable(t, "Getting biome");
             CrashReportCategory category = report.addCategory("Biome being got");

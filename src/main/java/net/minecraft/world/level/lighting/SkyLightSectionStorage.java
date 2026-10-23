@@ -77,6 +77,13 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
     }
 
     @Override
+    /** 🔧 MCRe（窗口化段释放）：sky 版额外维护 topSections 列顶表（onNodeRemoved） */
+    @Override
+    public void clearSectionData(final SectionPos sectionNode) {
+        super.clearSectionData(sectionNode);
+        this.onNodeRemoved(sectionNode);
+    }
+
     protected void onNodeRemoved(final SectionPos sectionNode) {
         SectionPos zeroNode = SectionPos.of(sectionNode.x(), 0, sectionNode.z());
         int y = sectionNode.y();

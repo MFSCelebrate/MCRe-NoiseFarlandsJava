@@ -212,6 +212,14 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
         }
     }
 
+    /** 🔧 MCRe（窗口化段释放）：从存储双缓冲 + 队列 + 状态表同时移除该段光照数据。客户端窗口移动释放路径用。 */
+    public void clearSectionData(final SectionPos sectionNode) {
+        this.queuedSections.remove(sectionNode);
+        this.updatingSectionData.map.remove(sectionNode);
+        this.visibleSectionData.map.remove(sectionNode);
+        this.sectionStates.remove(sectionNode);
+    }
+
     protected void updateSectionStatus(final SectionPos sectionNode, final boolean sectionEmpty) {
         byte state = this.sectionStates.getOrDefault(sectionNode, (byte)0);
         byte newState = LayerLightSectionStorage.SectionState.hasData(state, !sectionEmpty);

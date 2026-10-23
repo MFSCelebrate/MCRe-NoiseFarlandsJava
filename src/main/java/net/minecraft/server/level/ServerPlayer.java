@@ -174,6 +174,8 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.WindowedChunk;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;
@@ -644,8 +646,27 @@ public class ServerPlayer extends Player {
         }
     }
 
+    /** 🔧 MCRe 窗口化审计修复（Bug4）：上次驱动服务端窗口的玩家 sectionY（变化才触发，防每 tick 遍历） */
+    private int lastWindowCenterSectionY = Integer.MIN_VALUE;
+
+    /** 🔧 MCRe 窗口化审计修复（Bug4）：服务端窗口体系——玩家 tick 驱动 tracking 范围内 chunk 窗口跟随。 */
+    private void updateServerChunkWindows() {
+        final int centerSectionY = this.blockPosition().y() >> 4;
+        if (centerSectionY == this.lastWindowCenterSectionY) {
+            return;
+        }
+
+        this.lastWindowCenterSectionY = centerSectionY;
+        final ServerLevel level = this.level();
+        this.getChunkTrackingView().forEach(chunkPos -> {
+            final LevelChunk chunk = level.getChunkSource().getChunkNow(chunkPos.x(), chunkPos.z());
+            if (chunk != null) {
+                ((WindowedChunk) chunk).moveWindowTo(centerSectionY);
+            }
+        });
+    }
+
     public void doTick() {
-        try {
             if (!this.isSpectator() || !this.touchingUnloadedChunk()) {
                 super.tick();
                 if (!this.containerMenu.stillValid(this)) {

@@ -99,6 +99,16 @@ public class LevelLightEngine implements LightEventListener {
         }
     }
 
+    /** 🔧 MCRe（窗口化段释放）：清除某段的双层光照数据（客户端窗口移动释放路径用，ChunkAccess 跨包调用入口） */
+    public void clearSectionLightData(final SectionPos sectionNode) {
+        if (this.blockEngine != null) {
+            this.blockEngine.storage.clearSectionData(sectionNode);
+        }
+        if (this.skyEngine != null) {
+            this.skyEngine.storage.clearSectionData(sectionNode);
+        }
+    }
+
     public String getDebugData(final LightLayer layer, final SectionPos pos) {
         if (layer == LightLayer.BLOCK) {
             if (this.blockEngine != null) {

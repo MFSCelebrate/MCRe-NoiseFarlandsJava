@@ -20,6 +20,9 @@ public interface WindowedChunk {
     /** 中心上方半径（上界 = center + 16） */
     int WINDOW_HALF_ABOVE = 16;
 
+    /** 🔧 MCRe 窗口化审计修复：段释放余量（窗口 ±4 段内的段保留，防窗口滑动抖动导致段反复重建） */
+    int SECTION_RELEASE_MARGIN = 4;
+
     /** 窗口底部 sectionY */
     int getWindowMinY();
 
