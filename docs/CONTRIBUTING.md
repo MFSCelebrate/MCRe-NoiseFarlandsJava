@@ -85,6 +85,24 @@ cd MCRe-NoiseFarlandsJava
 
 构建完成后，你可以在 `build/lib` 中看到产物。
 
+### 本地启动客户端
+
+在 PC 平台可以参考如下命令：
+
+```sh
+./gradlew runClient
+```
+
+任务会编译并启动改版客户端。默认启用 `--offlineDeveloperMode`，使用 `Developer` 作为本地开发用户名。
+
+常用参数：
+
+```sh
+./gradlew runClient -PclientUsername=MyDeveloper
+./gradlew runClient --args="--width 1280 --height 720 --graphicsBackend OPENGL"
+./gradlew runClient --debug-jvm
+```
+
 ### 测试注意事项
 
 - 该改版不兼容多人联机，但可以进入改版本身就可开启的测试服务器。

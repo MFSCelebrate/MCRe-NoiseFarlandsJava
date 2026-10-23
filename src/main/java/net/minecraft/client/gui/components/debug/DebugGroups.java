@@ -51,6 +51,7 @@ public class DebugGroups {
    public static final DebugGroup TERRAIN_NOISES = DebugGroup.Builder.titled("Terrain Noises").withAccentColor(65535).build();
    // 🔧 MCRe：密度函数监视器组（DebugEntryDensityFunctionsMonitor 条目用）
    public static final DebugGroup DENSITY_FUNCTIONS_MONITOR = DebugGroup.Builder.titled("Density Functions Monitor").withAccentColor(16737280).build();
+   public static final DebugGroup GPU_PASS_TIMINGS = DebugGroup.Builder.titled("GPU Pass Timings").withAccentColor(16744448).build();
 
     // 🔧 MCRe：26.2 旧组名（Identifier）→ 26.4 分组的映射（过渡期兼容用）
     private static final Map<Identifier, DebugGroup> BY_NAME = new HashMap<>();
@@ -76,6 +77,7 @@ public class DebugGroups {
         register("spawn_counts", SPAWN_COUNTS);
         register("terrain_noises", TERRAIN_NOISES);
         register("density_functions_monitor", DENSITY_FUNCTIONS_MONITOR);
+        register("gpu_pass_timings", GPU_PASS_TIMINGS);
         // 26.2 条目分组：biome 在 26.4 并入 Position 面板（Biome: minecraft:plains 显示在 Position 内）
         register("biome", POSITION);
         register("post_effect", MISC);

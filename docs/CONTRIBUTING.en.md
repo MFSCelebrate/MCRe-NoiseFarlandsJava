@@ -85,6 +85,24 @@ cd MCRe-NoiseFarlandsJava
 
 After the build completes, you can find the artifacts in `build/lib`.
 
+### Launching the Client Locally
+
+On the PC platform, you can refer to the following command:
+
+```sh
+./gradlew runClient
+```
+
+The task will compile and launch the modified client. By default, `--offlineDeveloperMode` is enabled, and `Developer` is used as the local development username.
+
+Common arguments:
+
+```sh
+./gradlew runClient -PclientUsername=MyDeveloper
+./gradlew runClient --args="--width 1280 --height 720 --graphicsBackend OPENGL"
+./gradlew runClient --debug-jvm
+```
+
 ### Testing Notes
 
 - This mod is incompatible with multiplayer, but you can join the test server that the mod itself can enable.

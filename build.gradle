@@ -33,6 +33,28 @@ application {
     ]
 }
 
+loom {
+    runs {
+        client {
+            // 项目直接编译游戏源码，入口使用 Main；Loom 仍负责资源下载和开发启动参数。
+            mainClass.set(application.mainClass)
+            displayName.set('MCRe NoiseFarlandsJava Client')
+            runDirectory.set(layout.projectDirectory.dir('run'))
+            programArguments.addAll(
+                '--version', project.minecraft_version,
+                '--accessToken', '0',
+                '--username', providers.gradleProperty('clientUsername').orElse('Developer').get(),
+                '--offlineDeveloperMode'
+            )
+            // 当前原生库从 runtimeClasspath 的 jar 中自行解压，不使用 application 的相对 natives 路径。
+            jvmArguments.addAll(application.applicationDefaultJvmArgs.findAll {
+                !it.startsWith('-Djava.library.path=')
+            })
+            jvmArguments.add('-Xmx4G')
+        }
+    }
+}
+
 repositories {
     mavenCentral()
     maven { url 'https://libraries.minecraft.net/' }

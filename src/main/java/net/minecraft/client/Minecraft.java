@@ -34,6 +34,7 @@ import com.mojang.blaze3d.systems.GpuSurface;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.SurfaceException;
 import com.mojang.blaze3d.systems.TimerQuery;
+import com.mojang.blaze3d.systems.GpuPassProfiler;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vulkan.VulkanBackend;
 import com.mojang.datafixers.DataFixer;
@@ -1303,6 +1304,7 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
                     }
                 }
 
+                GpuPassProfiler.tickAndPublish();
                 profiler.popPush("update");
                 this.deltaTracker.advanceRealTime(Util.getMillis());
                 if (!this.debugEntries.isCurrentlyEnabled(DebugScreenEntries.GPU_UTILIZATION) && !this.metricsRecorder.isRecording()) {

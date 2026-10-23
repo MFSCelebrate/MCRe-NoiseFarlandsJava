@@ -189,6 +189,8 @@ public class CommandEncoder {
             if (this.profiler != null) {
                 this.profiler.pushZone(this, descriptor.label().get());
             }
+            // MCRe: GPU Pass Profiler — pass begin timestamp（Supplier 延迟取值，关闭时零分配）
+            GpuPassProfiler.beginPass(this, descriptor.label());
 
             return new RenderPass(
                 this.backend.createRenderPass(descriptor), this.device, descriptor.colorAttachments, this::submitRenderPass, descriptor.renderArea
@@ -210,6 +212,8 @@ public class CommandEncoder {
         if (this.profiler != null) {
             this.profiler.popZone(this);
         }
+        // MCRe: GPU Pass Profiler — pass end timestamp
+        GpuPassProfiler.endPass(this);
     }
 
     public void clearColorTexture(final GpuTexture colorTexture, final Vector4fc clearColor) {
