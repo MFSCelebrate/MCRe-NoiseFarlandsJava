@@ -46,6 +46,8 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.blending.Blender;
+import net.MinecraftTools.terrain.pipeline.TerrainPipeline;
+import net.MinecraftTools.terrain.pipeline.TerrainPipelineRegistry;
 import net.minecraft.world.level.levelgen.carver.CarvingContext;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -118,6 +120,11 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
     public CompletableFuture<ChunkAccess> createBiomes(
         final RandomState randomState, final Blender blender, final StructureManager structureManager, final ChunkAccess protoChunk
     ) {
+        // 🔧 MCRe 地形管线系统（MinecraftChunkPyramid）：管线分派——自定义管线接管 BIOMES 阶段
+        final TerrainPipeline pipeline = TerrainPipelineRegistry.active();
+        if (pipeline != null) {
+            return pipeline.fillBiomes(this, randomState, blender, structureManager, protoChunk);
+        }
         // 🔧 MCRe（C2ME 并行生成修复）：去掉 supplyAsync(backgroundExecutor)，同步跑 doCreateBiomes
         // 根因：原版异步到 backgroundExecutor，与 fillFromNoise（ForkJoinPool）并发共享同一 NoiseChunk
         // （可变 cell 状态/interpolators/cellCaches/wrapped HashMap 全非线程安全）→ 气候通道值错乱
@@ -317,6 +324,12 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
 
     @Override
     public void buildSurface(final WorldGenRegion region, final StructureManager structureManager, final RandomState randomState, final ChunkAccess protoChunk) {
+        // 🔧 MCRe 地形管线系统：管线分派——自定义管线接管 SURFACE 阶段（takesOverSurface 声明）
+        final TerrainPipeline pipeline = TerrainPipelineRegistry.active();
+        if (pipeline != null && pipeline.takesOverSurface()) {
+            pipeline.buildSurface(this, region, structureManager, randomState, protoChunk);
+            return;
+        }
         if (!SharedConstants.debugVoidTerrain(protoChunk.getPos()) && !SharedConstants.DEBUG_DISABLE_SURFACE) {
             WorldGenerationContext context = new WorldGenerationContext(this, region);
             Set<Holder<Biome>> possibleBiomes = collectPossibleBiomes(region, 1);
@@ -362,6 +375,12 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         final StructureManager structureManager,
         final ChunkAccess chunk
     ) {
+        // 🔧 MCRe 地形管线系统：管线分派——自定义管线接管 CARVERS 阶段（takesOverCarvers 声明）
+        final TerrainPipeline pipeline = TerrainPipelineRegistry.active();
+        if (pipeline != null && pipeline.takesOverCarvers()) {
+            pipeline.applyCarvers(this, region, seed, randomState, biomeManager, structureManager, chunk);
+            return;
+        }
         if (!SharedConstants.DEBUG_DISABLE_CARVERS) {
             BiomeManager correctBiomeManager = biomeManager.withDifferentSource(
                 (quartX, quartY, quartZ) -> this.biomeSource.getNoiseBiome(quartX, quartY, quartZ, randomState.sampler())
@@ -432,6 +451,12 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         final ChunkAccess centerChunk,
         final boolean lockSections
     ) {
+        // 🔧 MCRe 地形管线系统：管线分派——自定义管线接管 NOISE 阶段
+        // （同时覆盖两条调用链：ChunkStatusTasks.generateNoise + FarLandsBandGenerator 分带任务）
+        final TerrainPipeline pipeline = TerrainPipelineRegistry.active();
+        if (pipeline != null) {
+            return pipeline.fillNoise(this, blender, randomState, structureManager, centerChunk);
+        }
         NoiseSettings noiseSettings = this.settings.value().noiseSettings().clampToHeightAccessor(centerChunk.getHeightAccessorForGeneration());
         int minY = noiseSettings.minY();
         int cellYMin = Mth.floorDiv(minY, noiseSettings.getCellHeight());
