@@ -125,6 +125,13 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         if (pipeline != null) {
             return pipeline.fillBiomes(this, randomState, blender, structureManager, protoChunk);
         }
+        return this.createBiomesVanilla(randomState, blender, structureManager, protoChunk);
+    }
+
+    /** 🔧 MCRe 地形管线：原版 BIOMES 路径——管线分派后委托用（勿在分派前直接调，防递归）。 */
+    public CompletableFuture<ChunkAccess> createBiomesVanilla(
+        final RandomState randomState, final Blender blender, final StructureManager structureManager, final ChunkAccess protoChunk
+    ) {
         // 🔧 MCRe（C2ME 并行生成修复）：去掉 supplyAsync(backgroundExecutor)，同步跑 doCreateBiomes
         // 根因：原版异步到 backgroundExecutor，与 fillFromNoise（ForkJoinPool）并发共享同一 NoiseChunk
         // （可变 cell 状态/interpolators/cellCaches/wrapped HashMap 全非线程安全）→ 气候通道值错乱
@@ -457,6 +464,17 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
         if (pipeline != null) {
             return pipeline.fillNoise(this, blender, randomState, structureManager, centerChunk);
         }
+        return this.fillFromNoiseVanilla(blender, randomState, structureManager, centerChunk, lockSections);
+    }
+
+    /** 🔧 MCRe 地形管线：原版 NOISE 填充路径——管线分派后可带自定义 RandomState 直接调用（绕过分派防递归）。 */
+    public CompletableFuture<ChunkAccess> fillFromNoiseVanilla(
+        final Blender blender,
+        final RandomState randomState,
+        final StructureManager structureManager,
+        final ChunkAccess centerChunk,
+        final boolean lockSections
+    ) {
         NoiseSettings noiseSettings = this.settings.value().noiseSettings().clampToHeightAccessor(centerChunk.getHeightAccessorForGeneration());
         int minY = noiseSettings.minY();
         int cellYMin = Mth.floorDiv(minY, noiseSettings.getCellHeight());
@@ -488,6 +506,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
             }
         }, Util.backgroundExecutor().forName("wgen_fill_noise"));
     }
+
 
     private ChunkAccess doFill(
         final Blender blender,

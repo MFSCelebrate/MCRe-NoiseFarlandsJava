@@ -118,6 +118,44 @@ public final class RandomState {
         return this.noiseIntances;
     }
 
+    /** 🔧 MCRe 地形管线：派生一个仅替换 router 的 RandomState（其余状态——噪声实例缓存/随机工厂/sampler 等全部共享）。 */
+    public RandomState withRouter(final NoiseRouter newRouter) {
+        return new RandomState(this.random, this.noises, newRouter, this.sampler, this.surfaceSystem,
+            this.aquiferRandom, this.oreRandom, this.noiseIntances, this.positionalRandoms);
+    }
+
+    private RandomState(
+        final PositionalRandomFactory random,
+        final HolderGetter<NormalNoise.NoiseParameters> noises,
+        final NoiseRouter router,
+        final Climate.Sampler sampler,
+        final SurfaceSystem surfaceSystem,
+        final PositionalRandomFactory aquiferRandom,
+        final PositionalRandomFactory oreRandom,
+        final Map<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseIntances,
+        final Map<Identifier, PositionalRandomFactory> positionalRandoms
+    ) {
+        this.random = random;
+        this.noises = noises;
+        this.router = router;
+        this.sampler = sampler;
+        this.surfaceSystem = surfaceSystem;
+        this.aquiferRandom = aquiferRandom;
+        this.oreRandom = oreRandom;
+        this.noiseIntances = noiseIntances;
+        this.positionalRandoms = positionalRandoms;
+    }
+
+    /** 🔧 MCRe 地形管线 C 批：根随机工厂访问器——PipelineNoiseSource 自建噪声实例（seed 派生同 vanilla 接线）用 */
+    public PositionalRandomFactory noiseRandomFactory() {
+        return this.random;
+    }
+
+    /** 🔧 MCRe 地形管线 C 批：噪声参数 Getter 访问器——PipelineNoiseSource 重建实例需要 NoiseParameters Holder */
+    public HolderGetter<NormalNoise.NoiseParameters> noiseParametersGetter() {
+        return this.noises;
+    }
+
     public PositionalRandomFactory getOrCreateRandomFactory(final Identifier name) {
         return this.positionalRandoms.computeIfAbsent(name, key -> this.random.fromHashOf(name).forkPositional());
     }

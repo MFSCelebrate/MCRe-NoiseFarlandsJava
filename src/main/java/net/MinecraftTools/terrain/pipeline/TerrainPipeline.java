@@ -2,14 +2,16 @@ package net.MinecraftTools.terrain.pipeline;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.server.level.WorldGenRegion;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.levelgen.blending.Blender;
-import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.RandomState;
-import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
+import net.minecraft.world.level.levelgen.blending.Blender;
+import net.MinecraftTools.terrain.pipeline.noise.NoiseSource;
+import net.MinecraftTools.terrain.pipeline.noise.VanillaNoiseSource;
 
 /**
  * 🔧 MCRe 地形管线系统（MinecraftChunkPyramid）——地形管线抽象。
@@ -90,6 +92,11 @@ public interface TerrainPipeline {
     /** 本管线生成的 chunk 是否可安全参与 FarLandsBandGenerator 的带任务（默认 true） */
     default boolean supportsBandGeneration() {
         return true;
+    }
+
+    /** 🔧 MCRe C 批：为本管线创建噪声源（默认原版共享缓存；自定义管线可换 PipelineNoiseSource 自建隔离实例） */
+    default NoiseSource createNoiseSource(final RandomState randomState) {
+        return VanillaNoiseSource.of(randomState);
     }
 
     /** 便于日志/调试 */
