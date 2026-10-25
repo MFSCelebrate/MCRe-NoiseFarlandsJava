@@ -147,8 +147,18 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
     }
 
     private NoiseChunk createNoiseChunk(final ChunkAccess chunk, final StructureManager structureManager, final Blender blender, final RandomState randomState) {
+        // 🔧 MCRe 管线接管修复：NoiseChunk 是 chunk 级缓存（先到先得）——BIOMES 阶段先于 NOISE，
+        // 若不在此收口，BIOMES 会用主线 RandomState 建 NoiseChunk 并缓存，NOISE 阶段的自定义噪声/密度树全部失效
+        RandomState effective = randomState;
+        final TerrainPipeline pipeline = TerrainPipelineRegistry.active();
+        if (pipeline != null) {
+            final RandomState patched = pipeline.patchRandomState(this.settings.value(), randomState);
+            if (patched != null) {
+                effective = patched;
+            }
+        }
         return NoiseChunk.forChunk(
-            chunk, randomState, Beardifier.forStructuresInChunk(structureManager, chunk.getPos()), this.settings.value(), this.globalFluidPicker.get(), blender
+            chunk, effective, Beardifier.forStructuresInChunk(structureManager, chunk.getPos()), this.settings.value(), this.globalFluidPicker.get(), blender
         );
     }
 

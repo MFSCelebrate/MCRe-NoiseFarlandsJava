@@ -64,6 +64,24 @@ public final class MCBedrockGenPipeline implements TerrainPipeline {
         return generator.createBiomesVanilla(randomState, blender, structureManager, chunk);
     }
 
+    /**
+     * 🔧 管线接管修复：全 router 树的 noise 节点绑定本管线副本噪声实例（mcbedrockgen.noise.*，
+     * extends 主线类型进 NoiseHolder）——主线噪声改革后本管线语义不变。
+     * NoiseChunk 缓存收口（createNoiseChunk）与 fillNoise 都走这里，保证同一语义。
+     */
+    @Override
+    public RandomState patchRandomState(final NoiseGeneratorSettings settings, final RandomState vanilla) {
+        final var rootFactory = vanilla.noiseRandomFactory();
+        final var paramsGetter = vanilla.noiseParametersGetter();
+        return RandomState.createWithNoiseFactory(
+            settings,
+            paramsGetter,
+            rootFactory,
+            key -> net.MinecraftTools.terrain.pipeline.mcbedrockgen.noise.NormalNoise.create(
+                rootFactory.fromHashOf(key.identifier()),
+                paramsGetter.getOrThrow(key).value()));
+    }
+
     @Override
     public CompletableFuture<ChunkAccess> fillNoise(
         final NoiseBasedChunkGenerator generator,
@@ -75,12 +93,8 @@ public final class MCBedrockGenPipeline implements TerrainPipeline {
         // 🔧 密度函数树接线（大佬裁定"直接接密度函数主线"）：树用主线（JSON 数据驱动 + NoiseWiringHelper 绑定），
         // **噪声实例换本管线副本**——createWithNoiseFactory 注入噪声工厂，副本 NormalNoise extends 主线（类型兼容进 NoiseHolder），
         // 全 router 的 noise 节点绑定副本实例 → 树跑时全部走副本柏林底层（BedrockMode/exact 等魔改语义随副本）
-        final NoiseGeneratorSettings settings = generator.generatorSettings().value();
-        final var rootFactory = randomState.noiseRandomFactory();
-        final var paramsGetter = randomState.noiseParametersGetter();
-        final RandomState custom = RandomState.createWithNoiseFactory(settings, paramsGetter, rootFactory,
-            key -> net.MinecraftTools.terrain.pipeline.mcbedrockgen.noise.NormalNoise.create(
-                rootFactory.fromHashOf(key.identifier()), paramsGetter.getOrThrow(key).value()));
+        // 统一走 patchRandomState（与 createNoiseChunk 缓存收口同一语义）
+        final RandomState custom = this.patchRandomState(generator.generatorSettings().value(), randomState);
         return generator.fillFromNoiseVanilla(blender, custom, structureManager, chunk, true);
     }
 }

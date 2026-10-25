@@ -52,6 +52,21 @@ public final class MCVanilla263Pipeline implements TerrainPipeline {
         return "MC Vanilla 26.3 密度链";
     }
 
+    /**
+     * 🔧 管线接管修复：26.3 密度树替换 vanilla router 的 finalDensity（其余字段照抄）。
+     * NoiseChunk 缓存收口（createNoiseChunk）与 fillNoise 都走这里。每次调用新建 26.3 系统
+     * （树带状态缓存禁跨 chunk 共享）；enableJagged 强制开；enableSkyGrid 跟随 WMS forceSkyGrid。
+     */
+    @Override
+    public RandomState patchRandomState(final NoiseGeneratorSettings settings, final RandomState vanilla) {
+        final var cfg = net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        final Vanilla263NoiseSystem system = new Vanilla263NoiseSystem(
+            0L, true, false, true, cfg != null && cfg.forceSkyGrid);
+        final NoiseRouter customRouter = system.createRouterWithNoiseFactory(
+            vanilla.router(), vanilla.noiseRandomFactory());
+        return vanilla.withRouter(customRouter);
+    }
+
     @Override
     public CompletableFuture<ChunkAccess> fillBiomes(
         final NoiseBasedChunkGenerator generator,
@@ -72,19 +87,8 @@ public final class MCVanilla263Pipeline implements TerrainPipeline {
         final StructureManager structureManager,
         final ChunkAccess chunk
     ) {
-        // 🔧 每次调用新建 26.3 系统（树带状态缓存，禁止跨 chunk 共享——infs 注释同款纪律）
-        // 参数（大佬 10-24 裁定）：enableJagged 强制始终开启；enableSkyGrid 跟随
-        // WorldMainSettingScreen 的 forceSkyGrid 开关；enableFarlands 恒 true / topFade 恒 false（infs 同款默认）
-        final var cfg = net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        final Vanilla263NoiseSystem system = new Vanilla263NoiseSystem(
-            /* seed：噪声随机源改由 randomState 根工厂提供（overworld=XOROSHIRO，见类注释），seed 参数无实际作用 */
-            0L, /* enableFarlands */ true, /* topFadeEnabled */ false,
-            /* enableJagged */ true, /* enableSkyGrid */ cfg != null && cfg.forceSkyGrid);
-        // 用 randomState 的根工厂作为 26.3 树的 noises 随机源（与"同 seed 的 26.3 原版"同源同流）
-        final NoiseRouter customRouter = system.createRouterWithNoiseFactory(randomState.router(), randomState.noiseRandomFactory());
-        final RandomState customRandomState = randomState.withRouter(customRouter);
-
-        // 走原版 NOISE 填充路径（带自定义 RandomState——NoiseChunk/插值/aquifer/heightmap 全套 26.2 基建照跑）
+        final RandomState customRandomState = this.patchRandomState(generator.generatorSettings().value(), randomState);
+        // 走原版 NOISE 填充路径（带管线 RandomState——NoiseChunk/插值/aquifer/heightmap 全套 26.2 基建照跑）
         return generator.fillFromNoiseVanilla(blender, customRandomState, structureManager, chunk, true);
     }
 }

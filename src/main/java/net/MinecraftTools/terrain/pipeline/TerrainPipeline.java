@@ -9,6 +9,7 @@ import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
+import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.blending.Blender;
 import net.MinecraftTools.terrain.pipeline.noise.NoiseSource;
 import net.MinecraftTools.terrain.pipeline.noise.VanillaNoiseSource;
@@ -92,6 +93,17 @@ public interface TerrainPipeline {
     /** 本管线生成的 chunk 是否可安全参与 FarLandsBandGenerator 的带任务（默认 true） */
     default boolean supportsBandGeneration() {
         return true;
+    }
+
+    /**
+     * 🔧 MCRe 管线接管修复：把 vanilla RandomState 变换成管线语义的 RandomState（噪声实例=副本/
+     * 密度树=自定义）。null = 不变换。收口点在 {@code NoiseBasedChunkGenerator.createNoiseChunk}——
+     * 否则 BIOMES 阶段（先于 NOISE）会用主线 RandomState 先建 NoiseChunk 缓存，NOISE 阶段拿到缓存
+     * 导致自定义噪声/密度函数全部失效。
+     */
+    @Nullable
+    default RandomState patchRandomState(final NoiseGeneratorSettings settings, final RandomState vanilla) {
+        return null;
     }
 
     /** 🔧 MCRe C 批：为本管线创建噪声源（默认原版共享缓存；自定义管线可换 PipelineNoiseSource 自建隔离实例） */
