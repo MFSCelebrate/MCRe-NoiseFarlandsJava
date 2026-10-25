@@ -101,9 +101,8 @@ public interface TerrainPipeline {
      * 否则 BIOMES 阶段（先于 NOISE）会用主线 RandomState 先建 NoiseChunk 缓存，NOISE 阶段拿到缓存
      * 导致自定义噪声/密度函数全部失效。
      */
-    @Nullable
     default RandomState patchRandomState(final NoiseGeneratorSettings settings, final RandomState vanilla) {
-        return null;
+        return null; // 不变换 = 原版语义
     }
 
     /** 🔧 MCRe C 批：为本管线创建噪声源（默认原版共享缓存；自定义管线可换 PipelineNoiseSource 自建隔离实例） */
