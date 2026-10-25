@@ -39,6 +39,8 @@ jfr-report-*.json
 hs_err_*.log
 replay_*.log
 replay_*.json
+compile_errors.log
+compile_errors.txt
 crash-reports/
 dump/
 

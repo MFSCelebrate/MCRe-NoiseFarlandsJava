@@ -230,6 +230,16 @@ public final class ImprovedNoise {
                 hash & 15], (float) x, (float) y, (float) z);
     }
 
+    /** 🔧 MCRe 副本：float 语义 gradDot——照主线 double 版实现（SimplexNoise.dot 本就 float 强转），基岩 float 分支用 */
+    private static float gradDotFloat(final int hash, final float x, final float y, final float z) {
+        return (float) SimplexNoise.dot(SimplexNoise.GRADIENT[hash & 15], x, y, z);
+    }
+
+    /** 🔧 MCRe 副本：float 语义 smoothstep——公式同主线 Mth.smoothstep（x³(x(6x-15)+10)），float 域运算（基岩 float 模拟） */
+    private static float smoothstepFloat(final float x) {
+        return x * x * x * (x * (x * 6.0F - 15.0F) + 10.0F);
+    }
+
     private int p(final int x) {
         return this.p[x & 0xFF] & 0xFF;
     }
@@ -283,18 +293,18 @@ public final class ImprovedNoise {
         int xy10 = this.p(x1 + y);
         int xy11 = this.p(x1 + y + 1);
 
-        float d000 = gradDot(this.p(xy00 + z), (float) xr, (float) yr, (float) zr);
-        float d100 = gradDot(this.p(xy10 + z), (float) xr - 1.0F, (float) yr, (float) zr);
-        float d010 = gradDot(this.p(xy01 + z), (float) xr, (float) yr - 1.0F, (float) zr);
-        float d110 = gradDot(this.p(xy11 + z), (float) xr - 1.0F, (float) yr - 1.0F, (float) zr);
-        float d001 = gradDot(this.p(xy00 + z + 1), (float) xr, (float) yr, (float) zr - 1.0F);
-        float d101 = gradDot(this.p(xy10 + z + 1), (float) xr - 1.0F, (float) yr, (float) zr - 1.0F);
-        float d011 = gradDot(this.p(xy01 + z + 1), (float) xr, (float) yr - 1.0F, (float) zr - 1.0F);
-        float d111 = gradDot(this.p(xy11 + z + 1), (float) xr - 1.0F, (float) yr - 1.0F, (float) zr - 1.0F);
+        float d000 = gradDotFloat(this.p(xy00 + z), (float) xr, (float) yr, (float) zr);
+        float d100 = gradDotFloat(this.p(xy10 + z), (float) xr - 1.0F, (float) yr, (float) zr);
+        float d010 = gradDotFloat(this.p(xy01 + z), (float) xr, (float) yr - 1.0F, (float) zr);
+        float d110 = gradDotFloat(this.p(xy11 + z), (float) xr - 1.0F, (float) yr - 1.0F, (float) zr);
+        float d001 = gradDotFloat(this.p(xy00 + z + 1), (float) xr, (float) yr, (float) zr - 1.0F);
+        float d101 = gradDotFloat(this.p(xy10 + z + 1), (float) xr - 1.0F, (float) yr, (float) zr - 1.0F);
+        float d011 = gradDotFloat(this.p(xy01 + z + 1), (float) xr, (float) yr - 1.0F, (float) zr - 1.0F);
+        float d111 = gradDotFloat(this.p(xy11 + z + 1), (float) xr - 1.0F, (float) yr - 1.0F, (float) zr - 1.0F);
 
-        float xAlpha = Mth.smoothstep(xr);
-        float yAlpha = Mth.smoothstep(yrOriginal);
-        float zAlpha = Mth.smoothstep(zr);
+        float xAlpha = smoothstepFloat((float) xr);
+        float yAlpha = smoothstepFloat((float) yrOriginal);
+        float zAlpha = smoothstepFloat((float) zr);
 
         return (float) ImprovedNoise.lerp3(
                         (float) xAlpha, (float) yAlpha, (float) zAlpha,
