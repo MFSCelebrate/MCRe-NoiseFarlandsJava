@@ -37,7 +37,7 @@ public final class MCBedrockGenPipeline implements TerrainPipeline {
 
     @Override
     public String id() {
-        return "mcbedrockgen";
+        return "Bedrock-Edition";
     }
 
     @Override

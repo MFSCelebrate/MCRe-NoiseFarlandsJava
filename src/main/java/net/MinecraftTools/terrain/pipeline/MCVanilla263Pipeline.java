@@ -45,7 +45,7 @@ public final class MCVanilla263Pipeline implements TerrainPipeline {
 
     @Override
     public String id() {
-        return "mcvanilla263";
+        return "Java-26.3+";
     }
 
     @Override

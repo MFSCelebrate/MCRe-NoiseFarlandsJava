@@ -19,7 +19,7 @@ import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 public final class TerrainPipelineRegistry {
 
     /** 原版管线保留 ID（active() 对它返回 null） */
-    public static final String VANILLA_ID = "vanilla";
+    public static final String VANILLA_ID = "Java-1.18.2+";
 
     private static final Map<String, TerrainPipeline> PIPELINES = new ConcurrentHashMap<>();
 
@@ -42,7 +42,7 @@ public final class TerrainPipelineRegistry {
     @Nullable
     public static TerrainPipeline active() {
         final WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        final String id = config == null ? null : config.terrainPipeline;
+        final String id = config == null ? null : config.farlandsStyle;
         if (id == null || id.isEmpty() || VANILLA_ID.equals(id)) {
             return null;
         }

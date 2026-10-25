@@ -66,7 +66,6 @@ public class WorldMainSettingScreen extends Screen {
     private @Nullable EditBox replaceUndergroundLavaBlockInput;
 
     // 🔧 MCRe 地形管线系统（MinecraftChunkPyramid）：管线选择按钮 + 联动禁用的边境之地两按钮
-    private CycleButton<String> terrainPipelineButton;
     private CycleButton<String> precisionModeButton;
     private CycleButton<String> farlandsStyleButton;
 
@@ -282,27 +281,6 @@ public class WorldMainSettingScreen extends Screen {
                 Component.literal("§b§l边境之地位置与样式")
         ));
 
-        // 🔧 MCRe 地形管线系统（MinecraftChunkPyramid）：管线选择按钮（与边境之地样式/位置同款 CycleButton），
-        // 放在样式组之前——管线是更高层概念；非 vanilla 管线时下方两按钮禁用
-        this.terrainPipelineButton = CycleButton.builder(
-                mode -> switch (mode) {
-                    case "mcvanilla263" -> Component.literal("MC Vanilla 26.3 密度链");
-                    case "mcbedrockgen" -> Component.literal("MC Bedrock Gen（改版柏林底层）");
-                    default -> Component.literal("Vanilla 原版");
-                },
-                this.configData.terrainPipeline
-        )
-                .withInfo(Component.literal("§e地形管线切换（MinecraftChunkPyramid）\n§fVanilla 原版: 原版地形管线（柏林噪声家族 + 数据包）\nMC Vanilla 26.3 密度链: 26.3 语义密度树（代码组装，绕过数据包）\nMC Bedrock Gen: 改版柏林噪声底层专属管线（噪声底层改革前的独立副本）\n\n§c非 Vanilla 管线将禁用边境之地位置/样式（其语义与自定义管线无关）"))
-                .withValues("vanilla", "mcvanilla263", "mcbedrockgen")
-                .create(0, 0, CONTENT_WIDTH - 20, 20,
-                        Component.literal("MinecraftChunkPyramid"),
-                        (button, val) -> {
-                            this.configData.terrainPipeline = val;
-                            this.updatePipelineDependentButtons();
-                        }
-                );
-        this.scrollContent.addChild(this.terrainPipelineButton, s -> s.paddingHorizontal(2));
-
         this.precisionModeButton = CycleButton.builder(
                 mode -> switch (mode) {
                     case "32bit" -> Component.literal("Beta");
@@ -326,14 +304,15 @@ public class WorldMainSettingScreen extends Screen {
 
         this.farlandsStyleButton = CycleButton.builder(
                 mode -> switch (mode) {
-                    case "Java-1.18.2+" -> Component.literal("Java Edition 1.18.2+");
+                    case "Java-1.18.2+" -> Component.literal("Java Edition 1.18.2~26.2");
+                    case "Java-26.3+" -> Component.literal("Java Edition 26.3+");
                     case "Bedrock-Edition" -> Component.literal("Bedrock Edition 1.17.20+");
                     default -> Component.literal(mode);
                 },
                 this.configData.farlandsStyle
         )
                 .withInfo(Component.literal("§e控制边境之地的样式\n§fJava 1.18.2+: 类似高原地形，从溢出开始形成巨大高墙\nBedrock Edition: 模拟基岩版1.17.20之后的边境之地"))
-                .withValues("Java-1.18.2+", "Bedrock-Edition")
+                .withValues("Java-1.18.2+", "Java-26.3+", "Bedrock-Edition")
                 .create(0, 0, CONTENT_WIDTH - 20, 20,
                         Component.literal("边境之地样式"),
                         (button, val) -> this.configData.farlandsStyle = val
@@ -814,19 +793,6 @@ public class WorldMainSettingScreen extends Screen {
         return widget;
     }
 
-    // ==================== 回调 ====================
-    /** 🔧 MCRe 地形管线系统：非 vanilla 管线时禁用边境之地位置/样式按钮（大佬裁定：语义与自定义管线无关） */
-    private void updatePipelineDependentButtons() {
-        final boolean vanilla = this.configData.terrainPipeline == null
-            || "vanilla".equals(this.configData.terrainPipeline);
-        if (this.precisionModeButton != null) {
-            this.precisionModeButton.active = vanilla;
-        }
-        if (this.farlandsStyleButton != null) {
-            this.farlandsStyleButton.active = vanilla;
-        }
-    }
-
     private void onDone() {
         FarLandsConfigData cfg = this.configData;
         FarLandsConfigData.activeConfig = cfg;
@@ -896,13 +862,6 @@ public class WorldMainSettingScreen extends Screen {
 
         public String precisionMode = "32bit";
         public String farlandsStyle = "Java-1.18.2+";
-        // 🔧 MCRe 地形管线系统（MinecraftChunkPyramid）：地形管线选择——"vanilla"=原版管线，
-        // 其他值为 TerrainPipelineRegistry 注册的自定义管线（如 "test"=超平坦测试）。
-        // 非 vanilla 管线时边境之地位置/样式按钮禁用（自定义管线语义与边境之地无关）。
-        public String terrainPipeline = "vanilla";
-        // 🔧 MCRe：扩展基岩版边境之地单精度范围（大佬 10-05 派活）——BedrockMode 插值链三条产生线 double 化，
-        // 推迟边缘之地的生成（NaN 炸点 1e30 → 1e39 wrap 溢出），wrap 的 float 折叠保留（基岩模拟效果不变）
-        public boolean expandBedrockSinglePrecision = false;
 
         public boolean fixEndRings = false;
         public boolean fixFloatOverFlowCrash = true;
