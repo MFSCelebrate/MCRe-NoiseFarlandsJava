@@ -79,7 +79,8 @@ public final class MCBedrockGenPipeline implements TerrainPipeline {
             rootFactory,
             key -> net.MinecraftTools.terrain.pipeline.mcbedrockgen.noise.NormalNoise.create(
                 rootFactory.fromHashOf(key.identifier()),
-                paramsGetter.getOrThrow(key).value()));
+                paramsGetter.getOrThrow(key).value()),
+            random -> net.MinecraftTools.terrain.pipeline.mcbedrockgen.noise.BlendedNoise.create(random));
     }
 
     @Override

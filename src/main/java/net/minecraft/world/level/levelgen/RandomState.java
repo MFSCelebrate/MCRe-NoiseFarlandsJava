@@ -27,13 +27,15 @@ public final class RandomState {
     // 🔧 MCRe 地形管线：噪声实例工厂（@Nullable）——mcbedrockgen 管线注入副本噪声用；null = 原版 Noises.instantiate
     // 🔧 MCRe 地形管线：非 null 时 getOrCreateNoise 走此工厂（MCBedrockGen 副本噪声注入点）
     private final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory;
+    // 🔧 MCRe 地形管线 C 批：BlendedNoise 工厂（@Nullable）——old_blended_noise 节点的副本注入点
+    private final java.util.function.Function<RandomSource, BlendedNoise> blendedNoiseFactory;
 
     public static RandomState create(final HolderGetter.Provider holders, final ResourceKey<NoiseGeneratorSettings> noiseSettings, final long seed) {
         return create(holders.lookupOrThrow(Registries.NOISE_SETTINGS).getOrThrow(noiseSettings).value(), holders.lookupOrThrow(Registries.NOISE), seed);
     }
 
     public static RandomState create(final NoiseGeneratorSettings settings, final HolderGetter<NormalNoise.NoiseParameters> noises, final long seed) {
-        return new RandomState(settings, noises, seed, settings.getRandomSource().newInstance(seed).forkPositional(), null);
+        return new RandomState(settings, noises, seed, settings.getRandomSource().newInstance(seed).forkPositional(), null, null);
     }
 
     /** 🔧 MCRe 地形管线：噪声工厂注入变体——rootFactory 用调用方 RandomState 的根工厂（同源），噪声实例由 noiseFactory 提供（副本噪声）。 */
@@ -41,9 +43,10 @@ public final class RandomState {
         final NoiseGeneratorSettings settings,
         final HolderGetter<NormalNoise.NoiseParameters> noises,
         final PositionalRandomFactory rootFactory,
-        final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory
+        final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory,
+        final java.util.function.Function<RandomSource, BlendedNoise> blendedNoiseFactory
     ) {
-        return new RandomState(settings, noises, 0L, rootFactory, noiseFactory);
+        return new RandomState(settings, noises, 0L, rootFactory, noiseFactory, blendedNoiseFactory);
     }
 
     private RandomState(
@@ -51,9 +54,11 @@ public final class RandomState {
         final HolderGetter<NormalNoise.NoiseParameters> noises,
         final long seed,
         final PositionalRandomFactory rootFactory,
-        final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory
+        final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory,
+        final java.util.function.Function<RandomSource, BlendedNoise> blendedNoiseFactory
     ) {
         this.noiseFactory = noiseFactory;
+        this.blendedNoiseFactory = blendedNoiseFactory;
         this.random = rootFactory;
         this.noises = noises;
         this.aquiferRandom = this.random.fromHashOf(Identifier.withDefaultNamespace("aquifer")).forkPositional();
@@ -90,7 +95,10 @@ public final class RandomState {
                     RandomSource terrainRandom = useLegacyInit
                         ? this.newLegacyInstance(0L)
                         : RandomState.this.random.fromHashOf(Identifier.withDefaultNamespace("terrain"));
-                    return noise.withNewRandom(terrainRandom);
+                    // 🔧 MCRe 管线 C 批：blendedNoiseFactory 非 null 时用副本 BlendedNoise（旧_blended_noise 节点接管）
+                    return RandomState.this.blendedNoiseFactory != null
+                        ? RandomState.this.blendedNoiseFactory.apply(terrainRandom)
+                        : noise.withNewRandom(terrainRandom);
                 } else {
                     return function instanceof DensityFunctions.EndIslandDensityFunction ? new DensityFunctions.EndIslandDensityFunction(seed) : function;
                 }
@@ -98,6 +106,13 @@ public final class RandomState {
 
             @Override
             public DensityFunction apply(final DensityFunction function) {
+                // 🔧 MCRe 管线接管修复（仅 factory≠null 的管线路径，原版路径零变化）：
+                // final_density 主链的 reference（sloped_cheese/caves 系，HolderHolder）mapAll 不递归——
+                // 里面的 noise 节点从未被 visitNoise 绑定，求值时走 NoiseChunk.wrapNew 的 registry 实例（主线噪声）。
+                // 管线路径展开递归：内部 noise 节点走 visitNoise → noiseFactory → 副本实例
+                if (RandomState.this.noiseFactory != null && function instanceof DensityFunctions.HolderHolder holder) {
+                    return this.wrapped.computeIfAbsent(function, f -> holder.function().value().mapAll(this));
+                }
                 return this.wrapped.computeIfAbsent(function, this::wrapNew);
             }
         }
@@ -144,7 +159,7 @@ public final class RandomState {
     /** 🔧 MCRe 地形管线：派生一个仅替换 router 的 RandomState（其余状态——噪声实例缓存/随机工厂/sampler 等全部共享）。 */
     public RandomState withRouter(final NoiseRouter newRouter) {
         return new RandomState(this.random, this.noises, newRouter, this.sampler, this.surfaceSystem,
-            this.aquiferRandom, this.oreRandom, this.noiseIntances, this.positionalRandoms, this.noiseFactory);
+            this.aquiferRandom, this.oreRandom, this.noiseIntances, this.positionalRandoms, this.noiseFactory, this.blendedNoiseFactory);
     }
 
     private RandomState(
@@ -157,7 +172,8 @@ public final class RandomState {
         final PositionalRandomFactory oreRandom,
         final Map<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseIntances,
         final Map<Identifier, PositionalRandomFactory> positionalRandoms,
-        final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory
+        final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory,
+        final java.util.function.Function<RandomSource, BlendedNoise> blendedNoiseFactory
     ) {
         this.random = random;
         this.noises = noises;
@@ -169,6 +185,7 @@ public final class RandomState {
         this.noiseIntances = noiseIntances;
         this.positionalRandoms = positionalRandoms;
         this.noiseFactory = noiseFactory;
+        this.blendedNoiseFactory = blendedNoiseFactory;
     }
 
     /** 🔧 MCRe 地形管线 C 批：根随机工厂访问器——PipelineNoiseSource 自建噪声实例（seed 派生同 vanilla 接线）用 */

@@ -33,25 +33,26 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
     );
     public static final KeyDispatchDataCodec<
             BlendedNoise> CODEC = KeyDispatchDataCodec.of(DATA_CODEC);
-    private final PerlinNoise minLimitNoise;
-    private final PerlinNoise maxLimitNoise;
-    private final PerlinNoise mainNoise;
-    private final double xzMultiplier;
-    private final double yMultiplier;
-    private final double xzFactor;
-    private final double yFactor;
-    private final double smearScaleMultiplier;
-    private final double maxValue;
-    private final double xzScale;
-    private final double yScale;
+    // 🔧 MCRe 地形管线：字段去 final + protected 空构造——mcbedrockgen 副本 extends 本类（类型兼容进 JSON 树）
+    protected PerlinNoise minLimitNoise;
+    protected PerlinNoise maxLimitNoise;
+    protected PerlinNoise mainNoise;
+    protected double xzMultiplier;
+    protected double yMultiplier;
+    protected double xzFactor;
+    protected double yFactor;
+    protected double smearScaleMultiplier;
+    protected double maxValue;
+    protected double xzScale;
+    protected double yScale;
 
     // ──────── 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」：精确常量缓存 ────────
     // 在构造器里一次性初始化（区块生成是多线程的，惰性初始化有可见性风险）。
-    private final BigDecimal xzMultiplierExact;
-    private final BigDecimal yMultiplierExact;
-    private final BigDecimal xzFactorExact;
-    private final BigDecimal yFactorExact;
-    private final BigDecimal smearScaleMultiplierExact;
+    protected BigDecimal xzMultiplierExact;
+    protected BigDecimal yMultiplierExact;
+    protected BigDecimal xzFactorExact;
+    protected BigDecimal yFactorExact;
+    protected BigDecimal smearScaleMultiplierExact;
     private static final BigDecimal HALF_BD = BigDecimal.valueOf(0.5);
 
     private static boolean is1_18Exp4Mode() {
@@ -64,6 +65,10 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         for (int i = 0; i < 7; i++) amplitudes.set(i, 1.0);
         for (int i = 7; i < 16; i++) amplitudes.set(i, 0.0);
         return new PerlinNoise(random, Pair.of(-15, amplitudes), true);
+    }
+
+    /** 🔧 MCRe 地形管线：副本子类用（字段由子类遮蔽初始化） */
+    protected BlendedNoise() {
     }
 
     public static BlendedNoise createUnseeded(

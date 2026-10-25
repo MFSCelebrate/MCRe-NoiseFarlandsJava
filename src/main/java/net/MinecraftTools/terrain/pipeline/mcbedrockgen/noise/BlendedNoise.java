@@ -27,7 +27,7 @@ import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import net.minecraft.core.Direction;
 
-public class BlendedNoise implements DensityFunction.SimpleFunction {
+public class BlendedNoise extends net.minecraft.world.level.levelgen.synth.BlendedNoise implements DensityFunction.SimpleFunction {
     private static final Codec<
             Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     private static final MapCodec<BlendedNoise> DATA_CODEC = RecordCodecBuilder.mapCodec(
@@ -75,6 +75,11 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         return new PerlinNoise(random, Pair.of(-15, amplitudes), true);
     }
 
+    /** 🔧 MCRe 副本：供 RandomState.wrapNew 分派（blendedNoiseFactory）——overworld 标准参数 + 副本 PerlinNoise */
+    public static BlendedNoise create(final RandomSource terrainRandom) {
+        return new BlendedNoise(terrainRandom, 0.25, 0.125, 80.0, 160.0, 8.0);
+    }
+
     public static BlendedNoise createUnseeded(
             final double xzScale, final double yScale, final double xzFactor, final double yFactor, final double smearScaleMultiplier) {
         return new BlendedNoise(new XoroshiroRandomSource(0L), xzScale, yScale, xzFactor, yFactor, smearScaleMultiplier);
@@ -89,6 +94,7 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
             final double xzFactor,
             final double yFactor,
             final double smearScaleMultiplier) {
+        super(); // 🔧 MCRe：主线 protected 空构造（字段由本副本类遮蔽初始化）
         this.minLimitNoise = minLimitNoise;
         this.maxLimitNoise = maxLimitNoise;
         this.mainNoise = mainNoise;
