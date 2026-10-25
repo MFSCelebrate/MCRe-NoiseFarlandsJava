@@ -311,7 +311,7 @@ public class WorldMainSettingScreen extends Screen {
                 },
                 this.configData.farlandsStyle
         )
-                .withInfo(Component.literal("§e控制边境之地的样式\n§fJava 1.18.2+: 类似高原地形，从溢出开始形成巨大高墙\nBedrock Edition: 模拟基岩版1.17.20之后的边境之地"))
+                .withInfo(Component.literal("§e控制边境之地的样式\n§fJava 1.18.2~26.2: 类似高原地形，从溢出开始形成巨大高墙\nJava 26.3+: 从X/Z ±2812332开始，地形逐渐过渡为虚无\nBedrock Edition: 模拟基岩版1.17.20之后的边境之地"))
                 .withValues("Java-1.18.2+", "Java-26.3+", "Bedrock-Edition")
                 .create(0, 0, CONTENT_WIDTH - 20, 20,
                         Component.literal("边境之地样式"),
@@ -319,7 +319,7 @@ public class WorldMainSettingScreen extends Screen {
                 );
         this.scrollContent.addChild(this.farlandsStyleButton, s -> s.paddingHorizontal(10));
         // 🔧 MCRe 地形管线系统：按当前管线值初始化联动禁用态
-        
+        this.updatePipelineDependentButtons();
         this.scrollContent.addChild(new StringWidget(
         Component.literal("§7用于控制边境之地位置和样式"),
         this.font
