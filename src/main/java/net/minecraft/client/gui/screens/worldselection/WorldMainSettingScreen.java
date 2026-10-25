@@ -319,7 +319,7 @@ public class WorldMainSettingScreen extends Screen {
                 );
         this.scrollContent.addChild(this.farlandsStyleButton, s -> s.paddingHorizontal(10));
         // 🔧 MCRe 地形管线系统：按当前管线值初始化联动禁用态
-        this.updatePipelineDependentButtons();
+        
         this.scrollContent.addChild(new StringWidget(
         Component.literal("§7用于控制边境之地位置和样式"),
         this.font
