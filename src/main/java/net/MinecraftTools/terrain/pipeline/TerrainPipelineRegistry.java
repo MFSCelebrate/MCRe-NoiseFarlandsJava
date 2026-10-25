@@ -24,7 +24,8 @@ public final class TerrainPipelineRegistry {
     private static final Map<String, TerrainPipeline> PIPELINES = new ConcurrentHashMap<>();
 
     static {
-        register(Test263Pipeline.INSTANCE);
+        register(MCVanilla263Pipeline.INSTANCE);
+        register(MCBedrockGenPipeline.INSTANCE);
     }
 
     private TerrainPipelineRegistry() {

@@ -286,13 +286,14 @@ public class WorldMainSettingScreen extends Screen {
         // 放在样式组之前——管线是更高层概念；非 vanilla 管线时下方两按钮禁用
         this.terrainPipelineButton = CycleButton.builder(
                 mode -> switch (mode) {
-                    case "test" -> Component.literal("Test 测试");
+                    case "mcvanilla263" -> Component.literal("MC Vanilla 26.3 密度链");
+                    case "mcbedrockgen" -> Component.literal("MC Bedrock Gen（改版柏林底层）");
                     default -> Component.literal("Vanilla 原版");
                 },
                 this.configData.terrainPipeline
         )
-                .withInfo(Component.literal("§e地形管线切换（MinecraftChunkPyramid）\n§fVanilla 原版: 原版地形管线（柏林噪声家族 + 数据包）\nTest 测试: 测试用超平坦地形管线（绕过数据包，代码组装）\n\n§c非 Vanilla 管线将禁用边境之地位置/样式（其语义与自定义管线无关）"))
-                .withValues("vanilla", "test")
+                .withInfo(Component.literal("§e地形管线切换（MinecraftChunkPyramid）\n§fVanilla 原版: 原版地形管线（柏林噪声家族 + 数据包）\nMC Vanilla 26.3 密度链: 26.3 语义密度树（代码组装，绕过数据包）\nMC Bedrock Gen: 改版柏林噪声底层专属管线（噪声底层改革前的独立副本）\n\n§c非 Vanilla 管线将禁用边境之地位置/样式（其语义与自定义管线无关）"))
+                .withValues("vanilla", "mcvanilla263", "mcbedrockgen")
                 .create(0, 0, CONTENT_WIDTH - 20, 20,
                         Component.literal("MinecraftChunkPyramid"),
                         (button, val) -> {
@@ -344,17 +345,6 @@ public class WorldMainSettingScreen extends Screen {
         Component.literal("§7用于控制边境之地位置和样式"),
         this.font
         ).setMaxWidth(CONTENT_WIDTH - 40), s -> s.paddingHorizontal(20).paddingBottom(4));
-
-        // ========== 🔧 MCRe：扩展基岩版边境之地单精度范围（边境之地样式按钮下）==========
-        SwitchGrid.Builder spBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
-                .withRowSpacing(3)
-                .withInfoUnderneathUnlimited(false);
-        spBuilder.addSwitch(
-                Component.literal("扩展基岩版边境之地单精度范围"),
-                () -> this.configData.expandBedrockSinglePrecision,
-                val -> this.configData.expandBedrockSinglePrecision = val
-        ).withInfo(Component.literal("用于在使用 Bedrock Edition 1.17.20+ 边境之地样式时扩展单精度范围到双精度，推迟边缘之地的生成，做到有可能看到后个层边境层的效果"));
-        this.scrollContent.addChild(spBuilder.build().layout(), s -> s.paddingHorizontal(10));
 
         // ========== 第四组：假区块设置 ==========
         this.scrollContent.addChild(this.createSectionHeader(

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.Holder;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -23,17 +24,37 @@ public final class RandomState {
     private final PositionalRandomFactory oreRandom;
     private final Map<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseIntances;
     private final Map<Identifier, PositionalRandomFactory> positionalRandoms;
+    // 🔧 MCRe 地形管线：噪声实例工厂（@Nullable）——mcbedrockgen 管线注入副本噪声用；null = 原版 Noises.instantiate
+    // 🔧 MCRe 地形管线：非 null 时 getOrCreateNoise 走此工厂（MCBedrockGen 副本噪声注入点）
+    private final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory;
 
     public static RandomState create(final HolderGetter.Provider holders, final ResourceKey<NoiseGeneratorSettings> noiseSettings, final long seed) {
         return create(holders.lookupOrThrow(Registries.NOISE_SETTINGS).getOrThrow(noiseSettings).value(), holders.lookupOrThrow(Registries.NOISE), seed);
     }
 
     public static RandomState create(final NoiseGeneratorSettings settings, final HolderGetter<NormalNoise.NoiseParameters> noises, final long seed) {
-        return new RandomState(settings, noises, seed);
+        return new RandomState(settings, noises, seed, settings.getRandomSource().newInstance(seed).forkPositional(), null);
     }
 
-    private RandomState(final NoiseGeneratorSettings settings, final HolderGetter<NormalNoise.NoiseParameters> noises, final long seed) {
-        this.random = settings.getRandomSource().newInstance(seed).forkPositional();
+    /** 🔧 MCRe 地形管线：噪声工厂注入变体——rootFactory 用调用方 RandomState 的根工厂（同源），噪声实例由 noiseFactory 提供（副本噪声）。 */
+    public static RandomState createWithNoiseFactory(
+        final NoiseGeneratorSettings settings,
+        final HolderGetter<NormalNoise.NoiseParameters> noises,
+        final PositionalRandomFactory rootFactory,
+        final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory
+    ) {
+        return new RandomState(settings, noises, 0L, rootFactory, noiseFactory);
+    }
+
+    private RandomState(
+        final NoiseGeneratorSettings settings,
+        final HolderGetter<NormalNoise.NoiseParameters> noises,
+        final long seed,
+        final PositionalRandomFactory rootFactory,
+        final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory
+    ) {
+        this.noiseFactory = noiseFactory;
+        this.random = rootFactory;
         this.noises = noises;
         this.aquiferRandom = this.random.fromHashOf(Identifier.withDefaultNamespace("aquifer")).forkPositional();
         this.oreRandom = this.random.fromHashOf(Identifier.withDefaultNamespace("ore")).forkPositional();
@@ -110,7 +131,9 @@ public final class RandomState {
     }
 
     public NormalNoise getOrCreateNoise(final ResourceKey<NormalNoise.NoiseParameters> noise) {
-        return this.noiseIntances.computeIfAbsent(noise, key -> Noises.instantiate(this.noises, this.random, noise));
+        return this.noiseIntances.computeIfAbsent(noise, key -> this.noiseFactory != null
+            ? this.noiseFactory.apply(key)
+            : Noises.instantiate(this.noises, this.random, noise));
     }
 
     /** 🔧 MCRe：噪声实例缓存视图（调试屏幕 AllNoiseList 条目遍历用）——地形生成器用到的噪声全部经 getOrCreateNoise 实例化 */
@@ -121,7 +144,7 @@ public final class RandomState {
     /** 🔧 MCRe 地形管线：派生一个仅替换 router 的 RandomState（其余状态——噪声实例缓存/随机工厂/sampler 等全部共享）。 */
     public RandomState withRouter(final NoiseRouter newRouter) {
         return new RandomState(this.random, this.noises, newRouter, this.sampler, this.surfaceSystem,
-            this.aquiferRandom, this.oreRandom, this.noiseIntances, this.positionalRandoms);
+            this.aquiferRandom, this.oreRandom, this.noiseIntances, this.positionalRandoms, this.noiseFactory);
     }
 
     private RandomState(
@@ -133,7 +156,8 @@ public final class RandomState {
         final PositionalRandomFactory aquiferRandom,
         final PositionalRandomFactory oreRandom,
         final Map<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseIntances,
-        final Map<Identifier, PositionalRandomFactory> positionalRandoms
+        final Map<Identifier, PositionalRandomFactory> positionalRandoms,
+        final java.util.function.Function<ResourceKey<NormalNoise.NoiseParameters>, NormalNoise> noiseFactory
     ) {
         this.random = random;
         this.noises = noises;
@@ -144,6 +168,7 @@ public final class RandomState {
         this.oreRandom = oreRandom;
         this.noiseIntances = noiseIntances;
         this.positionalRandoms = positionalRandoms;
+        this.noiseFactory = noiseFactory;
     }
 
     /** 🔧 MCRe 地形管线 C 批：根随机工厂访问器——PipelineNoiseSource 自建噪声实例（seed 派生同 vanilla 接线）用 */

@@ -38,14 +38,6 @@ public final class ImprovedNoise {
         return config != null && config.simulatedWraparoundOverflow;
     }
 
-    // ===== 🔧 MCRe（大佬 10-05 派活）：扩展基岩版边境之地单精度范围 =====
-    // 开启 = BedrockMode 插值链三条产生线 double 化（sampleAndLerp 强转 / lerp3 / 最终返回），
-    // 推迟边缘之地的生成；基岩坐标量化（wrap float 折叠 / xr = x - xf）保留 = 基岩模拟效果不变
-    private static boolean expandSinglePrecision() {
-        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && config.expandBedrockSinglePrecision;
-    }
-
     public ImprovedNoise(final RandomSource random) {
         this.xo = random.nextDouble() * 256.0;
         this.yo = random.nextDouble() * 256.0;
@@ -74,7 +66,7 @@ public final class ImprovedNoise {
     public double noise(final double _x, final double _y, final double _z, final double yScale, final double yFudge) {
         // 🔧 MCRe：expandSinglePrecision + BedrockMode 双开启 = 三条链彻底走 double（不保留任何 float）
         // 仅 BedrockMode 开启 = 原基岩 float 全链
-        if (isBedrockMode() && !expandSinglePrecision()) {
+        if (isBedrockMode()) {
             // === 原基岩模式：全部使用 float 精度 ===
             float x = (float) (_x + this.xo);
             float y = (float) (_y + this.yo);
@@ -113,7 +105,7 @@ public final class ImprovedNoise {
             return (float) result;
         }
 
-        // === expandSinglePrecision 开启 或 非 BedrockMode：走 double 实现（与原版 double 行为一致） ===
+        // BedrockMode：走 double 实现（与原版 double 行为一致） ===
         double x = _x + this.xo;
         double y = _y + this.yo;
         double z = _z + this.zo;
@@ -245,7 +237,7 @@ public final class ImprovedNoise {
     public double noiseWithDerivative(final double _x, final double _y, final double _z, final double[] derivativeOut) {
         // 🔧 MCRe：expandSinglePrecision + BedrockMode 双开启 = 三条链彻底走 double（不保留任何 float）
         // 仅 BedrockMode 开启 = 原基岩 float 全链
-        if (isBedrockMode() && !expandSinglePrecision()) {
+        if (isBedrockMode()) {
             // Bedrock 模式：全部使用 float，但 derivativeOut 保留 double 数组签名
             float x = (float) (_x + this.xo);
             float y = (float) (_y + this.yo);
@@ -327,7 +319,7 @@ public final class ImprovedNoise {
             double v001, double v101, double v011, double v111) {
         // 🔧 MCRe：expandSinglePrecision 开启 = 插值线 double 化（走原版 double lerp，推迟 NaN）；关闭 = 原基岩 float 域
         // 7 次 lerp
-        if (isBedrockMode() && !expandSinglePrecision()) {
+        if (isBedrockMode()) {
             float fDelta1 = (float) delta1;
             float fDelta2 = (float) delta2;
             float fDelta3 = (float) delta3;
@@ -371,7 +363,7 @@ public final class ImprovedNoise {
 
         // 🔧 MCRe：expandSinglePrecision 开启 = 跳过 11 值 (float) 强转（插值线 double 化，推迟 Inf 炸点）；关闭 = 原基岩
         // float 化插值
-        if (isBedrockMode() && !expandSinglePrecision()) {
+        if (isBedrockMode()) {
             return (float) ImprovedNoise.lerp3(
                             (float) xAlpha, (float) yAlpha, (float) zAlpha,
                             (float) d000, (float) d100, (float) d010, (float) d110,

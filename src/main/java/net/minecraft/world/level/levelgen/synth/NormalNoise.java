@@ -21,11 +21,16 @@ public class NormalNoise {
     private static final double TARGET_DEVIATION = 0.3333333333333333;
     /** 🔧 MCRe 精确路径：INPUT_FACTOR 的精确 IEEE 754 值。 */
     private static final BigDecimal INPUT_FACTOR_BD = new BigDecimal(INPUT_FACTOR);
-    private final double valueFactor;
-    private final PerlinNoise first;
-    private final PerlinNoise second;
-    private final double maxValue;
-    private final NormalNoise.NoiseParameters parameters;
+    // 🔧 MCRe 地形管线：字段去 final + protected 空构造——mcbedrockgen 副本 extends 本类（类型兼容进 NoiseHolder）
+    protected double valueFactor;
+    protected PerlinNoise first;
+    protected PerlinNoise second;
+    protected double maxValue;
+    protected NormalNoise.NoiseParameters parameters;
+
+    /** 🔧 MCRe 地形管线：副本子类用（字段由子类遮蔽初始化） */
+    protected NormalNoise() {
+    }
 
     private static boolean isBedrockMode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
