@@ -19,7 +19,8 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import net.minecraft.core.Direction;
 
 public class BlendedNoise implements DensityFunction.SimpleFunction {
-    private static final Codec<Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+    private static final Codec<
+            Double> SCALE_RANGE = Codec.doubleRange(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     private static final MapCodec<BlendedNoise> DATA_CODEC = RecordCodecBuilder.mapCodec(
             i -> i.group(
                     SCALE_RANGE.fieldOf("xz_scale").forGetter(n -> n.xzScale),
@@ -30,7 +31,8 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
             )
                     .apply(i, BlendedNoise::createUnseeded)
     );
-    public static final KeyDispatchDataCodec<BlendedNoise> CODEC = KeyDispatchDataCodec.of(DATA_CODEC);
+    public static final KeyDispatchDataCodec<
+            BlendedNoise> CODEC = KeyDispatchDataCodec.of(DATA_CODEC);
     private final PerlinNoise minLimitNoise;
     private final PerlinNoise maxLimitNoise;
     private final PerlinNoise mainNoise;
@@ -51,11 +53,6 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
     private final BigDecimal yFactorExact;
     private final BigDecimal smearScaleMultiplierExact;
     private static final BigDecimal HALF_BD = BigDecimal.valueOf(0.5);
-
-    private static boolean isBedrockMode() {
-        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
-    }
 
     private static boolean is1_18Exp4Mode() {
         WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
@@ -92,18 +89,14 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         this.yFactor = yFactor;
         this.smearScaleMultiplier = smearScaleMultiplier;
 
-        boolean isBedrock = isBedrockMode();
+
 
         // 修改：在 Bedrock 模式下对乘数因子进行 float 截断
         double rawXzMultiplier = 684.412 * this.xzScale;
         double rawYMultiplier = 684.412 * this.yScale;
-        if (isBedrock) {
-            this.xzMultiplier = (float) rawXzMultiplier;
-            this.yMultiplier = (float) rawYMultiplier;
-        } else {
-            this.xzMultiplier = rawXzMultiplier;
-            this.yMultiplier = rawYMultiplier;
-        }
+
+        this.xzMultiplier = rawXzMultiplier;
+        this.yMultiplier = rawYMultiplier;
 
         // maxValue 通过 minLimitNoise.maxBrokenValue 计算，该方法内部已根据 isBedrockMode() 切换精度
         // 若当前为 Bedrock 模式，maxBrokenValue 会返回截断后的值
@@ -125,11 +118,11 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         double actualXzScale = exp4 ? 1.0 : xzScale;
 
         this(
-                exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
-                exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
-                exp4 ? PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0))
-                        : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0)),
-                actualXzScale, yScale, xzFactor, yFactor, smearScaleMultiplier
+        exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
+        exp4 ? createLimitNoiseExp4(random) : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-15, 0)),
+        exp4 ? PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0))
+                : PerlinNoise.createLegacyForBlendedNoise(random, IntStream.rangeClosed(-7, 0)),
+        actualXzScale, yScale, xzFactor, yFactor, smearScaleMultiplier
         );
     }
 
@@ -139,82 +132,6 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
 
     @Override
     public double compute(final DensityFunction.FunctionContext context) {
-        if (isBedrockMode()) {
-            // 🔧 Bedrock 模式 + 高精度模式：坐标大到 double 失真时走精确路径（Bedrock 适配在内部，无拉伸）
-            // 修复前：Bedrock 分支无条件拦截 → 高精度模式被绕过 → float 折叠的灾难性抵消 → 地形拉伸 ✗
-            if (ExactNoiseMath.enabled()) {
-                final double roughX = WorldReposition.reposition(context.blockX(), Direction.Axis.X);
-                final double roughY = WorldReposition.reposition(context.blockY(), Direction.Axis.Y);
-                final double roughZ = WorldReposition.reposition(context.blockZ(), Direction.Axis.Z);
-                if (ExactNoiseMath.needsExact(roughX, roughY, roughZ, this.xzMultiplier, this.yMultiplier)) {
-                    return this.computeExact(context);
-                }
-            }
-            // === Bedrock 模式：全部使用 float 精度计算 ===
-            // 🔧 MCRe：先施加 WorldReposition 偏移（newPos = pos * scale + shift），再乘 xzMultiplier/yMultiplier
-            float limitX = (float)(WorldReposition.reposition(context.blockX(), Direction.Axis.X) * this.xzMultiplier);
-            float limitY = (float)(WorldReposition.reposition(context.blockY(), Direction.Axis.Y) * this.yMultiplier);
-            float limitZ = (float)(WorldReposition.reposition(context.blockZ(), Direction.Axis.Z) * this.xzMultiplier);
-            float mainX = limitX / (float)this.xzFactor;
-            float mainY = limitY / (float)this.yFactor;
-            float mainZ = limitZ / (float)this.xzFactor;
-            float limitSmear = (float)(this.yMultiplier * this.smearScaleMultiplier);
-            float mainSmear = limitSmear / (float)this.yFactor;
-
-            float mainNoiseValue = 0.0f;
-            float pow = 1.0f;
-
-            // mainNoise 循环（8 次）
-            for (int i = 0; i < 8; i++) {
-                ImprovedNoise noise = this.mainNoise.getOctaveNoise(i);
-                if (noise != null) {
-                    float wx = (float) PerlinNoise.wrap(mainX * pow);
-                    float wy = (float) PerlinNoise.wrap(mainY * pow);
-                    float wz = (float) PerlinNoise.wrap(mainZ * pow);
-                    float noiseVal = (float) noise.noise(wx, wy, wz, mainSmear * pow, mainY * pow);
-                    mainNoiseValue += noiseVal / pow;
-                }
-                pow /= 2.0f;
-            }
-
-            float factor = (mainNoiseValue / 10.0f + 1.0f) / 2.0f;
-            boolean isMax = factor >= 1.0f;
-            boolean isMin = factor <= 0.0f;
-            pow = 1.0f;
-
-            float blendMin = 0.0f;
-            float blendMax = 0.0f;
-
-            // limit noise 循环（16 次）
-            for (int i = 0; i < 16; i++) {
-                float wx = (float) PerlinNoise.wrap(limitX * pow);
-                float wy = (float) PerlinNoise.wrap(limitY * pow);
-                float wz = (float) PerlinNoise.wrap(limitZ * pow);
-                float yScalePow = limitSmear * pow;
-                float limitYPow = limitY * pow;
-
-                if (!isMax) {
-                    ImprovedNoise minNoise = this.minLimitNoise.getOctaveNoise(i);
-                    if (minNoise != null) {
-                        float noiseVal = (float) minNoise.noise(wx, wy, wz, limitSmear * pow, limitY * pow);
-                        blendMin += noiseVal / pow;
-                    }
-                }
-
-                if (!isMin) {
-                    ImprovedNoise maxNoise = this.maxLimitNoise.getOctaveNoise(i);
-                    if (maxNoise != null) {
-                        float noiseVal = (float) maxNoise.noise(wx, wy, wz, limitSmear * pow, limitY * pow);
-                        blendMax += noiseVal / pow;
-                    }
-                }
-
-                pow /= 2.0f;
-            }
-
-            float result = Mth.clampedLerp(factor, blendMin / 512.0f, blendMax / 512.0f) / 128.0f;
-            return (float) result;
-        }
 
         // === 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」精确分支 ===
         // 只有坐标大到 double 会失真（绝对误差 > 0.5 格）时才切换，近处保持原快路径（零开销）。
@@ -249,8 +166,8 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
             if (noise != null) {
                 mainNoiseValue +=
                         noise.noise(
-                                PerlinNoise.wrap(mainX * pow), PerlinNoise.wrap(mainY * pow), PerlinNoise.wrap(mainZ * pow), mainSmear * pow, mainY * pow
-                        ) / pow;
+                                        PerlinNoise.wrap(mainX * pow), PerlinNoise.wrap(mainY * pow), PerlinNoise.wrap(mainZ * pow), mainSmear * pow, mainY * pow
+                                ) / pow;
             }
             pow /= 2.0;
         }
@@ -292,12 +209,14 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
      * 🔧 MCRe「使用 BigDecimal / BigInteger 重写地形」——精确版 {@link #compute}。
      *
      * <p>与原版 double 分支**逐句对应**，只把坐标链换成精确运算：
+     *
      * <pre>
      *   整数方块坐标 → WorldReposition（BigDecimal ×scale+shift）→ × xzMultiplier → ÷ xzFactor
      *   → × 2^k（每 octave）→ wrapExact（精确取模折叠）→ ImprovedNoise.noiseExact（精确 floor + 小数）
      * </pre>
-     * <b>刻意保留的语义</b>：{@code (int)Math.floor} 的饱和（平面边境之地）、int 晶格索引、hash 溢出、
-     * 噪声输出的 double 加权求和（输出值域小，精度足够）。
+     *
+     * <b>刻意保留的语义</b>：{@code (int)Math.floor} 的饱和（平面边境之地）、int 晶格索引、hash 溢出、 噪声输出的 double
+     * 加权求和（输出值域小，精度足够）。
      *
      * <p>性能：每样本约 20~40 次 BigDecimal 运算（微秒级），只在大坐标区域启用（见 {@link ExactNoiseMath#needsExact}）。
      */
@@ -306,14 +225,6 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
         BigDecimal posX = WorldReposition.reposition(BigDecimal.valueOf(context.blockX()), Direction.Axis.X);
         BigDecimal posY = WorldReposition.reposition(BigDecimal.valueOf(context.blockY()), Direction.Axis.Y);
         BigDecimal posZ = WorldReposition.reposition(BigDecimal.valueOf(context.blockZ()), Direction.Axis.Z);
-
-        // 🔧 Bedrock 模式适配：坐标先量化到 float（模拟基岩单精度输入量级），再精确计算
-        // float 的值可精确表示为 BigDecimal → 精确计算无灾难性抵消 → 无地形拉伸
-        if (isBedrockMode()) {
-            posX = BigDecimal.valueOf(posX.floatValue());
-            posY = BigDecimal.valueOf(posY.floatValue());
-            posZ = BigDecimal.valueOf(posZ.floatValue());
-        }
 
         final BigDecimal limitX = posX.multiply(this.xzMultiplierExact);
         final BigDecimal limitY = posY.multiply(this.yMultiplierExact);
@@ -361,14 +272,16 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
             if (!isMax) {
                 final ImprovedNoise minNoise = this.minLimitNoise.getOctaveNoise(i);
                 if (minNoise != null) {
-                    blendMin += minNoise.noiseExact(wx, wy, wz, smearPow, limitYPow) / pow.doubleValue();
+                    blendMin +=
+                            minNoise.noiseExact(wx, wy, wz, smearPow, limitYPow) / pow.doubleValue();
                 }
             }
 
             if (!isMin) {
                 final ImprovedNoise maxNoise = this.maxLimitNoise.getOctaveNoise(i);
                 if (maxNoise != null) {
-                    blendMax += maxNoise.noiseExact(wx, wy, wz, smearPow, limitYPow) / pow.doubleValue();
+                    blendMax +=
+                            maxNoise.noiseExact(wx, wy, wz, smearPow, limitYPow) / pow.doubleValue();
                 }
             }
 
@@ -381,18 +294,14 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
     @Override
     public double minValue() {
         double result = -this.maxValue();
-        if (isBedrockMode()) {
-            return (float) result;
-        }
+
         return result;
     }
 
     @Override
     public double maxValue() {
         double result = this.maxValue;
-        if (isBedrockMode()) {
-            return (float) result;
-        }
+
         return result;
     }
 

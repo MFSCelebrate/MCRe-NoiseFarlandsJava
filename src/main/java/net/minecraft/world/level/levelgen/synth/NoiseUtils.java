@@ -5,19 +5,9 @@ import java.util.Locale;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 
 public class NoiseUtils {
-    private static boolean isBedrockMode() {
-        WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
-        return config != null && ("Bedrock-Edition".equals(config.farlandsStyle));
-    }
 
     public static double biasTowardsExtreme(final double noise, final double factor) {
-        if (isBedrockMode()) {
-            // === Bedrock 模式：全 float 精度 ===
-            float fNoise = (float) noise;
-            float fFactor = (float) factor;
-            float result = (float) (fNoise + (float) (Math.sin(Math.PI * fNoise) * fFactor / Math.PI));
-            return (float) result;
-        }
+
         // === 原 double 实现 ===
         double result = noise + Math.sin(Math.PI * noise) * factor / Math.PI;
         return result;
