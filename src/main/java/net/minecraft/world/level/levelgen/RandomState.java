@@ -111,7 +111,14 @@ public final class RandomState {
                 // 里面的 noise 节点从未被 visitNoise 绑定，求值时走 NoiseChunk.wrapNew 的 registry 实例（主线噪声）。
                 // 管线路径展开递归：内部 noise 节点走 visitNoise → noiseFactory → 副本实例
                 if (RandomState.this.noiseFactory != null && function instanceof DensityFunctions.HolderHolder holder) {
-                    return this.wrapped.computeIfAbsent(function, f -> holder.function().value().mapAll(this));
+                    // 🔧 修复 CME：不能在 computeIfAbsent 的 mapping function 里递归 mapAll（嵌套 reference/DAG
+                    // 共享节点会再次触发同 map 的 computeIfAbsent → HashMap 递归自修改 → CME）。get/put 两步走。
+                    DensityFunction expanded = this.wrapped.get(function);
+                    if (expanded == null) {
+                        expanded = holder.function().value().mapAll(this);
+                        this.wrapped.put(function, expanded);
+                    }
+                    return expanded;
                 }
                 return this.wrapped.computeIfAbsent(function, this::wrapNew);
             }
