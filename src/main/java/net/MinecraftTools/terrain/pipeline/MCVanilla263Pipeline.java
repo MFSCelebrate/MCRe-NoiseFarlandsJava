@@ -88,8 +88,14 @@ public final class MCVanilla263Pipeline implements TerrainPipeline {
         final StructureManager structureManager,
         final ChunkAccess chunk
     ) {
-        final RandomState customRandomState = this.patchRandomState(generator.generatorSettings().value(), randomState);
-        // 走原版 NOISE 填充路径（带管线 RandomState——NoiseChunk/插值/aquifer/heightmap 全套 26.2 基建照跑）
-        return generator.fillFromNoiseVanilla(blender, customRandomState, structureManager, chunk, true);
+        // 🔧 性能修复：NOISE 阶段不再重建 263 树。NoiseChunk 在 BIOMES 阶段
+        // （createBiomesVanilla → getOrCreateNoiseChunk → createNoiseChunk → patchRandomState 收口）
+        // 就已持有管线树；doFill 的 getOrCreateNoiseChunk 命中 chunk 级缓存后完全不碰传入
+        // randomState 的 router——此处再 patch 一次 = 每 chunk 白干一次全量树组装
+        // （OverworldDensity263.build + 全部 263 噪声 octave 初始化）。
+        // 直接传原版 randomState；兜底场景（NoiseChunk 尚不存在）由 createNoiseChunk 内部的
+        // patchRandomState 收口，语义不变。走原版 NOISE 填充路径（NoiseChunk/插值/aquifer/heightmap
+        // 全套 26.2 基建照跑）。
+        return generator.fillFromNoiseVanilla(blender, randomState, structureManager, chunk, true);
     }
 }

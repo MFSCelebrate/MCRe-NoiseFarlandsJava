@@ -316,6 +316,7 @@ public class WorldMainSettingScreen extends Screen {
                 mode -> switch (mode) {
                     case "Java-1.18.2+" -> Component.literal("Java Edition 1.18.2~26.2");
                     case "Java-26.3+" -> Component.literal("Java Edition 26.3+");
+                    case "Java-1.18.1" -> Component.literal("Java Edition 1.18.1");
                     case "Bedrock-Edition" -> Component.literal("Bedrock Edition 1.17.20+");
                     // 🔧 新注册管线：自动显示 displayName()（注册表查不到再显示原文）
                     default -> {
@@ -325,7 +326,7 @@ public class WorldMainSettingScreen extends Screen {
                 },
                 this.configData.farlandsStyle
         )
-                .withInfo(Component.literal("§e控制边境之地的样式\n§fJava 1.18.2~26.2: 类似高原地形，从溢出开始形成巨大高墙\nJava 26.3+: 从X/Z ±2812332开始，地形逐渐过渡为虚无\nBedrock Edition: 模拟基岩版1.17.20之后的边境之地"))
+                .withInfo(Component.literal("§e控制边境之地的样式\n§fJava 1.18.1: 通过修改密度函数范围，模拟1.18.1的穿孔式边境之地\nJava 1.18.2~26.2: 类似高原地形，从溢出开始形成巨大高墙\nJava 26.3+: 从X/Z ±2812332开始，地形逐渐过渡为虚无\nBedrock Edition: 模拟基岩版1.17.20之后的边境之地"))
                 .withValues(farlandsStyleValues)
                 .create(0, 0, CONTENT_WIDTH - 20, 20,
                         Component.literal("边境之地样式"),

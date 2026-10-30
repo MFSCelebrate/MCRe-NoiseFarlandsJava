@@ -169,6 +169,35 @@ public final class RandomState {
             this.aquiferRandom, this.oreRandom, this.noiseIntances, this.positionalRandoms, this.noiseFactory, this.blendedNoiseFactory);
     }
 
+    /**
+     * 🔧 MCRe 1.18.1 管线：把代码组装的自定义密度树 wiring 到本 RandomState。
+     * <ul>
+     *   <li>NoiseHolder 绑定 {@link #getOrCreateNoise} 实例（bootstrap 定义里的噪声未绑定，求值恒 0——必须 wiring）；</li>
+     *   <li>BlendedNoise（sloped_cheese 内的 base_3d_noise）用 terrain 随机源重播种（照 NoiseWiringHelper——
+     *       否则地形与 seed 无关；legacy_random_source 的 settings 不走此路径，1.18.1 管线仅用于 overworld）；</li>
+     *   <li>HolderHolder（bootstrap 引用）无需显式展开——其 mapChildren 会把定义交回 visitor 递归处理，包装保留。</li>
+     * </ul>
+     * 放本类原因：{@code DensityFunction.NoiseHolder}/{@code DensityFunction.Visitor} 为同包可见，跨包无法实现。
+     */
+    public DensityFunction wireDensityTree(final DensityFunction tree) {
+        class TreeWiringVisitor implements DensityFunction.Visitor {
+            @Override
+            public DensityFunction.NoiseHolder visitNoise(final DensityFunction.NoiseHolder noise) {
+                return new DensityFunction.NoiseHolder(
+                    noise.noiseData(), RandomState.this.getOrCreateNoise(noise.noiseData().unwrapKey().orElseThrow()));
+            }
+
+            @Override
+            public DensityFunction apply(final DensityFunction function) {
+                if (function instanceof BlendedNoise noise) {
+                    return noise.withNewRandom(RandomState.this.random.fromHashOf(Identifier.withDefaultNamespace("terrain")));
+                }
+                return function;
+            }
+        }
+        return tree.mapAll(new TreeWiringVisitor());
+    }
+
     private RandomState(
         final PositionalRandomFactory random,
         final HolderGetter<NormalNoise.NoiseParameters> noises,

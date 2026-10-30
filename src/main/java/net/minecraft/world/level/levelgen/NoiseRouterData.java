@@ -2,6 +2,8 @@ package net.minecraft.world.level.levelgen;
 
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
@@ -13,6 +15,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.synth.BlendedNoise;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
+
+import javax.annotation.Nullable;
 
 public class NoiseRouterData {
     public static final float GLOBAL_OFFSET = -0.50375F;
@@ -135,15 +139,15 @@ public class NoiseRouterData {
             true
         );
         context.register(SLOPED_CHEESE_END, DensityFunctions.add(DensityFunctions.endIslands(0L), getFunction(functions, BASE_3D_NOISE_END)));
-        context.register(SPAGHETTI_ROUGHNESS_FUNCTION, spaghettiRoughnessFunction(noises));
+        registerAndWrap(context, SPAGHETTI_ROUGHNESS_FUNCTION, spaghettiRoughnessFunction(noises));
         context.register(
             SPAGHETTI_2D_THICKNESS_MODULATOR,
             DensityFunctions.cacheOnce(DensityFunctions.mappedNoise(noises.getOrThrow(Noises.SPAGHETTI_2D_THICKNESS), 2.0, 1.0, -0.6, -1.3))
         );
-        context.register(SPAGHETTI_2D, spaghetti2D(functions, noises));
-        context.register(ENTRANCES, entrances(functions, noises));
-        context.register(NOODLE, noodle(functions, noises));
-        return context.register(PILLARS, pillars(noises));
+        registerAndWrap(context, SPAGHETTI_2D, spaghetti2D(functions, noises));
+        registerAndWrap(context, ENTRANCES, entrances(functions, noises));
+        registerAndWrap(context, NOODLE, noodle(functions, noises));
+        return registerAndWrap(context, PILLARS, pillars(noises));
     }
 
     private static void registerTerrainNoises(
@@ -188,7 +192,7 @@ public class NoiseRouterData {
         );
         DensityFunction jaggedness = DensityFunctions.flatCache(DensityFunctions.mul(unscaledJaggedness, jaggedNoise.halfNegative()));
         DensityFunction initialDensity = noiseGradientDensity(factor, DensityFunctions.add(depth, jaggedness));
-        context.register(slopedCheeseName, DensityFunctions.add(initialDensity, getFunction(functions, BASE_3D_NOISE_OVERWORLD)));
+        registerAndWrap(context, slopedCheeseName, DensityFunctions.add(initialDensity, getFunction(functions, BASE_3D_NOISE_OVERWORLD)));
     }
 
     private static DensityFunction offsetToDepth(final DensityFunction offset) {
@@ -199,10 +203,23 @@ public class NoiseRouterData {
         return DensityFunctions.add(new DensityFunctions.WindowedDepthGradient(offset), offset);
     }
 
+    /** 🔧 MCRe 1.18.1 管线：bootstrap 注册的密度函数 Holder 缓存（registerAndWrap 收口写入；bootstrap 期单线程写，运行期只读） */
+    private static final Map<ResourceKey<DensityFunction>, Holder<DensityFunction>> BOOTSTRAP_HOLDERS = new ConcurrentHashMap<>();
+
     private static DensityFunction registerAndWrap(
         final BootstrapContext<DensityFunction> context, final ResourceKey<DensityFunction> name, final DensityFunction value
     ) {
-        return new DensityFunctions.HolderHolder(context.register(name, value));
+        final Holder<DensityFunction> holder = context.register(name, value);
+        // 🔧 MCRe 1.18.1 管线：bootstrap 的 Holder 缓存（运行时无 DENSITY_FUNCTION registry lookup 可用，
+        // 自定义管线从这里拿引用——定义内的噪声实例由 RandomState#wireDensityTree 绑定）
+        BOOTSTRAP_HOLDERS.put(name, holder);
+        return new DensityFunctions.HolderHolder(holder);
+    }
+
+    /** 🔧 MCRe 1.18.1 管线：bootstrap 注册的密度函数 Holder 缓存（key 必须走过 registerAndWrap） */
+    @Nullable
+    public static Holder<DensityFunction> bootstrapHolder(final ResourceKey<DensityFunction> key) {
+        return BOOTSTRAP_HOLDERS.get(key);
     }
 
     private static DensityFunction getFunction(final HolderGetter<DensityFunction> functions, final ResourceKey<DensityFunction> name) {

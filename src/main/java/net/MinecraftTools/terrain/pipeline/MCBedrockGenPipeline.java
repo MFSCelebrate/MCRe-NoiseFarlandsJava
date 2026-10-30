@@ -69,11 +69,27 @@ public final class MCBedrockGenPipeline implements TerrainPipeline {
      * extends 主线类型进 NoiseHolder）——主线噪声改革后本管线语义不变。
      * NoiseChunk 缓存收口（createNoiseChunk）与 fillNoise 都走这里，保证同一语义。
      */
+    /**
+     * 🔧 性能修复：patched RandomState 缓存（per vanilla 身份，volatile 不可变 holder 原子换对）。
+     * Bedrock 树 = 主线 JSON（节点不可变）+ 副本噪声（不可变，同 seed 数值确定——NoiseSourceTest
+     * 实测重建确定性），可跨 chunk 共享（vanilla 语义本就 per-world 一份 RandomState）。无缓存时
+     * createNoiseChunk + fillNoise 每 chunk 两次全量 createWithNoiseFactory（JSON 树重建 +
+     * 副本噪声 octave 初始化）拖慢生成。竞态安全：多线程同时 miss 各自重建，数值等价，后写覆盖无害。
+     */
+    private record CachedPatched(RandomState vanillaRef, RandomState patched) {
+    }
+
+    private volatile CachedPatched cachedPatched;
+
     @Override
     public RandomState patchRandomState(final NoiseGeneratorSettings settings, final RandomState vanilla) {
+        final CachedPatched cached = this.cachedPatched;
+        if (cached != null && cached.vanillaRef() == vanilla) {
+            return cached.patched();
+        }
         final var rootFactory = vanilla.noiseRandomFactory();
         final var paramsGetter = vanilla.noiseParametersGetter();
-        return RandomState.createWithNoiseFactory(
+        final RandomState patched = RandomState.createWithNoiseFactory(
             settings,
             paramsGetter,
             rootFactory,
@@ -81,6 +97,8 @@ public final class MCBedrockGenPipeline implements TerrainPipeline {
                 rootFactory.fromHashOf(key.identifier()),
                 paramsGetter.getOrThrow(key).value()),
             random -> net.MinecraftTools.terrain.pipeline.mcbedrockgen.noise.BlendedNoise.create(random));
+        this.cachedPatched = new CachedPatched(vanilla, patched);
+        return patched;
     }
 
     @Override
