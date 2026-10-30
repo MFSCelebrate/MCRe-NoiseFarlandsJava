@@ -28,9 +28,9 @@ import net.minecraft.world.level.levelgen.blending.Blender;
  *   <li><b>无 jagged</b>：jagged 噪声是 1.18.2 引入（jagged peaks 特性），1.18.1 的 final_density 无此项；</li>
  *   <li><b>slide 为内联 y_clamped_gradient 形态</b>（顶 240→256 / 底 -64→-40），1.18.2+ 改用
  *       slide() 函数且参数不同——两者不等价，勿混用；</li>
- *   <li><b>range_choice 边界为正负无穷</b>：1.18.1 没有 1.18.2+ 的 ±1000000 限制。数据包不支持写
- *       -Infinity 字面量，官方用 1E-150 量级巨数模拟负无穷——本管线按大佬裁定直接用
- *       {@link Double#NEGATIVE_INFINITY}（代码组装不走 codec 校验，语义比巨数更纯正）；</li>
+ *   <li><b>range_choice 边界 = 1.18.1 官方巨数哨兵</b>：1.18.1 没有 1.18.2+ 的 ±1000000 限制，
+ *       数据包不支持 -Infinity 字面量，官方用接近 double 负极限的巨数（≈ -1.0E308）模拟——本管线
+ *       逐字沿用该巨数（实测真 -Infinity 会在平原→山体过渡产生区块切断裂缝，见 {@link #NEGATIVE_SENTINEL}）；</li>
  *   <li>其余 13 个 router 字段（气候通道/preliminarySurfaceLevel 之外/aquifer/矿脉）与 26.2 相同，照抄 vanilla。</li>
  * </ul>
  *
@@ -49,6 +49,16 @@ public final class MCVanilla1_18_1Pipeline implements TerrainPipeline {
 
     /** 1.18.1 的洞穴入口判定阈值（surfaceWithEntrances / caves 分界） */
     private static final double SURFACE_DENSITY_THRESHOLD = 1.5625;
+
+    /**
+     * 🔧 1.18.1 数据包的"负无穷"哨兵值（INF32768 指点）：官方 JSON 用这个巨数模拟负无穷
+     * （数据包不支持 -Infinity 字面量）。实测锤：该值 ≈ -1.0E308（hex -0x1.1ccf385ebc8ap1023，
+     * 接近 double 负极限）。实测用真 -Infinity 会在平原→山体过渡产生区块切断裂缝
+     * （-∞ 的 minValue=-∞ 沿节点树传播污染上层值域计算，与官方巨数的有限值域行为有差异）——
+     * 按指点改回原版巨数，Java double 字面量舍入后与 1.18.1 官方解析结果逐位一致。
+     */
+    private static final double NEGATIVE_SENTINEL =
+        -100000000000000001097906362944045541740492309677311846336810682903157585404911491537163328978494688899061249669721172515611590283743140088328307009198146046031271664502933027185697489699588559043338384466165001178426897626212945177628091195786707458122783970171784415105291802893207873272974885715430223118336.0;
 
     private static final ResourceKey<DensityFunction> KEY_SLOPED_CHEESE = dfKey("overworld/sloped_cheese");
     private static final ResourceKey<DensityFunction> KEY_ENTRANCES = dfKey("overworld/caves/entrances");
@@ -133,7 +143,7 @@ public final class MCVanilla1_18_1Pipeline implements TerrainPipeline {
             DensityFunctions.mul(DensityFunctions.constant(5.0), reference(KEY_ENTRANCES))
         );
         final DensityFunction caves = DensityFunctions.rangeChoice(
-            slopedCheese, Double.NEGATIVE_INFINITY, SURFACE_DENSITY_THRESHOLD,
+            slopedCheese, NEGATIVE_SENTINEL, SURFACE_DENSITY_THRESHOLD,
             surfaceWithEntrances, this.underground1181(vanilla, slopedCheese));
         // 1.18.1 内联 slide：底部 -64→-40 渐变 0.1171875、顶部 240→256 渐变 -0.078125
         final DensityFunction inlineSlide = DensityFunctions.add(
@@ -176,8 +186,8 @@ public final class MCVanilla1_18_1Pipeline implements TerrainPipeline {
         );
         final DensityFunction pillarsWithoutCutoff = reference(KEY_PILLARS);
         final DensityFunction pillars = DensityFunctions.rangeChoice(
-            pillarsWithoutCutoff, Double.NEGATIVE_INFINITY, 0.03,
-            DensityFunctions.constant(Double.NEGATIVE_INFINITY), pillarsWithoutCutoff
+            pillarsWithoutCutoff, NEGATIVE_SENTINEL, 0.03,
+            DensityFunctions.constant(NEGATIVE_SENTINEL), pillarsWithoutCutoff
         );
         return DensityFunctions.max(undergroundSubtractions, pillars);
     }
