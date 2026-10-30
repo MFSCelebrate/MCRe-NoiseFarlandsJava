@@ -147,7 +147,11 @@ public class NoiseRouterData {
         registerAndWrap(context, SPAGHETTI_2D, spaghetti2D(functions, noises));
         registerAndWrap(context, ENTRANCES, entrances(functions, noises));
         registerAndWrap(context, NOODLE, noodle(functions, noises));
-        return registerAndWrap(context, PILLARS, pillars(noises));
+        // 🔧 MCRe 1.18.1 管线：bootstrap 方法返回 Holder<? extends DensityFunction>（原版语义），
+        // 不能走返回 DensityFunction 的 registerAndWrap——手动注册 + 缓存 + 返回 Holder
+        final Holder<DensityFunction> pillarsHolder = context.register(PILLARS, pillars(noises));
+        BOOTSTRAP_HOLDERS.put(PILLARS, pillarsHolder);
+        return pillarsHolder;
     }
 
     private static void registerTerrainNoises(
