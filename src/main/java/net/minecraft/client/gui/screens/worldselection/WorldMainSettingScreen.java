@@ -1,7 +1,11 @@
 package net.minecraft.client.gui.screens.worldselection;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
+import net.MinecraftTools.terrain.pipeline.TerrainPipeline;
+import net.MinecraftTools.terrain.pipeline.TerrainPipelineRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -302,24 +306,32 @@ public class WorldMainSettingScreen extends Screen {
         // 添加这一行：将 precisionModeButton 添加到滚动内容中
         this.scrollContent.addChild(this.precisionModeButton, s -> s.paddingHorizontal(2));
 
+        // 🔧 选项动态生成（vanilla + 注册表保序）——加新管线只改 TerrainPipelineRegistry 一处，UI 零维护
+        final List<String> farlandsStyleValues = new ArrayList<>();
+        farlandsStyleValues.add(TerrainPipelineRegistry.VANILLA_ID);
+        for (final TerrainPipeline pipeline : TerrainPipelineRegistry.registered()) {
+            farlandsStyleValues.add(pipeline.id());
+        }
         this.farlandsStyleButton = CycleButton.builder(
                 mode -> switch (mode) {
                     case "Java-1.18.2+" -> Component.literal("Java Edition 1.18.2~26.2");
                     case "Java-26.3+" -> Component.literal("Java Edition 26.3+");
                     case "Bedrock-Edition" -> Component.literal("Bedrock Edition 1.17.20+");
-                    default -> Component.literal(mode);
+                    // 🔧 新注册管线：自动显示 displayName()（注册表查不到再显示原文）
+                    default -> {
+                        final String name = TerrainPipelineRegistry.displayNameOf(mode);
+                        yield Component.literal(name != null ? name : mode);
+                    }
                 },
                 this.configData.farlandsStyle
         )
                 .withInfo(Component.literal("§e控制边境之地的样式\n§fJava 1.18.2~26.2: 类似高原地形，从溢出开始形成巨大高墙\nJava 26.3+: 从X/Z ±2812332开始，地形逐渐过渡为虚无\nBedrock Edition: 模拟基岩版1.17.20之后的边境之地"))
-                .withValues("Java-1.18.2+", "Java-26.3+", "Bedrock-Edition")
+                .withValues(farlandsStyleValues)
                 .create(0, 0, CONTENT_WIDTH - 20, 20,
                         Component.literal("边境之地样式"),
                         (button, val) -> this.configData.farlandsStyle = val
                 );
         this.scrollContent.addChild(this.farlandsStyleButton, s -> s.paddingHorizontal(10));
-        // 🔧 MCRe 地形管线系统：按当前管线值初始化联动禁用态
-        this.updatePipelineDependentButtons();
         this.scrollContent.addChild(new StringWidget(
         Component.literal("§7用于控制边境之地位置和样式"),
         this.font

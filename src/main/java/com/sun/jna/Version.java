@@ -24,6 +24,12 @@
 package com.sun.jna;
 interface Version {
     // Buildsystem replaces variables and compiled class will hold the right value
-    String VERSION = "TEMPLATE";
-    String VERSION_NATIVE = "TEMPLATE";
+    // 🔧 MCRe: 源码树自带 JNA 源码（src/main/java/com/sun/jna/），gradle javac 不会执行
+    // 官方 ant 构建的"版本注入"步骤 → 占位符 "TEMPLATE" 原样进产物 → 启动时与
+    // libjnidispatch.so（自报 7.0.4，官方 5.17.0 配套）版本握手必然失败，
+    // 报 "Expected: TEMPLATE Found: 7.0.4" Error（SystemReport 的 memory/software 组挂）。
+    // 此处手工补上官方 5.17.0 的注入值：VERSION = JNA Java 版本；VERSION_NATIVE = 配套
+    // libjnidispatch.so 自报版本。⚠️ 启动器将来更换 JNA 版本（jna_dir 的 so 自报值变化）需同步更新。
+    String VERSION = "5.17.0";
+    String VERSION_NATIVE = "7.0.4";
 }
