@@ -3,9 +3,12 @@ package net.MinecraftTools.terrain.pipeline;
 import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.WorldGenRegion;
+import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.levelgen.WorldReposition;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,7 +25,9 @@ import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.MinecraftTools.terrain.pipeline.mcbedrock0601.Bedrock0601NoiseSystem;
 import net.MinecraftTools.terrain.pipeline.mcbedrock0601.BiomeSource0601;
+import net.MinecraftTools.terrain.pipeline.mcbedrock0601.Mt19937Random;
 import net.MinecraftTools.terrain.pipeline.mcbedrock0601.PEBiome;
+import net.MinecraftTools.terrain.pipeline.mcbedrock0601.PEFeature0601;
 import net.MinecraftTools.terrain.pipeline.mcbedrock0601.TerrainDensity0601;
 
 /**
@@ -202,12 +207,20 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
         final float s = 1 / 32.0f;
 
         // 三表层 buffer（PE 参数序怪味照抄：y 参数传块 z、buffer 索引读写转置）
+        // 三表层 buffer（PE 参数序怪味照抄：y 参数传块 z、buffer 读写转置）——偏移缩放：采样点 reposition
+        // 转置推导：读 (lx,lz) = 原版写 (xx=lz, zz=lx) 的采样——sand/depth 的 x 维=块x（reposition）、z 维=索引（不偏移）；gravel 双空间维
         final float[] sandBuffer = new float[16 * 16];
         final float[] gravelBuffer = new float[16 * 16];
         final float[] depthBuffer = new float[16 * 16];
-        system.perlinNoise2().getRegion(sandBuffer, baseX, baseZ, 0, 16, 16, 1, s, s, 1);
-        system.perlinNoise2().getRegion(gravelBuffer, baseX, 109.01340f, baseZ, 16, 1, 16, s, 1, s);
-        system.perlinNoise3().getRegion(depthBuffer, baseX, baseZ, 0, 16, 16, 1, s * 2, s * 2, s * 2);
+        for (int lx = 0; lx < 16; lx++) {
+            for (int lz = 0; lz < 16; lz++) {
+                final float sx = (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(baseX + lz, net.minecraft.core.Direction.Axis.X);
+                final float sz = (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(baseZ + lx, net.minecraft.core.Direction.Axis.Z);
+                sandBuffer[lx + lz * 16] = system.perlinNoise2().getRegionPoint2D(sx, lx, s, s);
+                gravelBuffer[lx + lz * 16] = system.perlinNoise2().getRegionPoint2D(sx, sz, s, s);
+                depthBuffer[lx + lz * 16] = system.perlinNoise3().getRegionPoint2D(sx, lx, s * 2, s * 2);
+            }
+        }
 
         final BiomeSource0601 biomeSource0601 = this.biomeSource0601(randomState);
         final BlockState stone = Blocks.STONE.defaultBlockState();
@@ -220,8 +233,12 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
         for (int lx = 0; lx < 16; lx++) {
             for (int lz = 0; lz < 16; lz++) {
                 final PEBiome pe = PEBiome.judge(
-                    biomeSource0601.temperatureAt(baseX + lx, baseZ + lz),
-                    biomeSource0601.downfallAt(baseX + lx, baseZ + lz));
+                    biomeSource0601.temperatureAt(
+                        (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(baseX + lx, net.minecraft.core.Direction.Axis.X),
+                        (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(baseZ + lz, net.minecraft.core.Direction.Axis.Z)),
+                    biomeSource0601.downfallAt(
+                        (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(baseX + lx, net.minecraft.core.Direction.Axis.X),
+                        (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(baseZ + lz, net.minecraft.core.Direction.Axis.Z)));
                 final boolean sandHere = sandBuffer[lx + lz * 16] + system.random().nextFloat() * 0.2f > 0;
                 final boolean gravelHere = gravelBuffer[lx + lz * 16] + system.random().nextFloat() * 0.2f > 3;
                 final int runDepth = (int) (depthBuffer[lx + lz * 16] / 3 + 3 + system.random().nextFloat() * 0.25f);
@@ -304,6 +321,180 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
      * Climate.empty()（PE 不用 6 通道气候）；NoiseChunk 不在此预建（fillNoise 的 doFill 自行收口）。
      */
     @Override
+    public boolean takesOverCarvers() {
+        // 🔧 批5：carvers 阶段承载 PE 的 postProcess 语义（矿脉/树/花/蔗/仙人掌/泉水/雪覆盖）
+        return true;
+    }
+
+    private static boolean isEmptyAt(final WorldGenRegion region, final int x, final int y, final int z) {
+        return region.getBlockState(new BlockPos(x, y, z)).isAir();
+    }
+
+    /**
+     * 🔧 批5：PE postProcess 逐字（RandomLevelSource.cpp:219-483）。
+     * chunk 种子 = ((xt*xScale)+(zt*zScale)) ^ worldSeed（xScale/zScale 为 worldSeed 派生的奇数——照 PE）；
+     * 矿脉 9 种（Clay×32/dirt×32/gravel×32/coal×16/iron×16/gold×32域/redstone×16/emerald×16 PE独有/lapis双nextInt）；
+     * 树（forestNoise+群系修正→forests 数，全橡树——PE getTreeFeature 基类）；花/玫瑰/蘑菇/甘蔗/仙人掌；
+     * 泉（水 50 y=nextInt(nextInt(120)+8)、岩浆 20 三层 nextInt）；雪覆盖（SNOW_CUTOFF 0.5/SNOW_SCALE 0.3）；
+     * MobSpawner 跳过（PE 的 MobSpawner 语义不在 26.2 生成期范围）。
+     */
+    @Override
+    public void applyCarvers(
+        final NoiseBasedChunkGenerator generator,
+        final WorldGenRegion region,
+        final long seed,
+        final RandomState randomState,
+        final net.minecraft.world.level.biome.BiomeManager biomeManager,
+        final StructureManager structureManager,
+        final ChunkAccess chunk
+    ) {
+        final CachedPatched cached = this.cachedPatched;
+        if (cached == null) {
+            return; // 防御（fillNoise 先行必有缓存）
+        }
+        final Bedrock0601NoiseSystem system = cached.system();
+        final Mt19937Random random = system.random();
+
+        final int xt = (int) (chunk.getPos().getBlockX(0L) >> 4);
+        final int zt = (int) (chunk.getPos().getBlockZ(0L) >> 4);
+        final int xo = xt * 16;
+        final int zo = zt * 16;
+
+        // PE 的 chunk 种子派生（worldSeed → 奇数缩放 → chunk 种子）
+        random.setSeed(seed);
+        final int xScale = random.nextInt() / 2 * 2 + 1;
+        final int zScale = random.nextInt() / 2 * 2 + 1;
+        random.setSeed((long) (((xt * xScale) + (zt * zScale)) ^ seed));
+
+        final BiomeSource0601 biomeSource0601 = this.biomeSource0601(randomState);
+        final java.util.function.BiFunction<Integer, Integer, PEBiome> peAt = (bx, bz) -> {
+            final float sx = (float) WorldReposition.reposition(bx, Direction.Axis.X);
+            final float sz = (float) WorldReposition.reposition(bz, Direction.Axis.Z);
+            return PEBiome.judge(biomeSource0601.temperatureAt(sx, sz), biomeSource0601.downfallAt(sx, sz));
+        };
+        final PEBiome biome = peAt.apply(xo + 16, zo + 16); // PE：getBiome(xo+16, zo+16)
+
+        // ===== 矿脉（PE 独有绿宝石 ×1）=====
+        for (int i = 0; i < 10; i++) {
+            PEFeature0601.clay(region, random, xo + random.nextInt(16), random.nextInt(128), zo + random.nextInt(16), 32);
+        }
+        for (int i = 0; i < 20; i++) {
+            PEFeature0601.ore(region, random, xo + random.nextInt(16), random.nextInt(128), zo + random.nextInt(16),
+                Blocks.DIRT.defaultBlockState(), 32);
+        }
+        for (int i = 0; i < 10; i++) {
+            PEFeature0601.ore(region, random, xo + random.nextInt(16), random.nextInt(128), zo + random.nextInt(16),
+                Blocks.GRAVEL.defaultBlockState(), 32);
+        }
+        for (int i = 0; i < 20; i++) {
+            PEFeature0601.ore(region, random, xo + random.nextInt(16), random.nextInt(128), zo + random.nextInt(16),
+                Blocks.COAL_ORE.defaultBlockState(), 16);
+        }
+        for (int i = 0; i < 20; i++) {
+            PEFeature0601.ore(region, random, xo + random.nextInt(16), random.nextInt(128), zo + random.nextInt(16),
+                Blocks.IRON_ORE.defaultBlockState(), 8);
+        }
+        for (int i = 0; i < 2; i++) {
+            PEFeature0601.ore(region, random, xo + random.nextInt(16), random.nextInt(32), zo + random.nextInt(16),
+                Blocks.GOLD_ORE.defaultBlockState(), 8);
+        }
+        for (int i = 0; i < 8; i++) {
+            PEFeature0601.ore(region, random, xo + random.nextInt(16), random.nextInt(16), zo + random.nextInt(16),
+                Blocks.REDSTONE_ORE.defaultBlockState(), 7);
+        }
+        for (int i = 0; i < 1; i++) {
+            PEFeature0601.ore(region, random, xo + random.nextInt(16), random.nextInt(16), zo + random.nextInt(16),
+                Blocks.EMERALD_ORE.defaultBlockState(), 7);
+        }
+        for (int i = 0; i < 1; i++) {
+            PEFeature0601.ore(region, random, xo + random.nextInt(16), random.nextInt(16) + random.nextInt(16), zo + random.nextInt(16),
+                Blocks.LAPIS_ORE.defaultBlockState(), 6);
+        }
+
+        // ===== 树（forestNoise + 群系修正）=====
+        final float ss = 0.5f;
+        final int oFor = (int) ((system.forestNoise().getValue(xo * ss, zo * ss) / 8 + random.nextFloat() * 4 + 4) / 3);
+        int forests = 0;
+        if (random.nextInt(10) == 0) forests += 1;
+        if (biome == PEBiome.RAINFOREST) forests += oFor + 2;
+        if (biome == PEBiome.FOREST) forests += oFor + 2;
+        if (biome == PEBiome.SEASONAL_FOREST) forests += oFor + 1;
+        if (biome == PEBiome.TAIGA) forests += oFor + 1;
+        if (biome == PEBiome.DESERT) forests -= 20;
+        if (biome == PEBiome.TUNDRA) forests -= 20;
+        if (biome == PEBiome.PLAINS) forests -= 20;
+
+        for (int i = 0; i < forests; i++) {
+            final int x = xo + random.nextInt(16) + 8;
+            final int z = zo + random.nextInt(16) + 8;
+            final int y = region.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
+            PEFeature0601.tree(region, random, x, y, z);
+        }
+
+        // ===== 花/玫瑰/蘑菇 =====
+        for (int i = 0; i < 2; i++) {
+            PEFeature0601.bush(region, random, xo + random.nextInt(16) + 8, random.nextInt(128), zo + random.nextInt(16) + 8,
+                Blocks.DANDELION.defaultBlockState());
+        }
+        if (random.nextInt(2) == 0) {
+            PEFeature0601.bush(region, random, xo + random.nextInt(16) + 8, random.nextInt(128), zo + random.nextInt(16) + 8,
+                Blocks.POPPY.defaultBlockState());
+        }
+        if (random.nextInt(4) == 0) {
+            PEFeature0601.bush(region, random, xo + random.nextInt(16) + 8, random.nextInt(128), zo + random.nextInt(16) + 8,
+                Blocks.BROWN_MUSHROOM.defaultBlockState());
+        }
+        if (random.nextInt(8) == 0) {
+            PEFeature0601.bush(region, random, xo + random.nextInt(16) + 8, random.nextInt(128), zo + random.nextInt(16) + 8,
+                Blocks.RED_MUSHROOM.defaultBlockState());
+        }
+
+        // ===== 甘蔗 =====
+        for (int i = 0; i < 10; i++) {
+            PEFeature0601.reeds(region, random, xo + random.nextInt(16) + 8, random.nextInt(128), zo + random.nextInt(16) + 8);
+        }
+
+        // ===== 仙人掌（desert ×5）=====
+        if (biome == PEBiome.DESERT) {
+            for (int i = 0; i < 5; i++) {
+                PEFeature0601.cactus(region, random, xo + random.nextInt(16) + 8, random.nextInt(128), zo + random.nextInt(16) + 8);
+            }
+        }
+
+        // ===== 泉（水 ×50 / 岩浆 ×20）=====
+        for (int i = 0; i < 50; i++) {
+            PEFeature0601.spring(region, random, xo + random.nextInt(16), random.nextInt(random.nextInt(120) + 8), zo + random.nextInt(16),
+                Blocks.WATER.defaultBlockState());
+        }
+        for (int i = 0; i < 20; i++) {
+            PEFeature0601.spring(region, random, xo + random.nextInt(16),
+                random.nextInt(random.nextInt(random.nextInt(112) + 8) + 8), zo + random.nextInt(16),
+                Blocks.LAVA.defaultBlockState());
+        }
+
+        // ===== 雪覆盖（SNOW_CUTOFF 0.5 / SNOW_SCALE 0.3，照 PE postProcess 尾部）=====
+        final float snowCutoff = 0.5f;
+        final float snowScale = 0.3f;
+        for (int lx = 0; lx < 16; lx++) {
+            for (int lz = 0; lz < 16; lz++) {
+                final int x = xo + 8 + lx;
+                final int z = zo + 8 + lz;
+                final int y = region.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
+                final float temp = biomeSource0601.temperatureAt(
+                    (float) WorldReposition.reposition(x, Direction.Axis.X),
+                    (float) WorldReposition.reposition(z, Direction.Axis.Z)) - (y - 64) / 64.0f * snowScale;
+                if (temp < snowCutoff) {
+                    if (y > 0 && y < 128 && isEmptyAt(region, x, y, z)
+                        && region.getBlockState(new BlockPos(x, y - 1, z)).blocksMotion()) {
+                        region.setBlock(new BlockPos(x, y, z), Blocks.SNOW.defaultBlockState(), Block.UPDATE_CLIENTS);
+                    }
+                }
+            }
+        }
+        // PE 的 MobSpawner postProcessSpawnMobs 跳过（生物生成不在 26.2 生成期范围）
+    }
+
+    @Override
     public CompletableFuture<ChunkAccess> fillBiomes(
         final NoiseBasedChunkGenerator generator,
         final RandomState randomState,
@@ -340,8 +531,12 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
             (quartX, quartY, quartZ, sampler) -> {
                 final int blockX = quartX * 4 + 2; // quart 中心块作判定点
                 final int blockZ = quartZ * 4 + 2;
-                final float temperature = biomeSource0601.temperatureAt(blockX, blockZ);
-                final float downfall = biomeSource0601.downfallAt(blockX, blockZ);
+                final float temperature = biomeSource0601.temperatureAt(
+                    (float) WorldReposition.reposition(blockX, Direction.Axis.X),
+                    (float) WorldReposition.reposition(blockZ, Direction.Axis.Z));
+                final float downfall = biomeSource0601.downfallAt(
+                    (float) WorldReposition.reposition(blockX, Direction.Axis.X),
+                    (float) WorldReposition.reposition(blockZ, Direction.Axis.Z));
                 final PEBiome pe = PEBiome.judge(temperature, downfall);
                 final net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> holder = holders.get(pe);
                 return holder != null ? holder : fallbackHolder;

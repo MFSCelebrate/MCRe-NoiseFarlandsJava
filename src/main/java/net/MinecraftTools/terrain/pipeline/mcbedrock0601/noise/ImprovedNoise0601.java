@@ -1,5 +1,8 @@
 package net.MinecraftTools.terrain.pipeline.mcbedrock0601.noise;
 
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
+import net.minecraft.util.Mth;
+
 import net.MinecraftTools.terrain.pipeline.mcbedrock0601.Mt19937Random;
 
 /**
@@ -43,9 +46,9 @@ public final class ImprovedNoise0601 {
     }
 
     public float noise(float _x, float _y, float _z) {
-        final float x = _x + this.xo;
+        final float x = wrap0601(_x) + this.xo;
         final float y = _y + this.yo;
-        final float z = _z + this.zo;
+        final float z = wrap0601(_z) + this.zo;
 
         int xf = (int) x;
         int yf = (int) y;
@@ -83,7 +86,69 @@ public final class ImprovedNoise0601 {
     }
 
     private static float lerp(final float t, final float a, final float b) {
+        // 🔧 渐进式边境之地（大佬裁定）：progressiveFarlands 开启时 lerp 直接返回 a（插值退化——
+        // 噪声的 fade 插值层全部取起点梯度，晶格值阶跃）。关闭时正常三线性。
+        if (isProgressiveFarlands()) {
+            return a;
+        }
         return a + t * (b - a);
+    }
+
+    /** progressiveFarlands 开关（WMS"渐进式边境之地"） */
+    private static boolean isProgressiveFarlands() {
+        final WorldMainSettingScreen.FarLandsConfigData cfg = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return cfg != null && cfg.progressiveFarlands;
+    }
+
+    // ===== 坐标折叠（批6：照主线 wrap 结构 float 化——0.6.1 管线的边境之地位置控制）=====
+
+    /** PE/Release 式折叠（照主线 computeReleaseValue：整数部分 mod 2^24 折回 + 小数保留） */
+    public static double computeReleaseValue0601(final double x) {
+        final long l = Mth.lfloor(x);
+        double shifted = x - l;
+        final long wrapped = l % 16777216L;
+        return shifted + wrapped;
+    }
+
+    private static boolean limitReturnValueMode0601(final WorldMainSettingScreen.FarLandsConfigData config) {
+        return config.limitReturnValue;
+    }
+
+    /**
+     * 🔧 批6：坐标折叠（照主线 wrap 结构 float 化）——precisionMode 分派：
+     * 64bit / 1.18-exp-64bit → C=2^25 以 0 为中心对称折回；Release → mod 2^24 式；
+     * 32bit / 1.18-exp-32bit / default → 恒等（0.6.1 原版：(int) 溢出自然发生）。
+     * 末尾 limitReturnValue（对数域量级折叠，log10(0) 天然跳过）。
+     * 作用点：ImprovedNoise0601 的噪声输入（scale 后、xo 前——照主线 wrap 位置）。
+     */
+    public static float wrap0601(final float x) {
+        final WorldMainSettingScreen.FarLandsConfigData config = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        if (config == null) {
+            return x;
+        }
+        final double limitNoiseValue = config.limitReturnValueValue;
+        final String mode = config.precisionMode;
+        float folded;
+        switch (mode) {
+            case "64bit":
+            case "1.18-exp-64bit":
+                folded = x - Mth.lfloor(x / 3.3554432E7F + 0.5F) * 3.3554432E7F;
+                break;
+            case "Release":
+                folded = (float) computeReleaseValue0601(x);
+                break;
+            default:
+                folded = x;
+                break;
+        }
+        if (limitReturnValueMode0601(config)) {
+            final double abs = Math.abs((double) folded);
+            if (Math.log10(abs) > limitNoiseValue) {
+                final double logAbs = Math.log10(abs);
+                folded = (float) (Math.pow(10, logAbs - Math.floor(logAbs - limitNoiseValue)) * Math.signum(folded));
+            }
+        }
+        return folded;
     }
 
     /** PE 专用 2D 梯度（u 恒 ∈ {0, x}——(1-((h&8)>>3)) 整型算术照抄） */
@@ -114,14 +179,14 @@ public final class ImprovedNoise0601 {
      * ⚠️ 与 {@link #noise} 数值不同（grad2/grad 混用 vs 纯 3D grad——PE 源码事实），必须对应用途。
      */
     public float point2D(final float _x, final float _z, final float xs, final float zs) {
-        float x = _x * xs + this.xo;
+        float x = wrap0601(_x * xs) + this.xo;
         int xf = (int) x;
         if (x < xf) xf--;
         final int X = xf & 255;
         x -= xf;
         final float u = x * x * x * (x * (x * 6 - 15) + 10);
 
-        float z = _z * zs + this.zo;
+        float z = wrap0601(_z * zs) + this.zo;
         int zf = (int) z;
         if (z < zf) zf--;
         final int Z = zf & 255;
@@ -142,14 +207,14 @@ public final class ImprovedNoise0601 {
      * lerp 结构照 add（v0/v1 中间层），与 {@link #noise} 的浮点路径不同（PE 源码事实）。
      */
     public float point3D(final float _x, final float _y, final float _z, final float xs, final float ys, final float zs) {
-        float x = _x * xs + this.xo;
+        float x = wrap0601(_x * xs) + this.xo;
         int xf = (int) x;
         if (x < xf) xf--;
         final int X = xf & 255;
         x -= xf;
         final float u = x * x * x * (x * (x * 6 - 15) + 10);
 
-        float z = _z * zs + this.zo;
+        float z = wrap0601(_z * zs) + this.zo;
         int zf = (int) z;
         if (z < zf) zf--;
         final int Z = zf & 255;
@@ -184,13 +249,13 @@ public final class ImprovedNoise0601 {
      * buffer 索引 = x 外、z 中、y 内。
      */
     public void add(final float[] buffer, float _x, float _y, float _z, final int xSize, final int ySize, final int zSize,
-                    final float xs, final float ys, final float zs, final float pow) {
+                    final float xs, final float ys, final float zs, final float pow, final float amp) {
         if (ySize == 1) {
             // ===== PE 2D 路径（grad2/grad 混用怪味照抄）=====
             int pp = 0;
-            final float scale = 1.0f / pow;
+            final float scale = 1.0f / pow * amp;
             for (int xx = 0; xx < xSize; xx++) {
-                float x = (_x + xx) * xs + this.xo;
+                float x = wrap0601((_x + xx) * xs) + this.xo;
                 int xf = (int) x;
                 if (x < xf) xf--;
                 final int X = xf & 255;
@@ -198,7 +263,7 @@ public final class ImprovedNoise0601 {
                 final float u = x * x * x * (x * (x * 6 - 15) + 10);
 
                 for (int zz = 0; zz < zSize; zz++) {
-                    float z = (_z + zz) * zs + this.zo;
+                    float z = wrap0601((_z + zz) * zs) + this.zo;
                     int zf = (int) z;
                     if (z < zf) zf--;
                     final int Z = zf & 255;
@@ -221,7 +286,7 @@ public final class ImprovedNoise0601 {
 
         // ===== 3D 路径（yOld 列缓存照抄）=====
         int pp = 0;
-        final float scale = 1 / pow;
+        final float scale = 1 / pow * amp;
         int yOld = -1;
         int A = 0;
         int AA = 0;
@@ -235,7 +300,7 @@ public final class ImprovedNoise0601 {
         float vv3 = 0.0f;
 
         for (int xx = 0; xx < xSize; xx++) {
-            float x = (_x + xx) * xs + this.xo;
+            float x = wrap0601((_x + xx) * xs) + this.xo;
             int xf = (int) x;
             if (x < xf) xf--;
             final int X = xf & 255;
@@ -243,7 +308,7 @@ public final class ImprovedNoise0601 {
             final float u = x * x * x * (x * (x * 6 - 15) + 10);
 
             for (int zz = 0; zz < zSize; zz++) {
-                float z = (_z + zz) * zs + this.zo;
+                float z = wrap0601((_z + zz) * zs) + this.zo;
                 int zf = (int) z;
                 if (z < zf) zf--;
                 final int Z = zf & 255;

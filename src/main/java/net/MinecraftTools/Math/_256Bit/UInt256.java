@@ -345,7 +345,9 @@ public final class UInt256 extends Number implements Comparable<UInt256> {
     /* ==================== 位判断 ==================== */
     public boolean testBit(int n) {
         if (n < 0 || n >= 256) throw new IndexOutOfBoundsException("bit: " + n);
-        return (component(n / 64) & (1L << (n & 63))) != 0;
+        // 🔧 修复（AxorBisInfinitive 测试实锤）：component(0) 是最高组（a=bits255..192），从低位编号
+        // 必须反向取组——原 component(n/64) 方向相反
+        return (component(3 - n / 64) & (1L << (n & 63))) != 0;
     }
 
     public long lowBit() {

@@ -49,8 +49,8 @@ public final class BiomeSource0601 {
         return chunk * 16 + xc * TEMP_COORD_STEP + 1;
     }
 
-    /** 单点温度（getBiomeBlock 公式逐字：平方拉伸 + clamp） */
-    public float temperatureAt(final int x, final int z) {
+    /** 单点温度（getBiomeBlock 公式逐字：平方拉伸 + clamp；坐标可为 reposition 后的连续采样坐标） */
+    public float temperatureAt(final float x, final float z) {
         float temp = this.temperatureMap.getStacked(x, z, TEMP_SCALE, TEMP_SCALE, 0.25f);
         float noise = this.noiseMap.getStacked(x, z, NOISE_SCALE, NOISE_SCALE, 0.588f) * 1.1f + 0.5f;
         final float split2 = 0.01f;
@@ -63,7 +63,7 @@ public final class BiomeSource0601 {
     }
 
     /** 单点湿度（getBiomeBlock 公式逐字：split 0.002 + clamp；注意 0.6.1 原版湿度不做平方拉伸） */
-    public float downfallAt(final int x, final int z) {
+    public float downfallAt(final float x, final float z) {
         float downfall = this.downfallMap.getStacked(x, z, DOWNFALL_SCALE, DOWNFALL_SCALE, 0.3333f);
         float noise = this.noiseMap.getStacked(x, z, NOISE_SCALE, NOISE_SCALE, 0.588f) * 1.1f + 0.5f;
         final float split2 = 0.002f;

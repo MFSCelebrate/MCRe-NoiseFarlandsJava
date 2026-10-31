@@ -15,22 +15,32 @@ import java.util.Arrays;
 public final class PerlinNoise0601 {
 
     private int levels;
+    private final float[] amplitudes; // 🔧 批6：振幅列表（null = 全 1 原版语义；1.18-exp 模拟用 [0×6, 1×10]）
     private final ImprovedNoise0601[] noiseLevels;
 
     public PerlinNoise0601(final Mt19937Random random, final int levels) {
+        this(random, levels, null);
+    }
+
+    public PerlinNoise0601(final Mt19937Random random, final int levels, final float[] amplitudes) {
         this.levels = levels;
+        this.amplitudes = amplitudes;
         this.noiseLevels = new ImprovedNoise0601[levels];
         for (int i = 0; i < levels; i++) {
             this.noiseLevels[i] = new ImprovedNoise0601(random);
         }
     }
 
-    /** 单点堆（PE 同款：频率 ×pow 递减 + 振幅 /pow 递增） */
+    private float amplitude(final int i) {
+        return this.amplitudes != null ? this.amplitudes[i] : 1.0f;
+    }
+
+    /** 单点堆（PE 同款：频率 ×pow 递减 + 振幅 /pow 递增 × 振幅列表） */
     public float getValue(final float x, final float y) {
         float value = 0;
         float pow = 1;
         for (int i = 0; i < this.levels; i++) {
-            value += this.noiseLevels[i].getValue(x * pow, y * pow) / pow;
+            value += this.noiseLevels[i].getValue(x * pow, y * pow) / pow * this.amplitude(i);
             pow /= 2;
         }
         return value;
@@ -40,13 +50,13 @@ public final class PerlinNoise0601 {
         float value = 0;
         float pow = 1;
         for (int i = 0; i < this.levels; i++) {
-            value += this.noiseLevels[i].getValue(x * pow, y * pow, z * pow) / pow;
+            value += this.noiseLevels[i].getValue(x * pow, y * pow, z * pow) / pow * this.amplitude(i);
             pow /= 2;
         }
         return value;
     }
 
-    /** 区域采样累加（buffer 归零后逐层 add；buffer==null 时新建，调用方可复用数组） */
+    /** 区域采样累加（逐层 add×振幅列表；buffer==null 时新建，调用方可复用数组） */
     public float[] getRegion(float[] buffer, final float x, final float y, final float z,
                              final int xSize, final int ySize, final int zSize,
                              final float xScale, final float yScale, final float zScale) {
@@ -57,7 +67,7 @@ public final class PerlinNoise0601 {
         Arrays.fill(buffer, 0, size, 0.0f);
         float pow = 1;
         for (int i = 0; i < this.levels; i++) {
-            this.noiseLevels[i].add(buffer, x, y, z, xSize, ySize, zSize, xScale * pow, yScale * pow, zScale * pow, pow);
+            this.noiseLevels[i].add(buffer, x, y, z, xSize, ySize, zSize, xScale * pow, yScale * pow, zScale * pow, pow, this.amplitude(i));
             pow /= 2;
         }
         return buffer;
@@ -77,7 +87,7 @@ public final class PerlinNoise0601 {
         float value = 0;
         float pow = 1;
         for (int i = 0; i < this.levels; i++) {
-            value += this.noiseLevels[i].point2D(x, z, xScale * pow, zScale * pow) / pow;
+            value += this.noiseLevels[i].point2D(x, z, xScale * pow, zScale * pow) / pow * this.amplitude(i);
             pow /= 2;
         }
         return value;
@@ -88,7 +98,7 @@ public final class PerlinNoise0601 {
         float value = 0;
         float pow = 1;
         for (int i = 0; i < this.levels; i++) {
-            value += this.noiseLevels[i].point3D(x, y, z, xScale * pow, yScale * pow, zScale * pow) / pow;
+            value += this.noiseLevels[i].point3D(x, y, z, xScale * pow, yScale * pow, zScale * pow) / pow * this.amplitude(i);
             pow /= 2;
         }
         return value;

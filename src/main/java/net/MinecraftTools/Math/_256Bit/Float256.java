@@ -178,12 +178,12 @@ public final class Float256 extends Number implements Comparable<Float256> {
         if (value == 0.0) return ZERO;
         if (Double.isNaN(value)) return NaN;
         if (Double.isInfinite(value)) return value > 0 ? POS_INF : NEG_INF;
-        long bits = Double.doubleToRawLongBits(value);
-        boolean neg = (bits >>> 63) != 0;
-        int expBits = (int) ((bits >>> 52) & 0x7FF);
-        long mantBits = bits & 0xFFFF_FFFF_FFFFFL;
+        final long bits = Double.doubleToRawLongBits(value);
+        final boolean neg = (bits >>> 63) != 0;
+        final int expBits = (int) ((bits >>> 52) & 0x7FF);
+        final long mantBits = bits & 0xFFFF_FFFF_FFFFFL;
         if (expBits == 0) {
-            // 次正规: mantBits × 2^-1074
+            // 次正规（罕见）：保留原 Int256 路径（报告已说明）
             if (mantBits == 0) return ZERO;
             Float256 f = of(Int256.of(mantBits));
             if (neg) f = f.negate();
@@ -192,17 +192,49 @@ public final class Float256 extends Number implements Comparable<Float256> {
         if (expBits == 0x7FF) {
             return mantBits == 0 ? (neg ? NEG_INF : POS_INF) : NaN;
         }
-        // 正规: (2^52 | mantBits) × 2^(expBits - 1023 - 52)
-        Int256 mant = Int256.of(0, 0, 0, mantBits).or(Int256.of(0, 0, 0, 1L << 52));
-        Float256 f = of(mant);
-        if (neg) f = f.negate();
-        return f.scaleExp(expBits - 1075);
+        // 🔧 批A：正规直连——mant53 = 2^52 | mantBits（53 位含隐含）→ 位场铺 + realExp = expBits - 1023
+        //（值 = mant53 × 2^(realExp-52) = (1.f)×2^(expBits-1023) ✓；不借道 Int256，AxorBisInfinitive 实测 4.2 倍差）
+        final long mant53 = (1L << 52) | mantBits;
+        // 🔧 批A bug 修复：b 字段尾数区只占低 48 位（bit48+ = expLo 指数域）——mant53 bit52（隐含位）
+        // 经 >>>4 恒落 bit48，64 位掩码拦不住 → 污染 expLo bit0 → realExp 奇数时值 ×2。掩码改 48 位。
+        final long b48 = (mant53 >>> 4) & 0x0000_FFFF_FFFF_FFFFL; // mant53 bit51~4
+        final long c = (mant53 & 0xFL) << 60;                     // mant53 bit3~0 → c 高 4 位
+        final long realExp = expBits - 1023;
+        final long biasedLo = BIAS_LO + realExp;
+        final long biasedHi = BIAS_HI + (biasedLo >>> 16);
+        final long bField = ((biasedLo & 0xFFFFL) << 48) | (b48 & 0xFFFF_FFFF_FFFF_FFFFL);
+        final long aField = (neg ? SIGN_MASK : 0L) | (biasedHi & EXP_HI_MASK);
+        return new Float256(aField, bField, c, 0L);
     }
 
-    /** 从 long（精确） */
+    /** 从 long（精确，直连位铺——不借道 Int256，AxorBisInfinitive 实测 5.4 倍差）。Long.MIN_VALUE 按 2^63 幅值语义。 */
     public static Float256 of(long value) {
         if (value == 0) return ZERO;
-        return of(Int256.of(value));
+        final boolean neg = value < 0;
+        // Long.MIN_VALUE：-value 回绕同位模式 = 2^63 幅值（照 of(Int256) 的 MIN_VALUE 处理）
+        final long mag = neg ? -value : value;
+        final int k = 63 - Long.numberOfLeadingZeros(mag); // 幅值最高位（0~63）
+        final int sh = MANT_BITS - k; // 176-k ∈ [113, 176]——shifted = mag << sh 的 bit176 = 隐含位
+        long d = 0, c = 0, b48 = 0;
+        if (sh < 64) {
+            d = mag << sh;
+            c = mag >>> (64 - sh);
+            b48 = mag >>> (128 - sh);
+        } else if (sh < 128) {
+            c = mag << (sh - 64);
+            b48 = (mag >>> (128 - sh)) & 0xFFFF_FFFF_FFFF_FFFFL;
+        } else {
+            b48 = (mag << (sh - 128)) & 0xFFFF_FFFF_FFFF_FFFFL;
+        }
+        // 指数：realExp = k（值 = mant177 × 2^(realExp-176) = mag ✓）——biased = k + BIAS（79 位加法）
+        // 🔧 批A bug 修复（got=2×v 根因）：b 字段高 16 位是 expLo 指数域，尾数只占低 48 位。
+        // mag 最高位（bit k）经移位后恒落 b48 bit48（k + sh - 128 = 48），64 位掩码拦不住 → 污染 expLo bit0
+        // → realExp 解码 +1 → 值 ×2（k 奇数时必现，Diag256 全 k 扫描实锤）。掩码改 48 位在组装点统一拦。
+        final long biasedLo = BIAS_LO + k;
+        final long biasedHi = BIAS_HI + (biasedLo >>> 16);
+        final long bField = ((biasedLo & 0xFFFFL) << 48) | (b48 & 0x0000_FFFF_FFFF_FFFFL);
+        final long aField = (neg ? SIGN_MASK : 0L) | (biasedHi & EXP_HI_MASK);
+        return new Float256(aField, bField, c, d);
     }
 
     /**
@@ -538,9 +570,13 @@ public final class Float256 extends Number implements Comparable<Float256> {
     // ═════════ 乘法 ═════════
     public Float256 multiply(Float256 o) {
         if (isNaN() || o.isNaN()) return NaN;
-        if (isZero() || o.isZero()) return ZERO;
+        // 🔧 批A bug 修复（AxorBisInfinitive multiply_special 实锤）：0 × Inf = NaN——
+        // 原顺序 isZero 先命中返回 ZERO，下面 Inf 分支里的 NaN 判断成死代码
+        if (isZero() || o.isZero()) {
+            if (isInfinity() || o.isInfinity()) return NaN;
+            return ZERO;
+        }
         if (isInfinity() || o.isInfinity()) {
-            if (isZero() || o.isZero()) return NaN;
             return (signum() == o.signum()) ? POS_INF : NEG_INF;
         }
 
@@ -692,7 +728,12 @@ public final class Float256 extends Number implements Comparable<Float256> {
     // ═════════ 除法 ═════════
     public Float256 divide(Float256 o) {
         if (isNaN() || o.isNaN()) return NaN;
-        if (o.isZero()) return signum() == o.signum() ? POS_INF : NEG_INF;
+        // 🔧 批A bug 修复（AxorBisInfinitive divide_special 实锤）：0 ÷ 0 = NaN——原实现落
+        // x÷0 分支返回 +Inf
+        if (o.isZero()) {
+            if (isZero()) return NaN;
+            return signum() == o.signum() ? POS_INF : NEG_INF;
+        }
         if (isZero()) return ZERO;
         if (isInfinity()) {
             if (o.isInfinity()) return NaN;
@@ -837,7 +878,43 @@ public final class Float256 extends Number implements Comparable<Float256> {
         if (isZero()) return 0.0;
         if (isNaN()) return Double.NaN;
         if (isInfinity()) return signum() < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-        return toBigDecimal().doubleValue();
+        // 🔧 批A：直连位场（砍 BigDecimal 路径——AxorBisInfinitive 实测 436 倍差）
+        final long realExp = realExponent();
+        final boolean negSign = signum() < 0;
+        if (realExp > 1023) return negSign ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        if (realExp < -1074) return negSign ? -0.0 : 0.0; // 下溢（subnormal 简化为 ±0）
+        // 尾数高 53 位（含隐含位）+ GRS 最近偶数舍入
+        final long mantHi48 = b & MANT_HI_MASK;
+        long m53 = (1L << 52) | (mantHi48 << 4) | (c >>> 60);
+        final boolean guard = (c & (1L << 59)) != 0;
+        // 🔧 批A bug 修复：sticky = c 低 59 位（R+S 区）+ d——原 60 位掩码把 guard 位（c bit59）也吞进
+        // → G=1 恒进位，tie-to-even 语义破坏
+        final boolean sticky = (c & 0x07FF_FFFF_FFFF_FFFFL) != 0 || d != 0;
+        long e = realExp; // 值 = m53 × 2^(realExp-52) = 1.f × 2^realExp
+        if (realExp <= -1023) {
+            // 🔧 批A 补缺：次正规域（realExp ∈ [-1074,-1023]）——e+1023 ≤ 0 不能进指数域。
+            // f = m53 >> shift（shift = -realExp-1022 ∈ [1,52]）+ GRS 舍入（原实现直接拼位产生垃圾，
+            // Diag256 实锤 MIN_VALUE → -1.6e293、2^-1023 → 0.0）。R ≥ mant bit124 → c bit59（mant123）恒属 S，用 60 位掩码
+            final int shift = (int) (-realExp - 1022);
+            long f = m53 >> shift;
+            final boolean g2 = ((m53 >> (shift - 1)) & 1L) != 0;
+            final boolean s2 = (m53 & ((1L << (shift - 1)) - 1L)) != 0
+                    || (c & 0x0FFF_FFFF_FFFF_FFFFL) != 0 || d != 0;
+            if (g2 && (s2 || (f & 1L) != 0)) f++;
+            if (f == (1L << 52)) {
+                // 舍入上溢到最小正规 2^-1022
+                return Double.longBitsToDouble((negSign ? 1L << 63 : 0L) | (1L << 52));
+            }
+            return Double.longBitsToDouble((negSign ? 1L << 63 : 0L) | f);
+        }
+        if (guard && (sticky || (m53 & 1) != 0)) {
+            m53++;
+            if (m53 == (1L << 53)) { m53 >>= 1; e++; }
+        }
+        // 🔧 批A bug 修复：尾数掩码 0xF_FFFF_FFFFF 只有 40 位（丢 bit40..51 高 12 位尾数——
+        // Diag256 实锤 3.0→2.0、1.5→1.0）→ 改 52 位 0xF_FFFF_FFFF_FFFF
+        final long bits = (negSign ? (1L << 63) : 0L) | ((e + 1023) << 52) | (m53 & 0xF_FFFF_FFFF_FFFFL);
+        return Double.longBitsToDouble(bits);
     }
 
     @Override
@@ -845,9 +922,17 @@ public final class Float256 extends Number implements Comparable<Float256> {
         if (isZero()) return 0;
         if (isNaN() || isInfinity()) throw new ArithmeticException("not finite");
         long realExp = realExponent();
-        // long 有效范围 [-2^63, 2^63-1]，指数 ≥ 63 就一定超
-        if (realExp >= 63) throw new ArithmeticException("Float256 out of long range");
+        // 🔧 修复（AxorBisInfinitive 测试实锤）：long 有效范围 [-2^63, 2^63-1]——幅值 = 2^63（负数
+        // Long.MIN_VALUE）是合法的，原 realExp >= 63 一律抛把合法值也抛了。改为 realExp > 63 才超。
+        if (realExp > 63) throw new ArithmeticException("Float256 out of long range");
         if (realExp < 0) return 0;
+        if (realExp == 63) {
+            // 🔧 批A：幅值 ∈ [2^63, 2^64)——仅 -2^63（Long.MIN_VALUE，幅值语义）合法；
+            // +2^63 或幅值 > 2^63（尾数低位非零）都超界。原实现交给 Int256.longValue() 会把
+            // 2^63 位模式当补码超界误抛（Diag256 实锤 of(Long.MIN_VALUE) 崩）。
+            if (signum() < 0 && (b & MANT_HI_MASK) == 0 && c == 0 && d == 0) return Long.MIN_VALUE;
+            throw new ArithmeticException("Float256 out of long range");
+        }
         Int256 shifted = mantissaWithImplied().shiftRight((int) (MANT_BITS - realExp));
         long result = shifted.longValue();
         return signum() < 0 ? -result : result;
@@ -860,7 +945,44 @@ public final class Float256 extends Number implements Comparable<Float256> {
 
     @Override
     public float floatValue() {
-        return (float) doubleValue();
+        if (isZero()) return 0.0f;
+        if (isNaN()) return Float.NaN;
+        if (isInfinity()) return signum() < 0 ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
+        // 🔧 批A：直连位场（砍 BigDecimal/double 双重转换链——对手实测 430 倍差）
+        final long realExp = realExponent();
+        final boolean negSign = signum() < 0;
+        if (realExp > 127) return negSign ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
+        if (realExp < -149) return negSign ? -0.0f : 0.0f;
+        // 尾数高 24 位（含隐含位）+ GRS 最近偶数舍入（c/d 全在丢弃区）
+        // 🔧 批A bug 修复：m24 低 23 位 = M bits 153..175（>>>25），原 >>>24 顶掉 M bit175 且隐含位错位
+        // → 非幂值全错（2 的幂尾数全零侥幸 PASS，Diag256/Float256Check 实锤）。guard/sticky 同步移一位。
+        final long mantHi48 = b & MANT_HI_MASK;
+        long m24 = (1L << 23) | (mantHi48 >>> 25);
+        final boolean guard = (mantHi48 & (1L << 24)) != 0;
+        final boolean sticky = (mantHi48 & 0xFF_FFFFL) != 0 || c != 0 || d != 0;
+        long e = realExp; // 值 = m24 × 2^(realExp-23) = 1.f × 2^realExp
+        if (realExp <= -127) {
+            // 🔧 批A 补缺：次正规域（realExp ∈ [-149,-127]）——e+127 ≤ 0 不能进指数域。
+            // f = m24 >> shift（shift = -realExp-126 ∈ [1,23]）+ GRS 舍入。R ≥ mant bit152
+            // → mantHi48 bit23（mant151）恒属 S，用 24 位掩码全含
+            final int shift = (int) (-realExp - 126);
+            int f = (int) (m24 >> shift);
+            final boolean g2 = ((m24 >> (shift - 1)) & 1L) != 0;
+            final boolean s2 = (m24 & ((1L << (shift - 1)) - 1L)) != 0
+                    || (mantHi48 & 0xFF_FFFFL) != 0 || c != 0 || d != 0;
+            if (g2 && (s2 || (f & 1) != 0)) f++;
+            if (f == (1 << 24)) {
+                // 舍入上溢到最小正规 2^-126
+                return Float.intBitsToFloat((negSign ? 1 << 31 : 0) | (1 << 23));
+            }
+            return Float.intBitsToFloat((negSign ? 1 << 31 : 0) | f);
+        }
+        if (guard && (sticky || (m24 & 1) != 0)) {
+            m24++;
+            if (m24 == (1L << 24)) { m24 >>= 1; e++; }
+        }
+        final int bits = (negSign ? (1 << 31) : 0) | ((int) (e + 127) << 23) | (int) (m24 & 0x7F_FFFF);
+        return Float.intBitsToFloat(bits);
     }
 
 /** 精确十进制转换（不做有效位数截断）。 修复：原实现 realExp<0 时用 MathContext.DECIMAL128，每次转换丢约 19 位有效数字。 */

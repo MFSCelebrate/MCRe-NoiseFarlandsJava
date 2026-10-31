@@ -4,6 +4,7 @@ import com.mojang.serialization.MapCodec;
 
 import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.world.level.levelgen.DensityFunction;
+import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 
 /**
  * 🔧 MCBedrock0601GenPipeline：PE 0.6.1 地形密度（getHeights 公式逐字单点化）。
@@ -42,30 +43,43 @@ public final class TerrainDensity0601 implements DensityFunction.SimpleFunction 
 
     /** getHeights 公式单点化（源码逐字；bb/cc/pnr 用 8 堆单点采样，温度/湿度连续单点） */
     public float heightValue(final int blockX, final int blockY, final int blockZ) {
+        // 🔧 enableSkyGrid（大佬裁定）：0.6.1 原版的天空网格——启用 = 原版直接过（不检查 Inf，float 噪声
+        // 远坐标溢出的天空网格照原样）；关闭 = 禁用（y≥128 虚空 + Inf 消除——角点无 Inf，26.2 的
+        // interpolated 插值（double）自然无 Inf/NaN，覆盖角点/cell/过渡段全程）。
+        final boolean skyGrid = isSkyGridEnabled();
         // 🔧 大佬裁定（2026-10-31 实测）：0.6.1 原版有效高度域 0~127，域外全部虚空。
         // y≥128：源码 slide 公式在 yy>16 外推时 (1-slide) 变负，val 项（bb/cc ±64 尺度）反号压过
         // -10 项 → 实心石墙（原版 128 上限下不可见）；y<0：yOffs 负×4 外推为深岩（同样原版不存在）。
         // 域外早退判负（虚空），顺带省计算。
-        if (blockY < 0 || blockY >= 128) {
-            return -1.0f;
+        if (blockY < 0) {
+            return -1.0f; // y<0 恒虚空（0.6.1 无此域，与天空网格无关）
         }
+        if (!skyGrid && blockY >= 128) {
+            return -1.0f; // 关闭：y≥128 虚空（禁天空网格）；启用：原版 slide 外推照算（石墙/Inf 网格照原样）
+        }
+        // 🔧 偏移缩放（WorldReposition 红线）：采样坐标 = reposition(玩家块坐标)——恒等时无变化
+        final float sampleX = (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(blockX, net.minecraft.core.Direction.Axis.X);
+        final float sampleY = (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(blockY, net.minecraft.core.Direction.Axis.Y);
+        final float sampleZ = (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(blockZ, net.minecraft.core.Direction.Axis.Z);
         final float s = SCALE_S;
         final float hs = SCALE_HS;
 
-        // 温度采样点（连续化：采样格 k = 块坐标/4 → 温度块坐标 = 3k+1）
-        final int tx = BiomeSource0601.temperatureCoord(blockX);
-        final int tz = BiomeSource0601.temperatureCoord(blockZ);
-        final float temperature = this.system.biomeSource().temperatureAt(tx, tz);
-        float downfall = this.system.biomeSource().downfallAt(tx, tz) * temperature;
+        // 温度采样点（网格语义：xc×3+1——玩家域网格点 → reposition → 采样坐标）
+        final int txGrid = BiomeSource0601.temperatureCoord(blockX);
+        final int tzGrid = BiomeSource0601.temperatureCoord(blockZ);
+        final float txSample = (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(txGrid, net.minecraft.core.Direction.Axis.X);
+        final float tzSample = (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(tzGrid, net.minecraft.core.Direction.Axis.Z);
+        final float temperature = this.system.biomeSource().temperatureAt(txSample, tzSample);
+        float downfall = this.system.biomeSource().downfallAt(txSample, tzSample) * temperature;
         float dd = 1 - downfall;
         dd = dd * dd;
         dd = dd * dd;
         dd = 1 - dd;
 
-        // 噪声域：x/z = 块坐标/4、y = 块坐标/8（getRegion 采样点单点等价——2D/3D 噪声统一用此域）
-        final float nx = blockX / 4.0f;
-        final float ny = blockY / 8.0f;
-        final float nz = blockZ / 4.0f;
+        // 噪声域：采样坐标/4（x/z）、/8（y）——getRegion 采样点单点等价（reposition 后）
+        final float nx = sampleX / 4.0f;
+        final float ny = sampleY / 8.0f;
+        final float nz = sampleZ / 4.0f;
 
         // scaleNoise/depthNoise：2D point 版（走 add ySize==1 分支——与 getRegion 采样点逐位等价）
         float scale = (this.system.scaleNoise().getRegionPoint2D(nx, nz, 1.121f, 1.121f) + 256.0f) / 512;
@@ -121,7 +135,18 @@ public final class TerrainDensity0601 implements DensityFunction.SimpleFunction 
             val = val * (1 - slide) + -10 * slide;
         }
 
+        // 🔧 enableSkyGrid 关闭：Float 正负 Inf 消除（远坐标 fade x³ 溢出的天空网格）——角点无 Inf，
+        // 26.2 interpolated 插值（double）覆盖角点/cell/过渡段自然无 Inf/NaN
+        if (!skyGrid && Float.isInfinite(val)) {
+            return -1.0f;
+        }
         return val;
+    }
+
+    /** enableSkyGrid 开关（WMS"启用天空网格"；config 缺省时按 0.6.1 原版=启用） */
+    private static boolean isSkyGridEnabled() {
+        final WorldMainSettingScreen.FarLandsConfigData cfg = WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return cfg == null || cfg.enableSkyGrid;
     }
 
     // ===== 值域：±∞（yOffs 项随 y 外推无界；避免上层值域短路优化误判）=====

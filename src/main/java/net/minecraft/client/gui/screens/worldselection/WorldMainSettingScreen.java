@@ -852,7 +852,7 @@ public class WorldMainSettingScreen extends Screen {
         /** "限制返回值"输入框的数值（支持任意实数，含小数） */
         public double limitReturnValueValue = 9.0;
 
-        public boolean enableSkyGrid = false;
+        public boolean enableSkyGrid = true;
         public boolean forceSkyGrid = false;
         public boolean progressiveFarlands = false;
         /**
