@@ -88,6 +88,11 @@ public abstract class ChunkGenerator {
     private final Supplier<List<FeatureSorter.StepFeatureData>> featuresPerStep;
     private final Function<Holder<Biome>, BiomeGenerationSettings> generationSettingsGetter;
 
+    /** 🔧 MCRe 地形管线：biomeSource 访问器（protected 字段跨包不可达——0.6.1 管线的群系映射从 possibleBiomes() 按 key 匹配 Holder） */
+    public BiomeSource biomeSource() {
+        return this.biomeSource;
+    }
+
     public ChunkGenerator(final BiomeSource biomeSource) {
         this(biomeSource, biome -> biome.value().getGenerationSettings());
     }
