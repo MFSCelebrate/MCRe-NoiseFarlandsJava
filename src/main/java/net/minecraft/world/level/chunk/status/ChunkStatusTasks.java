@@ -144,7 +144,21 @@ public class ChunkStatusTasks {
         );
         WorldGenRegion region = new WorldGenRegion(level, chunks, step, chunk);
         if (!SharedConstants.DEBUG_DISABLE_FEATURES) {
-            context.generator().applyBiomeDecoration(region, chunk, level.structureManager().forWorldGenRegion(region));
+            // 🔧 MCRe 地形管线系统：管线接管 FEATURES 阶段（takesOverDecorate 声明）——
+            // PE postProcess 类 feature 语义（树冠/矿脉跨界读写）在 writeRadius=1 的本阶段天然合法
+            final net.MinecraftTools.terrain.pipeline.TerrainPipeline pipeline = net.MinecraftTools.terrain.pipeline.TerrainPipelineRegistry.active();
+            if (pipeline != null && pipeline.takesOverDecorate()) {
+                pipeline.applyDecorate(
+                    (net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator) context.generator(),
+                    region,
+                    level.getSeed(),
+                    level.getChunkSource().randomState(),
+                    level.structureManager().forWorldGenRegion(region),
+                    chunk
+                );
+            } else {
+                context.generator().applyBiomeDecoration(region, chunk, level.structureManager().forWorldGenRegion(region));
+            }
         }
 
         Blender.generateBorderTicks(region, chunk);

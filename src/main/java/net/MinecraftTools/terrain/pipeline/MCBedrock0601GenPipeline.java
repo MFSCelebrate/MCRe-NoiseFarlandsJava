@@ -339,12 +339,35 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
      * MobSpawner 跳过（PE 的 MobSpawner 语义不在 26.2 生成期范围）。
      */
     @Override
+    public boolean takesOverDecorate() {
+        return true; // PE postProcess = feature 装饰语义，挂 FEATURES 阶段（writeRadius=1，跨界读写合法）
+    }
+
+    /**
+     * 🔧 批5b：PE 0.6.1 无洞穴（cave/canyon 源码未接线），本阶段 no-op 防原版洞穴 carving 乱入；
+     * feature 全套（矿脉/树/花/蔗/仙人掌/泉/雪）见 {@link #applyDecorate}——原挂本阶段时
+     * 树冠 ±2 格/矿脉椭球 ±4 格的跨界读写触发 "Detected unsafe terrain read during worldgen"
+     * （大佬实测 1e33 缩放复现），已挪 FEATURES 阶段（writeRadius=1 天然合法）。
+     */
+    @Override
     public void applyCarvers(
         final NoiseBasedChunkGenerator generator,
         final WorldGenRegion region,
         final long seed,
         final RandomState randomState,
         final net.minecraft.world.level.biome.BiomeManager biomeManager,
+        final StructureManager structureManager,
+        final ChunkAccess chunk
+    ) {
+        // no-op：PE 0.6.1 无洞穴
+    }
+
+    @Override
+    public void applyDecorate(
+        final NoiseBasedChunkGenerator generator,
+        final WorldGenRegion region,
+        final long seed,
+        final RandomState randomState,
         final StructureManager structureManager,
         final ChunkAccess chunk
     ) {

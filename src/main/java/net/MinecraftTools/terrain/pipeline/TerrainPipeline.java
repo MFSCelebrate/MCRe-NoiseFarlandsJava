@@ -90,6 +90,28 @@ public interface TerrainPipeline {
     ) {
     }
 
+    /**
+     * 是否接管 FEATURES 阶段（feature 装饰语义）。
+     *
+     * <p>FEATURES 阶段的 blockStateWriteRadius = 1（可读写 ±1 chunk），而 CARVERS 阶段 = 0（仅本
+     * chunk）。PE postProcess 类 feature（树冠 ±2 格、矿脉椭球 ±4 格）天然跨界读写，挂在 CARVERS
+     * 会触发 WorldGenRegion 的 "Detected unsafe terrain read during worldgen" 警告——挂 FEATURES。
+     */
+    default boolean takesOverDecorate() {
+        return false;
+    }
+
+    /** FEATURES 阶段：feature 装饰（对应 ChunkGenerator.applyBiomeDecoration；PE postProcess 语义挂这里） */
+    default void applyDecorate(
+        final NoiseBasedChunkGenerator generator,
+        final WorldGenRegion region,
+        final long seed,
+        final RandomState randomState,
+        final StructureManager structureManager,
+        final ChunkAccess chunk
+    ) {
+    }
+
     /** 本管线生成的 chunk 是否可安全参与 FarLandsBandGenerator 的带任务（默认 true） */
     default boolean supportsBandGeneration() {
         return true;
