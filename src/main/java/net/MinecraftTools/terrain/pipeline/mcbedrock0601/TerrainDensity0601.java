@@ -42,6 +42,13 @@ public final class TerrainDensity0601 implements DensityFunction.SimpleFunction 
 
     /** getHeights 公式单点化（源码逐字；bb/cc/pnr 用 8 堆单点采样，温度/湿度连续单点） */
     public float heightValue(final int blockX, final int blockY, final int blockZ) {
+        // 🔧 大佬裁定（2026-10-31 实测）：0.6.1 原版有效高度域 0~127，域外全部虚空。
+        // y≥128：源码 slide 公式在 yy>16 外推时 (1-slide) 变负，val 项（bb/cc ±64 尺度）反号压过
+        // -10 项 → 实心石墙（原版 128 上限下不可见）；y<0：yOffs 负×4 外推为深岩（同样原版不存在）。
+        // 域外早退判负（虚空），顺带省计算。
+        if (blockY < 0 || blockY >= 128) {
+            return -1.0f;
+        }
         final float s = SCALE_S;
         final float hs = SCALE_HS;
 
