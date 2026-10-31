@@ -40,6 +40,7 @@ public final class TerrainPipelineRegistry {
         register(MCVanilla263Pipeline.INSTANCE);
         register(MCBedrockGenPipeline.INSTANCE);
         register(MCVanilla1_18_1Pipeline.INSTANCE);
+        register(MCBedrock0601GenPipeline.INSTANCE);
     }
 
     private TerrainPipelineRegistry() {
