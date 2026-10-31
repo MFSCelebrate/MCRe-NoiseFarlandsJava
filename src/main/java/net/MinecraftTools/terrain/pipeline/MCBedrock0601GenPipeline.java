@@ -10,12 +10,16 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.levelgen.Aquifer;
+import net.minecraft.world.level.levelgen.Beardifier;
 import net.minecraft.world.level.levelgen.DensityFunctions;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
+import net.minecraft.world.level.levelgen.NoiseChunk;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.NoiseRouter;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.MinecraftTools.terrain.pipeline.mcbedrock0601.Bedrock0601NoiseSystem;
 import net.MinecraftTools.terrain.pipeline.mcbedrock0601.BiomeSource0601;
 import net.MinecraftTools.terrain.pipeline.mcbedrock0601.PEBiome;
@@ -57,10 +61,49 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
     }
 
     /** per-vanilla 身份缓存（volatile 不可变 holder 原子换对，照 MCBedrockGenPipeline） */
-    private record CachedPatched(RandomState vanillaRef, RandomState patched, BiomeSource0601 biomeSource0601) {
+    private record CachedPatched(RandomState vanillaRef, RandomState patched, BiomeSource0601 biomeSource0601,
+                                 NoiseGeneratorSettings settings0601, Bedrock0601NoiseSystem system) {
     }
 
     private volatile CachedPatched cachedPatched;
+
+    /** 🔧 0.6.1 流体语义（大佬裁定：禁用现代含水层，转用 0.6.1 的硬编码水） */
+    private static final Aquifer.FluidPicker FLUID_PICKER_0601 = createFluidPicker0601();
+
+    /**
+     * 🔧 0.6.1 流体语义（大佬裁定：禁用现代含水层，转用 0.6.1 的硬编码水）：y<0/y≥128 域外空、
+     * y<64 水（0.6.1 海——prepareHeights 的 waterHeight=64）、y≥64 空。无岩浆层
+     * （0.6.1 的岩浆是泉水 feature，批5）。结构照 26.2 原版 picker（FluidStatus(fluidLevel, fluidType)）。
+     */
+    private static Aquifer.FluidPicker createFluidPicker0601() {
+        final Aquifer.FluidStatus waterStatus = new Aquifer.FluidStatus(63, Blocks.WATER.defaultBlockState());
+        final Aquifer.FluidStatus emptyStatus = new Aquifer.FluidStatus(DimensionType.MIN_Y, Blocks.AIR.defaultBlockState());
+        return (x, y, z) -> {
+            if (y < 0 || y >= 128) {
+                return emptyStatus;
+            }
+            return y < 64 ? waterStatus : emptyStatus;
+        };
+    }
+
+    /**
+     * 🔧 0.6.1 settings：record 全字段复制 + aquifersEnabled=false（禁现代含水层——大佬裁定）
+     * + 0.6.1 router。surfaceRule 照抄（takesOverSurface=true 后不消费）。
+     */
+    private static NoiseGeneratorSettings settings0601(final NoiseGeneratorSettings v, final NoiseRouter customRouter) {
+        return new NoiseGeneratorSettings(
+            v.noiseSettings(),
+            v.defaultBlock(),
+            v.defaultFluid(),
+            customRouter,
+            v.surfaceRule(),
+            v.spawnTarget(),
+            v.seaLevel(),
+            v.disableMobGeneration(),
+            false, // aquifersEnabled=false：Aquifer.createDisabled（大佬裁定禁用现代含水层）
+            v.oreVeinsEnabled(),
+            v.useLegacyRandomSource());
+    }
 
     @Override
     public RandomState patchRandomState(final NoiseGeneratorSettings settings, final RandomState vanilla) {
@@ -94,7 +137,7 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
             v.veinRidged(),
             v.veinGap());
         final RandomState patched = vanilla.withRouter(custom);
-        this.cachedPatched = new CachedPatched(vanilla, patched, biomeSource0601);
+        this.cachedPatched = new CachedPatched(vanilla, patched, biomeSource0601, settings0601(settings, custom), system);
         return patched;
     }
 
@@ -124,6 +167,7 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
         final BlockState air = Blocks.AIR.defaultBlockState();
         final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
+        // ===== 0.6.1 域外清空（批2.5）=====
         for (int lx = 0; lx < 16; lx++) {
             for (int lz = 0; lz < 16; lz++) {
                 // y<0（-64~-1）：26.2 流体/含水层残留
@@ -138,6 +182,103 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
                     pos.set(baseX + lx, y, baseZ + lz);
                     if (chunk.getBlockState(pos) != air) {
                         chunk.setBlockState(pos, air, Block.UPDATE_ALL);
+                    }
+                }
+            }
+        }
+
+        // ===== PE buildSurfaces 逐字（RandomLevelSource.cpp:138-218）=====
+        final CachedPatched cached = this.cachedPatched;
+        if (cached == null) {
+            return; // 防御（正常流程 fillNoise 先行必有缓存）
+        }
+        final Bedrock0601NoiseSystem system = cached.system();
+        final int chunkX = Math.floorDiv(baseX, 16);
+        final int chunkZ = Math.floorDiv(baseZ, 16);
+        // PE getChunk 的 chunk 种子（源码实锤：(xOffs*341872712 + zOffs*132899541)）
+        system.random().setSeed((long) (chunkX * 341872712L + chunkZ * 132899541L));
+
+        final int waterHeight = 64; // PE：Level::DEPTH - 64 = 128 - 64
+        final float s = 1 / 32.0f;
+
+        // 三表层 buffer（PE 参数序怪味照抄：y 参数传块 z、buffer 索引读写转置）
+        final float[] sandBuffer = new float[16 * 16];
+        final float[] gravelBuffer = new float[16 * 16];
+        final float[] depthBuffer = new float[16 * 16];
+        system.perlinNoise2().getRegion(sandBuffer, baseX, baseZ, 0, 16, 16, 1, s, s, 1);
+        system.perlinNoise2().getRegion(gravelBuffer, baseX, 109.01340f, baseZ, 16, 1, 16, s, 1, s);
+        system.perlinNoise3().getRegion(depthBuffer, baseX, baseZ, 0, 16, 16, 1, s * 2, s * 2, s * 2);
+
+        final BiomeSource0601 biomeSource0601 = this.biomeSource0601(randomState);
+        final BlockState stone = Blocks.STONE.defaultBlockState();
+        final BlockState gravel = Blocks.GRAVEL.defaultBlockState();
+        final BlockState sand = Blocks.SAND.defaultBlockState();
+        final BlockState sandstone = Blocks.SANDSTONE.defaultBlockState();
+        final BlockState bedrock = Blocks.BEDROCK.defaultBlockState();
+        final BlockState water = Blocks.WATER.defaultBlockState();
+
+        for (int lx = 0; lx < 16; lx++) {
+            for (int lz = 0; lz < 16; lz++) {
+                final PEBiome pe = PEBiome.judge(
+                    biomeSource0601.temperatureAt(baseX + lx, baseZ + lz),
+                    biomeSource0601.downfallAt(baseX + lx, baseZ + lz));
+                final boolean sandHere = sandBuffer[lx + lz * 16] + system.random().nextFloat() * 0.2f > 0;
+                final boolean gravelHere = gravelBuffer[lx + lz * 16] + system.random().nextFloat() * 0.2f > 3;
+                final int runDepth = (int) (depthBuffer[lx + lz * 16] / 3 + 3 + system.random().nextFloat() * 0.25f);
+
+                // PE 的表层材质（Biome 构造默认 grass/dirt；desert/iceDesert = sand/sand；temp=1 为源码 @todo 照抄）
+                BlockState top = Blocks.GRASS_BLOCK.defaultBlockState();
+                BlockState material = Blocks.DIRT.defaultBlockState();
+                if (pe == PEBiome.DESERT) {
+                    top = sand;
+                    material = sand;
+                }
+
+                int run = -1;
+                for (int y = 127; y >= 0; y--) {
+                    pos.set(baseX + lx, y, baseZ + lz);
+                    if (y <= 0 + system.random().nextInt(5)) {
+                        chunk.setBlockState(pos, bedrock, Block.UPDATE_ALL);
+                    } else {
+                        final BlockState old = chunk.getBlockState(pos);
+                        if (old.isAir()) {
+                            run = -1;
+                        } else if (old.is(Blocks.STONE)) {
+                            if (run == -1) {
+                                if (runDepth <= 0) {
+                                    top = air;
+                                    material = stone;
+                                } else if (y >= waterHeight - 4 && y <= waterHeight + 1) {
+                                    top = Blocks.GRASS_BLOCK.defaultBlockState();
+                                    material = Blocks.DIRT.defaultBlockState();
+                                    if (gravelHere) {
+                                        top = air;
+                                        material = gravel;
+                                    }
+                                    if (sandHere) {
+                                        top = sand;
+                                        material = sand;
+                                    }
+                                }
+                                if (y < waterHeight && top == air) {
+                                    // PE：temp<0.15 → ice（temp=1 todo 照抄，不触发）
+                                    top = water;
+                                }
+                                run = runDepth;
+                                if (y >= waterHeight - 1) {
+                                    chunk.setBlockState(pos, top, Block.UPDATE_ALL);
+                                } else {
+                                    chunk.setBlockState(pos, material, Block.UPDATE_ALL);
+                                }
+                            } else if (run > 0) {
+                                run--;
+                                chunk.setBlockState(pos, material, Block.UPDATE_ALL);
+                                if (run == 0 && material == sand) {
+                                    run = system.random().nextInt(4);
+                                    material = sandstone;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -218,6 +359,19 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
         final ChunkAccess chunk
     ) {
         final RandomState custom = this.patchRandomState(generator.generatorSettings().value(), randomState);
+        // 🔧 批4：预建 NoiseChunk（0601 settings：aquifersEnabled=false 禁现代含水层 + 0601 流体语义
+        // y<64 水/域外 air）——doFill 的 getOrCreateNoiseChunk 命中本缓存，走 fillFromNoiseVanilla 全套基建
+        final CachedPatched cached = this.cachedPatched;
+        final NoiseGeneratorSettings chunkSettings = cached != null && cached.vanillaRef() == randomState
+            ? cached.settings0601()
+            : settings0601(generator.generatorSettings().value(), custom.router());
+        chunk.getOrCreateNoiseChunk(c -> NoiseChunk.forChunk(
+            c,
+            custom,
+            Beardifier.forStructuresInChunk(structureManager, c.getPos()),
+            chunkSettings,
+            FLUID_PICKER_0601,
+            blender));
         return generator.fillFromNoiseVanilla(blender, custom, structureManager, chunk, true);
     }
 }

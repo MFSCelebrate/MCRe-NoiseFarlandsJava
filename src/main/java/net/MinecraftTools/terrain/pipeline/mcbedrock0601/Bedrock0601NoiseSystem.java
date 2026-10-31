@@ -23,9 +23,11 @@ public final class Bedrock0601NoiseSystem {
     private final PerlinNoise0601 depthNoise;
     private final PerlinNoise0601 forestNoise;
     private final BiomeSource0601 biomeSource;
+    private final Mt19937Random random;
 
     public Bedrock0601NoiseSystem(final long levelSeed) {
         final Mt19937Random random = new Mt19937Random(levelSeed);
+        this.random = random;
         this.lperlinNoise1 = new PerlinNoise0601(random, 16);
         this.lperlinNoise2 = new PerlinNoise0601(random, 16);
         this.perlinNoise1 = new PerlinNoise0601(random, 8);
@@ -71,5 +73,10 @@ public final class Bedrock0601NoiseSystem {
 
     public BiomeSource0601 biomeSource() {
         return this.biomeSource;
+    }
+
+    /** 主 MT 随机流访问器（PE 的 getChunk per-chunk setSeed——buildSurface/postProcess 的表层随机用） */
+    public Mt19937Random random() {
+        return this.random;
     }
 }
