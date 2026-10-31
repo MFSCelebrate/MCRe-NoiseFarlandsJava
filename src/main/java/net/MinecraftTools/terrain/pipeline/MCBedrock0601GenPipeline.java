@@ -201,7 +201,10 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
         final int chunkX = Math.floorDiv(baseX, 16);
         final int chunkZ = Math.floorDiv(baseZ, 16);
         // PE getChunk 的 chunk 种子（源码实锤：(xOffs*341872712 + zOffs*132899541)）
-        system.random().setSeed((long) (chunkX * 341872712L + chunkZ * 132899541L));
+        // 🔧 批4b 修复：per-chunk 随机改独立实例（PE 原版 = new Random(chunk 种子)）——原共享
+        // system.random() 被多线程并发 setSeed/nextInt → mti 竞态越界（大佬实测 Index 624
+        // out of bounds for length 624）+ 随机流互相污染破坏逐位复刻
+        final Mt19937Random random = new Mt19937Random((long) (chunkX * 341872712L + chunkZ * 132899541L));
 
         final int waterHeight = 64; // PE：Level::DEPTH - 64 = 128 - 64
         final float s = 1 / 32.0f;
@@ -239,9 +242,9 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
                     biomeSource0601.downfallAt(
                         (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(baseX + lx, net.minecraft.core.Direction.Axis.X),
                         (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(baseZ + lz, net.minecraft.core.Direction.Axis.Z)));
-                final boolean sandHere = sandBuffer[lx + lz * 16] + system.random().nextFloat() * 0.2f > 0;
-                final boolean gravelHere = gravelBuffer[lx + lz * 16] + system.random().nextFloat() * 0.2f > 3;
-                final int runDepth = (int) (depthBuffer[lx + lz * 16] / 3 + 3 + system.random().nextFloat() * 0.25f);
+                final boolean sandHere = sandBuffer[lx + lz * 16] + random.nextFloat() * 0.2f > 0;
+                final boolean gravelHere = gravelBuffer[lx + lz * 16] + random.nextFloat() * 0.2f > 3;
+                final int runDepth = (int) (depthBuffer[lx + lz * 16] / 3 + 3 + random.nextFloat() * 0.25f);
 
                 // PE 的表层材质（Biome 构造默认 grass/dirt；desert/iceDesert = sand/sand；temp=1 为源码 @todo 照抄）
                 BlockState top = Blocks.GRASS_BLOCK.defaultBlockState();
@@ -254,7 +257,7 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
                 int run = -1;
                 for (int y = 127; y >= 0; y--) {
                     pos.set(baseX + lx, y, baseZ + lz);
-                    if (y <= 0 + system.random().nextInt(5)) {
+                    if (y <= 0 + random.nextInt(5)) {
                         chunk.setBlockState(pos, bedrock, Block.UPDATE_ALL);
                     } else {
                         final BlockState old = chunk.getBlockState(pos);
@@ -291,7 +294,7 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
                                 run--;
                                 chunk.setBlockState(pos, material, Block.UPDATE_ALL);
                                 if (run == 0 && material == sand) {
-                                    run = system.random().nextInt(4);
+                                    run = random.nextInt(4);
                                     material = sandstone;
                                 }
                             }
@@ -376,7 +379,9 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
             return; // 防御（fillNoise 先行必有缓存）
         }
         final Bedrock0601NoiseSystem system = cached.system();
-        final Mt19937Random random = system.random();
+        // 🔧 批4b 修复：独立实例（PE 原版 postProcess = new Random(worldSeed) 后派生 chunk 种子）——
+        // 原共享实例多线程 setSeed/nextInt 竞态（同 buildSurface 修复）
+        final Mt19937Random random = new Mt19937Random();
 
         final int xt = (int) (chunk.getPos().getBlockX(0L) >> 4);
         final int zt = (int) (chunk.getPos().getBlockZ(0L) >> 4);

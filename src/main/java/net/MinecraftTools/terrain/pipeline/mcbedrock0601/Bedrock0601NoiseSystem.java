@@ -25,11 +25,11 @@ public final class Bedrock0601NoiseSystem {
     private final PerlinNoise0601 depthNoise;
     private final PerlinNoise0601 forestNoise;
     private final BiomeSource0601 biomeSource;
-    private final Mt19937Random random;
 
     public Bedrock0601NoiseSystem(final long levelSeed) {
         final Mt19937Random random = new Mt19937Random(levelSeed);
-        this.random = random;
+        // 🔧 批4b：随机实例只在构造期消耗（8 堆初始化），不外借——per-chunk 随机由
+        // MCBedrock0601GenPipeline 各自 new（共享实例多线程竞态见该类批4b 注释）
         // 🔧 批6：1.18-exp 振幅列表（precisionMode 分派）——1.18-exp-* 档：lperlin 堆 = [0×6, 1×10]
         //（PE 堆 i 层 = 八度 -i：i=0~5（八度 0~-5）振幅 0、i=6~15（八度 -6~-15）振幅 1——照 1.18-exp-4 的
         // minLimit/maxLimit 振幅表 [1×10, 0×6] 的 PE 堆序映射，i=7 层墙 = 2^38/171.103 = 1,606,505,472 ✓）
@@ -94,8 +94,4 @@ public final class Bedrock0601NoiseSystem {
         return this.biomeSource;
     }
 
-    /** 主 MT 随机流访问器（PE 的 getChunk per-chunk setSeed——buildSurface/postProcess 的表层随机用） */
-    public Mt19937Random random() {
-        return this.random;
-    }
 }
