@@ -29,6 +29,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
@@ -140,7 +141,10 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     private final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap = new Int2ObjectOpenHashMap<>();
     private final Map<ChunkPos, Byte> chunkTypeCache = new HashMap<>();
     private final Map<ChunkPos, Long> nextChunkSaveTime = new HashMap<>();
-    private final Set<ChunkPos> chunksToEagerlySave = new LinkedHashSet<>();
+    // 🔧 MCRe（A2 多线程）修复：setChunkUnsaved 在 worldgen 线程被调（生成完成标记 unsaved），
+    // 与 server thread 的 saveChunksEagerly 迭代并发 → LinkedHashSet CME（大佬实测崩溃）。
+    // 换 CHM 弱一致集合：add/迭代/iterator.remove 全线程安全；插入序丢失对"挑一批急切保存"无语义影响。
+    private final Set<ChunkPos> chunksToEagerlySave = ConcurrentHashMap.newKeySet();
     private final Queue<Runnable> unloadQueue = Queues.newConcurrentLinkedQueue();
     private final AtomicInteger activeChunkWrites = new AtomicInteger();
     private int serverViewDistance;
