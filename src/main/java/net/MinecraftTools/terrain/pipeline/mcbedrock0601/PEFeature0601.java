@@ -93,8 +93,12 @@ public final class PEFeature0601 {
     /** PE ClayFeature：水中粘土球（同 Ore 骨架，位置须为水） */
     public static void clay(final WorldGenRegion region, final Mt19937Random random,
                             final int x, final int y, final int z, final int count) {
+        // 🔧 PE 原版入口（ClayFeature.place 首行）：起点必须是水，否则整条矿脉不放置——
+        // 漏了它导致无效地形（NaN 噪声下 y<64 被 0.6.1 水语义填满）恒过 → 粘土密集误生
+        if (!blockAt(region, x, y, z).is(Blocks.WATER)) {
+            return;
+        }
         final BlockState clay = Blocks.CLAY.defaultBlockState();
-        final BlockState water = Blocks.WATER.defaultBlockState();
         final float dir = random.nextFloat() * (float) Math.PI;
         final float x0 = x + 8 + (float) Math.sin(dir) * count / 8;
         final float x1 = x + 8 - (float) Math.sin(dir) * count / 8;
@@ -113,7 +117,9 @@ public final class PEFeature0601 {
             for (int x2 = (int) (xx - r / 2); x2 <= (int) (xx + r * 0.5f); x2++) {
                 for (int y2 = (int) (yy - r / 2); y2 <= (int) (yy + r * 0.5f); y2++) {
                     for (int z2 = (int) (zz - r / 2); z2 <= (int) (zz + r * 0.5f); z2++) {
-                        if (blockAt(region, x2, y2, z2).getBlock() == Blocks.WATER) {
+                        // 🔧 PE 原版语义：只替换沙子（t == Tile::sand）——原错成替换水，
+                        // 把水团直接变成粘土块（截图中的灰色浮块根因）
+                        if (blockAt(region, x2, y2, z2).is(Blocks.SAND)) {
                             place(region, x2, y2, z2, clay);
                         }
                     }
@@ -214,8 +220,15 @@ public final class PEFeature0601 {
                 || blockAt(region, x2, y - 1, z2 - 1).is(Blocks.WATER)
                 || blockAt(region, x2, y - 1, z2 + 1).is(Blocks.WATER);
             if (nearWater) {
+                // 🔧 PE 原版 ReedTile.mayPlace：首节下方必须是 grass/dirt/sand（固体）——
+                // 漏了它导致无效地形（水/空气）上甘蔗直接生长（大佬实机：甘蔗生在水上）
+                final BlockState below = blockAt(region, x2, y - 1, z2);
+                if (!below.is(Blocks.GRASS_BLOCK) && !below.is(Blocks.DIRT) && !below.is(Blocks.SAND)) {
+                    continue;
+                }
                 final int h = 2 + random.nextInt(random.nextInt(3) + 1);
                 for (int yy = 0; yy < h; yy++) {
+                    // yy > 0 时下方是上一节甘蔗（PE mayPlace 的 below==id 快路径，天然满足）
                     if (isEmpty(region, x2, y + yy, z2)) {
                         place(region, x2, y + yy, z2, reeds);
                     }

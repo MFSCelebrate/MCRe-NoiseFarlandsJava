@@ -918,6 +918,61 @@ public final class FloatRefactor256 implements Comparable<FloatRefactor256> {
     }
 
     /**
+     * 定点字符串（digits 位小数 + HALF_UP 舍入）——调试坐标显示用：
+     * 值 = m·2^scale → ×10^digits → HALF_UP 取整 → 插小数点；±0 保号（位模式符号位）；
+     * scale 域 |≤262378| ⊂ int。注：舍入基于 double→256 的<b>精确</b>值，与原版 %.Nf 的
+     * 最短十进制路径在"精确值恰落舍入边界"时可能差 1 末位（精度更高，记录在案）。
+     */
+    public String toFixedString(final int digits) {
+        if (isNaN()) {
+            return "NaN";
+        }
+        if (isInfinite()) {
+            return signBit() ? "-Infinity" : "Infinity";
+        }
+        if (isZero()) {
+            return (signBit() ? "-" : "") + (digits > 0 ? "0." + "0".repeat(digits) : "0");
+        }
+        if (digits < 0) {
+            throw new IllegalArgumentException("digits must be >= 0");
+        }
+        // 幅值 × 10^digits（正有理数分子/分母）
+        final long[] mag = magnitude();
+        java.math.BigInteger m = java.math.BigInteger.ZERO;
+        for (int i = mag.length - 1; i >= 0; i--) {
+            m = m.shiftLeft(64).or(java.math.BigInteger.valueOf(mag[i])
+                    .and(java.math.BigInteger.ONE.shiftLeft(64).subtract(java.math.BigInteger.ONE)));
+        }
+        final int scale = Math.toIntExact(scaleExponent());
+        final java.math.BigInteger num;
+        final int den10;
+        if (scale >= 0) {
+            num = m.shiftLeft(scale).multiply(java.math.BigInteger.TEN.pow(digits));
+            den10 = 0;
+        } else {
+            final int k = -scale;
+            num = m.multiply(java.math.BigInteger.valueOf(5).pow(k)).multiply(java.math.BigInteger.TEN.pow(digits));
+            den10 = k;
+        }
+        // HALF_UP：num / 10^den10，余数 × 2 ≥ 分母则进一
+        final java.math.BigInteger den = java.math.BigInteger.TEN.pow(den10);
+        final java.math.BigInteger[] qr = num.divideAndRemainder(den);
+        java.math.BigInteger q = qr[0];
+        if (qr[1].shiftLeft(1).compareTo(den) >= 0) {
+            q = q.add(java.math.BigInteger.ONE);
+        }
+        String digitsStr = q.toString();
+        if (digits == 0) {
+            return (signBit() ? "-" : "") + digitsStr;
+        }
+        if (digitsStr.length() <= digits) {
+            digitsStr = "0".repeat(digits - digitsStr.length() + 1) + digitsStr;
+        }
+        return (signBit() ? "-" : "") + digitsStr.substring(0, digitsStr.length() - digits)
+                + "." + digitsStr.substring(digitsStr.length() - digits);
+    }
+
+    /**
      * 精确十进制字符串（double 输入构造时 52 位尾数在 237 位内 → 完整展开无精度损失；
      * |scale| ≤ 262378 恒在 int 域无需钳制；极端 scale 的展开成本由调用方承担——精确语义优先）。
      */

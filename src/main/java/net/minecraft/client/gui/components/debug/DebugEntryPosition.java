@@ -2,6 +2,7 @@ package net.minecraft.client.gui.components.debug;
 
 import java.util.Locale;
 import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
+import net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256;
 import net.MinecraftTools.Math.DynamicAccuracy.BigInteger;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -42,11 +43,12 @@ public class DebugEntryPosition implements DebugScreenEntry {
     // ==================== 🔧 MCRe 自定义：精确显示辅助 ====================
 
     /**
-     * 定点显示（复刻原版 {@code String.format("%.3f / %.5f / %.3f")} 语义：
-     * digits 位小数 + HALF_UP 舍入；自研 BigDecimal 全链路，不经 256 中转）。
+     * 定点显示（复刻原版 {@code String.format("%.3f / %.5f / %.3f")} 位数语义：
+     * digits 位小数 + HALF_UP 舍入——走 {@link FloatRefactor256#toFixedString}（256 浮点
+     * 精确值展开，±0 经位模式保号；与原版在"精确值恰落舍入边界"时可能差 1 末位）。
      */
-    private static String fmtFixed(final BigDecimal value, final int digits) {
-        return value.setScale(digits, java.math.RoundingMode.HALF_UP).toString();
+    private static String fmtFixed(final double value, final int digits) {
+        return FloatRefactor256.of(value).toFixedString(digits);
     }
 
     /**
@@ -134,16 +136,16 @@ public class DebugEntryPosition implements DebugScreenEntry {
             displayer.addFactToGroup(
                 DebugGroups.POSITION,
                 "XYZ",
-                fact -> fact.value(fmtFixed(new BigDecimal(entity.getX()), 3)).text(" / ").value(fmtFixed(new BigDecimal(entity.getY()), 5)).text(" / ").value(fmtFixed(new BigDecimal(entity.getZ()), 3))
+                fact -> fact.value(fmtFixed(entity.getX(), 3)).text(" / ").value(fmtFixed(entity.getY(), 5)).text(" / ").value(fmtFixed(entity.getZ(), 3))
             );
             displayer.addFactToGroup(
                 DebugGroups.POSITION,
                 "XYZ(Camera)",
-                fact -> fact.value(fmtFixed(new BigDecimal(camX), 3)).text(" / ").value(fmtFixed(new BigDecimal(camY), 5)).text(" / ").value(fmtFixed(new BigDecimal(camZ), 3))
+                fact -> fact.value(fmtFixed(camX, 3)).text(" / ").value(fmtFixed(camY, 5)).text(" / ").value(fmtFixed(camZ, 3))
             );
             displayer.addFactToGroup(
                 DebugGroups.POSITION,
-                "Terrain XYZ",
+                "Terrain XYZ(FloatRefactor256)",
                 fact -> fact.value(fmtBigInt(terrainXYZ[0])).text(" / ").value(fmtBigInt(terrainXYZ[1])).text(" / ").value(fmtBigInt(terrainXYZ[2]))
             );
             displayer.addFactToGroup(
