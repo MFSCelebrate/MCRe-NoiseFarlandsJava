@@ -9,8 +9,8 @@
 > 实际的理想来源于我的另一项目 [MFSCelebrate/MCRe-NoiseFarlands](https://github.com/MFSCelebrate/MCRe-NoiseFarlands) 的携带版边境之地 Mod
 
 > [!TIP]
-> 此仓库遵循 [MIT License (MIT)](./LICENSE) 协议
-> 作者本人: [MFSCelebrate(Bilibili)](https://b23.tv/hTl7eI5)
+> 此仓库遵循 [MIT License (MIT)](./LICENSE) 协议  
+> 作者本人: [MFSCelebrate(Bilibili)](https://b23.tv/hTl7eI5)  
 > 已知协作者: [AxorBisInfinitive(BiliBili)](https://space.bilibili.com/1196843580)
 
 > [!WARNING]

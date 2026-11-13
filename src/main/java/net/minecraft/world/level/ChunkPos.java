@@ -14,7 +14,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.chunk.status.ChunkPyramid;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Util;
-import net.MinecraftTools.Math._256Bit.Int256;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 
@@ -196,23 +195,9 @@ public record ChunkPos(long x, long z) {
         return deltaX * deltaX + deltaZ * deltaZ;
     }
 
-    // ═══════════ 256-bit 适配（MCRe NoiseFarlands） ═══════════
+    
 
-    /** 区块坐标精确转 Int256 */
-    public Int256 x256() {
-        return Int256.of(this.x);
-    }
-
-    public Int256 z256() {
-        return Int256.of(this.z);
-    }
-
-    /** 区块坐标转 256-bit 复合键（高 128 位 = x，低 128 位 = z） */
-    public Int256 key256() {
-        return this.x256().shiftLeft(128).or(this.z256());
-    }
-
-    public static Stream<ChunkPos> rangeClosed(final ChunkPos center, final long radius) {
+public static Stream<ChunkPos> rangeClosed(final ChunkPos center, final long radius) {
         return rangeClosed(new ChunkPos(center.x - radius, center.z - radius), new ChunkPos(center.x + radius, center.z + radius));
     }
 

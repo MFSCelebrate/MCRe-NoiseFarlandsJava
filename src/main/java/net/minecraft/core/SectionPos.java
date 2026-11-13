@@ -10,8 +10,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.entity.EntityAccess;
-import net.MinecraftTools.Math._256Bit.Int256;
-import net.MinecraftTools.Math._256Bit.utils.Vec3d256;
 
 /**
  * SectionPos — 区块节坐标（MCRe NoiseFarlands 对象化版）
@@ -289,32 +287,5 @@ public class SectionPos extends Vec3i {
         }
     }
 
-    // ═══════════ 256-bit 适配（MCRe NoiseFarlands） ═══════════
-
-    /** 区块节坐标精确转 Int256 */
-    public Int256 x256() {
-        return Int256.of(this.x());
-    }
-
-    public Int256 y256() {
-        return Int256.of(this.y());
-    }
-
-    public Int256 z256() {
-        return Int256.of(this.z());
-    }
-
-    /** 转 256-bit 向量（方块坐标级） */
-    public Vec3d256 to256() {
-        return Vec3d256.ofInt(Int256.of(this.minBlockX()), Int256.of(this.minBlockY()), Int256.of(this.minBlockZ()));
-    }
-
-    /** 256-bit 向量 → 区块节（floor 到 16 对齐） */
-    public static SectionPos from256(final Vec3d256 pos) {
-        return of(
-            (int)blockToSectionCoord(pos.x.floor().longValue()),
-            (int)blockToSectionCoord(pos.y.floor().longValue()),
-            (int)blockToSectionCoord(pos.z.floor().longValue())
-        );
-    }
+    
 }

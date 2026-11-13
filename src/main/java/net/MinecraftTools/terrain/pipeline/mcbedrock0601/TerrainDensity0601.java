@@ -51,11 +51,14 @@ public final class TerrainDensity0601 implements DensityFunction.SimpleFunction 
         // y≥128：源码 slide 公式在 yy>16 外推时 (1-slide) 变负，val 项（bb/cc ±64 尺度）反号压过
         // -10 项 → 实心石墙（原版 128 上限下不可见）；y<0：yOffs 负×4 外推为深岩（同样原版不存在）。
         // 域外早退判负（虚空），顺带省计算。
-        if (blockY < 0) {
-            return -1.0f; // y<0 恒虚空（0.6.1 无此域，与天空网格无关）
-        }
-        if (!skyGrid && blockY >= 128) {
-            return -1.0f; // 关闭：y≥128 虚空（禁天空网格）；启用：原版 slide 外推照算（石墙/Inf 网格照原样）
+        // 🔧 大佬实测回归修复（2026-11-12）：域外判定无条件优先于 enableSkyGrid——
+        // 0.6.1 原版有效高度域 0~127，域外本就"不存在"：y≥128 的 slide 公式外推（yy>16 时
+        // (1-slide) 变负 → val 项反号压过 -10 → 正值实心石墙）与 y<0 的 yOffs 负×4 深岩
+        // 都是外推错误、非原版行为；天空网格的 Inf 来自域内 x/z 远坐标溢出（fade x³），
+        // 与 y 外推无关——域外恒虚空不影响天空网格。此前把 slide 外推算作"原版直接过"
+        // 的一部分放 skyGrid 开启时照算，导致石墙回归。
+        if (blockY < 0 || blockY >= 128) {
+            return -1.0f; // 域外全虚空（顺带省计算）
         }
         // 🔧 偏移缩放（WorldReposition 红线）：采样坐标 = reposition(玩家块坐标)——恒等时无变化
         final float sampleX = (float) net.minecraft.world.level.levelgen.WorldReposition.reposition(blockX, net.minecraft.core.Direction.Axis.X);

@@ -26,8 +26,6 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.MinecraftTools.Math._256Bit.Int256;
-import net.MinecraftTools.Math._256Bit.utils.Vec3d256;
 import org.apache.commons.lang3.Validate;
 
 /**
@@ -577,32 +575,9 @@ public class BlockPos extends Vec3i {
         };
     }
 
-    // ═══════════ 256-bit 适配（MCRe NoiseFarlands） ═══════════
+    
 
-    /** 方块坐标精确转 Int256 */
-    public Int256 x256() {
-        return Int256.of(this.getX());
-    }
-
-    public Int256 y256() {
-        return Int256.of(this.getY());
-    }
-
-    public Int256 z256() {
-        return Int256.of(this.getZ());
-    }
-
-    /** 转 256-bit 向量 */
-    public Vec3d256 to256() {
-        return Vec3d256.ofInt(this.x256(), this.y256(), this.z256());
-    }
-
-    /** 256-bit 向量 → BlockPos（floor） */
-    public static BlockPos from256(final Vec3d256 pos) {
-        return new BlockPos((int)pos.x.floor().longValue(), (int)pos.y.floor().longValue(), (int)pos.z.floor().longValue());
-    }
-
-    public static class MutableBlockPos extends BlockPos {
+public static class MutableBlockPos extends BlockPos {
         public MutableBlockPos() {
             this(0, 0, 0);
         }

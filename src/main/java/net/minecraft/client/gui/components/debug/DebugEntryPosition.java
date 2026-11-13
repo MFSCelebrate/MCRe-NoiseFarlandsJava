@@ -18,16 +18,15 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.WorldReposition;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.MinecraftTools.Math._256Bit.Float256;
 import org.jspecify.annotations.Nullable;
 
 /**
  * 🔧 MCRe：Position 条目 —— 移植 26.4 Snapshot 2 全新架构（{@link DebugFact} 名字右对齐 + 值的对齐显示），
  * <b>完整保留 MCRe 全部自定义</b>（26 处）：
  * <ul>
- *   <li>256-bit 精确坐标显示（{@code Float256.toExactString} + 限长省略）</li>
+ *   <li>double 精确十进制显示（{@code new BigDecimal(double)} + 限长省略）</li>
  *   <li>XYZ(Camera)（正确的摄像机获取：{@code mainCamera()}）</li>
- *   <li>Terrain XYZ(BigInteger)（玩家坐标经 WorldReposition 偏移缩放，无精度损失）</li>
+ *   <li>Terrain XYZ（自研 BigDecimal 全链 + 显示层纯整数截断）</li>
  *   <li>Current precision（基于 Terrain XYZ 的 bit 长度推算 double/float 精度 + 颜色码）</li>
  * </ul>
  *
@@ -42,17 +41,12 @@ public class DebugEntryPosition implements DebugScreenEntry {
 
     // ==================== 🔧 MCRe 自定义：精确显示辅助 ====================
 
-    /** 精确显示小数部分的最大位数（超出截断 + 省略号） */
-    private static final int MAX_FRAC_DIGITS = 14;
-
-    /** double → Float256 → 精确十进制（完整 52-bit 尾数展开，限长显示） */
-    private static String fmtExact(final double value) {
-        String s = Float256.of(value).toExactString();
-        int dot = s.indexOf('.');
-        if (dot < 0) return s;
-        int frac = s.length() - dot - 1;
-        if (frac <= MAX_FRAC_DIGITS) return s;
-        return s.substring(0, dot + MAX_FRAC_DIGITS + 1) + "…";
+    /**
+     * 定点显示（复刻原版 {@code String.format("%.3f / %.5f / %.3f")} 语义：
+     * digits 位小数 + HALF_UP 舍入；自研 BigDecimal 全链路，不经 256 中转）。
+     */
+    private static String fmtFixed(final BigDecimal value, final int digits) {
+        return value.setScale(digits, java.math.RoundingMode.HALF_UP).toString();
     }
 
     /**
@@ -61,6 +55,11 @@ public class DebugEntryPosition implements DebugScreenEntry {
      */
     private static String fmtBigInt(final BigInteger value) {
         return value.toString();
+    }
+
+    /** BigDecimal → 纯整数字符串（Terrain XYZ 显示用：截断小数，无小数点） */
+    private static String fmtBigInt(final BigDecimal value) {
+        return value.toBigInteger().toString();
     }
 
     /**
@@ -72,11 +71,12 @@ public class DebugEntryPosition implements DebugScreenEntry {
      * <p>无大小限制：scale/shift 即使是 1e49 也能精确算出 BigInteger 整数地形坐标。
      * <p>无精度损失：double → BigDecimal（精确）→ reposition BigDecimal（精确乘加）→ toBigInteger（截断小数部分）。
      */
-    private static BigInteger[] computeTerrainXYZ(final double playerX, final double playerY, final double playerZ) {
-        return new BigInteger[] {
-            WorldReposition.reposition(new BigDecimal(playerX), Direction.Axis.X).toBigInteger(),
-            WorldReposition.reposition(new BigDecimal(playerY), Direction.Axis.Y).toBigInteger(),
-            WorldReposition.reposition(new BigDecimal(playerZ), Direction.Axis.Z).toBigInteger()
+    private static BigDecimal[] computeTerrainXYZ(final double playerX, final double playerY, final double playerZ) {
+        // 全 BigDecimal 链（new BigDecimal(double) 精确 → reposition 精确乘加）；小数保留在内部，显示层截断
+        return new BigDecimal[] {
+            WorldReposition.reposition(new BigDecimal(playerX), Direction.Axis.X),
+            WorldReposition.reposition(new BigDecimal(playerY), Direction.Axis.Y),
+            WorldReposition.reposition(new BigDecimal(playerZ), Direction.Axis.Z)
         };
     }
 
@@ -124,8 +124,8 @@ public class DebugEntryPosition implements DebugScreenEntry {
                     : java.util.Set.of();
 
             // ===== 🔧 MCRe：Terrain XYZ + 精度计算 =====
-            final BigInteger[] terrainXYZ = computeTerrainXYZ(entity.getX(), entity.getY(), entity.getZ());
-            final BigInteger maxAbs = terrainXYZ[0].abs().max(terrainXYZ[1].abs()).max(terrainXYZ[2].abs());
+            final BigDecimal[] terrainXYZ = computeTerrainXYZ(entity.getX(), entity.getY(), entity.getZ());
+            final BigInteger maxAbs = terrainXYZ[0].abs().toBigInteger().max(terrainXYZ[1].abs().toBigInteger()).max(terrainXYZ[2].abs().toBigInteger());
             final int bitLen = maxAbs.bitLength();  // 最高位 1 的位置（等价于 64 - Long.numberOfLeadingZeros）
             final double doublePrecision = Math.pow(2.0, (double) (bitLen - 53));
             final double floatPrecision = Math.pow(2.0, (double) (bitLen - 24));
@@ -134,16 +134,16 @@ public class DebugEntryPosition implements DebugScreenEntry {
             displayer.addFactToGroup(
                 DebugGroups.POSITION,
                 "XYZ",
-                fact -> fact.value(fmtExact(entity.getX())).text(" / ").value(fmtExact(entity.getY())).text(" / ").value(fmtExact(entity.getZ()))
+                fact -> fact.value(fmtFixed(new BigDecimal(entity.getX()), 3)).text(" / ").value(fmtFixed(new BigDecimal(entity.getY()), 5)).text(" / ").value(fmtFixed(new BigDecimal(entity.getZ()), 3))
             );
             displayer.addFactToGroup(
                 DebugGroups.POSITION,
                 "XYZ(Camera)",
-                fact -> fact.value(fmtExact(camX)).text(" / ").value(fmtExact(camY)).text(" / ").value(fmtExact(camZ))
+                fact -> fact.value(fmtFixed(new BigDecimal(camX), 3)).text(" / ").value(fmtFixed(new BigDecimal(camY), 5)).text(" / ").value(fmtFixed(new BigDecimal(camZ), 3))
             );
             displayer.addFactToGroup(
                 DebugGroups.POSITION,
-                "Terrain XYZ(BigInteger)",
+                "Terrain XYZ",
                 fact -> fact.value(fmtBigInt(terrainXYZ[0])).text(" / ").value(fmtBigInt(terrainXYZ[1])).text(" / ").value(fmtBigInt(terrainXYZ[2]))
             );
             displayer.addFactToGroup(
