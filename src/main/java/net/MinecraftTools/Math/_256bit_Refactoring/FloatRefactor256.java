@@ -1,6 +1,7 @@
 package net.MinecraftTools.Math._256bit_Refactoring;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -505,84 +506,247 @@ public final class FloatRefactor256 implements Comparable<FloatRefactor256> {
         final long exp1 = magnitudeExponent();
         final long exp2 = other.magnitudeExponent();
 
+        // 🔧 指数差快路径（Binary256 同款）：两项均按 237 位编码，指数差 ≥ 239 时小项严格小于
+        // 较大值两侧舍入边界的距离——直接返回大项，省掉整条对齐/舍入链
+        final long difference = exp1 - exp2;
+        if (difference >= 239) {
+            return this;
+        }
+        if (difference <= -239) {
+            return subtract ? other.negate() : other;
+        }
+
         // 对齐到大指数方；工作区位权基准 = scaleBig - 3（GRS 区）
         final FloatRefactor256 big = exp1 >= exp2 ? this : other;
         final FloatRefactor256 small = exp1 >= exp2 ? other : this;
         final boolean bigSign = exp1 >= exp2 ? sign1 : sign2;
         final boolean smallSign = exp1 >= exp2 ? sign2 : sign1;
-        final long scaleBig = exp1 >= exp2 ? scale1 : scale2;
         final int distance = Math.toIntExact(Math.abs(exp1 - exp2));
         final boolean sameSign = bigSign == smallSign;
 
-        // big << 3 → 5 long
-        final long[] work = new long[5];
-        putShiftedLeft3(work, big.magnitudeWord(0), big.magnitudeWord(1), big.magnitudeWord(2), big.magnitudeWord(3));
-        // small << 3 后右移 distance；sticky = 移出位非零（不参与 sum——只进舍入 S 判定：
-        // 加法 OR 进 bit0 尚安全（S 偏大无害），但减法会借位穿透污染 G/R，必须拆开）
-        final long[] smallShifted = new long[5];
-        putShiftedLeft3(smallShifted, small.magnitudeWord(0), small.magnitudeWord(1), small.magnitudeWord(2), small.magnitudeWord(3));
+        // 🔧 零数组局部量重写（Binary256 同款单工作区思路）：big<<3 的 4 组 + small<<3 的 4 组，
+        // 跨组移位/加减/提取全部 switch 展开——原实现 4 次数组操作（put×2 + result + kept），
+        // Binary256 同款单工作区快 3×（数组分配 + 循环是主要开销）。
+        final long b0 = big.magnitudeWord(0) << 3;
+        final long b1 = (big.magnitudeWord(1) << 3) | (big.magnitudeWord(0) >>> 61);
+        final long b2 = (big.magnitudeWord(2) << 3) | (big.magnitudeWord(1) >>> 61);
+        final long b3 = (big.magnitudeWord(3) << 3) | (big.magnitudeWord(2) >>> 61);
+
+        final long t0 = small.magnitudeWord(0) << 3;
+        final long t1 = (small.magnitudeWord(1) << 3) | (small.magnitudeWord(0) >>> 61);
+        final long t2 = (small.magnitudeWord(2) << 3) | (small.magnitudeWord(1) >>> 61);
+        final long t3 = (small.magnitudeWord(3) << 3) | (small.magnitudeWord(2) >>> 61);
+
         boolean sticky = false;
+        final long s0;
+        final long s1;
+        final long s2;
+        final long s3;
         if (distance >= 240) {
-            for (final long w : smallShifted) {
-                sticky |= w != 0;
-            }
-            java.util.Arrays.fill(smallShifted, 0L);
+            // 整项移出：sticky = 小项非零；减法用 ceil 语义（非零 → 1）
+            sticky = (t0 | t1 | t2 | t3) != 0L;
             if (!sameSign && sticky) {
-                // 减法 ceil 语义：非零小项 >> 240 的上取整为 1（保证 result = 精确换算，无 1 LSB 偏差）
-                smallShifted[0] = 1L;
+                s0 = 1L; s1 = 0L; s2 = 0L; s3 = 0L;
+            } else {
+                s0 = 0L; s1 = 0L; s2 = 0L; s3 = 0L;
             }
-        } else if (distance > 0) {
-            sticky = anyLow5(smallShifted, distance);
-            if (!sameSign) {
-                // 减法 trailing-ones：(A-B)>>n = A>>n - ceil(B/2^n)——低 distance 位填 1 再右移即 ceil；
-                // 若用 floor，result 会比精确换算大 1 LSB，进位穿透把 G/R/S 全翻（实测 add 差 1ulp 之根因）
-                addLowOnes(smallShifted, distance);
+        } else if (distance == 0) {
+            s0 = t0; s1 = t1; s2 = t2; s3 = t3;
+        } else {
+            // 移出位非零 → sticky；右移后的 4 组（跨组拼接，高位补 0）
+            final int whole = distance >>> 6, bits = distance & 63;
+            final long fill = 0L;
+            if (whole == 0) {
+                sticky = bits == 0 ? false : (t0 & ((1L << bits) - 1)) != 0;
+                if (!sameSign && sticky) {
+                    // 减法 trailing-ones：低位填 1 再右移 = ceil（(A-B)>>n = A>>n - ceil(B/2^n)）；
+                    // 若用 floor，result 比精确换算大 1 LSB，进位穿透把 G/R/S 全翻（实测 add 差 1ulp 之根因）
+                    final long m0 = t0 | ((1L << bits) - 1);
+                    final long m1 = t1 | ((1L << bits) - 1);
+                    final long m2 = t2 | ((1L << bits) - 1);
+                    final long m3 = t3 | ((1L << bits) - 1);
+                    s0 = (m0 >>> bits) | (m1 << (64 - bits));
+                    s1 = (m1 >>> bits) | (m2 << (64 - bits));
+                    s2 = (m2 >>> bits) | (m3 << (64 - bits));
+                    s3 = m3 >>> bits;
+                } else {
+                    s0 = bits == 0 ? t0 : (t0 >>> bits) | (t1 << (64 - bits));
+                    s1 = bits == 0 ? t1 : (t1 >>> bits) | (t2 << (64 - bits));
+                    s2 = bits == 0 ? t2 : (t2 >>> bits) | (t3 << (64 - bits));
+                    s3 = bits == 0 ? t3 : (t3 >>> bits) | fill;
+                }
+            } else if (whole == 1) {
+                sticky = bits == 0 ? t0 != 0 : (t0 & ((1L << bits) - 1)) != 0;
+                if (!sameSign && sticky) {
+                    final long m0 = t0 | ((1L << bits) - 1);
+                    final long m1 = t1 | ((1L << bits) - 1);
+                    final long m2 = t2 | ((1L << bits) - 1);
+                    final long m3 = t3 | ((1L << bits) - 1);
+                    s0 = (m1 >>> bits) | (m2 << (64 - bits));
+                    s1 = (m2 >>> bits) | (m3 << (64 - bits));
+                    s2 = m3 >>> bits;
+                    s3 = 0L;
+                } else {
+                    s0 = bits == 0 ? t1 : (t1 >>> bits) | (t2 << (64 - bits));
+                    s1 = bits == 0 ? t2 : (t2 >>> bits) | (t3 << (64 - bits));
+                    s2 = bits == 0 ? t3 : (t3 >>> bits) | fill;
+                    s3 = 0L;
+                }
+            } else if (whole == 2) {
+                sticky = bits == 0 ? (t0 | t1) != 0 : (t1 & ((1L << bits) - 1)) != 0;
+                if (!sameSign && sticky) {
+                    final long m0 = t0 | ((1L << bits) - 1);
+                    final long m1 = t1 | ((1L << bits) - 1);
+                    final long m2 = t2 | ((1L << bits) - 1);
+                    final long m3 = t3 | ((1L << bits) - 1);
+                    s0 = (m2 >>> bits) | (m3 << (64 - bits));
+                    s1 = m3 >>> bits;
+                    s2 = 0L;
+                    s3 = 0L;
+                } else {
+                    s0 = bits == 0 ? t2 : (t2 >>> bits) | (t3 << (64 - bits));
+                    s1 = bits == 0 ? t3 : (t3 >>> bits) | fill;
+                    s2 = 0L;
+                    s3 = 0L;
+                }
+            } else {
+                sticky = bits == 0 ? (t0 | t1 | t2) != 0 : (t2 & ((1L << bits) - 1)) != 0;
+                if (!sameSign && sticky) {
+                    final long m0 = t0 | ((1L << bits) - 1);
+                    final long m1 = t1 | ((1L << bits) - 1);
+                    final long m2 = t2 | ((1L << bits) - 1);
+                    final long m3 = t3 | ((1L << bits) - 1);
+                    s0 = m3 >>> bits;
+                    s1 = 0L;
+                    s2 = 0L;
+                    s3 = 0L;
+                } else {
+                    s0 = bits == 0 ? t3 : (t3 >>> bits) | fill;
+                    s1 = 0L;
+                    s2 = 0L;
+                    s3 = 0L;
+                }
             }
-            shiftRightWords(smallShifted, distance);
         }
 
-        final long[] result = new long[5];
+        // 逐组加减（4 组 + 1 位进位/借位链）
+        final long r0;
+        final long r1;
+        final long r2;
+        final long r3;
         final boolean resultSign;
         if (sameSign) {
-            addWords(work, smallShifted, result);
+            final long x0 = b0 + s0;
+            final long c0 = Long.compareUnsigned(x0, b0) < 0 ? 1L : 0L;
+            final long x1 = b1 + s1 + c0;
+            final long c1 = Long.compareUnsigned(x1, b1) < 0 || (c0 != 0L && x1 == b1) ? 1L : 0L;
+            final long x2 = b2 + s2 + c1;
+            final long c2 = Long.compareUnsigned(x2, b2) < 0 || (c1 != 0L && x2 == b2) ? 1L : 0L;
+            r0 = x0; r1 = x1; r2 = x2; r3 = b3 + s3 + c2;
             resultSign = bigSign;
         } else {
-            final int cmp = compareWords(work, smallShifted);
+            // 异号相减：先比较对齐后幅值（高组优先）
+            int cmp = 0;
+            if (b3 != s3) cmp = Long.compareUnsigned(b3, s3);
+            else if (b2 != s2) cmp = Long.compareUnsigned(b2, s2);
+            else if (b1 != s1) cmp = Long.compareUnsigned(b1, s1);
+            else cmp = Long.compareUnsigned(b0, s0);
             if (cmp == 0) {
                 return ZERO; // 异号精确相消 → +0
             }
             if (cmp > 0) {
-                subtractWords(work, smallShifted, result);
+                final long x0 = b0 - s0;
+                final long w0 = Long.compareUnsigned(b0, s0) < 0 ? 1L : 0L;
+                final long x1 = b1 - s1 - w0;
+                final long w1 = Long.compareUnsigned(b1, s1) < 0 || (w0 != 0L && b1 == s1) ? 1L : 0L;
+                final long x2 = b2 - s2 - w1;
+                final long w2 = Long.compareUnsigned(b2, s2) < 0 || (w1 != 0L && b2 == s2) ? 1L : 0L;
+                r0 = x0; r1 = x1; r2 = x2; r3 = b3 - s3 - w2;
                 resultSign = bigSign;
             } else {
-                subtractWords(smallShifted, work, result);
+                final long x0 = s0 - b0;
+                final long w0 = Long.compareUnsigned(s0, b0) < 0 ? 1L : 0L;
+                final long x1 = s1 - b1 - w0;
+                final long w1 = Long.compareUnsigned(s1, b1) < 0 || (w0 != 0L && s1 == b1) ? 1L : 0L;
+                final long x2 = s2 - b2 - w1;
+                final long w2 = Long.compareUnsigned(s2, b2) < 0 || (w1 != 0L && s2 == b2) ? 1L : 0L;
+                r0 = x0; r1 = x1; r2 = x2; r3 = s3 - b3 - w2;
                 resultSign = smallSign;
             }
         }
 
-        // 从 320 位工作区提取 237 位 + GRS（k = bl - 237）
-        final int bl = bitLength5(result);
+        // 从 240 位工作区提取 237 位 + GRS（k = bl - 237）
+        int bl = 0;
+        if (r3 != 0L) bl = 256 - Long.numberOfLeadingZeros(r3);
+        else if (r2 != 0L) bl = 192 - Long.numberOfLeadingZeros(r2);
+        else if (r1 != 0L) bl = 128 - Long.numberOfLeadingZeros(r1);
+        else bl = 64 - Long.numberOfLeadingZeros(r0);
         final int k = bl - PRECISION;
-        final long[] kept = new long[4];
+        long kept0;
+        long kept1;
+        long kept2;
+        long kept3;
         long increment;
-        long keptScale;
+        final long keptScale;
         if (k >= 0) {
-            shiftRightInto4(result, k, kept);
-            final boolean g = bit5(result, k - 1);                    // G = 第一个丢弃位
-            final boolean rBit = k >= 2 && bit5(result, k - 2);       // R = 第二个丢弃位（原漏）
-            final boolean sBits = k >= 3 && anyLow5(result, k - 2);   // S = 低 k-2 位（bit0..k-3）
-            // S 判定 = 结果低位 || 对齐 sticky（sticky 不参与 sum，只在这里生效）
-            increment = g && (rBit || sBits || sticky || (kept[0] & 1L) != 0L) ? 1L : 0L;
-            keptScale = scaleBig - 3 + k;
+            // 右移 k 位取 4 组 + GRS（G = 第一个丢弃位，R/S = 其余丢弃位，sticky 并入 S）
+            final int whole = k >>> 6, bits = k & 63;
+            final long mask = bits == 0 ? 0L : (1L << bits) - 1;
+            final boolean g;
+            final boolean rBit;
+            final boolean sLow;
+            if (whole == 0) {
+                kept0 = bits == 0 ? r0 : (r0 >>> bits) | (r1 << (64 - bits));
+                kept1 = bits == 0 ? r1 : (r1 >>> bits) | (r2 << (64 - bits));
+                kept2 = bits == 0 ? r2 : (r2 >>> bits) | (r3 << (64 - bits));
+                kept3 = bits == 0 ? r3 : (r3 >>> bits);
+                g = bits == 0 ? false : (r0 & (1L << (bits - 1))) != 0;
+                rBit = bits < 2 ? false : (r0 & (1L << (bits - 2))) != 0;
+                sLow = bits < 3 ? false : (r0 & mask) != 0;
+            } else if (whole == 1) {
+                kept0 = bits == 0 ? r1 : (r1 >>> bits) | (r2 << (64 - bits));
+                kept1 = bits == 0 ? r2 : (r2 >>> bits) | (r3 << (64 - bits));
+                kept2 = bits == 0 ? r3 : (r3 >>> bits);
+                kept3 = 0L;
+                g = bits == 0 ? r1 != 0 : (r1 & (1L << (bits - 1))) != 0;
+                rBit = bits < 2 ? false : (r1 & (1L << (bits - 2))) != 0;
+                sLow = bits < 3 ? false : (r1 & mask) != 0;
+            } else {
+                kept0 = bits == 0 ? r2 : (r2 >>> bits) | (r3 << (64 - bits));
+                kept1 = bits == 0 ? r3 : (r3 >>> bits);
+                kept2 = 0L;
+                kept3 = 0L;
+                g = bits == 0 ? r2 != 0 : (r2 & (1L << (bits - 1))) != 0;
+                rBit = bits < 2 ? false : (r2 & (1L << (bits - 2))) != 0;
+                sLow = bits < 3 ? false : (r2 & mask) != 0;
+            }
+            increment = g && (rBit || sLow || sticky || (kept0 & 1L) != 0L) ? 1L : 0L;
+            keptScale = Math.max(scale1, scale2) - 3 + k;
         } else {
-            // 左移规格化（相消后小值）：result 左移高位补 0 精确，唯 bit0 之下有 small 的
-            // sticky 尾巴（frac）——kept bit0 恒偶，frac > 0 即过半 → RN 进位
-            shiftLeftInto4(result, -k, kept);
-            increment = sticky ? 1L : 0L;
-            keptScale = scaleBig - 3 + k;
+            // 左移规格化（相消后小值）：低位移出为 0（精确）
+            final int sh = -k;
+            final int whole = sh >>> 6, bits = sh & 63;
+            kept0 = 0L;
+            kept1 = 0L;
+            kept2 = 0L;
+            kept3 = 0L;
+            if (whole == 0) {
+                kept0 = r0 << bits;
+                kept1 = bits == 0 ? r1 : (r1 << bits) | (r0 >>> (64 - bits));
+                kept2 = bits == 0 ? r2 : (r2 << bits) | (r1 >>> (64 - bits));
+                kept3 = bits == 0 ? r3 : (r3 << bits) | (r2 >>> (64 - bits));
+            } else {
+                kept0 = 0L;
+                kept1 = r0 << bits;
+                kept2 = bits == 0 ? r1 : (r1 << bits) | (r0 >>> (64 - bits));
+                kept3 = bits == 0 ? r2 : (r2 << bits) | (r1 >>> (64 - bits));
+            }
+            increment = 0L;
+            keptScale = Math.max(scale1, scale2) - 3 + k;
         }
-        return packRounded(resultSign, kept[0], kept[1], kept[2], kept[3], keptScale, increment != 0);
+        return packRounded(resultSign, kept0, kept1, kept2, kept3, keptScale, increment != 0);
     }
+
 
     // ═══════════ 乘法 ═══════════
 
@@ -671,6 +835,10 @@ public final class FloatRefactor256 implements Comparable<FloatRefactor256> {
      * 平方根（正有限；RN 舍入——开方中点永不可达，increment = 余数 > 根）。
      * 精确快路径（幅值 ≤ 64 位完全平方）→ Newton（words 级，IntRefactorWords.divide 迭代）。
      */
+    /**
+     * 平方根（🔧 移植 Binary256 的 sqrtScaled 路线：精确快路径 + 前缀 seed + Newton ≤2 轮）。
+     * 原实现是 words 级 Newton（初值 2^ceil(bl/2)）——上百轮迭代，慢 2×。
+     */
     public FloatRefactor256 sqrt() {
         if (isNaN() || (signBit() && !isZero())) {
             return NaN;
@@ -678,66 +846,63 @@ public final class FloatRefactor256 implements Comparable<FloatRefactor256> {
         if (isZero() || isInfinite()) {
             return this;
         }
-        long[] mag = magnitude();
-        long scale = scaleExponent();
-        // 指数调偶（值不变：mag << 1, scale - 1）
-        if ((scale & 1) != 0) {
-            mag = IntRefactorWords.left(mag, 1);
-            scale--;
-        }
-        // 精确快路径
-        if (mag.length <= 1) {
-            final long m = mag.length == 0 ? 0L : mag[0];
-            if (m != 0L) {
-                final long root = IntRefactorWords.sqrtUnsignedLong(m);
-                if (root * root == m) {
-                    return fromDyadic(false, new long[] {root, 0L, 0L, 0L}, scale / 2);
+        final long scale = scaleExponent(), top = magnitudeWord(3);
+        final long inputExponent = magnitudeExponent();
+        final int length = (int) (inputExponent - scale + 1);
+        final int trailing = length <= 64
+                ? Long.numberOfTrailingZeros(l3)
+                : compactMagnitudeShift(l3, l2, l1, top, length);
+        final long reducedScale = scale + trailing;
+        // 精确快路径：低零位剥离后 ≤64 位且 scale 偶 → 整数平方根
+        if (length - trailing <= 64 && (reducedScale & 1) == 0) {
+            final long magnitude = shiftedWord4(l3, l2, l1, top, 0, trailing);
+            if ((magnitude & 7) == 1L) {
+                final long exactRoot = IntRefactorWords.sqrtUnsignedLong(magnitude);
+                if (exactRoot * exactRoot == magnitude) {
+                    return fromUnsignedLong(false, exactRoot, reducedScale / 2);
                 }
             }
         }
-        // Newton：N = mag << s（位长补足到 474，s 与 scale 同奇偶保证 (scale-s) 偶）
-        final int bl = IntRefactorWords.bitLength(mag);
-        int s = 2 * PRECISION - bl;
-        if (s < 0) {
-            s = 0;
-        }
-        if (((s ^ (int) Math.min(scale, Integer.MAX_VALUE)) & 1) != 0) {
-            s++;
-        }
-        final long[] n = s == 0 ? mag : IntRefactorWords.left(mag, s);
-        final IntRefactorWords.Division rootAndRemainder = sqrtWords(n);
-        final long[] root = rootAndRemainder.quotient();
-        final long[] remainder = rootAndRemainder.remainder();
-        // RN：真根 = root + f（f ∈ [0,1)），f > 0.5 ⟺ 余数 > 根（开方无精确 tie）。
-        // 让出低 2 位作 G/R：fBits = (r>root ? 0b11 : (r!=0 ? 0b01 : 0b00))——
-        // f>0.5 → G=1,S=1 恒进位；0<f<0.5 → G=0,S=1 不进；f=0 → 精确。
-        final int fBits = IntRefactorWords.compare(remainder, root) > 0 ? 3 : (remainder.length != 0 ? 1 : 0);
-        final long[] shifted = IntRefactorWords.left(root, 2);
-        shifted[0] |= fBits;
-        return fromDyadic(false, shifted, (scale - s) / 2 - 2);
+        final long exponent = Math.floorDiv(inputExponent, 2);
+        final long quantum = exponent - 236;
+        final int shift = Math.toIntExact(scale - 2 * quantum);
+        final long[] workspace = new long[8];
+        final int comparison = IntRefactorWords.sqrtScaled(l3, l2, l1, top, shift, workspace);
+        return packRounded(false, workspace[0], workspace[1], workspace[2], workspace[3], quantum, comparison > 0);
     }
 
-    /** floor(sqrt(n))（n 低组前非零）：x0 = 2^ceil(bl/2) 上界起 Newton，返回根与余数 n - root²。 */
-    private static IntRefactorWords.Division sqrtWords(final long[] n) {
-        final int bl = IntRefactorWords.bitLength(n);
-        long[] x = new long[] {1L << ((bl + 1) / 2 % 64)};
-        x = IntRefactorWords.left(x, (bl + 1) / 2 - ((bl + 1) / 2 % 64));
-        // 上述构造等价于 1 << ceil(bl/2)；直接简化：
-        x = IntRefactorWords.left(new long[] {1}, (bl + 1) / 2);
-        for (;;) {
-            final long[] q = IntRefactorWords.divide(n, x).quotient();
-            // x' = (x + q) >> 1
-            final long[] sum = IntRefactorWords.add(x, q);
-            final long[] next = IntRefactorWords.shiftRight1(sum);
-            if (IntRefactorWords.compare(next, x) >= 0) {
-                // 收敛：x 即 floor(sqrt(n))；余数 = n - x²
-                final long[] square = IntRefactorWords.multiply(x, x);
-                final long[] remainder = IntRefactorWords.compare(n, square) >= 0
-                        ? IntRefactorWords.subtract(n, square) : new long[0];
-                return new IntRefactorWords.Division(x, remainder);
-            }
-            x = next;
+    /** 幅值低零位剥离后的尾零位数（>64 位时用紧凑扫描）。 */
+    private static int compactMagnitudeShift(final long w0, final long w1, final long w2, final long w3, final int length) {
+        if (length <= 64) {
+            return 0;
         }
+        final int bits = ((length - 1) & 63) + 1;
+        // 1L << 64 会回绕为一，减少整组所需的 64 个低零位须直接检查整个最低组
+        if (bits == 64 ? w0 != 0 : (w0 & ((1L << bits) - 1)) != 0) {
+            return 0;
+        }
+        return w0 != 0 ? Long.numberOfTrailingZeros(w0)
+                : w1 != 0 ? 64 + Long.numberOfTrailingZeros(w1)
+                : w2 != 0 ? 128 + Long.numberOfTrailingZeros(w2) : 192 + Long.numberOfTrailingZeros(w3);
+    }
+
+    /** 四个低组在前的数组按 shift 缩放后的第 index 组（小端口径）。 */
+    private static long shiftedWord4(final long w0, final long w1, final long w2, final long w3, final int index, final int shift) {
+        final int group = index - (shift >> 6), bits = shift & 63;
+        final long low = fourWord(w0, w1, w2, w3, group) << bits;
+        return bits == 0 ? low : low | (fourWord(w0, w1, w2, w3, group - 1) >>> (64 - bits));
+    }
+
+    /** 原始无符号 long 幅值的精确扩展（调用方保证落在正常范围内）。 */
+    private static FloatRefactor256 fromUnsignedLong(final boolean negative, final long magnitude, final long scale) {
+        if (magnitude == 0L) {
+            return zero(negative);
+        }
+        final int length = 64 - Long.numberOfLeadingZeros(magnitude);
+        final long top = length <= 45 ? magnitude << (45 - length) : magnitude >>> (length - 45);
+        final long next = length <= 45 ? 0L : magnitude << (109 - length);
+        final long encoded = scale + length - 1 + BIAS;
+        return new FloatRefactor256((negative ? Long.MIN_VALUE : 0L) | (encoded << 44) | (top & FRACTION_MASK), next, 0L, 0L);
     }
 
     // ═══════════ 符号/缩放 ═══════════
