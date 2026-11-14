@@ -2,10 +2,10 @@ package net.MinecraftTools.terrain.pipeline.mcbedrockgen.density;
 
 import com.mojang.serialization.MapCodec;
 
+import net.minecraft.data.worldgen.TerrainProvider;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.util.CubicSpline;
-import net.minecraft.world.data.worldgen.TerrainProvider;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.DensityFunction;
 import net.minecraft.world.level.levelgen.DensityFunctions;
@@ -40,6 +40,8 @@ import net.MinecraftTools.terrain.pipeline.mcbedrockgen.density.FloatDensity.Squ
 import net.MinecraftTools.terrain.pipeline.mcbedrockgen.density.FloatDensity.WindowedDepthGradientF;
 import net.MinecraftTools.terrain.pipeline.mcbedrockgen.density.FloatDensity.YClampedGradientF;
 import net.MinecraftTools.terrain.pipeline.mcbedrockgen.density.FloatDensity.YF;
+
+import static net.MinecraftTools.terrain.pipeline.mcbedrockgen.density.FloatDensity.mappedNoiseF;
 
 /**
  * 🔧 MCRe Bedrock-Edition 管线：原版 overworld 密度链的<b>全 Float</b> 组装（大佬 2026-11-13 派活）。
@@ -117,7 +119,7 @@ public final class OverworldFloatDensity {
         final F caves = new RangeChoiceF(slopedCheese, -1000000.0f, 1.5625f, surfaceWithEntrances, underground);
 
         // ── slide + postProcess（blendDensity 透传 + 0.64 + squeeze，全 float）──
-        final F postProcessed = squeezeF(new InterpolatedF(new MulF(slideOverworldF(caves, amplified), new ConstantF(0.64f))));
+        final F postProcessed = new SqueezeF(new InterpolatedF(new MulF(slideOverworldF(caves, amplified), new ConstantF(0.64f))));
         final F noodle = noodleF(resolver);
         final F finalDensityF = new MinF(postProcessed, noodle);
 
@@ -240,6 +242,10 @@ public final class OverworldFloatDensity {
         return intervalSelectF(input, new float[] { -0.75f, -0.5f, 0.5f, 0.75f },
                 noiseForRarityF(noise, 0.5), noiseForRarityF(noise, 0.75), noiseForRarityF(noise, 1.0), noiseForRarityF(noise, 2.0),
                 noiseForRarityF(noise, 3.0));
+    }
+
+    private static F intervalSelectF(final F input, final float[] thresholds, final F... functions) {
+        return new IntervalSelectF(input, thresholds, functions);
     }
 
     private record IntervalSelectF(F input, float[] thresholds, F[] functions) implements F {
