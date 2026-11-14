@@ -70,12 +70,14 @@ public class CommandSuggestions {
     public static final int LINE_HEIGHT = 12;
 
     // ──────── 🔧 MCRe 基岩风格命令提示（大佬 2026-11-14 指派）────────
-    /** 普通指令文字色（浅灰 #CCCCCC）。 */
-    public static final int BEDROCK_NORMAL_COMMAND_COLOR = 0xCCCCCC;
+    // ⚠️ vanilla 的 int 颜色是 **ARGB（0xAARRGGBB）**——写 #RRGGBB 时必须补 FF alpha，
+    //    否则 alpha=0 → 文字全透明（面板背景/选中框正常、只有命令文字不见的经典坑）。
+    /** 普通指令文字色（浅灰 #CCCCCC，ARGB 带 FF alpha）。 */
+    public static final int BEDROCK_NORMAL_COMMAND_COLOR = 0xFFCCCCCC;
     /** 调试（TEST）类指令文字色（RGB 0.3330 / 1.0 / 1.0 = #55FFFF 天蓝色）。 */
-    public static final int BEDROCK_TEST_COMMAND_COLOR = 0x55FFFF;
+    public static final int BEDROCK_TEST_COMMAND_COLOR = 0xFF55FFFF;
     /** 命令描述文字色（暗灰）。 */
-    public static final int BEDROCK_COMMAND_DESC_COLOR = 0x8C8C8C;
+    public static final int BEDROCK_COMMAND_DESC_COLOR = 0xFF8C8C8C;
     /** 选中行背景色（半透明白）——选中不改文字色，保证分类色始终可辨。 */
     public static final int BEDROCK_SELECTED_BG_COLOR = 0x30FFFFFF;
     /** 基岩风格紧凑行高（MC 自带字体行高 9，留 2px 间距）。 */
@@ -639,9 +641,12 @@ public class CommandSuggestions {
             final int height;
 
             if (CommandSuggestions.this.anchorToBottom) {
-                // 🔧 基岩风格：面板底边贴输入框，顶边一路延伸到「屏幕顶部 - 5px」，高度随屏幕自适应
+                // 🔧 基岩风格：底边贴输入框，**高度内容驱动 + 屏幕封顶**
+                //   —— 命令少 → 面板只占实际行数（不撑满）；命令多 → 最多撑到「屏幕顶部 - 5px」，超出部分滚动
                 final int bottom = y - 3;
-                height = Math.max(BEDROCK_LINE_HEIGHT, bottom - BEDROCK_PANEL_TOP_MARGIN);
+                final int maxHeight = Math.max(BEDROCK_LINE_HEIGHT, bottom - BEDROCK_PANEL_TOP_MARGIN);
+                final int contentHeight = suggestionList.size() * BEDROCK_LINE_HEIGHT;
+                height = Math.min(contentHeight, maxHeight);
                 listY = bottom - height;
             } else {
                 listY = y - (CommandSuggestions.this.input.isBordered() ? 1 : 0);
