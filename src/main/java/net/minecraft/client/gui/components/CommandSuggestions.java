@@ -20,6 +20,7 @@ import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -66,6 +67,101 @@ public class CommandSuggestions {
         .map(Style.EMPTY::withColor)
         .collect(ImmutableList.toImmutableList());
     public static final int LINE_HEIGHT = 12;
+
+    // ──────── 🔧 MCRe 基岩风格命令提示（大佬 2026-11-14 指派）────────
+    /** 普通指令文字色（浅灰 #CCCCCC）。 */
+    public static final int BEDROCK_NORMAL_COMMAND_COLOR = 0xCCCCCC;
+    /** 管理/调试类指令文字色（RGB 0.3330 / 1.0 / 1.0 = #55FFFF 青色系）。 */
+    public static final int BEDROCK_ADMIN_COMMAND_COLOR = 0x55FFFF;
+    /** 命令描述文字色（暗灰）。 */
+    public static final int BEDROCK_COMMAND_DESC_COLOR = 0x8C8C8C;
+    /** 选中行背景色（半透明白）——选中不改文字色，保证分类色始终可辨。 */
+    public static final int BEDROCK_SELECTED_BG_COLOR = 0x30FFFFFF;
+    /** 基岩风格紧凑行高（MC 自带字体行高 9，留 2px 间距）。 */
+    public static final int BEDROCK_LINE_HEIGHT = 11;
+    /** 面板最小宽度；最大宽度占屏宽比例（"占据大部分空间"）。 */
+    public static final int BEDROCK_PANEL_MIN_WIDTH = 200;
+    public static final float BEDROCK_PANEL_MAX_WIDTH_RATIO = 0.75F;
+
+    /**
+     * 管理/调试类指令判定：命令名以 {@code debug_} 开头（MCRe 伪命令族）+ 白名单前缀。
+     * <p>客户端命令树无服务端 PermissionLevel 概念（服务端权限不下发到客户端），故按命令名族判定；
+     * 需要扩展时往本表加前缀即可。
+     */
+    private static final List<String> ADMIN_COMMAND_PREFIXES = List.of("debug_");
+
+    private static boolean isAdminCommand(final String name) {
+        for (final String prefix : ADMIN_COMMAND_PREFIXES) {
+            if (name.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** 命令元信息：描述文本 + 是否管理/调试类。 */
+    private record CommandMeta(String description, boolean admin) {
+    }
+
+    /** 命令名 → 元信息（每次刷新建议时从客户端命令树重建）。 */
+    private Map<String, CommandMeta> commandMeta = Map.of();
+
+    /**
+     * 从客户端命令树收集「命令名 → 描述 / 分类」。
+     * <p>Java 版 brigadier 命令树<b>不带描述</b>（{@code LiteralCommandNode.getDescription()} 不存在），
+     * 故描述取该命令的 <b>用法摘要</b>：{@code getSmartUsage(root, provider)} 一次拿到全部顶层命令的用法
+     * （形如 {@code "tp <x> <y> <z>"}），去掉命令名后即为参数描述 —— 与基岩版「命令 - 说明」的观感对齐，
+     * 也让面板顺带承担"用法提示"的职责（原版的用法行仍保留在输入框上方）。
+     */
+    private void rebuildCommandMeta() {
+        if (this.minecraft.player == null || this.minecraft.player.connection == null) {
+            this.commandMeta = Map.of();
+            return;
+        }
+
+        final CommandDispatcher<ClientSuggestionProvider> dispatcher = this.minecraft.player.connection.getCommands();
+        final Map<CommandNode<ClientSuggestionProvider>, String> usages = dispatcher.getSmartUsage(
+            dispatcher.getRoot(), this.minecraft.player.connection.getSuggestionsProvider()
+        );
+        final Map<String, CommandMeta> meta = new HashMap<>();
+
+        for (final CommandNode<ClientSuggestionProvider> child : dispatcher.getRoot().getChildren()) {
+            if (child instanceof LiteralCommandNode literal) {
+                final String name = literal.getName();
+                final String usage = usages.get(child);
+                String description = "";
+
+                if (usage != null && !usage.isEmpty()) {
+                    description = usage.startsWith(name) ? usage.substring(name.length()).trim() : usage;
+                }
+
+                meta.put(name, new CommandMeta(description, isAdminCommand(name)));
+            }
+        }
+
+        this.commandMeta = meta;
+    }
+
+    /** 基岩风格面板宽度：按最长「/命令名 - 描述」计算，并限制在屏宽的 BEDROCK_PANEL_MAX_WIDTH_RATIO 内。 */
+    private int computePanelWidth(final List<Suggestion> suggestionList) {
+        int width = BEDROCK_PANEL_MIN_WIDTH;
+
+        for (final Suggestion suggestion : suggestionList) {
+            final CommandMeta meta = this.commandMeta.get(suggestion.getText());
+            final String description = meta == null ? "" : meta.description();
+            int lineWidth = this.font.width("/" + suggestion.getText());
+
+            if (!description.isEmpty()) {
+                lineWidth += this.font.width(" - " + description);
+            }
+
+            width = Math.max(width, lineWidth);
+        }
+
+        final int maxWidth = Math.max(BEDROCK_PANEL_MIN_WIDTH, (int) (this.screen.width * BEDROCK_PANEL_MAX_WIDTH_RATIO));
+        return Math.min(width, maxWidth) + 2;
+    }
     public static final int USAGE_OFFSET_FROM_BOTTOM = 27;
     private static final Component COMMANDS_NOT_ALLOWED_TEXT = Component.translatable("chat_screen.commands_not_allowed").withStyle(ChatFormatting.RED);
     private static final Component MESSAGES_NOT_ALLOWED_TEXT = Component.translatable("chat_screen.messages_not_allowed").withStyle(ChatFormatting.RED);
@@ -160,17 +256,17 @@ public class CommandSuggestions {
         if (this.pendingSuggestions != null && this.pendingSuggestions.isDone()) {
             Suggestions suggestions = this.pendingSuggestions.join();
             if (!suggestions.isEmpty()) {
-                int maxSuggestionWidth = 0;
-
-                for (Suggestion suggestion : suggestions.getList()) {
-                    maxSuggestionWidth = Math.max(maxSuggestionWidth, this.font.width(suggestion.getText()));
-                }
-
+                // 🔧 基岩风格：先收集命令描述/分类，再按「/命令名 - 描述」算面板宽度（占大部分空间）
+                this.rebuildCommandMeta();
+                final List<Suggestion> sorted = this.sortSuggestions(suggestions);
+                final int panelWidth = this.computePanelWidth(sorted);
                 int x = Mth.clamp(
-                    this.input.getScreenX(suggestions.getRange().getStart()), 0, this.input.getScreenX(0) + this.input.getInnerWidth() - maxSuggestionWidth
+                    this.input.getScreenX(suggestions.getRange().getStart()),
+                    0,
+                    Math.max(0, this.input.getScreenX(0) + this.input.getInnerWidth() - panelWidth)
                 );
                 int y = this.anchorToBottom ? this.screen.height - 12 : 72;
-                this.suggestions = new CommandSuggestions.SuggestionsList(x, y, maxSuggestionWidth, this.sortSuggestions(suggestions), immediateNarration);
+                this.suggestions = new CommandSuggestions.SuggestionsList(x, y, panelWidth, sorted, immediateNarration);
             }
         }
     }
@@ -525,9 +621,9 @@ public class CommandSuggestions {
         private SuggestionsList(final int x, final int y, final int width, final List<Suggestion> suggestionList, final boolean immediateNarration) {
             int listX = x - (CommandSuggestions.this.input.isBordered() ? 0 : 1);
             int listY = CommandSuggestions.this.anchorToBottom
-                ? y - 3 - Math.min(suggestionList.size(), CommandSuggestions.this.suggestionLineLimit) * 12
+                ? y - 3 - Math.min(suggestionList.size(), CommandSuggestions.this.suggestionLineLimit) * BEDROCK_LINE_HEIGHT
                 : y - (CommandSuggestions.this.input.isBordered() ? 1 : 0);
-            this.rect = new Rect2i(listX, listY, width + 1, Math.min(suggestionList.size(), CommandSuggestions.this.suggestionLineLimit) * 12);
+            this.rect = new Rect2i(listX, listY, width + 1, Math.min(suggestionList.size(), CommandSuggestions.this.suggestionLineLimit) * BEDROCK_LINE_HEIGHT);
             this.originalContents = CommandSuggestions.this.input.getValue();
             this.lastNarratedEntry = immediateNarration ? -1 : 0;
             this.suggestionList = suggestionList;
@@ -582,18 +678,30 @@ public class CommandSuggestions {
             boolean hovered = false;
 
             for (int i = 0; i < limit; i++) {
-                Suggestion suggestion = this.suggestionList.get(i + this.offset);
+                final Suggestion suggestion = this.suggestionList.get(i + this.offset);
+                final int rowY = this.rect.getY() + BEDROCK_LINE_HEIGHT * i;
+                final boolean selected = i + this.offset == this.current;
                 graphics.fill(
                     this.rect.getX(),
-                    this.rect.getY() + 12 * i,
+                    rowY,
                     this.rect.getX() + this.rect.getWidth(),
-                    this.rect.getY() + 12 * i + 12,
+                    rowY + BEDROCK_LINE_HEIGHT,
                     CommandSuggestions.this.fillColor
                 );
+                if (selected) {
+                    // 🔧 基岩风格：选中项用背景高亮（不改文字色），保证命令分类色始终可辨
+                    graphics.fill(
+                        this.rect.getX(),
+                        rowY,
+                        this.rect.getX() + this.rect.getWidth(),
+                        rowY + BEDROCK_LINE_HEIGHT,
+                        BEDROCK_SELECTED_BG_COLOR
+                    );
+                }
                 if (mouseX > this.rect.getX()
                     && mouseX < this.rect.getX() + this.rect.getWidth()
-                    && mouseY > this.rect.getY() + 12 * i
-                    && mouseY < this.rect.getY() + 12 * i + 12) {
+                    && mouseY > rowY
+                    && mouseY < rowY + BEDROCK_LINE_HEIGHT) {
                     if (mouseMoved) {
                         this.select(i + this.offset);
                     }
@@ -601,13 +709,43 @@ public class CommandSuggestions {
                     hovered = true;
                 }
 
-                graphics.text(
-                    CommandSuggestions.this.font,
-                    suggestion.getText(),
-                    this.rect.getX() + 1,
-                    this.rect.getY() + 2 + 12 * i,
-                    i + this.offset == this.current ? -256 : -5592406
-                );
+                // 🔧 基岩风格单行格式：/命令名 - 命令描述
+                //   管理/调试类命令名 → 青色 #55FFFF（RGB 0.3330/1.0/1.0）；普通命令 → 浅灰 #CCCCCC
+                final CommandMeta meta = CommandSuggestions.this.commandMeta.get(suggestion.getText());
+                final boolean admin = meta != null && meta.admin();
+                final int nameColor = admin ? BEDROCK_ADMIN_COMMAND_COLOR : BEDROCK_NORMAL_COMMAND_COLOR;
+                final String nameText = "/" + suggestion.getText();
+                graphics.text(CommandSuggestions.this.font, nameText, this.rect.getX() + 1, rowY + 1, nameColor);
+                if (meta != null && !meta.description().isEmpty()) {
+                    final String prefix = " - ";
+                    final int available = this.rect.getWidth() - 2 - CommandSuggestions.this.font.width(nameText) - CommandSuggestions.this.font.width(prefix);
+                    if (available > 0) {
+                        // 描述按可用宽度逐字符裁剪（避免文字溢出面板）
+                        final String description = meta.description();
+                        int used = 0;
+                        int cut = description.length();
+
+                        for (int c = 0; c < description.length(); c++) {
+                            final int charWidth = CommandSuggestions.this.font.width(String.valueOf(description.charAt(c)));
+
+                            if (used + charWidth > available) {
+                                cut = c;
+                                break;
+                            }
+
+                            used += charWidth;
+                        }
+
+                        final String trimmed = cut < description.length() ? description.substring(0, cut) + "…" : description;
+                        graphics.text(
+                            CommandSuggestions.this.font,
+                            prefix + trimmed,
+                            this.rect.getX() + 1 + CommandSuggestions.this.font.width(nameText),
+                            rowY + 1,
+                            BEDROCK_COMMAND_DESC_COLOR
+                        );
+                    }
+                }
             }
 
             if (hovered) {
@@ -627,7 +765,7 @@ public class CommandSuggestions {
                 return false;
             }
 
-            int line = (y - this.rect.getY()) / 12 + this.offset;
+            int line = (y - this.rect.getY()) / BEDROCK_LINE_HEIGHT + this.offset;
             if (line >= 0 && line < this.suggestionList.size()) {
                 this.select(line);
                 this.useSuggestion();
