@@ -226,12 +226,16 @@ public final class FloatDensity {
         }
     }
 
-    /** invert = 1 - v（主线 Mapped.Type.INVERT 同语义）。 */
+    /**
+     * invert = 1 / v（主线 {@code Mapped.Type.INVERT} 同语义）。
+     * <p>教训：初版误写成 {@code 1 - v} —— 主线是<b>倒数</b>；PS 链的 upperBound 依赖 invert，
+     * 写错会让初步地表高度整体错位（地表异常条纹的根因之一）。Diag 实测锤抓出。
+     */
     public record InvertF(F source) implements F {
 
         @Override
         public float compute(final int x, final int y, final int z) {
-            return 1.0f - this.source.compute(x, y, z);
+            return 1.0f / this.source.compute(x, y, z);
         }
     }
 
@@ -271,7 +275,7 @@ public final class FloatDensity {
      * y_clamped_gradient：Y 轴坐标受 {@code isYClampedGradientOffsetEnabled} 开关（主线同款），
      * 梯度映射全 float。
      */
-    public record YClampedGradientF(long fromY, long toY, float fromValue, float toValue) implements F {
+    public record YClampedGradientF(int fromY, int toY, float fromValue, float toValue) implements F {
 
         @Override
         public float compute(final int x, final int y, final int z) {
@@ -375,7 +379,7 @@ public final class FloatDensity {
 
         @Override
         public float compute(final int x, final int y, final int z) {
-            final long key = ((long) x << 32) ^ ((long) z << 16) ^ y;
+            final long key = mixKey(x, y, z);
             if (key == this.lastKey) {
                 return this.lastValue;
             }
@@ -404,7 +408,7 @@ public final class FloatDensity {
             final int cellX = Math.floorDiv(x, 4);
             final int cellY = Math.floorDiv(y, 8);
             final int cellZ = Math.floorDiv(z, 4);
-            final long key = ((long) cellX << 42) ^ (((long) cellY & 0x1FFFFF) << 21) ^ ((long) cellZ & 0x1FFFFF);
+            final long key = mixKey(cellX, cellY, cellZ);
             float[] corners = this.cornerCache.get(key);
             if (corners == null) {
                 corners = new float[8];
@@ -459,6 +463,21 @@ public final class FloatDensity {
     }
 
     // ──────── 辅助 ────────
+
+    /**
+     * 三元组 → 64 位 key（结构无重叠，超大世界不碰撞）。
+     * <p>教训：早期版本用 {@code (cellX << 42) ^ (cellY << 21) ^ cellZ} —— 位域在超大世界
+     * （cellY/cellZ > 2^21、cellX > 2^22）必然溢出互撞 → 缓存角点串值 → 地表条纹。
+     */
+    private static long mixKey(final int x, final int y, final int z) {
+        long h = (long) x * 0x9E3779B97F4A7C15L;
+        h ^= (long) y * 0xC2B2AE3D27D4EB4FL;
+        h ^= (long) z * 0x165667B19E3779F9L;
+        h ^= (h >>> 29);
+        h *= 0xBF58476D1CE4E5B9L;
+        h ^= (h >>> 32);
+        return h;
+    }
 
     /** peaksAndValleys（ridge → ridges_folded，主线同公式 float 化）。 */
     public static F peaksAndValleysF(final F weirdness) {

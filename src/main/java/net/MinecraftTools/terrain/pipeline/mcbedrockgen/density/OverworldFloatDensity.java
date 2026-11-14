@@ -81,6 +81,15 @@ public final class OverworldFloatDensity {
         BlendedNoise base3d();
     }
 
+    /**
+     * 🔧 大佬 2026-11-14 裁定：<b>float 链禁用 jagged</b>（照 26.3 管线 Vanilla263 的 enableJagged=false 语义
+     * —— <b>摘节点而非塞 0</b>："0×NaN 仍会照常传播"，塞 0 不挡 NaN）。
+     * <p>原因：jagged 的 xzScale=1500 使噪声输入在 2^31 边界溢出（float 域产物为 Inf/NaN），
+     * 而 jaggedness 外的 flatCache 不拦 NaN → 传播至整条链 → 地形退化为虚无、密度全面 NaN。
+     * <p>禁用法 = 把 jaggedness 从 {@code add(depth, jaggedness)} 里摘掉（initialDensity 只剩 depth×factor）。
+     */
+    private static final boolean ENABLE_JAGGED = false;
+
     /** 产出：可直接喂进 NoiseRouter 的 double 载体适配（内部全 float 求值）。 */
     public record Chain(DensityFunction finalDensity, DensityFunction preliminarySurfaceLevel) {
     }
@@ -106,8 +115,10 @@ public final class OverworldFloatDensity {
         final F unscaledJaggedness = new FlatCacheF(new Cache2dF(new LerpF(blendAlpha, new ConstantF(0.0f),
                 splineF(TerrainProvider.overworldJaggedness(coord(continents), coord(erosion), coord(ridge), coord(ridgesFolded), amplified)))));
         final F jaggedness = new FlatCacheF(new MulF(unscaledJaggedness, new HalfNegativeF(jaggedNoise)));
-        final F initialDensity = new MulF(new ConstantF(4.0f),
-                new QuarterNegativeF(new MulF(new AddF(depth, jaggedness), factor)));
+        // 🔧 jagged 禁用（ENABLE_JAGGED=false）：摘掉 jaggedness 节点（不是乘 0——0×NaN 照样传播）
+        final F initialDensity = ENABLE_JAGGED
+                ? new MulF(new ConstantF(4.0f), new QuarterNegativeF(new MulF(new AddF(depth, jaggedness), factor)))
+                : new MulF(new ConstantF(4.0f), new QuarterNegativeF(new MulF(depth, factor)));
         final F base3d = new InterpolatedF(
                 (x, y, z) -> (float) resolver.base3d().compute(new DensityFunction.SinglePointContext(x, y, z)));
         final F slopedCheese = new CacheOnceF(new AddF(initialDensity, base3d));
