@@ -2,9 +2,9 @@ name: Build Minecraft 26.2 (Permanent)
 
 on:
   push:
-    branches: [ "26.2-Permanent" ]
+    branches: ["26.2-Permanent"]
   pull_request:
-    branches: [ "26.2-Permanent" ]
+    branches: ["26.2-Permanent"]
   workflow_dispatch:
 
 concurrency:
@@ -53,7 +53,7 @@ jobs:
         with:
           name: NewBuildCode
           path: NewBuildCode.zip
-  
+
   # ===== 配置读取组 =====
   CheckConfig:
     name: Check Build Config
@@ -66,7 +66,7 @@ jobs:
     steps:
       - name: 拉取代码
         uses: actions/checkout@v6
-      
+
       - name: 读取 EnableTestNightlyRelease 配置
         id: read_nightly_config
         run: |
@@ -75,7 +75,7 @@ jobs:
           echo "enable_nightly=$ENABLE" >> $GITHUB_OUTPUT
           echo "ENABLE_NIGHTLY=$ENABLE" >> $GITHUB_ENV
           echo "✅ Nightly Release 开关: $ENABLE"
-          
+
       - name: 读取 UploadLocalWikiToGithubWiki 配置
         id: read_uwiki_config
         run: |
@@ -84,7 +84,7 @@ jobs:
           echo "upload_lwiki_to_gwiki=$ENABLE" >> $GITHUB_OUTPUT
           echo "UPLOAD_LWIKI_TO_GWIKI=$ENABLE" >> $GITHUB_ENV
           echo "✅ UploadLocalWikiToGithubWiki 开关: $ENABLE"
-          
+
       - name: 读取 DoNotBuildMinecraft 配置
         id: read_do_not_build_config
         run: |
@@ -93,7 +93,7 @@ jobs:
           echo "do_not_build_minecraft=$ENABLE" >> $GITHUB_OUTPUT
           echo "DO_NOT_BUILD_MINECRAFT=$ENABLE" >> $GITHUB_ENV
           echo "✅ DoNotBuildMinecraft 开关: $ENABLE"
-      
+
       - name: 从 gradle.properties 读取 minecraft_version
         id: read_version
         run: |
@@ -163,19 +163,19 @@ jobs:
       - name: 给 gradlew 加执行权限
         run: chmod +x ./gradlew
 
-      - name: 编译并 remap（生成 modified.jar）
+      - name: 编译并 remap
+        shell: bash
         run: |
+          set -o pipefail
           ./gradlew build --no-daemon --parallel --build-cache 2>&1 | tee full.log
-          grep -B 2 -A 5 "error:" full.log > compile_errors.log || true
-          rm -f full.log
-        continue-on-error: true
+          test -s build/libs/modified.jar
 
-      - name: 上传编译错误日志
+      - name: 上传失败日志
+        if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: CompileErrors
-          path: compile_errors.log
-          if-no-files-found: warn
+          name: GradleBuildLog
+          path: full.log
 
       - name: 查看 modified.jar 内容
         if: success()
@@ -257,15 +257,15 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **构建状态**: 失败" >> $GITHUB_STEP_SUMMARY
-            echo "> 请查看上传的 `CompileErrors` 工件获取详细错误信息" >> $GITHUB_STEP_SUMMARY
+            echo '> 请查看上传的 `GradleBuildLog` 工件获取详细错误信息' >> "$GITHUB_STEP_SUMMARY"
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 📄 编译错误摘要" >> $GITHUB_STEP_SUMMARY
-            if [ -f compile_errors.log ]; then
+            echo "### 📄 构建错误摘要" >> $GITHUB_STEP_SUMMARY
+            if [ -f full.log ]; then
               echo '```' >> $GITHUB_STEP_SUMMARY
-              head -20 compile_errors.log >> $GITHUB_STEP_SUMMARY
+              tail -n 60 full.log >> "$GITHUB_STEP_SUMMARY"
               echo '```' >> $GITHUB_STEP_SUMMARY
             else
-              echo "未找到错误日志文件" >> $GITHUB_STEP_SUMMARY
+              echo "未找到构建日志文件" >> $GITHUB_STEP_SUMMARY
             fi
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -299,7 +299,7 @@ jobs:
             **该每日构建版本 (Nightly Release) 是正在开发测试的版本**，用于发布带有改动的测试版本，由 Github Actions 半自动化发布，便于公开进行改版测试
 
             > [!WARNING]
-            > 该版本携带未测试或正在开发的改动，需要进一步测试  
+            > 该版本携带未测试或正在开发的改动，需要进一步测试
             > 该测试版仍然使用 [GNU General Public License](./LICENSE) 协议，不允许违反协议的行为
 
             ### 🧩 主要信息 Main Information
@@ -320,25 +320,25 @@ jobs:
 
             ### 🎲 构建产物
             由于该改版目前主要更改均在单一分支测试，极少时会在其他分支进行测试，所以每次的构建产物均会上传到这里来 ~~(懒得进行分离发布了)~~
-            
+
             ### 🚅 快速下载
             可能 Github 原生的下载速度过慢，需要快速下载的请点击下面的链接
             - [这里下载 26.2-Permanent.jar](https://v6.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.jar)
             - [这里下载 26.2-Permanent.json](https://v6.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.json)
             下面的下载链接如果需要 Fabric Loader 支持，请下载它，并按照“Fabric 版本的使用”安装。
             - [这里下载 26.2-Permanent-Fabric.json](https://v6.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent-Fabric.json)
-            
-            CDN 线路: 
+
+            CDN 线路:
                - [26.2-Permanent.jar](https://cdn.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.jar)
                - [26.2-Permanent.json](https://cdn.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent.json)
                下面的下载链接如果需要 Fabric Loader 支持，请下载它，并按照“Fabric 版本的使用”安装。
                - [26.2-Permanent-Fabric.json](https://cdn.gh-proxy.org/https://github.com/MFSCelebrate/MCRe-NoiseFarlandsJava/releases/download/nightly/26.2-Permanent-Fabric.json)
-              
+
             ### 🔗 Fabric 版本的使用
-            你需要下载`26.2-Permanent-Fabric.json`和`26.2-Permanent.jar`，并把 **Jar** 重命名成`26.2-Permanent-Fabric.jar`  
-            随后，安装**有 Fabric Loader 0.19.5 及以上版本模组加载器的原版 26.2**，名字叫 **26.2-Permanent-Fabric.jar**，方便替换。  
-            把下载的 `26.2-Permanent-Fabric.json`和`26.2-Permanent.jar` 替换掉原版同名的 **Json 和 Jar**，开启启动器对版本的**“不检查版本完整性”**，大功告成，可以启动游戏了。  
-              
+            你需要下载`26.2-Permanent-Fabric.json`和`26.2-Permanent.jar`，并把 **Jar** 重命名成`26.2-Permanent-Fabric.jar`
+            随后，安装**有 Fabric Loader 0.19.5 及以上版本模组加载器的原版 26.2**，名字叫 **26.2-Permanent-Fabric.jar**，方便替换。
+            把下载的 `26.2-Permanent-Fabric.json`和`26.2-Permanent.jar` 替换掉原版同名的 **Json 和 Jar**，开启启动器对版本的**“不检查版本完整性”**，大功告成，可以启动游戏了。
+
           files: |
             artifacts/26.2-Permanent.jar
             artifacts/26.2-Permanent.json
@@ -385,7 +385,7 @@ jobs:
         if: success()
         with:
           name: 26.2-*
-          
+
   # 同步 Wiki 的任务
   sync-wiki:
     continue-on-error: true
@@ -409,7 +409,7 @@ jobs:
         run: |
           echo "## 📚 Wiki 同步摘要" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-        
+
           echo "### ✅ 同步状态" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.wiki_sync.outcome }}" == "success" ]; then
             echo "- **状态**: 成功 🎉" >> $GITHUB_STEP_SUMMARY
@@ -420,13 +420,13 @@ jobs:
           echo "- **目标 Wiki 仓库**: \`${{ github.repository }}.wiki.git\`" >> $GITHUB_STEP_SUMMARY
           echo "- **触发提交**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-        
+
           echo "### 📄 同步的文件列表" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           ls -la MainProjectCatalogue/GithubWiki/ 2>/dev/null || echo "（文件夹不存在或为空）" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           echo "### 🔗 访问 Wiki" >> $GITHUB_STEP_SUMMARY
           echo "> 本次同步已将源文件夹内容推送至 Wiki 仓库，可在 [Wiki 页面](https://github.com/${{ github.repository }}/wiki) 立即查看。" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

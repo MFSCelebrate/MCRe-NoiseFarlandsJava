@@ -424,11 +424,13 @@ public final class FloatDensity {
                 final int baseX = cellX * 4;
                 final int baseY = cellY * 8;
                 final int baseZ = cellZ * 4;
-                // 角点序（与 Mth.lerp3 参数序一致）：index bit0=x(+4)、bit1=y(+8)、bit2=z(+4)
+                // 角点序（与主线 NoiseInterpolator 的 nXYZ 命名一致）：bit0=x、bit1=y、bit2=z
+                // 🔧 修正：Z 角点偏移原写成 (i & 4) << 2 = 16（应为 cellWidth=4）→ Z 方向插值跨越 4 个 cell
+                //    的错误角点 → 地表竖直条纹（3 格 cell 内部 vs 角点反向）+ caves 链 Z 向错位 → 洞穴爆炸。
                 for (int i = 0; i < 8; i++) {
-                    final int dx = (i & 1) << 2;
-                    final int dy = (i & 2) << 2;
-                    final int dz = (i & 4) << 2;
+                    final int dx = (i & 1) * 4;
+                    final int dy = ((i >> 1) & 1) * 8;
+                    final int dz = ((i >> 2) & 1) * 4;
                     corners[i] = this.source.compute(baseX + dx, baseY + dy, baseZ + dz);
                 }
                 this.cornerCache.put(key, corners);
