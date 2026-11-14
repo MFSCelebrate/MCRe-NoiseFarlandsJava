@@ -19,11 +19,13 @@ import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.chunk.CarvingMask;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.Aquifer;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseChunk;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
+import net.minecraft.world.level.levelgen.NoiseSettings;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.RandomSupport;
 import net.minecraft.world.level.levelgen.WorldGenerationContext;
@@ -74,11 +76,43 @@ public final class FarLandsBandGenerator {
 
     private final ServerLevel level;
 
+    /**
+     * 🔧 MCRe 修复（NegativeArraySizeException -1/-3/-5/-7）：生成域钳制（section）。
+     * <p>分带窗口若超出「生成域」，{@code NoiseSettings.clampToHeightAccessor} 会钳出<b>负高度</b>
+     * （原版该方法无 max(0) 防护——原版中高度 accessor 恒覆盖 NoiseSettings 故不可达；
+     * 分带的自定义 band accessor 打破了此前提）→ {@code NoiseInterpolator.allocateSlice} 拿负数开数组崩溃：
+     * <ul>
+     *   <li>PE 0.6.1 管线（世界 0..128，NoiseSettings 仍为 vanilla 主世界 -64..320）：玩家 Y≥64 后
+     *       带顶进入 section 21+（块 Y 336 &gt; 320），带钳制高度 = 320 − 带起点·16 为负
+     *       → cellCountY −2/−4/−6/−8 → 数组尺寸 −1/−3/−5/−7（与实测四种负值按带起点逐一吻合）。</li>
+     *   <li>失败带不 markBandGenerated → 每 tick 无限重试 → 日志刷屏（实测 3 分钟 2484 条 / 7.3 万行）拖垮 FPS。</li>
+     *   <li>对称地，带整体低于噪声域底（如坠入虚空 Y&lt;−336）也以同款负高度崩溃。</li>
+     * </ul>
+     * 修复 = 带窗口钳制到生成域内：下限 = max(维度最低 section, 噪声域底 section)；
+     * 上限 = min(维度顶 section, 生成器 NoiseSettings 顶 section)。域外不存在可生成地形，直接跳过。
+     * 超高世界 NoiseSettings 顶 ≈ 2^31，钳制不生效，分带扩层功能不受影响。
+     */
+    private final int genMinSectionY;
+    private final int genMaxSectionY;
+
     /** 在途 chunk 去重（ChunkPos 是 record，天然可作 map key）。 */
     private final Set<ChunkPos> inFlight = ConcurrentHashMap.newKeySet();
 
     public FarLandsBandGenerator(final ServerLevel level) {
         this.level = level;
+        // 生成域范围（long 域计算防 min_y+height 溢出，对齐 NoiseSettings 校验的 long 比较风格）
+        final DimensionType dimension = level.dimensionType();
+        int minSection = dimension.minY() >> 4;
+        long topSection = ((long) dimension.minY() + dimension.height() - 1) >> 4;
+        if (level.getChunkSource().getGenerator() instanceof NoiseBasedChunkGenerator noiseGenerator) {
+            // NoiseChunk 只在 NoiseSettings 域内可构造：带起点·16 超过 NoiseSettings 顶（或带整体低于其底），
+            // clampToHeightAccessor 必然钳出非正高度——上限/下限各收一道
+            final NoiseSettings noiseSettings = noiseGenerator.generatorSettings().value().noiseSettings();
+            minSection = Math.max(minSection, noiseSettings.minY() >> 4);
+            topSection = Math.min(topSection, ((long) noiseSettings.minY() + noiseSettings.height() - 1) >> 4);
+        }
+        this.genMinSectionY = minSection;
+        this.genMaxSectionY = (int) Math.min(topSection, Integer.MAX_VALUE >> 4);
     }
 
     /** 主线程每 tick 调用（{@code ServerLevel.tick} 里 chunkSource.tick 之后）。 */
@@ -95,8 +129,14 @@ public final class FarLandsBandGenerator {
             }
 
             final int playerSectionY = SectionPos.blockToSectionCoord(player.getBlockY());
-            final int bandMin = playerSectionY - VERTICAL_SIMULATION_DISTANCE;
-            final int bandMax = playerSectionY + VERTICAL_SIMULATION_DISTANCE;
+            // 🔧 MCRe 修复（NegativeArraySizeException -1/-3/-5/-7）：带窗口钳制到生成域内（见 genMinSectionY 注释）。
+            // 域外（维度上/下方虚空）没有可生成地形，此前提交必然在 NoiseChunk 构造期崩溃且永不标记 → 无限重试刷屏。
+            final int bandMin = Math.max(playerSectionY - VERTICAL_SIMULATION_DISTANCE, this.genMinSectionY);
+            final int bandMax = Math.min(playerSectionY + VERTICAL_SIMULATION_DISTANCE, this.genMaxSectionY);
+            if (bandMin > bandMax) {
+                // 玩家在生成域外的虚空（如飞出 PE 0.6.1 管线世界的 0..128 顶）：无带可生成
+                continue;
+            }
             final ChunkPos center = player.chunkPosition();
 
             for (int dx = -CHUNK_RADIUS; dx <= CHUNK_RADIUS && budget > 0; dx++) {
