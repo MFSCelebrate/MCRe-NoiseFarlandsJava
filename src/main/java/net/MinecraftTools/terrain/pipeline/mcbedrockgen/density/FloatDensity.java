@@ -320,6 +320,12 @@ public final class FloatDensity {
     /**
      * flat_cache：按 <b>quart</b> 列（4 块）缓存——主线 NoiseChunk.FlatCache 同粒度
      * （offset/factor/气候等 2D 函数按 quart 采样）。
+     *
+     * <p>🔧 关键语义（Diag/源码实锤）：主线 FlatCache 在 <b>chunk 构造时于 quart 边界点</b>预计算
+     * （{@code SinglePointContext(QuartPos.toBlock(firstNoiseX + i), 0, QuartPos.toBlock(firstNoiseZ + j))}，
+     * Y 固定 0），查询时按 quart 索引取值。初版本实现"首次访问点求值"——与边界点最多差 3 格
+     * → 被缓存函数不够平滑时出现<b>每 4 格错位 3 格</b>的台阶（实测：地表竖直条纹，3 格红 + 1 格黄）。
+     * 现改为<b>一律在 quart 边界坐标求值</b>，与主线逐位对齐。
      */
     public static final class FlatCacheF implements F {
 
@@ -332,12 +338,15 @@ public final class FloatDensity {
 
         @Override
         public float compute(final int x, final int y, final int z) {
-            final long key = ((long) (x >> 2) << 32) | ((z >> 2) & 0xFFFFFFFFL);
+            final int quartX = x >> 2;
+            final int quartZ = z >> 2;
+            final long key = ((long) quartX << 32) | (quartZ & 0xFFFFFFFFL);
             final Float cached = this.cache.get(key);
             if (cached != null) {
                 return cached;
             }
-            final float value = this.source.compute(x, y, z);
+            // quart 边界块坐标（与主线 QuartPos.toBlock 同语义）+ Y=0（主线 FlatCache 同款）
+            final float value = this.source.compute(quartX << 2, 0, quartZ << 2);
             this.cache.put(key, value);
             return value;
         }
