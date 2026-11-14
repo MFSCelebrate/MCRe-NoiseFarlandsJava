@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,8 +72,8 @@ public class CommandSuggestions {
     // ──────── 🔧 MCRe 基岩风格命令提示（大佬 2026-11-14 指派）────────
     /** 普通指令文字色（浅灰 #CCCCCC）。 */
     public static final int BEDROCK_NORMAL_COMMAND_COLOR = 0xCCCCCC;
-    /** 管理/调试类指令文字色（RGB 0.3330 / 1.0 / 1.0 = #55FFFF 青色系）。 */
-    public static final int BEDROCK_ADMIN_COMMAND_COLOR = 0x55FFFF;
+    /** 调试（TEST）类指令文字色（RGB 0.3330 / 1.0 / 1.0 = #55FFFF 天蓝色）。 */
+    public static final int BEDROCK_TEST_COMMAND_COLOR = 0x55FFFF;
     /** 命令描述文字色（暗灰）。 */
     public static final int BEDROCK_COMMAND_DESC_COLOR = 0x8C8C8C;
     /** 选中行背景色（半透明白）——选中不改文字色，保证分类色始终可辨。 */
@@ -82,16 +83,29 @@ public class CommandSuggestions {
     /** 面板最小宽度；最大宽度占屏宽比例（"占据大部分空间"）。 */
     public static final int BEDROCK_PANEL_MIN_WIDTH = 200;
     public static final float BEDROCK_PANEL_MAX_WIDTH_RATIO = 0.75F;
+    /** 面板顶边距屏幕顶部（基岩风格：面板从输入框上方一路延伸到屏幕顶部 - 5px）。 */
+    public static final int BEDROCK_PANEL_TOP_MARGIN = 5;
 
     /**
-     * 管理/调试类指令判定：命令名以 {@code debug_} 开头（MCRe 伪命令族）+ 白名单前缀。
-     * <p>客户端命令树无服务端 PermissionLevel 概念（服务端权限不下发到客户端），故按命令名族判定；
-     * 需要扩展时往本表加前缀即可。
+     * 精确指定的调试命令名单（硬编码；命中即按调试命令着色为天蓝 #55FFFF）。
+     * <p>例：{@code /test} 是普通命令，但列入本表后即按调试命令显示。
      */
-    private static final List<String> ADMIN_COMMAND_PREFIXES = List.of("debug_");
+    private static final Set<String> TEST_COMMANDS = Set.of("test");
 
-    private static boolean isAdminCommand(final String name) {
-        for (final String prefix : ADMIN_COMMAND_PREFIXES) {
+    /** 调试命令前缀族（{@code debug_*} 等伪命令整体归为调试命令）。 */
+    private static final List<String> TEST_COMMAND_PREFIXES = List.of("debug_");
+
+    /**
+     * 调试（TEST）命令判定：<b>精确名单</b>（{@link #TEST_COMMANDS}）+ <b>前缀族</b>（{@link #TEST_COMMAND_PREFIXES}）。
+     * <p>客户端命令树无服务端 PermissionLevel 概念（权限不下发），故只能按命令名判定；
+     * 需要精确指定某个命令时，往 TEST_COMMANDS 加名字即可。
+     */
+    private static boolean isTestCommand(final String name) {
+        if (TEST_COMMANDS.contains(name)) {
+            return true;
+        }
+
+        for (final String prefix : TEST_COMMAND_PREFIXES) {
             if (name.startsWith(prefix)) {
                 return true;
             }
@@ -100,8 +114,8 @@ public class CommandSuggestions {
         return false;
     }
 
-    /** 命令元信息：描述文本 + 是否管理/调试类。 */
-    private record CommandMeta(String description, boolean admin) {
+    /** 命令元信息：描述文本 + 是否调试（TEST）类。 */
+    private record CommandMeta(String description, boolean test) {
     }
 
     /** 命令名 → 元信息（每次刷新建议时从客户端命令树重建）。 */
@@ -136,7 +150,7 @@ public class CommandSuggestions {
                     description = usage.startsWith(name) ? usage.substring(name.length()).trim() : usage;
                 }
 
-                meta.put(name, new CommandMeta(description, isAdminCommand(name)));
+                meta.put(name, new CommandMeta(description, isTestCommand(name)));
             }
         }
 
@@ -612,6 +626,7 @@ public class CommandSuggestions {
         private final Rect2i rect;
         private final String originalContents;
         private final List<Suggestion> suggestionList;
+        private int limit;
         private int offset;
         private int current;
         private Vec2 lastMouse = Vec2.ZERO;
@@ -619,11 +634,22 @@ public class CommandSuggestions {
         private int lastNarratedEntry;
 
         private SuggestionsList(final int x, final int y, final int width, final List<Suggestion> suggestionList, final boolean immediateNarration) {
-            int listX = x - (CommandSuggestions.this.input.isBordered() ? 0 : 1);
-            int listY = CommandSuggestions.this.anchorToBottom
-                ? y - 3 - Math.min(suggestionList.size(), CommandSuggestions.this.suggestionLineLimit) * BEDROCK_LINE_HEIGHT
-                : y - (CommandSuggestions.this.input.isBordered() ? 1 : 0);
-            this.rect = new Rect2i(listX, listY, width + 1, Math.min(suggestionList.size(), CommandSuggestions.this.suggestionLineLimit) * BEDROCK_LINE_HEIGHT);
+            final int listX = x - (CommandSuggestions.this.input.isBordered() ? 0 : 1);
+            final int listY;
+            final int height;
+
+            if (CommandSuggestions.this.anchorToBottom) {
+                // 🔧 基岩风格：面板底边贴输入框，顶边一路延伸到「屏幕顶部 - 5px」，高度随屏幕自适应
+                final int bottom = y - 3;
+                height = Math.max(BEDROCK_LINE_HEIGHT, bottom - BEDROCK_PANEL_TOP_MARGIN);
+                listY = bottom - height;
+            } else {
+                listY = y - (CommandSuggestions.this.input.isBordered() ? 1 : 0);
+                height = Math.min(suggestionList.size(), CommandSuggestions.this.suggestionLineLimit) * BEDROCK_LINE_HEIGHT;
+            }
+
+            this.rect = new Rect2i(listX, listY, width + 1, height);
+            this.limit = Math.max(1, Math.min(suggestionList.size(), height / BEDROCK_LINE_HEIGHT));
             this.originalContents = CommandSuggestions.this.input.getValue();
             this.lastNarratedEntry = immediateNarration ? -1 : 0;
             this.suggestionList = suggestionList;
@@ -631,7 +657,7 @@ public class CommandSuggestions {
         }
 
         public void extractRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY) {
-            int limit = Math.min(this.suggestionList.size(), CommandSuggestions.this.suggestionLineLimit);
+            int limit = this.limit;
             int unselectedColor = -5592406;
             boolean hasPrevious = this.offset > 0;
             boolean hasNext = this.suggestionList.size() > this.offset + limit;
@@ -710,10 +736,10 @@ public class CommandSuggestions {
                 }
 
                 // 🔧 基岩风格单行格式：/命令名 - 命令描述
-                //   管理/调试类命令名 → 青色 #55FFFF（RGB 0.3330/1.0/1.0）；普通命令 → 浅灰 #CCCCCC
+                //   调试（TEST）类命令名 → 天蓝 #55FFFF（RGB 0.3330/1.0/1.0）；普通命令 → 浅灰 #CCCCCC
                 final CommandMeta meta = CommandSuggestions.this.commandMeta.get(suggestion.getText());
-                final boolean admin = meta != null && meta.admin();
-                final int nameColor = admin ? BEDROCK_ADMIN_COMMAND_COLOR : BEDROCK_NORMAL_COMMAND_COLOR;
+                final boolean test = meta != null && meta.test();
+                final int nameColor = test ? BEDROCK_TEST_COMMAND_COLOR : BEDROCK_NORMAL_COMMAND_COLOR;
                 final String nameText = "/" + suggestion.getText();
                 graphics.text(CommandSuggestions.this.font, nameText, this.rect.getX() + 1, rowY + 1, nameColor);
                 if (meta != null && !meta.description().isEmpty()) {
@@ -778,7 +804,7 @@ public class CommandSuggestions {
             int mouseX = (int)CommandSuggestions.this.minecraft.mouseHandler.getScaledXPos(CommandSuggestions.this.minecraft.getWindow());
             int mouseY = (int)CommandSuggestions.this.minecraft.mouseHandler.getScaledYPos(CommandSuggestions.this.minecraft.getWindow());
             if (this.rect.contains(mouseX, mouseY)) {
-                this.offset = Mth.clamp((int)(this.offset - scroll), 0, Math.max(this.suggestionList.size() - CommandSuggestions.this.suggestionLineLimit, 0));
+                this.offset = Mth.clamp((int)(this.offset - scroll), 0, Math.max(this.suggestionList.size() - this.limit, 0));
                 return true;
             } else {
                 return false;
@@ -817,14 +843,14 @@ public class CommandSuggestions {
         public void cycle(final int direction) {
             this.select(this.current + direction);
             int first = this.offset;
-            int last = this.offset + CommandSuggestions.this.suggestionLineLimit - 1;
+            int last = this.offset + this.limit - 1;
             if (this.current < first) {
-                this.offset = Mth.clamp(this.current, 0, Math.max(this.suggestionList.size() - CommandSuggestions.this.suggestionLineLimit, 0));
+                this.offset = Mth.clamp(this.current, 0, Math.max(this.suggestionList.size() - this.limit, 0));
             } else if (this.current > last) {
                 this.offset = Mth.clamp(
-                    this.current + CommandSuggestions.this.lineStartOffset - CommandSuggestions.this.suggestionLineLimit,
+                    this.current + CommandSuggestions.this.lineStartOffset - this.limit,
                     0,
-                    Math.max(this.suggestionList.size() - CommandSuggestions.this.suggestionLineLimit, 0)
+                    Math.max(this.suggestionList.size() - this.limit, 0)
                 );
             }
         }
