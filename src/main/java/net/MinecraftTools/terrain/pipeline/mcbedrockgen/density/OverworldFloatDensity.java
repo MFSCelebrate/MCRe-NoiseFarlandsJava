@@ -119,8 +119,15 @@ public final class OverworldFloatDensity {
         final F initialDensity = ENABLE_JAGGED
                 ? new MulF(new ConstantF(4.0f), new QuarterNegativeF(new MulF(new AddF(depth, jaggedness), factor)))
                 : new MulF(new ConstantF(4.0f), new QuarterNegativeF(new MulF(depth, factor)));
-        final F base3d = new InterpolatedF(
-                (x, y, z) -> (float) resolver.base3d().compute(new DensityFunction.SinglePointContext(x, y, z)));
+        // 🔧 base_3d 不单独插值（对齐 26.2 主线，源码实锤）：
+        //   主线 NoiseChunk.wrapNew **只**对 Marker(Interpolated) 建 NoiseInterpolator，而 bootstrap 注册
+        //   BASE_3D_NOISE_OVERWORLD 时**没有**包 interpolated marker；synth.BlendedNoise.compute 是纯逐点求值
+        //   （无内部 cell 插值）→ 主线的地形平滑**全部来自 postProcess 那层整链插值**（Marker(Interpolated) 包
+        //   mul(blendDensity(slide), 0.64)）。
+        //   初版本家族给 base3d 又包了一层 InterpolatedF → **双重插值** → base3d 被过度平滑 → sloped_cheese 抹平
+        //   → 洞边界被抹开 → 溶洞膨胀到洞穿整个边境之地（实测）。
+        //   去掉内层插值后，base3d 只在 postProcess 插值器的 cell 角点被求值（每 cell 8 次）→ 性能亦与主线一致。
+        final F base3d = (x, y, z) -> (float) resolver.base3d().compute(new DensityFunction.SinglePointContext(x, y, z));
         final F slopedCheese = new CacheOnceF(new AddF(initialDensity, base3d));
 
         // ── overworld() caves 装配 ──

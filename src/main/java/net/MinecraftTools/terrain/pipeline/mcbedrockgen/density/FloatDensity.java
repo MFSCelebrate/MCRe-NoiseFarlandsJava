@@ -54,16 +54,15 @@ public final class FloatDensity {
         }
     }
 
-    /** Y 恒等（对应主线 Y = yClampedGradient(MIN,MAX,MIN,MAX)，含 Y 轴偏移开关语义）。 */
+    /** Y 恒等（对应主线 Y = yClampedGradient(MIN,MAX,MIN,MAX)）——含 Y 轴偏移缩放开关语义。 */
     public record YF(long minY, long maxY) implements F {
 
         @Override
         public float compute(final int x, final int y, final int z) {
+            // 🔧 偏移缩放：主线 Y 节点是 yClampedGradient → 走 enabledYClampedGradientOffset 开关（主线同款）
             final double yy = WorldReposition.isYClampedGradientOffsetEnabled()
                     ? WorldReposition.reposition((long) y, Direction.Axis.Y)
                     : y;
-            // clampedMap(yy, minY, maxY, minY, maxY) = clamp 后恒等（超大域 float 会丢整数精度，
-            // 但该节点只喂 rangeChoice 的区间比较，主线 double 版同域同语义）
             return (float) yy;
         }
     }
@@ -254,7 +253,8 @@ public final class FloatDensity {
 
         @Override
         public float compute(final int x, final int y, final int z) {
-            return Math.clamp(this.source.compute(x, y, z), this.min, this.max);
+            // 🔧 forceSkyGrid 分流（对齐主线 DensityFunctions.Clamp.transform）
+            return clampF(this.source.compute(x, y, z), this.min, this.max);
         }
     }
 
@@ -441,15 +441,20 @@ public final class FloatDensity {
             return lerp3(fx, fy, fz, corners);
         }
 
-        /** float 版 Mth.lerp3（参数序同 vanilla：n000..n111，bit0=x、bit1=y、bit2=z）。 */
+        /**
+         * float 版三线性（参数序同 vanilla：n000..n111，bit0=x、bit1=y、bit2=z）。
+         * <p>🔧 enableSkyGrid 分流（对齐主线 NoiseInterpolator 的 MathUtil.lerp vs Mth.lerp）：
+         * 开启时 delta=0/1 的 cell 边界列保留 Inf（天空网格的网格线就来自这里），内部列变 NaN 不扩散。
+         */
         private static float lerp3(final float fx, final float fy, final float fz, final float[] c) {
-            final float v00 = c[0] + fx * (c[1] - c[0]);
-            final float v10 = c[2] + fx * (c[3] - c[2]);
-            final float v01 = c[4] + fx * (c[5] - c[4]);
-            final float v11 = c[6] + fx * (c[7] - c[6]);
-            final float v0 = v00 + fy * (v10 - v00);
-            final float v1 = v01 + fy * (v11 - v01);
-            return v0 + fz * (v1 - v0);
+            final boolean skyGrid = isEnableSkyGrid();
+            final float v00 = lerpWithMode(fx, c[0], c[1], skyGrid);
+            final float v10 = lerpWithMode(fx, c[2], c[3], skyGrid);
+            final float v01 = lerpWithMode(fx, c[4], c[5], skyGrid);
+            final float v11 = lerpWithMode(fx, c[6], c[7], skyGrid);
+            final float v0 = lerpWithMode(fy, v00, v10, skyGrid);
+            final float v1 = lerpWithMode(fy, v01, v11, skyGrid);
+            return lerpWithMode(fz, v0, v1, skyGrid);
         }
     }
 
@@ -474,6 +479,70 @@ public final class FloatDensity {
     }
 
     // ──────── 辅助 ────────
+
+    // ──────── 天空网格开关（对齐主线 NoiseChunk.isEnableSkyGrid / DensityFunctions.isForceSkyGrid）────────
+
+    /** 主线同款判定：config 为 null → <b>false</b>（注意不是默认开）。 */
+    public static boolean isEnableSkyGrid() {
+        final net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData config =
+                net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.enableSkyGrid;
+    }
+
+    /** 主线同款判定：config 为 null → false。 */
+    public static boolean isForceSkyGrid() {
+        final net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData config =
+                net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+        return config != null && config.forceSkyGrid;
+    }
+
+    /**
+     * 插值分流：enableSkyGrid 开 → {@code MathUtil.lerp} 语义（delta 0/1 <b>端点优先含 Inf</b>；
+     * 0<delta<1 时任一端 Inf → NaN，<b>不扩散</b>——这正是"天空网格只存在于 cell 边界列"的机制）；
+     * 关 → {@code Mth.lerp} 语义（start + delta×(end−start)，无防护 → Inf 端点也 NaN）。
+     */
+    public static float lerpF(final float delta, final float start, final float end) {
+        return lerpWithMode(delta, start, end, isEnableSkyGrid());
+    }
+
+    public static float lerpWithMode(final float delta, final float start, final float end, final boolean skyGrid) {
+        if (skyGrid) {
+            if (delta == 0.0f) {
+                return start;
+            }
+            if (delta == 1.0f) {
+                return end;
+            }
+            if (Float.isNaN(start) || Float.isNaN(end)) {
+                return Float.NaN;
+            }
+            if (Float.isInfinite(start) || Float.isInfinite(end)) {
+                return Float.NaN;
+            }
+            if (start == end) {
+                return start;
+            }
+        }
+        return start + delta * (end - start);
+    }
+
+    /**
+     * 钳制分流：forceSkyGrid 开 → {@code MathUtil.clamp} 语义（<b>Inf 保留不钳</b>——让 Inf 密度透传到表层/天空）；
+     * 关 → {@code Mth.clamp} 语义（Inf 钳到边界）。
+     */
+    public static float clampF(final float value, final float min, final float max) {
+        return clampWithMode(value, min, max, isForceSkyGrid());
+    }
+
+    public static float clampWithMode(final float value, final float min, final float max, final boolean forceSkyGrid) {
+        if (forceSkyGrid) {
+            if (Float.isInfinite(value)) {
+                return value;
+            }
+            return value < min ? min : Math.min(value, max);
+        }
+        return Math.clamp(value, min, max);
+    }
 
     /**
      * 三元组 → 64 位 key（结构无重叠，超大世界不碰撞）。
