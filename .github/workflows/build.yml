@@ -257,15 +257,15 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **构建状态**: 失败" >> $GITHUB_STEP_SUMMARY
-            echo "> 请查看上传的 `CompileErrors` 工件获取详细错误信息" >> $GITHUB_STEP_SUMMARY
+            echo '> 请查看上传的 `GradleBuildLog` 工件获取详细错误信息' >> "$GITHUB_STEP_SUMMARY"
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 📄 编译错误摘要" >> $GITHUB_STEP_SUMMARY
-            if [ -f compile_errors.log ]; then
+            echo "### 📄 构建错误摘要" >> $GITHUB_STEP_SUMMARY
+            if [ -f full.log ]; then
               echo '```' >> $GITHUB_STEP_SUMMARY
-              head -20 compile_errors.log >> $GITHUB_STEP_SUMMARY
+              tail -n 60 full.log >> "$GITHUB_STEP_SUMMARY"
               echo '```' >> $GITHUB_STEP_SUMMARY
             else
-              echo "未找到错误日志文件" >> $GITHUB_STEP_SUMMARY
+              echo "未找到构建日志文件" >> $GITHUB_STEP_SUMMARY
             fi
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
