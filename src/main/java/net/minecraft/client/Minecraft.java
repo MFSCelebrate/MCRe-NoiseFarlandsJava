@@ -562,6 +562,15 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
         } catch (Throwable t) {
             LOGGER.warn("MCRe: GPU fp64 capability probe failed", t);
         }
+        // 🔧 MCRe：向量化后端安装（jdk.incubator.vector；未加 --add-modules 时自动退回标量 fallback）
+        net.MinecraftTools.vectorization.VectorMath.installVectorBackend();
+        LOGGER.info("MCRe: vectorization backend = {}", net.MinecraftTools.vectorization.VectorMath.backendName());
+        // 🔧 MCRe：向量化自测（逐位一致性 + 吞吐）——**真机数字的唯一来源**（proot 模拟环境的数字不作数）
+        try {
+            LOGGER.info(net.MinecraftTools.vectorization.VectorizationSelfTest.run());
+        } catch (Throwable t) {
+            LOGGER.warn("MCRe: vectorization self-test failed", t);
+        }
         this.windowSurface = device.createSurface(this.window.handle());
         this.textInputManager = new TextInputManager(this.window);
         this.window
