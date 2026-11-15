@@ -91,8 +91,20 @@ public class CommandSuggestions {
     /**
      * 精确指定的调试命令名单（硬编码；命中即按调试命令着色为天蓝 #55FFFF）。
      * <p>例：{@code /test} 是普通命令，但列入本表后即按调试命令显示。
+     * <p>注意：{@code debugconfig} / {@code debugpath} / {@code debugmobspawning} 这类<b>不带下划线</b>的
+     * 名字不匹配 {@code debug_} 前缀族，必须靠本精确名单命中。
      */
-    private static final Set<String> TEST_COMMANDS = Set.of("test");
+    private static final Set<String> TEST_COMMANDS = Set.of(
+        "test",
+        "chase",
+        "debugconfig",
+        "serverpack",
+        "spawn_armor_trims",
+        "warden_spawn_tracker",
+        "debugpath",
+        "debugmobspawning",
+        "raid"
+    );
 
     /** 调试命令前缀族（{@code debug_*} 等伪命令整体归为调试命令）。 */
     private static final List<String> TEST_COMMAND_PREFIXES = List.of("debug_");

@@ -131,6 +131,9 @@ public class DebugEntryPosition implements DebugScreenEntry {
             final int bitLen = maxAbs.bitLength();  // 最高位 1 的位置（等价于 64 - Long.numberOfLeadingZeros）
             final double doublePrecision = Math.pow(2.0, (double) (bitLen - 53));
             final double floatPrecision = Math.pow(2.0, (double) (bitLen - 24));
+            // 🔧 MCRe：FloatRefactor256（237 位精度：1 隐含 + 236 显式小数）的最小可分辨步长
+            //   —— 与 double(2^(bitLen-53)) / float(2^(bitLen-24)) 完全同款公式族，PRECISION=237
+            final double floatRefactorPrecision = Math.pow(2.0, (double) (bitLen - FloatRefactor256.PRECISION));
 
             // ===== 26.4 Fact 风格：名字右对齐 + 值（DebugGroups.POSITION，白强调色）=====
             displayer.addFactToGroup(
@@ -175,6 +178,7 @@ public class DebugEntryPosition implements DebugScreenEntry {
                 fact -> fact.text(
                     "§" + getColorCodeFromPrecision(doublePrecision) + doublePrecision
                     + "§r (float: §" + getColorCodeFromPrecision(floatPrecision) + floatPrecision + "§r)"
+                    + ", (FloatRefactor256: §" + getColorCodeFromPrecision(floatRefactorPrecision) + floatRefactorPrecision + "§r)"
                 )
             );
             displayer.addFactToGroup(
