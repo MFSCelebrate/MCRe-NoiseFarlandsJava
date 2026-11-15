@@ -33,6 +33,13 @@ application {
     ]
 }
 
+// ===== 🔧 MCRe：向量化路线（2026-11-15）—— jdk.incubator.vector 孵化模块 =====
+// 编译期必须显式 --add-modules；运行时玩家侧由 version.json 的 javaArgs 追加（启动器可自动构造）。
+// 未加该参数时 VectorMath 会反射加载失败并自动退回标量 fallback（游戏不受影响）。
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['--add-modules', 'jdk.incubator.vector']
+}
+
 loom {
     runs {
         client {
@@ -51,6 +58,8 @@ loom {
                 !it.startsWith('-Djava.library.path=')
             })
             jvmArguments.add('-Xmx4G')
+            // 🔧 向量化：开发环境运行时启用 jdk.incubator.vector（缺失时库自动退回标量）
+            jvmArguments.add('--add-modules=jdk.incubator.vector')
         }
     }
 }
