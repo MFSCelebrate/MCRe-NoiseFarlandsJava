@@ -68,10 +68,44 @@ class GlDevice implements GpuDeviceBackend {
     private final VertexArrayCache vertexArrayCache;
     private final BufferStorage bufferStorage;
     private final DeviceInfo deviceInfo;
+    // 🔧 MCRe：GL 能力快照（启动期 fp64 扩展探测用——避免在探测线程触碰 GL context）
+    public final GLCapabilities capabilities;
+
+    /**
+     * 🔧 MCRe：启动期 fp64 能力探测（桌面 GL 用 {@code GL_ARB_gpu_shader_fp64}，
+     * GLES 用 {@code GL_EXT_shader_fp64}；字段用反射读，避免不同 LWJGL 版本字段集差异）。
+     */
+    @Override
+    public void appendFp64Capability(final StringBuilder sb) {
+        final boolean arb = glHasExtension(this.capabilities, "GL_ARB_gpu_shader_fp64");
+        final boolean ext = glHasExtension(this.capabilities, "GL_EXT_shader_fp64");
+        sb.append("Active backend  : OpenGL\n");
+        sb.append("  fp64 ext      : ")
+            .append(arb ? "GL_ARB_gpu_shader_fp64" : (ext ? "GL_EXT_shader_fp64" : "none"))
+            .append('\n');
+        sb.append("  fp64 verdict  : ")
+            .append(arb || ext ? "declared usable (runtime compile+dispatch check still required)" : "NOT supported -> GPU fp64 acceleration unavailable")
+            .append('\n');
+    }
+
+    private static boolean glHasExtension(final GLCapabilities capabilities, final String fieldName) {
+        if (capabilities == null) {
+            return false;
+        }
+
+        try {
+            final java.lang.reflect.Field field = GLCapabilities.class.getField(fieldName);
+            return field.getBoolean(capabilities);
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
 
     public GlDevice(final long windowHandle, final ShaderSource defaultShaderSource, final GpuDebugOptions debugOptions) {
         GLFW.glfwMakeContextCurrent(windowHandle);
         GLCapabilities capabilities = GL.createCapabilities();
+        this.capabilities = capabilities;
         Set<String> enabledExtensions = new HashSet<>();
         int maxSupportedAnisotropy;
         if (capabilities.GL_EXT_texture_filter_anisotropic) {

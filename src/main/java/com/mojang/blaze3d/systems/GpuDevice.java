@@ -26,6 +26,11 @@ public class GpuDevice {
     private final Runnable criticalShaderLoader;
     private final @Nullable TracyGpuProfiler profiler;
 
+    /** 🔧 MCRe：取当前后端（启动期 fp64 能力探测用）。 */
+    public GpuDeviceBackend backend() {
+        return this.backend;
+    }
+
     public GpuDevice(final GpuDeviceBackend backend, final Runnable criticalShaderLoader) {
         this.backend = backend;
         this.criticalShaderLoader = criticalShaderLoader;

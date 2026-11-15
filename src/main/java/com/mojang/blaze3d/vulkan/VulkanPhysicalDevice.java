@@ -161,6 +161,11 @@ public class VulkanPhysicalDevice implements AutoCloseable {
         return this.vkPhysicalDevice;
     }
 
+    /** 🔧 MCRe：暴露物理设备特性集（fp64 能力探测用——{@code shaderFloat64} 是 Vulkan 1.2 core feature）。 */
+    public VkPhysicalDeviceFeatures2 vkPhysicalDeviceFeatures() {
+        return this.vkPhysicalDeviceFeatures;
+    }
+
     public VkPhysicalDeviceProperties vkPhysicalDeviceProperties() {
         return this.vkPhysicalDeviceProperties.properties();
     }

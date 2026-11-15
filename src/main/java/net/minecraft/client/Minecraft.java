@@ -555,6 +555,13 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
         }
 
         this.window = windowCandidate;
+        // 🔧 MCRe：启动期 GPU fp64 能力检测报告（大佬 2026-11-15 指派）——只读探测当前已实例化后端，
+        //   Turnip（软件 Vulkan）等会谎报特性的情况在报告里显式标注。
+        try {
+            LOGGER.info(net.MinecraftTools.diagnostics.GpuFp64Report.probe(RenderSystem.getDevice(), "26.2"));
+        } catch (Throwable t) {
+            LOGGER.warn("MCRe: GPU fp64 capability probe failed", t);
+        }
         this.windowSurface = device.createSurface(this.window.handle());
         this.textInputManager = new TextInputManager(this.window);
         this.window

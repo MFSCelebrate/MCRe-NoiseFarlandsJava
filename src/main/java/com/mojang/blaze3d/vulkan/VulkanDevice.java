@@ -63,6 +63,47 @@ public class VulkanDevice implements GpuDeviceBackend {
     private final VulkanQueue transferQueue;
     private final boolean isIntegratedIntelMoltenVK;
     // 🔧 MCRe：原始 vendorID（0x8086=Intel）——兼容性降级判定用（physicalDevice 构造后 close，需提前存）
+    // 🔧 MCRe：启动期 fp64 能力探测快照（只读；physicalDevice 构造后 close，故在此提前取）
+    public final boolean shaderFloat64;
+    public final String deviceName;
+
+    /**
+     * 🔧 MCRe：启动期 fp64 能力探测（{@code shaderFloat64} 是 Vulkan 1.2 core feature）。
+     * <p>⚠️ Turnip（Vulkan→GLES 软件翻译层）会谎报特性 → 报告里显式标注需运行时复验。
+     */
+    @Override
+    public void appendFp64Capability(final StringBuilder sb) {
+        final String lowerName = this.deviceName.toLowerCase();
+        final String lowerDriver = this.driverInfo.toLowerCase();
+        final boolean turnip = lowerName.contains("turnip") || lowerDriver.contains("turnip");
+        sb.append("Active backend  : Vulkan\n");
+        sb.append("  device        : ").append(this.deviceName).append('\n');
+        sb.append("  vendor        : ").append(this.vendorName).append('\n');
+        sb.append("  driver        : ").append(this.driverInfo).append('\n');
+        sb.append("  API version   : ").append(formatApiVersion(this.vulkanApiVersion)).append('\n');
+        sb.append("  shaderFloat64 : ").append(this.shaderFloat64 ? "YES" : "NO").append('\n');
+        sb.append("  fp64 verdict  : ")
+            .append(this.shaderFloat64 ? "declared usable (runtime compile+dispatch check still required)" : "NOT supported -> GPU fp64 acceleration unavailable")
+            .append('\n');
+
+        if (turnip) {
+            sb.append("  ! Turnip detected (software Vulkan over GLES):\n");
+            sb.append("    Turnip may advertise features it cannot execute; shaderFloat64 here is\n");
+            sb.append("    UNVERIFIED. Treat fp64 as OFF until a real f64 compile + dispatch +\n");
+            sb.append("    readback probe succeeds.\n");
+        }
+    }
+
+    private static String formatApiVersion(final int version) {
+        final int major = (version >> 22) & 0x7F;
+        final int minor = (version >> 12) & 0x3FF;
+        final int patch = version & 0xFFF;
+        return major + "." + minor + "." + patch;
+    }
+
+    public final String vendorName;
+    public final String driverInfo;
+    public final int vulkanApiVersion;
     private final int vendorId;
     private final VulkanCommandEncoder commandEncoder;
     private final CheckpointExtension checkpointExtension;
@@ -81,6 +122,14 @@ public class VulkanDevice implements GpuDeviceBackend {
         this.vkDevice = vkDevice;
         this.vma = vma;
         this.checkpointExtension = checkpointExtension;
+        // 🔧 MCRe：启动期 fp64 能力探测用的只读快照（physicalDevice 构造后即被 close，必须提前取）
+        // ⚠️ LWJGL 的 VkPhysicalDeviceFeatures2 是**组合**不是继承：shaderFloat64() 在 V1.0 的
+        //    VkPhysicalDeviceFeatures 里，须经 features() 取出后再取（Vulkan 1.2 core feature）。
+        this.shaderFloat64 = physicalDevice.vkPhysicalDeviceFeatures().features().shaderFloat64();
+        this.deviceName = physicalDevice.deviceName();
+        this.vendorName = physicalDevice.vendorName();
+        this.driverInfo = physicalDevice.driverInfo();
+        this.vulkanApiVersion = physicalDevice.vkPhysicalDeviceProperties().apiVersion();
         Set<String> extensionNames = new HashSet<>();
 
         for (String name : instance.getEnabledExtensions()) {

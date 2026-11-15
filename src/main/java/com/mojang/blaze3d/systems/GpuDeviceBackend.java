@@ -20,6 +20,14 @@ import org.jspecify.annotations.Nullable;
 
 @OnlyIn(Dist.CLIENT)
 public interface GpuDeviceBackend {
+
+    /**
+     * 🔧 MCRe：启动期 fp64 能力探测（各后端 override 填自己的信息；默认=不报告）。
+     * <p>放在接口上而非直接引用具体后端类：{@code GlDevice} 是包私有类，外部包无法引用。
+     */
+    default void appendFp64Capability(final StringBuilder sb) {
+        sb.append("Active backend  : (backend does not report fp64 capability)\n");
+    }
     GpuSurfaceBackend createSurface(long windowHandle);
 
     CommandEncoderBackend createCommandEncoder();
