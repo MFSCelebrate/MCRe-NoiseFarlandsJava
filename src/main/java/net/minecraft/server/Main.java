@@ -59,10 +59,17 @@ import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.LevelSummary;
 import net.minecraft.world.level.storage.PrimaryLevelData;
 import net.minecraft.world.level.storage.WorldData;
+import net.MinecraftTools.logging.MCReLoggingBootstrap;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 public class Main {
+    static {
+        // 🔧 MCRe 异步日志：必须早于下面的 static LOGGER 字段 —— 那是本类第一个 Logger 创建点，
+        // 而 log4j2 只在初始化时读一次配置。配置文件落在当前工作目录（服务器目录）里，可直接编辑
+        MCReLoggingBootstrap.configureEarly();
+    }
+
     private static final Logger LOGGER = LogUtils.getLogger();
     // MCRe: keep a reference to the currently running DedicatedServer (started via /server_debug start)
     private static volatile DedicatedServer runningServer = null;
@@ -70,6 +77,8 @@ public class Main {
     @SuppressForbidden(reason = "System.out needed before bootstrap")
     public static void main(final String[] args) {
         SharedConstants.tryDetectVersion();
+        // 🔧 MCRe 异步日志：确认生效的是 MCRe 的配置（用户把配置文件改坏时会回退）
+        MCReLoggingBootstrap.verifyActive();
         OptionParser parser = new OptionParser();
         OptionSpec<Void> nogui = parser.accepts("nogui");
         OptionSpec<Void> initSettings = parser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");

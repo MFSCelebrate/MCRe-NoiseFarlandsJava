@@ -12,6 +12,7 @@ import com.mojang.logging.LogUtils;
 import com.mojang.util.UndashedUuid;
 import java.io.File;
 import java.net.Authenticator;
+import java.nio.file.Path;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
@@ -48,6 +49,7 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.profiling.jfr.Environment;
 import net.minecraft.util.profiling.jfr.JvmProfiler;
+import net.MinecraftTools.logging.MCReLoggingBootstrap;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -57,6 +59,11 @@ import org.slf4j.Logger;
 @OnlyIn(Dist.CLIENT)
 public class Main {
     public static void main(final String[] args) {
+        // 🔧 MCRe 异步日志：必须在任何 Logger 创建之前切换 log4j2 配置
+        //（log4j2 只在初始化时读一次配置，之后再改系统属性不生效）
+        // 配置落在游戏目录里（mcre-log4j2.xml），首次启动自动导出，之后可直接编辑
+        MCReLoggingBootstrap.configureEarly(parseGameDirectory(args));
+
         try {
             SharedConstants.tryDetectVersion();
         } catch (Throwable t) {
@@ -148,6 +155,8 @@ public class Main {
 
             if (optionSet.has(tracyProfilingOption)) {
                 TracyBootstrap.setup();
+                // 🔧 MCRe 异步日志：Tracy appender 按需挂载（它的 %F:%L 会给每行加一次栈回溯的税）
+                MCReLoggingBootstrap.attachTracyAppender();
             }
 
             Stopwatch totalTimePreClassLoadTimer = Stopwatch.createStarted(Ticker.systemTicker());
@@ -158,6 +167,8 @@ public class Main {
             CompletableFuture<?> dataFixerOptimization = DataFixers.optimize(DataFixTypes.TYPES_FOR_LEVEL_LIST);
             CrashReport.preload();
             logger = LogUtils.getLogger();
+            // 🔧 MCRe 异步日志：确认生效的是 MCRe 的配置（用户把游戏目录里的 XML 改坏时会回退）
+            MCReLoggingBootstrap.verifyActive();
             stage = "Bootstrap";
             Bootstrap.bootStrap();
             ClientBootstrap.bootstrap();
@@ -374,5 +385,28 @@ public class Main {
 
     static {
         System.setProperty("java.awt.headless", "true");
+    }
+
+    /** 取出游戏目录（与 joptsimple 的 --gameDir 语义一致，缺省为当前工作目录）。 */
+    private static Path parseGameDirectory(final String[] args) {
+        for (int i = 0; i < args.length - 1; i++) {
+            if ("--gameDir".equals(args[i])) {
+                try {
+                    return Path.of(args[i + 1]);
+                } catch (Throwable ignored) {
+                    break;
+                }
+            }
+
+            if (args[i].startsWith("--gameDir=")) {
+                try {
+                    return Path.of(args[i].substring("--gameDir=".length()));
+                } catch (Throwable ignored) {
+                    break;
+                }
+            }
+        }
+
+        return Path.of(System.getProperty("user.dir", "."));
     }
 }

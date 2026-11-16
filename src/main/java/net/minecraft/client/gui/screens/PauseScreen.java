@@ -96,16 +96,10 @@ public class PauseScreen extends Screen {
         GridLayout gridLayout = new GridLayout();
         gridLayout.defaultCellSetting().padding(4, 4, 4, 0);
         GridLayout.RowHelper helper = gridLayout.createRowHelper(2);
-        // 🔧 MCRe：世界内直接打开「全局配置」（与主界面同名按钮同款规格：50×20、间隔 2px）
-        //   "回到游戏"由跨满 2 列改为占 1 列（204→152），右侧第 2 列放本按钮，两按钮并排；
-        //   间隔 = 回到游戏的 paddingRight(0) + 本按钮的 paddingLeft(2) = 2px（与主界面按钮一致）。
         helper.addChild(Button.builder(RETURN_TO_GAME, button -> {
             this.minecraft.gui.setScreen(null);
             this.minecraft.mouseHandler.grabMouse();
-        }).width(152).build(), 1, gridLayout.newCellSettings().paddingTop(50).paddingRight(0));
-        helper.addChild(Button.builder(Component.literal("全局配置"), button -> {
-            this.minecraft.gui.setScreen(new WorldMainSettingScreen(this));
-        }).width(50).build(), 1, gridLayout.newCellSettings().paddingLeft(2));
+        }).width(204).build(), 2, gridLayout.newCellSettings().paddingTop(50));
         helper.addChild(this.openScreenButton(ADVANCEMENTS, () -> new AdvancementsScreen(this.minecraft.player.connection.getAdvancements(), this)));
         helper.addChild(this.openScreenButton(STATS, () -> new StatsScreen(this, this.minecraft.player.getStats())));
         LinearLayout iconButtonRow = LinearLayout.horizontal().spacing(4);
@@ -190,6 +184,20 @@ public class PauseScreen extends Screen {
         gridLayout.arrangeElements();
         FrameLayout.alignInRectangle(gridLayout, 0, 0, this.width, this.height, 0.5F, 0.25F);
         gridLayout.visitWidgets(this::addRenderableWidget);
+
+        // 🔧 MCRe：世界内直接打开「全局配置」——**绝对定位**在「回到游戏」右侧（间隔 2px、尺寸 50×20，
+        //   与主界面同名按钮完全一致）。**刻意不占用 GridLayout 的列**：把它塞进网格会撑宽第 0 列，
+        //   把同行其它按钮（进度|统计信息、选项|对局域网开放）的水平间距一起拉歪（原版间距会被破坏）。
+        for (final var child : this.children()) {
+            if (child instanceof Button button && button.getWidth() == 204) {
+                this.addRenderableWidget(
+                        Button.builder(Component.literal("全局配置"), b -> this.minecraft.gui.setScreen(new WorldMainSettingScreen(this)))
+                                .bounds(button.getX() + button.getWidth() + 2, button.getY(), 50, 20)
+                                .build()
+                );
+                break;
+            }
+        }
     }
 
     private Optional<? extends Holder<Dialog>> getCustomAdditions() {

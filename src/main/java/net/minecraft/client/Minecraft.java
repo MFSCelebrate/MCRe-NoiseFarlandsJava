@@ -236,6 +236,7 @@ import net.minecraft.util.profiling.metrics.profiling.MetricsRecorder;
 import net.minecraft.util.profiling.metrics.storage.MetricsPersister;
 import net.minecraft.util.thread.GlobalWorldGenExecutors;
 import net.minecraft.util.thread.ReentrantBlockableEventLoop;
+import net.MinecraftTools.logging.MCReLoggingBootstrap;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.TickRateManager;
@@ -1020,6 +1021,9 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
         Path crashDir = gameDirectory.toPath().resolve("crash-reports");
         Path crashFile = crashDir.resolve("crash-" + Util.getFilenameFormattedDateTime() + "-client.txt");
 
+        // 🔧 MCRe 异步日志：崩溃前先把异步队列排空，否则崩溃前的最后几条日志会丢
+        MCReLoggingBootstrap.flushForExit();
+
         try {
             Bootstrap.realStdoutPrintln(crash.getFriendlyReport(ReportType.CRASH));
         } catch (Throwable t) {
@@ -1203,6 +1207,8 @@ public class Minecraft extends ReentrantBlockableEventLoop<Runnable> implements 
             this.window.close();
             this.monitorManager.close();
             GLFW.glfwTerminate();
+            // 🔧 MCRe 异步日志：退出前排空异步队列，别把最后几条日志留在内存里
+            MCReLoggingBootstrap.flushForExit();
         }
     }
 

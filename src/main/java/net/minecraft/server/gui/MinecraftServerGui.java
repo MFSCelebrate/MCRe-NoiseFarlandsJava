@@ -28,6 +28,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import net.minecraft.DefaultUncaughtExceptionHandler;
 import net.minecraft.server.dedicated.DedicatedServer;
+import net.MinecraftTools.logging.MCReLoggingBootstrap;
 import org.slf4j.Logger;
 
 public class MinecraftServerGui extends JComponent {
@@ -69,6 +70,8 @@ public class MinecraftServerGui extends JComponent {
     }
 
     private MinecraftServerGui(final DedicatedServer server) {
+        // 🔧 MCRe 异步日志：GUI 控制台 appender 按需挂载（它每行都要在调用线程做一次格式化）
+        MCReLoggingBootstrap.attachServerGuiAppender();
         this.server = server;
         this.setPreferredSize(new Dimension(854, 480));
         this.setLayout(new BorderLayout());
