@@ -147,6 +147,7 @@ jobs:
         with:
           distribution: ${{ env.JAVA_DISTRIBUTION }}
           java-version: ${{ env.JAVA_VERSION }}
+          problem-matcher: true
 
       - name: 下载原版 Minecraft ${{ needs.CheckConfig.outputs.minecraft_version }} client jar
         run: |
