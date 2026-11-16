@@ -173,16 +173,23 @@ dependencies {
 
 def brokenPatterns = ["**/*.bak"]
 
+// ===== 🔧 MCRe：多源根布局（2026-11-16）=====
+// 主代码与第三方依赖库分根存放，每个根内部都镜像包名（root/包路径/文件），
+// 这样 javac -sourcepath 的隐式查找、Gradle 增量编译、IDE 索引都能正常工作。
 sourceSets {
     main {
         java {
-            include 'net/**'
-            include 'com/**'
-            
+            // Minecraft 主代码（vanilla + 我们就地改的 + MCRe 自研 net/MinecraftTools 等）
+            srcDirs = ['src/common']
+            // 第三方依赖库源码（各自独立成根，便于与主代码区分）
+            srcDirs += ['src-deps/Azure', 'src-deps/Microsoft', 'src-deps/Sun', 'src-deps/Jpountz', 'src-deps/Google']
+
+            include '**'
+
             brokenPatterns.each { pattern -> exclude pattern }
         }
         resources {
-            srcDirs = ['src/main/resources']
+            srcDirs = ['src/resources']
             include '**'
         }
     }
@@ -192,7 +199,7 @@ sourceSets {
 tasks.register('updateBuildTime') {
     description = '将 ModMetadata.java 中的 BUILD_TIME 更新为当前 UTC 时间'
     doLast {
-        def targetFile = file('src/main/java/net/ModMetadata/ModMetadata.java')
+        def targetFile = file('src/common/net/ModMetadata/ModMetadata.java')
         if (!targetFile.exists()) {
             logger.warn('⚠️ ModMetadata.java 不存在，跳过构建时间更新')
             return

@@ -54,6 +54,8 @@ public final class MCReLoggingBootstrap {
     public static final String CONFIG_FILE_NAME = "mcre-log4j2.xml";
     /** 覆盖 root 日志级别的系统属性名（值取 log4j2 的 Level 名，如 debug/info/warn/error）。 */
     public static final String LEVEL_PROPERTY = "mcre.log.level";
+    /** 设为 true 时沿用外部（启动器）指定的日志配置，不改用 MCRe 自带的异步配置。 */
+    public static final String RESPECT_EXTERNAL_PROPERTY = "mcre.log.respectExternalConfig";
     /** Mojang 插件 appender：Tracy 性能分析（target 名与 TracyBootstrap 一致）。 */
     private static final String TRACY_APPENDER = "Tracy";
     /** Mojang 插件 appender：专用服务器 GUI 控制台（target 名与 MinecraftServerGui 一致）。 */
@@ -82,8 +84,8 @@ public final class MCReLoggingBootstrap {
      *
      * <p>行为：
      * <ul>
-     *   <li>启动器已显式指定 {@code -Dlog4j2.configurationFile}（或老名字
-     *       {@code -Dlog4j.configurationFile}）→ <b>完全尊重它</b>，不导出也不覆盖；</li>
+     *   <li>外部（启动器）指定了日志配置 → 默认<b>改用 MCRe 自己的异步配置</b>（并在 stderr 提示原路径）；
+     *       想沿用外部那份，加 {@code -Dmcre.log.respectExternalConfig=true} 即可；</li>
      *   <li>目录里没有 {@code mcre-log4j2.xml} → 从 jar 内导出一份默认模板；</li>
      *   <li>目录里已有 → <b>沿用用户那份</b>（用户改过的设置不丢）；</li>
      *   <li>用户那份 XML 解析失败 → 回退 jar 内默认配置，并在 stderr 打印提示（游戏照常跑）。</li>
@@ -95,22 +97,34 @@ public final class MCReLoggingBootstrap {
         }
 
         configured = true;
-        // log4j2 的正式属性名是 log4j2.configurationFile；老 log4j1 名字 log4j.configurationFile 也能被 log4j2 识别，一并尊重
-        String existing = System.getProperty("log4j2.configurationFile");
-        if (existing == null || existing.isEmpty()) {
-            existing = System.getProperty("log4j.configurationFile");
+
+        // 外部（启动器/用户）指定的配置：log4j2 的正式属性名是 log4j2.configurationFile，
+        // 而老 log4j1 名字 log4j.configurationFile **同样会被 log4j2 识别**（不少启动器传的是这个）
+        String external = System.getProperty("log4j2.configurationFile");
+        if (external == null || external.isEmpty()) {
+            external = System.getProperty("log4j.configurationFile");
         }
 
-        if (existing != null && !existing.isEmpty()) {
-            // 启动器/用户显式指定 → 优先，不动它
+        if (Boolean.parseBoolean(System.getProperty(RESPECT_EXTERNAL_PROPERTY, "false"))) {
+            // 用户显式要求沿用外部配置 → 完全不动
             return;
         }
 
         Path target = directory.resolve(CONFIG_FILE_NAME);
         if (exportDefaultConfig(target) && isValidXml(target)) {
-            System.setProperty("log4j2.configurationFile", target.toUri().toString());
+            String uri = target.toUri().toString();
+            System.setProperty("log4j2.configurationFile", uri);
+            // 清掉老名字，避免 log4j2 优先读到启动器那份
+            System.clearProperty("log4j.configurationFile");
+
+            if (external != null && !external.isEmpty() && !external.equals(uri)) {
+                System.err.println("[MCRe] 外部指定了日志配置 " + external + "，MCRe 已改用 "
+                    + target + "（异步版）。想继续用外部那份：启动器加 -D" + RESPECT_EXTERNAL_PROPERTY + "=true。");
+            }
         } else {
-            System.setProperty("log4j2.configurationFile", "classpath:" + CONFIG_RESOURCE);
+            String fallback = "classpath:" + CONFIG_RESOURCE;
+            System.setProperty("log4j2.configurationFile", fallback);
+            System.clearProperty("log4j.configurationFile");
         }
     }
 

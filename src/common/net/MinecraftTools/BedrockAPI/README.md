@@ -93,7 +93,7 @@ player.teleportTo(pos);  // 目标区块可能还没加载
 每个类带 `main()` 自测（沿用项目 `Math/_256Bit` 的风格），可直接：
 
 ```bash
-javac -d out -encoding UTF-8 $(find src/main/java/net/MinecraftTools/BedrockAPI -name "*.java")
+javac -d out -encoding UTF-8 $(find src/common/net/MinecraftTools/BedrockAPI -name "*.java")
 
 java -cp out net.MinecraftTools.BedrockAPI.toggle.FeatureToggles
 java -cp out net.MinecraftTools.BedrockAPI.command.TeleportCmdTemplate
