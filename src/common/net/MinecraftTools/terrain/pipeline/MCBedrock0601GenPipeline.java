@@ -595,6 +595,6 @@ public final class MCBedrock0601GenPipeline implements TerrainPipeline {
             chunkSettings,
             FLUID_PICKER_0601,
             blender));
-        return generator.fillFromNoiseVanilla(blender, custom, structureManager, chunk, true);
+        return generator.fillFromNoiseVanilla(blender, custom, structureManager, chunk, !chunk.isGenerationWrite());
     }
 }

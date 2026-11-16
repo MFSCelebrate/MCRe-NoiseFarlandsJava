@@ -255,6 +255,6 @@ public final class MCVanilla1_18_1Pipeline implements TerrainPipeline {
     ) {
         // patch 命中 per-world 缓存零成本；走原版 NOISE 填充路径（NoiseChunk/插值/aquifer/heightmap 全套 26.2 基建照跑）
         final RandomState custom = this.patchRandomState(generator.generatorSettings().value(), randomState);
-        return generator.fillFromNoiseVanilla(blender, custom, structureManager, chunk, true);
+        return generator.fillFromNoiseVanilla(blender, custom, structureManager, chunk, !chunk.isGenerationWrite());
     }
 }

@@ -96,6 +96,6 @@ public final class MCVanilla263Pipeline implements TerrainPipeline {
         // 直接传原版 randomState；兜底场景（NoiseChunk 尚不存在）由 createNoiseChunk 内部的
         // patchRandomState 收口，语义不变。走原版 NOISE 填充路径（NoiseChunk/插值/aquifer/heightmap
         // 全套 26.2 基建照跑）。
-        return generator.fillFromNoiseVanilla(blender, randomState, structureManager, chunk, true);
+        return generator.fillFromNoiseVanilla(blender, randomState, structureManager, chunk, !chunk.isGenerationWrite());
     }
 }

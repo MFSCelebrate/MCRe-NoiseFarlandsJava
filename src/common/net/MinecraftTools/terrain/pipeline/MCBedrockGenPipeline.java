@@ -203,6 +203,6 @@ public final class MCBedrockGenPipeline implements TerrainPipeline {
         // 全 router 的 noise 节点绑定副本实例 → 树跑时全部走副本柏林底层（BedrockMode/exact 等魔改语义随副本）
         // 统一走 patchRandomState（与 createNoiseChunk 缓存收口同一语义）
         final RandomState custom = this.patchRandomState(generator.generatorSettings().value(), randomState);
-        return generator.fillFromNoiseVanilla(blender, custom, structureManager, chunk, true);
+        return generator.fillFromNoiseVanilla(blender, custom, structureManager, chunk, !chunk.isGenerationWrite());
     }
 }

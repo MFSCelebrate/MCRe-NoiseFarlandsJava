@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -541,6 +542,27 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     private volatile Thread generationWriteThread;
 
     /**
+     * 🔧 MCRe 分带生成：<b>区块写入仲裁状态</b>。
+     *
+     * <p>语义（一个原子整数同时表达三件事，避免「检查标志」与「计数」之间的竞态）：
+     * <ul>
+     *   <li>{@code > 0}：外部线程（服务器线程）在途写入数；</li>
+     *   <li>{@code < 0}：生成式写入（分带 fill）<b>独占</b>进行中，外部写入必须让路；</li>
+     *   <li>{@code == 0}：空闲。</li>
+     * </ul>
+     *
+     * <p>为什么需要：分带 fill 在异步线程改写<b>活着的</b> LevelChunk，而服务器线程可能同时在
+     * tick 流体写同一 section。两者并发操作同一个 PalettedContainer 会：
+     * <ol>
+     *   <li>fill 持 section 锁时 → 外部线程 {@code acquire()} 阻塞 → fill {@code release()} 时
+     *       {@code ThreadingDetector} 抛「Accessing PalettedContainer from multiple threads」→ 崩溃 ✗；</li>
+     *   <li>fill 不持锁时 → 双写同一 palette/storage → 静默数据损坏 ✗。</li>
+     * </ol>
+     * 仲裁后：fill 期间外部写入<b>让路</b>（本次写入丢弃），fill 开始前先等在途写入排空 → 两边不再并发碰容器 ✓。
+     */
+    private final AtomicInteger writeArbitration = new AtomicInteger();
+
+    /**
      * 🔧 MCRe 分带生成：标记当前线程开始「生成式写入」。
      *
      * <p><b>为什么需要</b>：分带填充在**异步线程**写活着的 LevelChunk。原版活游戏路径的
@@ -555,12 +577,49 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
      * 光照/空状态由分带填充完成回调在主线程统一补报 ✓。
      */
     public void beginGenerationWrite() {
+        // 先等在途的外部写入排空，再独占本区块（CAS 保证「置独占标志」与「等待排空」之间无竞态）
+        while (true) {
+            final int state = this.writeArbitration.get();
+            if (state > 0) {
+                Thread.onSpinWait();
+                continue;
+            }
+
+            if (this.writeArbitration.compareAndSet(state, state - 1)) {
+                break;
+            }
+        }
+
         this.generationWriteThread = Thread.currentThread();
     }
 
     /** 结束「生成式写入」。 */
     public void endGenerationWrite() {
         this.generationWriteThread = null;
+        this.writeArbitration.set(0);
+    }
+
+    /**
+     * 🔧 MCRe 分带生成：外部线程（服务器线程）开始一次区块写入。
+     *
+     * @return true = 获得写入权；false = 分带生成正在进行，本次写入必须让路（丢弃）
+     */
+    public boolean tryBeginExternalWrite() {
+        while (true) {
+            final int state = this.writeArbitration.get();
+            if (state < 0) {
+                return false;
+            }
+
+            if (this.writeArbitration.compareAndSet(state, state + 1)) {
+                return true;
+            }
+        }
+    }
+
+    /** 🔧 MCRe 分带生成：外部线程写入结束，释放写入权。 */
+    public void endExternalWrite() {
+        this.writeArbitration.decrementAndGet();
     }
 
     /** 当前线程是否持有「生成式写入」权。 */

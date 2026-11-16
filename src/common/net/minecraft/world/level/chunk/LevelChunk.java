@@ -269,6 +269,25 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
             return this.setBlockStateGenerationStyle(pos, state);
         }
 
+        // 🔧 MCRe 分带生成：分带 fill 正在改写本区块时，外部线程的写入必须**让路** ——
+        // 否则会与 fill 线程并发操作同一个 PalettedContainer：
+        //   ① fill 持 section 锁 → 外部线程 acquire() 阻塞 → fill release() 时 ThreadingDetector
+        //      抛「Accessing PalettedContainer from multiple threads」→ 崩溃 ✗
+        //   ② fill 无锁写 → 双写同一 palette/storage → 静默数据损坏 ✗
+        // 让路语义 = 本次写入丢弃（返回 null = 无变化）；分带 fill 会重写该区域，写入本就作废 ✓
+        if (!this.tryBeginExternalWrite()) {
+            return null;
+        }
+
+        try {
+            return this.setBlockStateLive(pos, state, flags);
+        } finally {
+            this.endExternalWrite();
+        }
+    }
+
+    /** 原版「活区块」写入路径（外部线程；调用方须已通过 {@link #tryBeginExternalWrite()} 仲裁）。 */
+    private @Nullable BlockState setBlockStateLive(final BlockPos pos, final BlockState state, final int flags) {
         int y = pos.getY();
         LevelChunkSection section = this.getSection(this.getSectionIndex(y));
         boolean wasEmpty = section.hasOnlyAir();

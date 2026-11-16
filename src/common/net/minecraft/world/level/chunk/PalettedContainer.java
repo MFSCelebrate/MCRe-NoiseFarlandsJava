@@ -144,7 +144,20 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
 
     protected T get(final int index) {
         PalettedContainer.Data<T> data = this.data;
-        return data.palette.valueFor(data.storage.get(index));
+        final int id = data.storage.get(index);
+        try {
+            return data.palette.valueFor(id);
+        } catch (IndexOutOfBoundsException | IllegalStateException exception) {
+            // 🔧 MCRe 分带生成：fill 线程可能正在**无锁**改写同一 section 的 palette/storage
+            // （palette 扩容重编号、位压缩存储的读-改-写半写窗口）→ 偶尔会读到越界 id。
+            // 原版在这里直接抛异常崩游戏；这里重取一次快照，仍失败则退回 0 号项（palette 0 号项恒有效）✓
+            final PalettedContainer.Data<T> retry = this.data;
+            try {
+                return retry.palette.valueFor(retry.storage.get(index));
+            } catch (IndexOutOfBoundsException | IllegalStateException ignored) {
+                return retry.palette.valueFor(0);
+            }
+        }
     }
 
     @Override
