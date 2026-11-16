@@ -23,7 +23,6 @@ import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.gametest.framework.GameTestTicker;
 import net.minecraft.gametest.framework.RetryOptions;
 import net.minecraft.gametest.framework.StructureUtils;
-import net.minecraft.gametest.framework.TestCommand;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -51,6 +50,8 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import org.slf4j.Logger;
+
+import test.test_commands.TestCommand;
 
 public class TestInstanceBlockEntity extends BlockEntity implements BoundingBoxRenderable, BeaconBeamOwner {
     private static final Logger LOGGER = LogUtils.getLogger();

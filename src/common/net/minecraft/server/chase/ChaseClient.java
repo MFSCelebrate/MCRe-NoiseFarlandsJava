@@ -17,7 +17,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.commands.ChaseCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
@@ -27,6 +26,8 @@ import net.minecraft.world.phys.Vec3;
 import org.apache.commons.io.IOUtils;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+
+import test.test_commands.ChaseCommand;
 
 public class ChaseClient {
     private static final Logger LOGGER = LogUtils.getLogger();

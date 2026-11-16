@@ -31,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import net.MinecraftTools.commands.CommandDescriptions;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.LocalCommandExecutor;
@@ -138,9 +139,15 @@ public class CommandSuggestions {
     /**
      * 从客户端命令树收集「命令名 → 描述 / 分类」。
      * <p>Java 版 brigadier 命令树<b>不带描述</b>（{@code LiteralCommandNode.getDescription()} 不存在），
-     * 故描述取该命令的 <b>用法摘要</b>：{@code getSmartUsage(root, provider)} 一次拿到全部顶层命令的用法
-     * （形如 {@code "tp <x> <y> <z>"}），去掉命令名后即为参数描述 —— 与基岩版「命令 - 说明」的观感对齐，
-     * 也让面板顺带承担"用法提示"的职责（原版的用法行仍保留在输入框上方）。
+     * 故描述按语言分两档取：
+     * <ul>
+     *     <li><b>{@code zh_cn}</b>：查 {@link CommandDescriptions} 中文描述表 → 显示真正的人类可读介绍
+     *     （如 {@code "给予玩家物品。"}），表里没有的命令回落到用法摘要；</li>
+     *     <li><b>其它语言</b>：一律回落到原版的 <b>用法摘要</b> —— {@code getSmartUsage(root, provider)}
+     *     一次拿到全部顶层命令的用法（形如 {@code "tp <x> <y> <z>"}），去掉命令名后即为参数描述，
+     *     与基岩版「命令 - 说明」的观感对齐，也让面板顺带承担"用法提示"的职责
+     *     （原版的用法行仍保留在输入框上方）。</li>
+     * </ul>
      */
     private void rebuildCommandMeta() {
         if (this.minecraft.player == null || this.minecraft.player.connection == null) {
@@ -154,14 +161,21 @@ public class CommandSuggestions {
         );
         final Map<String, CommandMeta> meta = new HashMap<>();
 
+        // 中文（zh_cn）走命令描述表；其它语言表为空 → 全部回落到用法摘要（原版行为）
+        final Map<String, String> descriptions = CommandDescriptions.forLocale(this.minecraft.getLanguageManager().getSelected());
+
         for (final CommandNode<ClientSuggestionProvider> child : dispatcher.getRoot().getChildren()) {
             if (child instanceof LiteralCommandNode literal) {
                 final String name = literal.getName();
                 final String usage = usages.get(child);
-                String description = "";
+                String description = descriptions.get(name);
 
-                if (usage != null && !usage.isEmpty()) {
-                    description = usage.startsWith(name) ? usage.substring(name.length()).trim() : usage;
+                if (description == null) {
+                    description = "";
+
+                    if (usage != null && !usage.isEmpty()) {
+                        description = usage.startsWith(name) ? usage.substring(name.length()).trim() : usage;
+                    }
                 }
 
                 meta.put(name, new CommandMeta(description, isTestCommand(name)));
