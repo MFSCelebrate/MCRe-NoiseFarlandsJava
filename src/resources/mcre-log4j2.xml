@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  MCRe NoiseFarlands 日志配置（可直接编辑）
+  ============================================================================
+  本文件由 MCRe 首次启动时从 jar 内导出到游戏目录，之后一直沿用你改过的版本。
+  · 想恢复默认：直接删掉本文件，下次启动会重新生成。
+  · 想开调试日志（两种任选）：
+      ① 启动器 javaArgs 加 -Dmcre.log.level=debug   （推荐，不动文件）
+      ② 把下面 Root 标签的 level 直接改成 debug
+  · 本文件被改坏（XML 写错）时，MCRe 会自动回退 jar 内默认配置并在日志里提示。
+
+  ── 和启动器的 -Dlog4j.configurationFile 的关系 ──────────────────────────
+  不少启动器（包括 ZL_Two / Zalith）会传 -Dlog4j.configurationFile=<游戏目录>/log4j2.xml
+  （注意是老名字 log4j.*，log4j2 同样认）。MCRe 默认**以本文件为准**（异步版），并在日志里
+  提示原路径；想沿用启动器那份：启动器加 -Dmcre.log.respectExternalConfig=true。
+
+  ── 这个文件解决什么问题 ────────────────────────────────────────────────
+  原版 26.2 的日志是全同步的：每条日志的格式化 + 控制台写 + 文件写都发生在
+  调用线程上。DEBUG 一开，日志本身就成了帧率杀手（实测调用方线程 46~54 µs/行，
+  最坏单次 14 ms）。下面把两个 appender 都包进 log4j2 的 <Async>，让格式化与 IO
+  全部挪到后台线程，调用线程只负责入队。
+
+  ── 常用可调项 ──────────────────────────────────────────────────────────
+  · bufferSize="32768"   异步队列容量（条）。调大 = 更不容易挤爆；吃内存。
+  · blocking="false"     队列满时不阻塞调用线程（改为丢弃，log4j2 会打警告）。
+                          改成 true 则宁可卡住也要保证日志不丢。
+  · includeLocation="false"
+                          是否捕获调用点位置（文件/行号）。关掉能省掉每行一次
+                          栈回溯（实测约 40 µs/行）。开了才能在日志里看到 %F:%L。
+  · Root level="..."     全局日志级别：trace/debug/info/warn/error。
+  · 下面 <AppenderRef>   想单独关掉某个输出（比如控制台太吵）注释掉对应那行即可。
+  · 想按模块分级别：照 log4j2 语法加 <Logger name="net.minecraft.world" level="debug"/>
+
+  ── 注意 ────────────────────────────────────────────────────────────────
+  · 文件输出仍是 logs/latest.log（相对**当前工作目录**，启动器通常把它设成游戏目录），
+    每次启动会把上一份压成 .gz。
+  · 专用服务器 GUI 控制台（ServerGuiConsole）与 Tracy 两个 appender 不在这里：
+    它们每行都要在调用线程做格式化/栈回溯，客户端用不到，MCRe 只在真要用时
+    才动态挂上。
+-->
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="SysOut" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %msg{nolookups}%n" />
+        </Console>
+        <Async name="AsyncSysOut" bufferSize="32768" blocking="false" includeLocation="false">
+            <AppenderRef ref="SysOut" />
+        </Async>
+        <RollingRandomAccessFile name="File" fileName="logs/latest.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %msg{nolookups}%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <OnStartupTriggeringPolicy />
+            </Policies>
+        </RollingRandomAccessFile>
+        <Async name="AsyncFile" bufferSize="32768" blocking="false" includeLocation="false">
+            <AppenderRef ref="File" />
+        </Async>
+    </Appenders>
+    <Loggers>
+        <Root level="${sys:mcre.log.level:-info}">
+            <filters>
+                <MarkerFilter marker="NETWORK_PACKETS" onMatch="DENY" onMismatch="NEUTRAL" />
+            </filters>
+            <AppenderRef ref="AsyncSysOut" />
+            <AppenderRef ref="AsyncFile" />
+        </Root>
+    </Loggers>
+</Configuration>
