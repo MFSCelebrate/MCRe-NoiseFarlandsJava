@@ -62,6 +62,7 @@ import net.minecraft.world.ticks.LevelChunkTicks;
 import net.minecraft.world.ticks.TickContainerAccess;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import test.DebugAssertions.OwnerThreadAssertion;
 
 public class LevelChunk extends ChunkAccess implements DebugValueSource {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -280,6 +281,9 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
         }
 
         try {
+            // 🔧 MCRe「断言调试」：活区块的外部写入必须来自该世界的归属线程（世界主线程）——
+            // 异步线程改写活区块正是 PalettedContainer 并发崩溃的根因，这里直接把越权者炸出来。
+            OwnerThreadAssertion.assertLevelOwnerThread(this.level, "LevelChunk.setBlockState @ " + pos);
             return this.setBlockStateLive(pos, state, flags);
         } finally {
             this.endExternalWrite();

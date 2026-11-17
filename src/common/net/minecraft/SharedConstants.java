@@ -91,9 +91,9 @@ public class SharedConstants {
     public static final boolean DEBUG_CURSOR_POS = debugFlag("CURSOR_POS");
     public static final boolean DEBUG_DEFAULT_SKIN_OVERRIDE = debugFlag("DEFAULT_SKIN_OVERRIDE");
     public static final boolean DEBUG_PANORAMA_SCREENSHOT = debugFlag("PANORAMA_SCREENSHOT");
-    public static final boolean DEBUG_CHASE_COMMAND = debugFlag("CHASE_COMMAND");
+    public static final boolean DEBUG_CHASE_COMMAND = true;
     public static final boolean DEBUG_VERBOSE_COMMAND_ERRORS = debugFlag("VERBOSE_COMMAND_ERRORS");
-    public static final boolean DEBUG_DEV_COMMANDS = debugFlag("DEV_COMMANDS");
+    public static final boolean DEBUG_DEV_COMMANDS = true;
     public static final boolean DEBUG_ACTIVE_TEXT_AREAS = debugFlag("ACTIVE_TEXT_AREAS");
     public static final boolean DEBUG_PREFER_WAYLAND = debugFlag("PREFER_WAYLAND");
     public static final boolean DEBUG_SIMULATE_LIBRARY_LOAD_FAILURE = debugFlag("SIMULATE_LIBRARY_LOAD_FAILURE");

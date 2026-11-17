@@ -131,7 +131,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     // blank final 的 thread 不能在字段初始化 lambda 里简单引用（JLS definite assignment）→ 经实例方法间接读取
     protected final RandomSource random = new CheckedRandomSource(RandomSource.create(), () -> this.worldThread());
 
-    private Thread worldThread() {
+    /**
+     * 🔧 MCRe「断言调试」：本 Level 的<b>归属线程</b>（构造 Level 的线程 = 世界主线程）。
+     * <p>原为 private（仅 {@code CheckedRandomSource} 使用），现开放给
+     * {@code test.DebugAssertions.OwnerThreadAssertion} 做线程归属断言。
+     */
+    public Thread worldThread() {
         return this.thread;
     }
     @Deprecated private final RandomSource soundSeedGenerator = RandomSource.createThreadSafe();

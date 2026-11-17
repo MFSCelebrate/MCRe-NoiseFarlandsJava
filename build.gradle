@@ -182,7 +182,7 @@ sourceSets {
             // Minecraft 主代码（vanilla + 我们就地改的 + MCRe 自研 net/MinecraftTools 等）
             srcDirs = ['src/common']
             // 第三方依赖库源码（各自独立成根，便于与主代码区分）
-            srcDirs += ['src-deps/Azure', 'src-deps/Microsoft', 'src-deps/Sun', 'src-deps/Jpountz', 'src-deps/Google']
+            srcDirs += ['src-deps/Core']
             // 开发测试库源码（仍然独立成根）
             srcDirs += ['src-testinfrastructure/common']
             include '**'

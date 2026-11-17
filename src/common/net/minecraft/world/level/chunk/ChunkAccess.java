@@ -57,6 +57,7 @@ import net.minecraft.world.ticks.SavedTick;
 import net.minecraft.world.ticks.TickContainerAccess;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import test.DebugAssertions.OwnerThreadAssertion;
 
 public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeManager.NoiseBiomeSource, WindowedChunk {
     public static final int NO_FILLED_SECTION = -1;
@@ -595,6 +596,9 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
 
     /** 结束「生成式写入」。 */
     public void endGenerationWrite() {
+        // 🔧 MCRe「断言调试」：必须由**登记归属的那个线程**收尾 —— 别的线程来收尾会静默清掉标志位、
+        // 让仲裁状态机与实际写入者脱节（后续外部写入会误判为「无人持有生成权」→ 并发写同一 palette）。
+        OwnerThreadAssertion.assertGenerationWriteOwner(this, "ChunkAccess.endGenerationWrite");
         this.generationWriteThread = null;
         this.writeArbitration.set(0);
     }
@@ -612,6 +616,8 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
             }
 
             if (this.writeArbitration.compareAndSet(state, state + 1)) {
+                // 🔧 MCRe「断言调试」：外部写入者不能同时是「生成式写入」归属线程 —— 同线程双角色 = 协议违规
+                OwnerThreadAssertion.assertNotOwnerThread(this.generationWriteThread, "ChunkAccess.tryBeginExternalWrite");
                 return true;
             }
         }
@@ -625,6 +631,11 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
     /** 当前线程是否持有「生成式写入」权。 */
     public boolean isGenerationWrite() {
         return this.generationWriteThread == Thread.currentThread();
+    }
+
+    /** 🔧 MCRe 分带生成：当前持有「生成式写入」权的线程（无人持有时为 null）。 */
+    public @Nullable Thread generationWriteOwner() {
+        return this.generationWriteThread;
     }
 
     public @Nullable ShortList[] getPostProcessing() {

@@ -77,8 +77,8 @@ public class WorldMainSettingScreen extends Screen {
     /** 当前页码（0 起），进入界面默认为第一页 */
     private int currentPage = 0;
 
-    /** 总页数（1=世界自定义、2=地形偏移与缩放、3=服务端） */
-    private static final int PAGE_COUNT = 3;
+    /** 总页数（1=世界自定义、2=地形偏移与缩放、3=服务端、4=调试） */
+    private static final int PAGE_COUNT = 4;
 
     private @Nullable Button prevPageButton;
     private @Nullable Button nextPageButton;
@@ -157,6 +157,7 @@ public class WorldMainSettingScreen extends Screen {
             case 0 -> this.buildPage1Content();
             case 1 -> this.buildPage2Content();
             case 2 -> this.buildPage3Content();
+            case 3 -> this.buildPage4Content();
             default -> {}
         }
     }
@@ -693,6 +694,29 @@ public class WorldMainSettingScreen extends Screen {
         this.scrollContent.addChild(serverBuilder.build().layout(), s -> s.paddingHorizontal(10));
     }
 
+    /**
+     * 第 4 页：调试（仅开发调试使用的特殊功能）。
+     * <p>本页的开关只服务于「把潜在问题当场炸出来」的诊断类工具，默认全部关闭，
+     * 开启后请自行承担崩溃风险。
+     */
+    private void buildPage4Content() {
+        this.scrollContent.defaultCellSetting().alignHorizontallyCenter();
+
+        this.scrollContent.addChild(this.createSectionHeader(
+                Component.literal("§6§l多线程")
+        ));
+
+        SwitchGrid.Builder debugBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
+                .withRowSpacing(4)
+                .withInfoUnderneathUnlimited(false);
+        debugBuilder.addSwitch(
+                Component.literal("断言调试"),
+                () -> this.configData.debugAssertionsMultiThread,
+                val -> this.configData.debugAssertionsMultiThread = val
+        ).withInfo(Component.literal("用于检查每个线程的归属者，断言'当前线程是不是这块数据的 owner'，如果不是，就引发一次崩溃并将信息输出到日志"));
+        this.scrollContent.addChild(debugBuilder.build().layout(), s -> s.paddingHorizontal(10));
+    }
+
     private void switchPage(final int delta) {
         int newPage = this.currentPage + delta;
         if (newPage < 0 || newPage >= PAGE_COUNT) {
@@ -726,6 +750,9 @@ public class WorldMainSettingScreen extends Screen {
             } else if (this.currentPage == 2) {
                 this.titleWidget.setMessage(Component.literal("服务端").withStyle(ChatFormatting.BOLD));
                 this.subtitleWidget.setMessage(Component.literal("§7控制 Minecraft 服务端线程，得到想要的效果"));
+            } else if (this.currentPage == 3) {
+                this.titleWidget.setMessage(Component.literal("调试").withStyle(ChatFormatting.BOLD));
+                this.subtitleWidget.setMessage(Component.literal("§7仅开发调试使用的特殊功能"));
             } else {
                 this.titleWidget.setMessage(this.title.copy().withStyle(ChatFormatting.BOLD));
                 this.subtitleWidget.setMessage(Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"));
@@ -873,6 +900,13 @@ public class WorldMainSettingScreen extends Screen {
         // 🔧 MCRe（大佬 10-07 派活）：修复 6 个气候通道的 Float 精度丢失——Climate.Sampler.sample 的 (float) 强转
         // + quantizeCoord 的 float 乘法 → 开关开启时全走 double 量化（TargetPoint 仍存 long，整数比较架构不变）
         public boolean fixClimateFloatPrecision = false;
+
+        /**
+         * 🔧 MCRe「断言调试」（大佬 2026-11-16 派活，移植自 MCPE 1.0.0 的 {@code DEBUG_ASSERT_OWNER_THREAD}）。
+         * <p>开启后：断言「当前线程是不是这块数据的 owner」，不是就直接崩溃并把信息输出到日志。
+         * <p>默认关闭（诊断工具，误判会直接崩游戏）。
+         */
+        public boolean debugAssertionsMultiThread = false;
 
         public String precisionMode = "32bit";
         public String farlandsStyle = "Java-1.18.2+";
