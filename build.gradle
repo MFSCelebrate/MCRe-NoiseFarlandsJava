@@ -236,9 +236,12 @@ sourceSets {
     }
 }
 
-// 自定义源集的 classpath 不会自动带上 main 的产物 → 手工挂上（否则 functest 找不到 net.minecraft.*）
-sourceSets.functest.compileClasspath += sourceSets.main.output
-sourceSets.functest.runtimeClasspath += sourceSets.main.output
+// 自定义源集**不会**继承 main 的依赖与产物 → 手工挂上：
+//   ① main.output：否则 functest 找不到 net.minecraft.* / net.MinecraftTools.*
+//   ② main.compileClasspath：否则 main 的第三方依赖缺失 → javac 会报
+//      "unknown enum constant Dist.CLIENT（class file for net.minecraftforge.api.distmarker.Dist not found）"
+sourceSets.functest.compileClasspath += sourceSets.main.compileClasspath
+sourceSets.functest.runtimeClasspath += sourceSets.main.runtimeClasspath
 
 // ===== 🔧 MCRe 测试体系（2026-11-17）=====
 // 单元测试：走 JUnit 5 平台（类名 *UnitTests 会被 Gradle 默认的 test 扫描命中）

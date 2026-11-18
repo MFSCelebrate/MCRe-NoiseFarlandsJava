@@ -171,6 +171,11 @@ jobs:
           ./gradlew build --no-daemon --parallel --build-cache 2>&1 | tee full.log
           test -s build/libs/modified.jar
 
+      - name: 运行功能测试（functest）
+        run: |
+          echo "🧪 [Test 2] 运行功能测试（src-functest，依赖 Minecraft 运行时）..."
+          ./gradlew functest --no-daemon
+
       - name: 上传失败日志
         if: failure()
         uses: actions/upload-artifact@v6
