@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
+import test.DebugAssertions.OwnerThreadAssertion;
 
 /**
  * 🔧 MCRe（C2ME A2 简化版移植）：世界生成写入半径锁。
@@ -27,9 +28,10 @@ public class WorldGenLocks {
 
     public static void runLocked(final long centerX, final long centerZ, final Runnable task) {
         final List<ReentrantLock> held = new ArrayList<>();
+        // 🔧 MCRe「断言调试」：锁单元清单提到 try 外 → finally 里能逐单元释放互斥归属登记
+        final List<long[]> coords = new ArrayList<>();
         try {
             // 固定顺序获取（先 chunkX 后 chunkZ 排序）→ 无循环等待 → 无死锁
-            final List<long[]> coords = new ArrayList<>();
             for (long dx = -LOCK_RADIUS; dx <= LOCK_RADIUS; dx++) {
                 for (long dz = -LOCK_RADIUS; dz <= LOCK_RADIUS; dz++) {
                     coords.add(new long[]{centerX + dx, centerZ + dz});
@@ -41,12 +43,20 @@ public class WorldGenLocks {
                 final ReentrantLock lock = lockFor(coord[0], coord[1]);
                 lock.lock();
                 held.add(lock);
+                // 🔧 MCRe「断言调试」：同一锁单元（逻辑坐标）不得被两个线程同时持有 ——
+                // 刻意用「chunkX,chunkZ」字符串做 key（不复用锁的打包 long key），
+                // 这样「锁 key 算错 → 同一逻辑单元用了两把锁」的 bug 也会被当场抓住。
+                OwnerThreadAssertion.assertExclusiveCell(coord[0], coord[1], "WorldGenLocks.runLocked 单元");
             }
 
             task.run();
         } finally {
             for (int i = held.size() - 1; i >= 0; i--) {
                 held.get(i).unlock();
+            }
+
+            for (long[] coord : coords) {
+                OwnerThreadAssertion.releaseExclusiveCell(coord[0], coord[1]);
             }
         }
     }

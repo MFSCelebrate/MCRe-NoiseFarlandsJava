@@ -102,6 +102,7 @@ import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import test.DebugAssertions.OwnerThreadAssertion;
 
 public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerProvider, GeneratingChunkMap {
     private static final ChunkResult<List<ChunkAccess>> UNLOADED_CHUNK_LIST_RESULT = ChunkResult.error("Unloaded chunks found in range");
@@ -410,7 +411,14 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
         }
     }
 
+    /** 🔧 MCRe「断言调试」：本 ChunkMap 所属的服务端世界（用于线程归属断言）。 */
+    public ServerLevel getLevel() {
+        return this.level;
+    }
+
     protected void saveAllChunks(final boolean flushStorage) {
+        // 🔧 MCRe「断言调试」：存盘必须来自世界主线程（存档路径 / 区块容器非线程安全）
+        OwnerThreadAssertion.assertLevelOwnerThread(this.level, "ChunkMap.saveAllChunks");
         if (flushStorage) {
             List<ChunkHolder> chunksToSave = this.visibleChunkMap
                 .values()
@@ -446,6 +454,8 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
     }
 
     protected void tick(final BooleanSupplier haveTime) {
+        // 🔧 MCRe「断言调试」：区块系统 tick 属于世界主线程（票据 / 卸载 / 保存都在这里驱动）
+        OwnerThreadAssertion.assertLevelOwnerThread(this.level, "ChunkMap.tick");
         ProfilerFiller profiler = Profiler.get();
         profiler.push("poi");
         this.poiManager.tick(haveTime);

@@ -137,6 +137,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import test.DebugAssertions.OwnerThreadAssertion;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.Cleaner<ClientLevel> {
@@ -499,6 +500,8 @@ public class ClientLevel extends Level implements BlockAndTintGetter, CacheSlot.
         profiler.push("populateLightUpdates");
         this.pollLightUpdates();
         profiler.popPush("runLightUpdates");
+        // 🔧 MCRe「断言调试」：客户端光照更新属于客户端主线程（渲染 / 输入线程）
+        OwnerThreadAssertion.assertClientThread("ClientLevel 光照更新");
         this.getChunkSource().getLightEngine().runLightUpdates();
         profiler.pop();
     }

@@ -79,6 +79,25 @@ ext {
     spi_version = '8.0.0'
 }
 
+// ===== 🔧 MCRe 功能测试源集（2026-11-17）=====
+// ⚠️ 必须声明在 dependencies 块**之前**：Gradle 是在创建源集时才生成
+// functestImplementation / functestRuntimeOnly 这两个 configuration，
+// 写在 dependencies 之后会报 "Could not find method functestImplementation()"。
+sourceSets {
+    // 功能测试根：src-functest/test —— 依赖 Minecraft 类（可能要 Bootstrap + 资源）
+    // → 独立源集 + 独立 task（functest），**不挂进 build**：功能测试失败不该拖垮产物构建
+    functest {
+        java {
+            srcDirs = ['src-functest/test']
+            include '**'
+        }
+        resources {
+            srcDirs = ['src-functest/resources']
+            include '**'
+        }
+    }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     // ===== Mojang 原生库 =====
@@ -169,6 +188,14 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-spvc:${lwjglVersion}:natives-windows"
     runtimeOnly "org.lwjgl:lwjgl-vma:${lwjglVersion}:natives-windows"
     runtimeOnly "org.lwjgl:lwjgl-jemalloc:${lwjglVersion}:natives-windows"
+
+    // ===== 🔧 MCRe 测试体系（2026-11-17）=====
+    // 单元测试（src-unittest/test）：纯逻辑，不依赖 Minecraft 运行时 → 进标准 test 源集
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // 功能测试（src-functest/test）：依赖 Minecraft 类 / 需要 Bootstrap 与资源 → 独立源集 + 独立 task
+    functestImplementation 'org.junit.jupiter:junit-jupiter:5.14.2'
+    functestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 def brokenPatterns = ["**/*.bak"]
@@ -193,6 +220,52 @@ sourceSets {
             include '**'
         }
     }
+
+    // ===== 🔧 MCRe 测试体系（2026-11-17）=====
+    // 单元测试根：src-unittest/test —— 纯逻辑（不依赖 Minecraft 运行时），秒级、无需资源
+    // → 进标准 test 源集 → 每次 gradle build 自动跑（:test 不再是 NO-SOURCE）
+    test {
+        java {
+            srcDirs = ['src-unittest/test']
+            include '**'
+        }
+        resources {
+            srcDirs = ['src-unittest/resources']
+            include '**'
+        }
+    }
+}
+
+// 自定义源集的 classpath 不会自动带上 main 的产物 → 手工挂上（否则 functest 找不到 net.minecraft.*）
+sourceSets.functest.compileClasspath += sourceSets.main.output
+sourceSets.functest.runtimeClasspath += sourceSets.main.output
+
+// ===== 🔧 MCRe 测试体系（2026-11-17）=====
+// 单元测试：走 JUnit 5 平台（类名 *UnitTests 会被 Gradle 默认的 test 扫描命中）
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
+
+// 功能测试：独立 task，**不参与 build**（避免功能测试失败导致产物构建失败）
+tasks.register('functest', Test) {
+    description = '运行 MCRe 功能测试（依赖 Minecraft 运行时；不参与 build）'
+    group = 'verification'
+    testClassesDirs = sourceSets.functest.output.classesDirs
+    classpath = sourceSets.functest.runtimeClasspath
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+    shouldRunAfter tasks.named('test')
+}
+
+// build 顺带**编译**功能测试（但不执行）→ functest 的编译错误能在 CI 被发现，
+// 而 functest 的**运行**仍需显式 `./gradlew functest`（避免功能测试失败拖垮产物构建）
+tasks.named('build') {
+    dependsOn 'functestClasses'
 }
 
 // ===== 修改：在编译前自动更新 ModMetadata 的 BUILD_TIME =====

@@ -117,8 +117,8 @@ jobs:
 
       - name: Test for No Residual Patch Diff
         run: |
-          echo "🧪 [Test 1] 正在检查 src/common、src-deps 与 src-testinfrastructure 下所有 .java 文件是否存在残留 Patch Diff 格式..."
-          MATCHES=$(grep -rnE '^\+ |^- ' src/common src-deps src-testinfrastructure --include='*.java' || true)
+          echo "🧪 [Test 1] 正在检查 src/common、src-deps、src-testinfrastructure、src-unittest 与 src-functest 下所有 .java 文件是否存在残留 Patch Diff 格式..."
+          MATCHES=$(grep -rnE '^\+ |^- ' src/common src-deps src-testinfrastructure src-unittest src-functest --include='*.java' || true)
           if [ -n "$MATCHES" ]; then
             COUNT=$(echo "$MATCHES" | wc -l)
             echo "❌ 检测到残留 Patch Diff 格式！共 $COUNT 处："

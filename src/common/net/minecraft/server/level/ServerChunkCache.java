@@ -54,6 +54,7 @@ import net.minecraft.world.level.storage.SavedDataStorage;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import test.DebugAssertions.OwnerThreadAssertion;
 
 public class ServerChunkCache extends ChunkSource {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -326,6 +327,8 @@ public class ServerChunkCache extends ChunkSource {
 
     @Override
     public void tick(final BooleanSupplier haveTime, final boolean tickChunks) {
+        // 🔧 MCRe「断言调试」：区块缓存 tick 属于服务端主线程（票据清理 / 区块回收都在这里驱动）
+        OwnerThreadAssertion.assertOwnerThread(this.mainThread, "ServerChunkCache.tick");
         ProfilerFiller profiler = Profiler.get();
         profiler.push("purge");
         if (this.level.tickRateManager().runsNormally() || !tickChunks) {
@@ -494,6 +497,8 @@ public class ServerChunkCache extends ChunkSource {
     }
 
     public void addTicket(final Ticket ticket, final ChunkPos pos) {
+        // 🔧 MCRe「断言调试」：票据系统属于服务端主线程（DistanceManager / TicketStorage 非线程安全）
+        OwnerThreadAssertion.assertOwnerThread(this.mainThread, "ServerChunkCache.addTicket");
         this.ticketStorage.addTicket(ticket, pos);
     }
 

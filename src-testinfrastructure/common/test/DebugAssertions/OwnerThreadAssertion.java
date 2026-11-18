@@ -1,6 +1,9 @@
 package test.DebugAssertions;
 
 import com.mojang.logging.LogUtils;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
@@ -37,6 +40,13 @@ import org.slf4j.Logger;
 public final class OwnerThreadAssertion {
 
     private static final Logger LOGGER = LogUtils.getLogger();
+
+    /**
+     * 互斥归属登记表：key → 当前持有它的线程。
+     * <p>用于「同一份数据同一时刻只能有一个 owner」这类<b>串行化</b>不变量
+     * （并行 worldgen 的半径锁单元、光照引擎的任务 drain 等）。
+     */
+    private static final ConcurrentMap<Object, Thread> EXCLUSIVE_OWNERS = new ConcurrentHashMap<>();
 
     private OwnerThreadAssertion() {
     }
@@ -149,6 +159,92 @@ public final class OwnerThreadAssertion {
         }
 
         assertOwnerThread(chunk.generationWriteOwner(), context);
+    }
+
+    /**
+     * <b>互斥归属</b>断言：同一 {@code key} 同一时刻只能属于一个线程。
+     *
+     * <p>与 {@link #assertOwnerThread} 的区别：owner 断言是「这块数据<b>永远</b>归某个固定线程」，
+     * 互斥断言是「这块数据<b>当下</b>只能有一个持有者」——适用于本来就允许多线程轮流进入、
+     * 但绝不允许两人同时在临界区的场景（并行生成的锁单元、光照任务 drain）。
+     *
+     * @param key     互斥单元标识
+     * @param context 上下文描述
+     */
+    public static void assertExclusiveOwner(final Object key, final String context) {
+        if (!enabled()) {
+            return;
+        }
+
+        final Thread current = Thread.currentThread();
+        final Thread previous = EXCLUSIVE_OWNERS.putIfAbsent(key, current);
+
+        if (previous != null && previous != current) {
+            fail(previous, current, context + "（互斥归属冲突：" + key + " 同时被两个线程持有）");
+        }
+    }
+
+    /**
+     * 释放互斥归属（<b>只释放自己持有的</b>，避免误删他人登记）。
+     *
+     * @param key 互斥单元标识
+     */
+    public static void releaseExclusiveOwner(final Object key) {
+        if (EXCLUSIVE_OWNERS.isEmpty()) {
+            return;
+        }
+
+        EXCLUSIVE_OWNERS.remove(key, Thread.currentThread());
+    }
+
+    /**
+     * 互斥归属断言（坐标单元版）：用「chunkX,chunkZ」字符串做 key，
+     * <b>刻意不复用</b>锁的打包 long key —— 这样「锁 key 算错导致同一逻辑单元用了两把锁」的
+     * bug 也会被本断言抓出来（两个线程会同时认为自己独占同一逻辑单元）。
+     *
+     * @param chunkX  单元 X 坐标
+     * @param chunkZ  单元 Z 坐标
+     * @param context 上下文描述
+     */
+    public static void assertExclusiveCell(final long chunkX, final long chunkZ, final String context) {
+        if (!enabled()) {
+            return;
+        }
+
+        assertExclusiveOwner(cellKey(chunkX, chunkZ), context);
+    }
+
+    /** 释放坐标单元的互斥归属（只释放自己持有的）。 */
+    public static void releaseExclusiveCell(final long chunkX, final long chunkZ) {
+        if (EXCLUSIVE_OWNERS.isEmpty()) {
+            return;
+        }
+
+        EXCLUSIVE_OWNERS.remove(cellKey(chunkX, chunkZ), Thread.currentThread());
+    }
+
+    /** 坐标单元 key（仅在开关开启时构造，避免无谓分配）。 */
+    private static String cellKey(final long chunkX, final long chunkZ) {
+        return chunkX + "," + chunkZ;
+    }
+
+    /**
+     * 断言当前线程是<b>客户端主线程</b>（渲染 / 输入线程）。
+     *
+     * @param context 上下文描述
+     */
+    public static void assertClientThread(final String context) {
+        if (!enabled()) {
+            return;
+        }
+
+        final Minecraft minecraft = Minecraft.getInstance();
+
+        if (minecraft != null && minecraft.isSameThread()) {
+            return;
+        }
+
+        fail(null, Thread.currentThread(), context + "（客户端主线程）");
     }
 
     /** 断言失败：先写日志（详细信息），再抛异常引发崩溃。 */

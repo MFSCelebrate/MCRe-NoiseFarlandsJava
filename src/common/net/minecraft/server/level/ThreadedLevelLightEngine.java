@@ -22,6 +22,7 @@ import net.minecraft.world.level.chunk.LightChunkGetter;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import test.DebugAssertions.OwnerThreadAssertion;
 
 public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable {
     public static final int DEFAULT_BATCH_SIZE = 1000;
@@ -201,6 +202,18 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     }
 
     private void runUpdate() {
+        // 🔧 MCRe「断言调试」：光照任务 drain 必须串行 —— 同一光照引擎同一时刻只允许一个线程在 drain，
+        // 否则两个线程会并发读写同一批光照数据（palette / DataLayer）→ 静默损坏。
+        OwnerThreadAssertion.assertExclusiveOwner(this, "ThreadedLevelLightEngine.runUpdate 光照 drain");
+        try {
+            this.runUpdateTasks();
+        } finally {
+            OwnerThreadAssertion.releaseExclusiveOwner(this);
+        }
+    }
+
+    /** 光照任务 drain 的实际逻辑（由 {@link #runUpdate()} 串行保护）。 */
+    private void runUpdateTasks() {
         int totalSize = Math.min(this.lightTasks.size(), 1000);
         ObjectListIterator<Pair<ThreadedLevelLightEngine.TaskType, Runnable>> iterator = this.lightTasks.iterator();
 
