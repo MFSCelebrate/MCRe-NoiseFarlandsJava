@@ -42,13 +42,13 @@ public class TeleportCommand {
          (LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal("teleport")
                      .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)))
                   .then(
-                     Commands.argument("location", Vec3Argument.vec3())
+                     Commands.argument("location", StringArgumentType.greedyString())
                         .executes(
                            c -> teleportToPos(
                               (CommandSourceStack)c.getSource(),
                               Collections.singleton(((CommandSourceStack)c.getSource()).getEntityOrException()),
                               ((CommandSourceStack)c.getSource()).getLevel(),
-                              Vec3Argument.getCoordinates(c, "location"),
+                              net.MinecraftTools.commands.PreciseVec3Argument.getCoordinates(c, "location"),
                               null,
                               null
                            )
@@ -67,13 +67,13 @@ public class TeleportCommand {
             .then(
                ((RequiredArgumentBuilder)Commands.argument("targets", EntityArgument.entities())
                      .then(
-                        ((RequiredArgumentBuilder)((RequiredArgumentBuilder)Commands.argument("location", Vec3Argument.vec3())
+                        ((RequiredArgumentBuilder)((RequiredArgumentBuilder)Commands.argument("location", StringArgumentType.greedyString())
                                  .executes(
                                     c -> teleportToPos(
                                        (CommandSourceStack)c.getSource(),
                                        EntityArgument.getEntities(c, "targets"),
                                        ((CommandSourceStack)c.getSource()).getLevel(),
-                                       Vec3Argument.getCoordinates(c, "location"),
+                                       net.MinecraftTools.commands.PreciseVec3Argument.getCoordinates(c, "location"),
                                        null,
                                        null
                                     )
@@ -85,7 +85,7 @@ public class TeleportCommand {
                                           (CommandSourceStack)c.getSource(),
                                           EntityArgument.getEntities(c, "targets"),
                                           ((CommandSourceStack)c.getSource()).getLevel(),
-                                          Vec3Argument.getCoordinates(c, "location"),
+                                          net.MinecraftTools.commands.PreciseVec3Argument.getCoordinates(c, "location"),
                                           RotationArgument.getRotation(c, "rotation"),
                                           null
                                        )
@@ -102,7 +102,7 @@ public class TeleportCommand {
                                                          (CommandSourceStack)c.getSource(),
                                                          EntityArgument.getEntities(c, "targets"),
                                                          ((CommandSourceStack)c.getSource()).getLevel(),
-                                                         Vec3Argument.getCoordinates(c, "location"),
+                                                         net.MinecraftTools.commands.PreciseVec3Argument.getCoordinates(c, "location"),
                                                          null,
                                                          new LookAt.LookAtEntity(EntityArgument.getEntity(c, "facingEntity"), EntityAnchorArgument.Anchor.FEET)
                                                       )
@@ -114,7 +114,7 @@ public class TeleportCommand {
                                                             (CommandSourceStack)c.getSource(),
                                                             EntityArgument.getEntities(c, "targets"),
                                                             ((CommandSourceStack)c.getSource()).getLevel(),
-                                                            Vec3Argument.getCoordinates(c, "location"),
+                                                            net.MinecraftTools.commands.PreciseVec3Argument.getCoordinates(c, "location"),
                                                             null,
                                                             new LookAt.LookAtEntity(
                                                                EntityArgument.getEntity(c, "facingEntity"), EntityAnchorArgument.getAnchor(c, "facingAnchor")
@@ -131,7 +131,7 @@ public class TeleportCommand {
                                              (CommandSourceStack)c.getSource(),
                                              EntityArgument.getEntities(c, "targets"),
                                              ((CommandSourceStack)c.getSource()).getLevel(),
-                                             Vec3Argument.getCoordinates(c, "location"),
+                                             net.MinecraftTools.commands.PreciseVec3Argument.getCoordinates(c, "location"),
                                              null,
                                              new LookAt.LookAtPosition(Vec3Argument.getVec3(c, "facingLocation"))
                                           )
@@ -353,9 +353,9 @@ public class TeleportCommand {
             source,
             entity,
             (ServerLevel)destination.level(),
-            destination.getX(),
-            destination.getY(),
-            destination.getZ(),
+            java.math.BigDecimal.valueOf(destination.getX()),
+            java.math.BigDecimal.valueOf(destination.getY()),
+            java.math.BigDecimal.valueOf(destination.getZ()),
             EnumSet.noneOf(Relative.class),
             destination.getYRot(),
             destination.getXRot(),
@@ -379,19 +379,24 @@ public class TeleportCommand {
       final CommandSourceStack source,
       final Collection<? extends Entity> entities,
       final ServerLevel level,
-      final Coordinates destination,
+      final net.MinecraftTools.commands.PreciseCoordinates destination,
       final @Nullable Coordinates rotation,
       final @Nullable LookAt lookAt
    ) throws CommandSyntaxException {
-      Vec3 pos = destination.getPosition(source);
+      // 🔧 MCRe「高精度坐标」：destination 已是**绝对值**（相对坐标在解析阶段用执行者的精确位置解出）
+      final java.math.BigDecimal posX = destination.x();
+      final java.math.BigDecimal posY = destination.y();
+      final java.math.BigDecimal posZ = destination.z();
       Vec2 rot = rotation == null ? null : rotation.getRotation(source);
 
       for (Entity entity : entities) {
          Set<Relative> relatives = getRelatives(destination, rotation, entity.level().dimension() == level.dimension());
+         // 相对坐标已在解析阶段解成绝对 → 必须清掉「位置相对」标志（否则 performTeleport 会再减一次）
+         relatives = withoutPositionRelatives(relatives);
          if (rot == null) {
-            performTeleport(source, entity, level, pos.x, pos.y, pos.z, relatives, entity.getYRot(), entity.getXRot(), lookAt);
+            performTeleport(source, entity, level, posX, posY, posZ, relatives, entity.getYRot(), entity.getXRot(), lookAt);
          } else {
-            performTeleport(source, entity, level, pos.x, pos.y, pos.z, relatives, rot.y, rot.x, lookAt);
+            performTeleport(source, entity, level, posX, posY, posZ, relatives, rot.y, rot.x, lookAt);
          }
       }
 
@@ -400,16 +405,16 @@ public class TeleportCommand {
             () -> Component.translatable(
                "commands.teleport.success.location.single",
                entities.iterator().next().getDisplayName(),
-               formatDouble(pos.x),
-               formatDouble(pos.y),
-               formatDouble(pos.z)
+               posX.toPlainString(),
+               posY.toPlainString(),
+               posZ.toPlainString()
             ),
             true
          );
       } else {
          source.sendSuccess(
             () -> Component.translatable(
-               "commands.teleport.success.location.multiple", entities.size(), formatDouble(pos.x), formatDouble(pos.y), formatDouble(pos.z)
+               "commands.teleport.success.location.multiple", entities.size(), posX.toPlainString(), posY.toPlainString(), posZ.toPlainString()
             ),
             true
          );
@@ -418,7 +423,7 @@ public class TeleportCommand {
       return entities.size();
    }
 
-   private static Set<Relative> getRelatives(final Coordinates destination, final @Nullable Coordinates rotation, final boolean sameDimension) {
+   private static Set<Relative> getRelatives(final net.MinecraftTools.commands.PreciseCoordinates destination, final @Nullable Coordinates rotation, final boolean sameDimension) {
       Set<Relative> dir = Relative.direction(destination.isXRelative(), destination.isYRelative(), destination.isZRelative());
       Set<Relative> pos = sameDimension ? Relative.position(destination.isXRelative(), destination.isYRelative(), destination.isZRelative()) : Set.of();
       Set<Relative> rot = rotation == null ? Relative.ROTATION : Relative.rotation(rotation.isYRelative(), rotation.isXRelative());
@@ -429,21 +434,46 @@ public class TeleportCommand {
       return String.format(Locale.ROOT, "%f", value);
    }
 
+   /**
+    * 🔧 MCRe「高精度坐标」：十进制 → FloatRefactor256。
+    * <p><b>整数走 BigInteger 精确路径</b>（完全无损：1e35 这类坐标能逐位送达）；
+    * <p>带小数的值其小数部分按 double 舍入（相对误差 ~1e-17）。
+    */
+   private static net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256 toExact(final java.math.BigDecimal value) {
+      final java.math.BigDecimal stripped = value.stripTrailingZeros();
+
+      if (stripped.scale() <= 0) {
+         return net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(stripped.toBigInteger());
+      }
+
+      return net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(value);
+   }
+
+   /** 去掉「位置相对」标志（相对坐标已在解析阶段解成绝对值）。 */
+   private static Set<Relative> withoutPositionRelatives(final Set<Relative> relatives) {
+      final Set<Relative> result = new java.util.HashSet<>(relatives);
+      result.remove(Relative.X);
+      result.remove(Relative.Y);
+      result.remove(Relative.Z);
+      return result;
+   }
+
    private static void performTeleport(
       final CommandSourceStack source,
       final Entity victim,
       final ServerLevel level,
-      final double x,
-      final double y,
-      final double z,
+      final java.math.BigDecimal x,
+      final java.math.BigDecimal y,
+      final java.math.BigDecimal z,
       final Set<Relative> relatives,
       final float yRot,
       final float xRot,
       final @Nullable LookAt lookAt
    ) throws CommandSyntaxException {
-      double relativeOrAbsoluteX = relatives.contains(Relative.X) ? x - victim.getX() : x;
-      double relativeOrAbsoluteY = relatives.contains(Relative.Y) ? y - victim.getY() : y;
-      double relativeOrAbsoluteZ = relatives.contains(Relative.Z) ? z - victim.getZ() : z;
+      // 🔧 MCRe「高精度坐标」：位置相对标志已在解析阶段处理 → 这里坐标即绝对值
+      final double relativeOrAbsoluteX = x.doubleValue();
+      final double relativeOrAbsoluteY = y.doubleValue();
+      final double relativeOrAbsoluteZ = z.doubleValue();
       float relativeOrAbsoluteYRot = relatives.contains(Relative.Y_ROT) ? yRot - victim.getYRot() : yRot;
       float relativeOrAbsoluteXRot = relatives.contains(Relative.X_ROT) ? xRot - victim.getXRot() : xRot;
       float newYRot = Mth.wrapDegrees(relativeOrAbsoluteYRot);
@@ -455,9 +485,9 @@ public class TeleportCommand {
 
       if (precise != null) {
          teleported = victim.teleportToExact(level,
-            net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(relativeOrAbsoluteX),
-            net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(relativeOrAbsoluteY),
-            net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(relativeOrAbsoluteZ),
+            toExact(x),
+            toExact(y),
+            toExact(z),
             relatives, newYRot, newXRot, true);
       } else {
          teleported = victim.teleportTo(level, relativeOrAbsoluteX, relativeOrAbsoluteY, relativeOrAbsoluteZ, relatives, newYRot, newXRot, true);
