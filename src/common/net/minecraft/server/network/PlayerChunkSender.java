@@ -4,6 +4,7 @@ import com.google.common.collect.Comparators;
 import com.mojang.logging.LogUtils;
 
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
@@ -63,8 +64,18 @@ public class PlayerChunkSender {
                         this.unacknowledgedBatches++;
                         connection.send(ClientboundChunkBatchStartPacket.INSTANCE);
 
-                        for (LevelChunk chunk : chunksToSend) {
-                            sendChunk(connection, level, chunk);
+                        // 🔧 MCRe：发包会**序列化区块**（PalettedContainer.write 内部 acquire/release，会重建 palette）
+                        //   → 与分带生成（worker 线程写同一 LevelChunk）并发会触发
+                        //   "Accessing PalettedContainer from multiple threads" 崩溃。
+                        //   故收集阶段已申请写入仲裁（拿不到的区块放回队列、下 tick 再发），这里发送完必须释放。
+                        try {
+                            for (LevelChunk chunk : chunksToSend) {
+                                sendChunk(connection, level, chunk);
+                            }
+                        } finally {
+                            for (LevelChunk chunk : chunksToSend) {
+                                chunk.endExternalWrite();
+                            }
                         }
 
                         connection.send(new ClientboundChunkBatchFinishedPacket(chunksToSend.size()));
@@ -105,11 +116,24 @@ public class PlayerChunkSender {
                 .toList();
         }
 
+        // 🔧 MCRe：申请写入仲裁（与分带生成的「生成式独占」互斥）
+        //   · 拿不到 → 分带正在写这个区块 → **放回 pendingChunks**，本 tick 不发，下 tick 再试
+        //   · 拿得到 → 持有仲裁直到发包结束（发送阶段 finally 释放）
+        final List<LevelChunk> sendable = new ArrayList<>(chunks.size());
+
         for (LevelChunk chunk : chunks) {
+            if (chunk.tryBeginExternalWrite()) {
+                sendable.add(chunk);
+            } else {
+                this.pendingChunks.add(chunk.getPos());
+            }
+        }
+
+        for (LevelChunk chunk : sendable) {
             this.pendingChunks.remove(chunk.getPos());
         }
 
-        return chunks;
+        return sendable;
     }
 
     public void onChunkBatchReceivedByClient(final float desiredChunksPerTick) {

@@ -579,10 +579,16 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
      */
     public void beginGenerationWrite() {
         // 先等在途的外部写入排空，再独占本区块（CAS 保证「置独占标志」与「等待排空」之间无竞态）
+        int spins = 0;
         while (true) {
             final int state = this.writeArbitration.get();
             if (state > 0) {
                 Thread.onSpinWait();
+                // 🔧 MCRe：纯忙等会烧 CPU（手机 8 核上尤其明显）→ 偶尔让出 CPU 给持锁方
+                //   （持锁方可能是发包序列化区块或流体 tick，都是短任务，让出后很快就能拿到）
+                if ((++spins & 0x3F) == 0) {
+                    Thread.yield();
+                }
                 continue;
             }
 
