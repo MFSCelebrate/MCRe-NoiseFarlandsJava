@@ -227,9 +227,9 @@ public class BlendedNoise implements DensityFunction.SimpleFunction {
      */
     private double computeExact(final DensityFunction.FunctionContext context) {
         // ⚠️ 从**整数**方块坐标开始精确化——绝不经过 double（double 在 2^53 以上已无法区分相邻方块）
-        BigDecimal posX = WorldReposition.reposition(BigDecimal.valueOf(context.blockX()), Direction.Axis.X);
-        BigDecimal posY = WorldReposition.reposition(BigDecimal.valueOf(context.blockY()), Direction.Axis.Y);
-        BigDecimal posZ = WorldReposition.reposition(BigDecimal.valueOf(context.blockZ()), Direction.Axis.Z);
+        BigDecimal posX = WorldReposition.reposition(context.blockXExact(), Direction.Axis.X);
+        BigDecimal posY = WorldReposition.reposition(context.blockYExact(), Direction.Axis.Y);
+        BigDecimal posZ = WorldReposition.reposition(context.blockZExact(), Direction.Axis.Z);
 
         final BigDecimal limitX = posX.multiply(this.xzMultiplierExact);
         final BigDecimal limitY = posY.multiply(this.yMultiplierExact);

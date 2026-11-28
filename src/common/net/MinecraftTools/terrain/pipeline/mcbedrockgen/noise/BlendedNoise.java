@@ -239,9 +239,9 @@ public class BlendedNoise extends net.minecraft.world.level.levelgen.synth.Blend
      */
     private double computeExact(final DensityFunction.FunctionContext context) {
         // ⚠️ 从**整数**方块坐标开始精确化——绝不经过 double（double 在 2^53 以上已无法区分相邻方块）
-        BigDecimal posX = WorldReposition.reposition(BigDecimal.valueOf(context.blockX()), Direction.Axis.X);
-        BigDecimal posY = WorldReposition.reposition(BigDecimal.valueOf(context.blockY()), Direction.Axis.Y);
-        BigDecimal posZ = WorldReposition.reposition(BigDecimal.valueOf(context.blockZ()), Direction.Axis.Z);
+        BigDecimal posX = WorldReposition.reposition(context.blockXExact(), Direction.Axis.X);
+        BigDecimal posY = WorldReposition.reposition(context.blockYExact(), Direction.Axis.Y);
+        BigDecimal posZ = WorldReposition.reposition(context.blockZExact(), Direction.Axis.Z);
 
         // 🔧 Bedrock 模式适配：坐标先量化到 float（模拟基岩单精度输入量级），再精确计算
         // float 的值可精确表示为 BigDecimal → 精确计算无灾难性抵消 → 无地形拉伸

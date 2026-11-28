@@ -55,6 +55,17 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     private final int cellHeight;
     private boolean interpolating;
     private boolean fillingCell;
+    /**
+     * 🔧 MCRe：<b>精确区块原点</b>（java.math.BigInteger；null = 未知 → 精确坐标回落 int）。
+     *
+     * <p>采样坐标原本是 int（±2.1 亿格）→ 这正是「平面边境之地」的直接成因：
+     * 坐标再大也会被 int 截断回绕。本字段把 long 化的区块原点以精确形式带进采样链。
+     */
+    private @Nullable final String exactChunkMinBlockX;
+
+    /** 🔧 MCRe：精确区块原点 Z（见 {@link #exactChunkMinBlockX}）。 */
+    private @Nullable final String exactChunkMinBlockZ;
+
     private int cellStartBlockX;
     private int cellStartBlockY;
     private int cellStartBlockZ;
@@ -101,7 +112,8 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         NoiseSettings noiseSettings = settings.noiseSettings().clampToHeightAccessor(chunk.getHeightAccessorForGeneration());
         ChunkPos pos = chunk.getPos();
         int cellCountXZ = 16 / noiseSettings.getCellWidth();
-        return new NoiseChunk(cellCountXZ, randomState, (int)pos.getMinBlockX(), (int)pos.getMinBlockZ(), noiseSettings, beardifier, settings, globalFluidPicker, blender);
+        return new NoiseChunk(cellCountXZ, randomState, (int)pos.getMinBlockX(), (int)pos.getMinBlockZ(), noiseSettings, beardifier, settings, globalFluidPicker, blender,
+                java.math.BigInteger.valueOf(pos.getMinBlockX()).toString(), java.math.BigInteger.valueOf(pos.getMinBlockZ()).toString());
     }
 
     public NoiseChunk(
@@ -113,8 +125,12 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
         final DensityFunctions.BeardifierOrMarker beardifier,
         final NoiseGeneratorSettings settings,
         final Aquifer.FluidPicker globalFluidPicker,
-        final Blender blender
+        final Blender blender,
+        final @Nullable String exactChunkMinBlockX,
+        final @Nullable String exactChunkMinBlockZ
     ) {
+        this.exactChunkMinBlockX = exactChunkMinBlockX;
+        this.exactChunkMinBlockZ = exactChunkMinBlockZ;
         this.cellWidth = noiseSettings.getCellWidth();
         this.cellHeight = noiseSettings.getCellHeight();
         this.generationNoiseSettings = noiseSettings; // 🔧 MCRe（窗口感知限制器）：存钳制到生成窗口的 NoiseSettings
@@ -211,6 +227,41 @@ public class NoiseChunk implements DensityFunction.FunctionContext, DensityFunct
     @Override
     public int blockZ() {
         return this.cellStartBlockZ + this.inCellZ;
+    }
+
+    /**
+     * 🔧 MCRe：精确采样 X 坐标（不受 int 限制）。
+     *
+     * <p>组成：精确区块原点（BigInteger） + 区块内偏移。
+     * <p>区块内偏移取 {@code cellStartBlockX & 15}：区块起点是 16 对齐的，int 溢出只影响高位、低 4 位仍是区块内偏移 ✓
+     */
+    @Override
+    public net.MinecraftTools.Math.DynamicAccuracy.BigDecimal blockXExact() {
+        if (this.exactChunkMinBlockX == null) {
+            return net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.valueOf(this.blockX());
+        }
+
+        final int intraChunk = (this.cellStartBlockX & 15) + this.inCellX;
+        return new net.MinecraftTools.Math.DynamicAccuracy.BigDecimal(this.exactChunkMinBlockX)
+                .add(net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.valueOf(intraChunk));
+    }
+
+    /** 🔧 MCRe：精确采样 Y 坐标（Y 不超出 int 范围，直接精确化）。 */
+    @Override
+    public net.MinecraftTools.Math.DynamicAccuracy.BigDecimal blockYExact() {
+        return net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.valueOf(this.blockY());
+    }
+
+    /** 🔧 MCRe：精确采样 Z 坐标（见 {@link #blockXExact()}）。 */
+    @Override
+    public net.MinecraftTools.Math.DynamicAccuracy.BigDecimal blockZExact() {
+        if (this.exactChunkMinBlockZ == null) {
+            return net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.valueOf(this.blockZ());
+        }
+
+        final int intraChunk = (this.cellStartBlockZ & 15) + this.inCellZ;
+        return new net.MinecraftTools.Math.DynamicAccuracy.BigDecimal(this.exactChunkMinBlockZ)
+                .add(net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.valueOf(intraChunk));
     }
 
     public int maxPreliminarySurfaceLevel(final int minBlockX, final int minBlockZ, final int maxBlockX, final int maxBlockZ) {

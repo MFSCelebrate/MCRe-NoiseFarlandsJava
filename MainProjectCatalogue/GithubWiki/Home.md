@@ -43,7 +43,7 @@
 - [26.3 Snapshot 3的改进透明显示崩溃特性](https://b23.tv/9yzDHM5) - 展示了为什么在 26.3 Snapshot 3 中打开改进透明显示扔出特殊物品导致的崩溃
 
 ### 改版使用的特殊工具
-- [256bit Tools](UserGuide.BigNumber) - 展示改版使用的 **256bit Tools**
+- [Refactor 256bit](UserGuide.Eight-PrecisionFP) - 展示改版使用的 **256bit Tools**
 
 ### 视频资料
 - [请输入文本](https://b23.tv/GPverzs) - 点击输入文本，绝对不是 RickRoll()

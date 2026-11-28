@@ -95,6 +95,33 @@ public interface DensityFunction {
         int blockY();
 
         int blockZ();
+
+        /**
+         * 🔧 MCRe：<b>精确采样坐标</b>（BigDecimal）。
+         *
+         * <p>为什么需要：{@link #blockX()} 返回 <b>int</b> → 采样坐标的天花板只有 2^31 格（±21.4 亿），
+         * 这正是「平面边境之地」的直接成因（坐标再大也会被 int 截断回绕）。
+         * 本方法给出不受 int 限制的精确坐标，供偏移缩放（WorldReposition）与精确噪声链使用。
+         *
+         * <p>默认实现回落到 int 坐标（保持 vanilla 语义与第三方实现兼容）；
+         * {@code NoiseChunk} 覆写为「精确区块原点 + 区块内偏移」。
+         *
+         * <p>⚠️ 用全限定名：{@code net.MinecraftTools.Math.DynamicAccuracy.BigDecimal} 与
+         * {@code java.math.BigDecimal} 同名，本文件已 import 后者。
+         */
+        default net.MinecraftTools.Math.DynamicAccuracy.BigDecimal blockXExact() {
+            return net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.valueOf(this.blockX());
+        }
+
+        /** 🔧 MCRe：精确采样 Y 坐标（见 {@link #blockXExact()}）。 */
+        default net.MinecraftTools.Math.DynamicAccuracy.BigDecimal blockYExact() {
+            return net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.valueOf(this.blockY());
+        }
+
+        /** 🔧 MCRe：精确采样 Z 坐标（见 {@link #blockXExact()}）。 */
+        default net.MinecraftTools.Math.DynamicAccuracy.BigDecimal blockZExact() {
+            return net.MinecraftTools.Math.DynamicAccuracy.BigDecimal.valueOf(this.blockZ());
+        }
     }
 
     record NoiseHolder(Holder<NormalNoise.NoiseParameters> noiseData, @Nullable NormalNoise noise) {

@@ -132,11 +132,12 @@ tasks.named('build') { dependsOn 'functestClasses' }   // 只编译、不运行
 
 ### 4.1 判断标准
 
-> **只依赖 JDK + 我们自己的 `net.MinecraftTools.*`** → 属于单元测试。
+> **不需要 Minecraft 运行时**（不碰 Bootstrap / 注册表 / 资源 / 客户端静态初始化）→ 属于单元测试。
 
-`net.MinecraftTools` 是本项目自研的库（DynamicAccuracy 大数、`_256bit_Refactoring` 精度层、向量库、地形管线等），**不需要 Minecraft 运行时**，因此仍算单元测试。
+- `net.MinecraftTools.*`（我们自研的 DynamicAccuracy 大数、`_256bit_Refactoring` 精度层、向量库、地形管线等）天然属于这一类；
+- 少数**位于 `net.minecraft.*` 但零运行时依赖**的纯逻辑类（例如 `net.minecraft.util.thread.WorldGenLocks` —— 只有 `ReentrantLock` 与原子计数）也归单元测试：判据是「**跑起来需不需要 Minecraft 起来**」，而不是「包名在不在 net.minecraft 下」。
 
-只要触碰了 `net.minecraft.*`（注册表、命令、配置、资源、渲染），就应当放到[功能性测试](#五如何添加功能性测试)。
+需要 Minecraft 真正起来的（注册表、命令树、配置读写、Bootstrap 后的数据）→ 放到[功能性测试](#五如何添加功能性测试)。
 
 ### 4.2 标准写法
 
@@ -378,6 +379,7 @@ src-functest/resources/assets/minecraft/lang/en_us.json
 | `BandIndexUnitTests` | 黏土带索引：`floorMod` 防护与原版环形语义一致 |
 | `WrapBedrockUnitTests` / `BedrockExactNoStretchUnitTests` | Bedrock 模式的 wrap 折叠落点、精确路径**无地形拉伸** |
 | `Noise0601UnitTests` / `Diag0601DomainUnitTests` | 0.6.1 携带版管线的噪声逐位复刻与取值域 |
+| `WorldGenLocksUnitTests` | 并行 worldgen 的**半径锁真实互斥**（独立持有计数，8 线程 × 200 轮重叠区域） |
 
 ### 7.2 功能性测试（3 个类 / 6 个用例）
 
@@ -386,6 +388,7 @@ src-functest/resources/assets/minecraft/lang/en_us.json
 | `OwnerThreadAssertionTests` | 「断言调试」线程归属断言：开关关闭不抛 / owner 正确不抛 / owner 错误抛异常 / 互斥归属冲突抛异常 |
 | `NoiseSourceTests` | 噪声源可重建且确定性（seed 与参数敏感） |
 | `DiagFloatChainMathTests` | Float 密度链与主线逐点对照（20 采样 + canary 反证） |
+| `WorldGenLocksAssertionTests` | 「断言调试」的互斥归属断言在并发下**零误报**（回归测试，见第八章） |
 
 ### 7.3 暂时未迁移的脚本（及原因）
 
@@ -410,6 +413,7 @@ src-functest/resources/assets/minecraft/lang/en_us.json
 | 类找不到 / IDE 报红 | 目录与包名不镜像 | 对齐 `package` 声明 |
 | 明明全 PASS 却判失败 | 脚本汇总行含字面 `FAIL` | 先剔除零失败汇总行再判定 |
 | `Map.ofEntries` 初始化抛异常 | 表里有重复键 | 建表前断言键唯一 |
+| 并发下断言误报「同一锁单元同时被两个线程持有」 | 归属登记表**释放顺序**写错（先放锁、后撤登记 → 留下陈旧登记的窗口） | 改为**先撤登记、再放锁**，保证「登记表里有我」⟺「锁还握在我手里」 |
 
 ---
 

@@ -1066,11 +1066,11 @@ public final class DensityFunctions {
                     && (Math.abs(x) > ExactNoiseMath.EXACT_THRESHOLD_XZ
                     || Math.abs(z) > ExactNoiseMath.EXACT_THRESHOLD_XZ
                     || Math.abs(y) > ExactNoiseMath.EXACT_THRESHOLD_Y)) {
-                final BigDecimal exactX = WorldReposition.reposition(BigDecimal.valueOf(context.blockX()), Direction.Axis.X)
+                final BigDecimal exactX = WorldReposition.reposition(context.blockXExact(), Direction.Axis.X)
                         .multiply(ExactNoiseMath.cachedOf(this.xzScale));
-                final BigDecimal exactY = WorldReposition.reposition(BigDecimal.valueOf(context.blockY()), Direction.Axis.Y)
+                final BigDecimal exactY = WorldReposition.reposition(context.blockYExact(), Direction.Axis.Y)
                         .multiply(ExactNoiseMath.cachedOf(this.yScale));
-                final BigDecimal exactZ = WorldReposition.reposition(BigDecimal.valueOf(context.blockZ()), Direction.Axis.Z)
+                final BigDecimal exactZ = WorldReposition.reposition(context.blockZExact(), Direction.Axis.Z)
                         .multiply(ExactNoiseMath.cachedOf(this.xzScale));
                 return this.noise.getValueExact(exactX, exactY, exactZ);
             }

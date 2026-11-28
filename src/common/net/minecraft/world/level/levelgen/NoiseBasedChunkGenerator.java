@@ -222,7 +222,9 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
                 DensityFunctions.BeardifierMarker.INSTANCE,
                 this.settings.value(),
                 this.globalFluidPicker.get(),
-                Blender.empty()
+                Blender.empty(),
+                null,
+                null
             );
             noiseChunk.initializeForFirstCellX();
             noiseChunk.advanceCellX(0);
@@ -307,7 +309,9 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
             DensityFunctions.BeardifierMarker.INSTANCE,
             this.settings.value(),
             this.globalFluidPicker.get(),
-            Blender.empty()
+            Blender.empty(),
+            null,
+            null
         );
         noiseChunk.initializeForFirstCellX();
         noiseChunk.advanceCellX(0);

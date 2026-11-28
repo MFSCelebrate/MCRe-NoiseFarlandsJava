@@ -4,6 +4,7 @@ import java.util.Locale;
 import net.MinecraftTools.Math.DynamicAccuracy.BigDecimal;
 import net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256;
 import net.MinecraftTools.Math.DynamicAccuracy.BigInteger;
+import net.MinecraftTools.precision.PrecisePosition;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -82,6 +83,29 @@ public class DebugEntryPosition implements DebugScreenEntry {
         };
     }
 
+    /**
+     * 🔧 MCRe：计算 Terrain XYZ（优先用<b>高精度位置</b>）。
+     *
+     * <p>玩家启用高精度位置后（{@code PrecisePosition}），坐标真值是 237 位尾数的二进制浮点，
+     * 其精确十进制展开与 double 的量化结果不同 —— 远坐标下 double 已被 ulp 截断（1e46 处 ulp≈1.27e30），
+     * 而这里给出的是**未被截断**的真值。
+     *
+     * <p>无高精度位置时回落原 double 路径（行为不变）。
+     */
+    private static BigDecimal[] computeTerrainXYZ(final net.minecraft.world.entity.Entity entity) {
+        final PrecisePosition precise = entity.getPrecisePosition();
+
+        if (precise == null) {
+            return computeTerrainXYZ(entity.getX(), entity.getY(), entity.getZ());
+        }
+
+        return new BigDecimal[] {
+            WorldReposition.reposition(new BigDecimal(precise.exactX().toExactString()), Direction.Axis.X),
+            WorldReposition.reposition(new BigDecimal(precise.exactY().toExactString()), Direction.Axis.Y),
+            WorldReposition.reposition(new BigDecimal(precise.exactZ().toExactString()), Direction.Axis.Z)
+        };
+    }
+
     private static char getColorCodeFromPrecision(double precision) {
         if (precision <= 0.03125) {
             return 'a';
@@ -126,7 +150,12 @@ public class DebugEntryPosition implements DebugScreenEntry {
                     : java.util.Set.of();
 
             // ===== 🔧 MCRe：Terrain XYZ + 精度计算 =====
-            final BigDecimal[] terrainXYZ = computeTerrainXYZ(entity.getX(), entity.getY(), entity.getZ());
+            final BigDecimal[] terrainXYZ = computeTerrainXYZ(entity);
+            // 🔧 MCRe：高精度坐标的精确十进制串（调试屏每次刷新算一次，避免在 fact lambda 里反复转换）
+            final PrecisePosition precisePosition = entity.getPrecisePosition();
+            final String[] exactXYZ = precisePosition != null
+                    ? new String[]{precisePosition.exactX().toExactString(), precisePosition.exactY().toExactString(), precisePosition.exactZ().toExactString()}
+                    : null;
             final BigInteger maxAbs = terrainXYZ[0].abs().toBigInteger().max(terrainXYZ[1].abs().toBigInteger()).max(terrainXYZ[2].abs().toBigInteger());
             final int bitLen = maxAbs.bitLength();  // 最高位 1 的位置（等价于 64 - Long.numberOfLeadingZeros）
             final double doublePrecision = Math.pow(2.0, (double) (bitLen - 53));
@@ -145,6 +174,17 @@ public class DebugEntryPosition implements DebugScreenEntry {
                 DebugGroups.POSITION,
                 "XYZ(Camera)",
                 fact -> fact.value(fmtFixed(camX, 3)).text(" / ").value(fmtFixed(camY, 5)).text(" / ").value(fmtFixed(camZ, 3))
+            );
+            displayer.addFactToGroup(
+                DebugGroups.POSITION,
+                "XYZ(精确)",
+                fact -> {
+                    if (exactXYZ != null) {
+                        fact.value(exactXYZ[0]).text(" / ").value(exactXYZ[1]).text(" / ").value(exactXYZ[2]);
+                    } else {
+                        fact.value(fmtFixed(entity.getX(), 3)).text(" / ").value(fmtFixed(entity.getY(), 5)).text(" / ").value(fmtFixed(entity.getZ(), 3));
+                    }
+                }
             );
             displayer.addFactToGroup(
                 DebugGroups.POSITION,

@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import net.MinecraftTools.precision.PrecisePosition;
 import net.minecraft.CrashReport;
 import net.minecraft.CrashReportCategory;
 import net.minecraft.ReportedException;
@@ -218,6 +219,19 @@ public abstract class Entity
     public double yo;
     public double zo;
     private Vec3 position;
+
+    /**
+     * 🔧 MCRe「高精度位置」：本实体的<b>精确位置真值</b>（null = 未启用）。
+     *
+     * <p>double 只有 53 位尾数，坐标到 1e46 时 ULP 已达 1.27e30 —— 此时 {@code pos + 0.1} 会直接归零，
+     * 偏移缩放（WorldReposition）再把这份量化原样放大，于是「坐标越远、精度越差」。
+     * 本字段把位置真值存成 237 位尾数的二进制浮点（FloatRefactor256），<b>对外仍以 double 投影</b>
+     * （出口不变 → vanilla 读路径零改动）。
+     *
+     * <p>只有 {@link Player} 启用（见 {@link #usesPrecisePosition()}）：256 位运算约 400 ns/次，
+     * 给全部实体用会拖垮 tick；玩家每 tick 仅数次，开销可忽略。其它实体保持 null → 逐位不变、零开销。
+     */
+    private @Nullable PrecisePosition precisePosition;
     private BlockPos blockPosition;
     private ChunkPos chunkPosition;
     private Vec3 deltaMovement = Vec3.ZERO;
@@ -727,7 +741,14 @@ public abstract class Entity
 
     public void move(final MoverType moverType, Vec3 delta) {
         if (this.noPhysics) {
-            this.setPos(this.getX() + delta.x, this.getY() + delta.y, this.getZ() + delta.z);
+            // 🔧 MCRe「高精度位置」：位移累加发生在高精度域（double 加法在 1e46 处会归零）
+            final PrecisePosition precise = this.precisePosition;
+            if (precise != null) {
+                precise.add(delta.x, delta.y, delta.z);
+                this.setPosRaw(precise.x(), precise.y(), precise.z());
+            } else {
+                this.setPos(this.getX() + delta.x, this.getY() + delta.y, this.getZ() + delta.z);
+            }
             this.horizontalCollision = false;
             this.verticalCollision = false;
             this.verticalCollisionBelow = false;
@@ -768,7 +789,14 @@ public abstract class Entity
                 Vec3 pos = this.position();
                 Vec3 newPosition = pos.add(movement);
                 this.addMovementThisTick(new Entity.Movement(pos, newPosition, delta));
-                this.setPos(newPosition);
+                // 🔧 MCRe「高精度位置」：碰撞后的位移同样在高精度域累加
+                final PrecisePosition precise = this.precisePosition;
+                if (precise != null) {
+                    precise.add(movement.x, movement.y, movement.z);
+                    this.setPosRaw(precise.x(), precise.y(), precise.z());
+                } else {
+                    this.setPos(newPosition);
+                }
             }
 
             profiler.pop();
@@ -1837,6 +1865,33 @@ public abstract class Entity
         this.reapplyPosition();
     }
 
+    /**
+     * 🔧 MCRe「高精度位置」：本实体是否启用高精度位置。
+     *
+     * <p>默认关闭（其它实体走原 double 路径，行为逐位不变、零开销）；{@link Player} 覆写为 true。
+     */
+    protected boolean usesPrecisePosition() {
+        return false;
+    }
+
+    /** 🔧 MCRe「高精度位置」：本实体的高精度位置（未启用时为 null）。 */
+    public @Nullable PrecisePosition getPrecisePosition() {
+        return this.precisePosition;
+    }
+
+    /** 🔧 MCRe「高精度位置」：把 vanilla 的位置写入同步到高精度槽位（投影回填保护由 PrecisePosition 内部处理）。 */
+    private void syncPrecisePosition(final double x, final double y, final double z) {
+        if (!this.usesPrecisePosition()) {
+            return;
+        }
+
+        if (this.precisePosition == null) {
+            this.precisePosition = PrecisePosition.of(x, y, z);
+        } else {
+            this.precisePosition.set(x, y, z);
+        }
+    }
+
     public final void setOldPosAndRot() {
         this.setOldPos();
         this.setOldRot();
@@ -1856,6 +1911,11 @@ public abstract class Entity
     }
 
     private void setOldPos(final Vec3 position) {
+        // 🔧 MCRe「高精度位置」：旧位置保留精确值（相机插值起点不再被 double 量化）
+        if (this.precisePosition != null) {
+            this.precisePosition.setOldFromCurrent();
+        }
+
         this.xo = this.xOld = position.x;
         this.yo = this.yOld = position.y;
         this.zo = this.zOld = position.z;
@@ -3788,7 +3848,9 @@ public abstract class Entity
     }
 
     public final double getX() {
-        return this.position.x;
+        // 🔧 MCRe「高精度位置」：有精确值时返回其 double 投影（出口仍是 double）
+        final PrecisePosition precise = this.precisePosition;
+        return precise != null ? precise.x() : this.position.x;
     }
 
     public double getX(final double progress) {
@@ -3804,7 +3866,8 @@ public abstract class Entity
     }
 
     public final double getY() {
-        return this.position.y;
+        final PrecisePosition precise = this.precisePosition;
+        return precise != null ? precise.y() : this.position.y;
     }
 
     public double getY(final double progress) {
@@ -3828,7 +3891,8 @@ public abstract class Entity
     }
 
     public final double getZ() {
-        return this.position.z;
+        final PrecisePosition precise = this.precisePosition;
+        return precise != null ? precise.z() : this.position.z;
     }
 
     public double getZ(final double progress) {
@@ -3840,6 +3904,9 @@ public abstract class Entity
     }
 
     public final void setPosRaw(final double x, final double y, final double z) {
+        // 🔧 MCRe「高精度位置」：位置真值在这里同步（vanilla 侧仍是 double 投影）
+        this.syncPrecisePosition(x, y, z);
+
         if (this.position.x != x || this.position.y != y || this.position.z != z) {
             this.position = new Vec3(x, y, z);
             int fx = Mth.floor(x);

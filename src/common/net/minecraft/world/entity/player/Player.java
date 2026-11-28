@@ -124,6 +124,20 @@ import net.minecraft.world.scores.Team;
 import org.jspecify.annotations.Nullable;
 
 public abstract class Player extends Avatar implements ContainerUser {
+
+    /**
+     * 🔧 MCRe「高精度位置」：<b>玩家启用高精度位置</b>。
+     *
+     * <p>double 只有 53 位尾数，坐标到 1e46 时 ULP 已达 1.27e30 —— 此时 {@code pos + 0.1} 会直接归零，
+     * 偏移缩放（WorldReposition）再把这份量化原样放大，于是「坐标越远、精度越差」。
+     *
+     * <p>玩家每 tick 仅数次 256 位运算（约 400 ns/次），开销可忽略；其它实体不启用 → 逐位不变、零开销。
+     * 客户端的 LocalPlayer 继承本类 → 自动启用。
+     */
+    @Override
+    protected boolean usesPrecisePosition() {
+        return true;
+    }
     public static final int MAX_HEALTH = 20;
     public static final int SLEEP_DURATION = 100;
     public static final int WAKE_UP_DURATION = 10;

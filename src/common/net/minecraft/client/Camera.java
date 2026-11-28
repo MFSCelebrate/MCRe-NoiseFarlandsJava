@@ -2,6 +2,7 @@ package net.minecraft.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.Arrays;
+import net.MinecraftTools.precision.PrecisePosition;
 import net.minecraft.client.entity.ClientAvatarState;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -259,10 +260,15 @@ public class Camera implements TrackedWaypoint.Camera {
             this.setPosition(behavior.getCartLerpPosition(partialTicks).add(positionOffset));
         } else {
             this.setRotation(this.entity.getViewYRot(partialTicks), this.entity.getViewXRot(partialTicks));
+            // 🔧 MCRe「高精度位置」：插值起点改读精确旧位置 —— double 量化过的 xo/yo/zo 会让插值起点偏
+            final PrecisePosition precise = this.entity.getPrecisePosition();
+            final double oldX = precise != null ? precise.oldX() : this.entity.xo;
+            final double oldY = precise != null ? precise.oldY() : this.entity.yo;
+            final double oldZ = precise != null ? precise.oldZ() : this.entity.zo;
             this.setPosition(
-                Mth.lerp(partialTicks, this.entity.xo, this.entity.getX()),
-                Mth.lerp(partialTicks, this.entity.yo, this.entity.getY()) + Mth.lerp(partialTicks, this.eyeHeightOld, this.eyeHeight),
-                Mth.lerp(partialTicks, this.entity.zo, this.entity.getZ())
+                Mth.lerp(partialTicks, oldX, this.entity.getX()),
+                Mth.lerp(partialTicks, oldY, this.entity.getY()) + Mth.lerp(partialTicks, this.eyeHeightOld, this.eyeHeight),
+                Mth.lerp(partialTicks, oldZ, this.entity.getZ())
             );
         }
 

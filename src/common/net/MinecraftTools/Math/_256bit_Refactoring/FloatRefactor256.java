@@ -217,7 +217,10 @@ public final class FloatRefactor256 implements Comparable<FloatRefactor256> {
         }
         final long scale = scaleExponent();
         final int clamped = (int) Math.min(Math.abs(scale), 1 << 20);
-        return scale >= 0 ? m.shiftLeft(clamped) : m.shiftRight(clamped);
+        final BigInteger truncated = scale >= 0 ? m.shiftLeft(clamped) : m.shiftRight(clamped);
+        // 🔧 MCRe 修复（2026-11-27）：magnitude() 返回的是**绝对值**，原实现直接返回 → 负数丢符号
+        //   （实测 -1.5 → 1、-2.0 → 2）。BigInteger 转换语义是「向零截断」，负数需补回符号。
+        return this.signum() < 0 ? truncated.negate() : truncated;
     }
 
     // ═══════════ 谓词 ═══════════

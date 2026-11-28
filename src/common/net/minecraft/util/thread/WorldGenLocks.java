@@ -51,12 +51,16 @@ public class WorldGenLocks {
 
             task.run();
         } finally {
+            // 🔧 MCRe「断言调试」修正：**先撤销归属登记，再放锁**（逐单元、逆序，与解锁顺序一致）。
+            //   旧写法是「先把 25 把锁全放掉、再统一清登记表」→ 中间存在窗口：
+            //   锁已释放但登记还在 → 下一个线程拿到该锁后调 assertExclusiveCell 会看到**陈旧登记**
+            //   → 误报「同一锁单元同时被两个线程持有」（真机日志里全是这种假阳性，
+            //     而独立的持有计数实测**真实互斥违规 = 0**，锁本身没问题）。
+            //   新写法保证不变量：「登记表里有我」⟺「这把锁还握在我手里」。
             for (int i = held.size() - 1; i >= 0; i--) {
-                held.get(i).unlock();
-            }
-
-            for (long[] coord : coords) {
+                final long[] coord = coords.get(i);
                 OwnerThreadAssertion.releaseExclusiveCell(coord[0], coord[1]);
+                held.get(i).unlock();
             }
         }
     }
