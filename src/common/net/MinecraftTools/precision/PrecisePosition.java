@@ -148,6 +148,22 @@ public final class PrecisePosition {
     }
 
     /**
+     * 直接写入精确值（不经 double 中转）—— 传送等「落点已知为高精度」的场景。
+     *
+     * <p>写完后投影与帧同步刷新；随后 vanilla 的 double 回填（{@code setPosRaw}）因投影相同
+     * 会被 {@code keepIfProjection} 保留，**不会把精确值降级** ✓
+     */
+    public void setExact(final FloatRefactor256 x, final FloatRefactor256 y, final FloatRefactor256 z) {
+        this.exactX = x;
+        this.exactY = y;
+        this.exactZ = z;
+        this.projX = x.toDouble();
+        this.projY = y.toDouble();
+        this.projZ = z.toDouble();
+        this.refreshFrame();
+    }
+
+    /**
      * 在高精度域累加位移量。
      *
      * <p>位移量本身仍是 double（小数量级，double 完全够），但<b>累加发生在 237 位尾数上</b> →

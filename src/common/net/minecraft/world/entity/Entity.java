@@ -745,7 +745,9 @@ public abstract class Entity
             final PrecisePosition precise = this.precisePosition;
             if (precise != null) {
                 precise.add(delta.x, delta.y, delta.z);
-                this.setPosRaw(precise.x(), precise.y(), precise.z());
+                // ⚠️ 必须走 setPos（不是 setPosRaw）：**AABB 只在 setPos 里重建**（setBoundingBox(makeBoundingBox())），
+                //   用 setPosRaw 会让碰撞箱停在旧位置 → 玩家「踩着空气走」。
+                this.setPos(precise.x(), precise.y(), precise.z());
             } else {
                 this.setPos(this.getX() + delta.x, this.getY() + delta.y, this.getZ() + delta.z);
             }
@@ -793,7 +795,8 @@ public abstract class Entity
                 final PrecisePosition precise = this.precisePosition;
                 if (precise != null) {
                     precise.add(movement.x, movement.y, movement.z);
-                    this.setPosRaw(precise.x(), precise.y(), precise.z());
+                    // ⚠️ 同上：必须 setPos（重建 AABB），不能用 setPosRaw
+                    this.setPos(precise.x(), precise.y(), precise.z());
                 } else {
                     this.setPos(newPosition);
                 }
@@ -2072,6 +2075,19 @@ public abstract class Entity
     }
 
     public final Vec3 getEyePosition(final float partialTickTime) {
+        // 🔧 MCRe「高精度位置」：帧内插值 —— 两端先在帧内相减（差量只有一 tick 的位移），
+        //   避免「两个世界量级 double 直接相减」在该量级的 ulp 处被吞掉。
+        //   锚点为 0 时（|坐标| < 1e12）局部就是世界值 → 与原版 Mth.lerp 逐位等价。
+        final PrecisePosition precise = this.precisePosition;
+
+        if (precise != null) {
+            return new Vec3(
+                precise.anchor(0).toDouble() + precise.lerpLocal(0, partialTickTime),
+                precise.anchor(1).toDouble() + precise.lerpLocal(1, partialTickTime) + this.getEyeHeight(),
+                precise.anchor(2).toDouble() + precise.lerpLocal(2, partialTickTime)
+            );
+        }
+
         double x = Mth.lerp(partialTickTime, this.xo, this.getX());
         double y = Mth.lerp(partialTickTime, this.yo, this.getY()) + this.getEyeHeight();
         double z = Mth.lerp(partialTickTime, this.zo, this.getZ());
@@ -2083,6 +2099,17 @@ public abstract class Entity
     }
 
     public final Vec3 getPosition(final float partialTickTime) {
+        // 🔧 MCRe「高精度位置」：帧内插值（见 getEyePosition(float) 的说明）
+        final PrecisePosition precise = this.precisePosition;
+
+        if (precise != null) {
+            return new Vec3(
+                precise.anchor(0).toDouble() + precise.lerpLocal(0, partialTickTime),
+                precise.anchor(1).toDouble() + precise.lerpLocal(1, partialTickTime),
+                precise.anchor(2).toDouble() + precise.lerpLocal(2, partialTickTime)
+            );
+        }
+
         double endX = Mth.lerp(partialTickTime, this.xo, this.getX());
         double endY = Mth.lerp(partialTickTime, this.yo, this.getY());
         double endZ = Mth.lerp(partialTickTime, this.zo, this.getZ());
@@ -3418,6 +3445,33 @@ public abstract class Entity
         }
 
         return null;
+    }
+
+    /**
+     * 🔧 MCRe「高精度位置」：<b>精确坐标传送</b>（仅启用高精度位置的实体，即玩家）。
+     *
+     * <p>普通 {@link #teleportTo} 的落点是 double → 坐标在传送那一刻就被 ulp 量化
+     * （1e46 处 ulp≈1.27e30）；本入口先把落点**精确搬进 237 位尾数**，再走原版传送流程。
+     * <p>传送过程中 vanilla 的 double 回填因投影相同会被保留（{@code keepIfProjection}）→ 精确值不降级 ✓
+     *
+     * @return 是否传送成功
+     */
+    public boolean teleportToExact(
+            final ServerLevel level,
+            final net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256 x,
+            final net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256 y,
+            final net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256 z,
+            final Set<Relative> relatives,
+            final float newYRot,
+            final float newXRot,
+            final boolean resetCamera) {
+        final PrecisePosition precise = this.precisePosition;
+
+        if (precise != null) {
+            precise.setExact(x, y, z);
+        }
+
+        return this.teleportTo(level, x.toDouble(), y.toDouble(), z.toDouble(), relatives, newYRot, newXRot, resetCamera);
     }
 
     public boolean teleportTo(

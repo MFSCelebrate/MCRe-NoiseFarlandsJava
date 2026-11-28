@@ -200,6 +200,28 @@ public final class FloatRefactor256 implements Comparable<FloatRefactor256> {
     }
 
     /**
+     * 从<b>十进制</b>（{@link java.math.BigDecimal}）构造。
+     *
+     * <p><b>精度边界（重要）</b>：本类是<b>二进制</b>浮点，十进制输入先按 IEEE 754 <b>double</b> 规则舍入
+     * （53 位有效数字），再无损搬进本类的 237 位尾数。
+     * <p>也就是说：<b>十进制超过 53 位有效数字的部分会被舍入</b>（与 double 一致）；
+     * 但一旦进入本类，坐标的<b>后续累加</b>是在 237 位尾数上进行的（不会再有 double 的 ulp 截断）。
+     * <p>零值按符号返回（{@code -0} → {@link #NEGATIVE_ZERO}）。
+     *
+     * <p>用途：命令输入（{@code /tp} 之类）常是十进制字符串，支持科学记数法 —— 用本入口可直接吃下。
+     */
+    public static FloatRefactor256 of(final java.math.BigDecimal value) {
+        Objects.requireNonNull(value);
+
+        if (value.signum() == 0) {
+            return ZERO;
+        }
+
+        // 十进制 → double（BigDecimal.doubleValue 本身按 double 规则舍入）→ 无损搬进 237 位尾数
+        return of(value.doubleValue());
+    }
+
+    /**
      * 精确整数值导出（尾数 × 2^scale，小数部分截断；scale 极大时结果巨大——调用方责任）。
      * 次正态/正规一致；NaN/Inf 抛 ArithmeticException。
      */

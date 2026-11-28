@@ -206,7 +206,16 @@ public class TeleportCommand {
          double dz = z.doubleValue();
          Entity entity = source.getEntityOrException();
          if (entity instanceof net.minecraft.server.level.ServerPlayer sp) {
-            sp.teleportTo(dx, dy, dz);
+            // 🔧 MCRe「高精度位置」：玩家走精确通道（落点精确搬进 237 位尾数，后续累加不再被 ulp 截断）
+            if (sp.getPrecisePosition() != null) {
+               sp.teleportToExact(source.getLevel(),
+                  net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(dx),
+                  net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(dy),
+                  net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(dz),
+                  java.util.Set.of(), sp.getYRot(), sp.getXRot(), true);
+            } else {
+               sp.teleportTo(dx, dy, dz);
+            }
          } else {
             entity.absSnapTo(dx, dy, dz);
          }
@@ -439,7 +448,22 @@ public class TeleportCommand {
       float relativeOrAbsoluteXRot = relatives.contains(Relative.X_ROT) ? xRot - victim.getXRot() : xRot;
       float newYRot = Mth.wrapDegrees(relativeOrAbsoluteYRot);
       float newXRot = Mth.wrapDegrees(relativeOrAbsoluteXRot);
-      if (victim.teleportTo(level, relativeOrAbsoluteX, relativeOrAbsoluteY, relativeOrAbsoluteZ, relatives, newYRot, newXRot, true)) {
+      // 🔧 MCRe「高精度位置」：启用高精度位置的实体（玩家）→ 落点**精确搬运**
+      //   （double 落点在传送那一刻就已被 ulp 量化：1e46 处 ulp≈1.27e30）
+      final boolean teleported;
+      final net.MinecraftTools.precision.PrecisePosition precise = victim.getPrecisePosition();
+
+      if (precise != null) {
+         teleported = victim.teleportToExact(level,
+            net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(relativeOrAbsoluteX),
+            net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(relativeOrAbsoluteY),
+            net.MinecraftTools.Math._256bit_Refactoring.FloatRefactor256.of(relativeOrAbsoluteZ),
+            relatives, newYRot, newXRot, true);
+      } else {
+         teleported = victim.teleportTo(level, relativeOrAbsoluteX, relativeOrAbsoluteY, relativeOrAbsoluteZ, relatives, newYRot, newXRot, true);
+      }
+
+      if (teleported) {
          if (lookAt != null) {
             lookAt.perform(source, victim);
          }

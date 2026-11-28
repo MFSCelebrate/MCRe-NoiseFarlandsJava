@@ -151,11 +151,8 @@ public class DebugEntryPosition implements DebugScreenEntry {
 
             // ===== 🔧 MCRe：Terrain XYZ + 精度计算 =====
             final BigDecimal[] terrainXYZ = computeTerrainXYZ(entity);
-            // 🔧 MCRe：高精度坐标的精确十进制串（调试屏每次刷新算一次，避免在 fact lambda 里反复转换）
+            // 🔧 MCRe：高精度位置（玩家启用后，坐标真值是 237 位尾数的二进制浮点）
             final PrecisePosition precisePosition = entity.getPrecisePosition();
-            final String[] exactXYZ = precisePosition != null
-                    ? new String[]{precisePosition.exactX().toExactString(), precisePosition.exactY().toExactString(), precisePosition.exactZ().toExactString()}
-                    : null;
             final BigInteger maxAbs = terrainXYZ[0].abs().toBigInteger().max(terrainXYZ[1].abs().toBigInteger()).max(terrainXYZ[2].abs().toBigInteger());
             final int bitLen = maxAbs.bitLength();  // 最高位 1 的位置（等价于 64 - Long.numberOfLeadingZeros）
             final double doublePrecision = Math.pow(2.0, (double) (bitLen - 53));
@@ -168,21 +165,34 @@ public class DebugEntryPosition implements DebugScreenEntry {
             displayer.addFactToGroup(
                 DebugGroups.POSITION,
                 "XYZ",
-                fact -> fact.value(fmtFixed(entity.getX(), 3)).text(" / ").value(fmtFixed(entity.getY(), 5)).text(" / ").value(fmtFixed(entity.getZ(), 3))
+                fact -> {
+                    // 🔧 MCRe：显示**精确坐标**（237 位尾数），小数位与原版一致（x/z 3 位、y 5 位）
+                    //   —— double 投影在远坐标下已被 ulp 量化（1e46 处 ulp≈1.27e30），精确值能多显示被吞掉的小数
+                    if (precisePosition != null) {
+                        fact.value(precisePosition.exactX().toFixedString(3))
+                                .text(" / ")
+                                .value(precisePosition.exactY().toFixedString(5))
+                                .text(" / ")
+                                .value(precisePosition.exactZ().toFixedString(3));
+                    } else {
+                        fact.value(fmtFixed(entity.getX(), 3)).text(" / ").value(fmtFixed(entity.getY(), 5)).text(" / ").value(fmtFixed(entity.getZ(), 3));
+                    }
+                }
             );
             displayer.addFactToGroup(
                 DebugGroups.POSITION,
                 "XYZ(Camera)",
-                fact -> fact.value(fmtFixed(camX, 3)).text(" / ").value(fmtFixed(camY, 5)).text(" / ").value(fmtFixed(camZ, 3))
-            );
-            displayer.addFactToGroup(
-                DebugGroups.POSITION,
-                "XYZ(精确)",
                 fact -> {
-                    if (exactXYZ != null) {
-                        fact.value(exactXYZ[0]).text(" / ").value(exactXYZ[1]).text(" / ").value(exactXYZ[2]);
+                    // 🔧 MCRe：显示**精确的摄像机坐标** = 精确实体位置 + （摄像机 double 位置 − 实体 double 位置）的偏移
+                    //   （第一人称时偏移就是眼睛高度；第三人称拉远的偏移受 double 限制，远坐标下本就丢失 → 偏移为 0）
+                    if (precisePosition != null) {
+                        fact.value(precisePosition.exactX().add(FloatRefactor256.of(camX - entity.getX())).toFixedString(3))
+                                .text(" / ")
+                                .value(precisePosition.exactY().add(FloatRefactor256.of(camY - entity.getY())).toFixedString(5))
+                                .text(" / ")
+                                .value(precisePosition.exactZ().add(FloatRefactor256.of(camZ - entity.getZ())).toFixedString(3));
                     } else {
-                        fact.value(fmtFixed(entity.getX(), 3)).text(" / ").value(fmtFixed(entity.getY(), 5)).text(" / ").value(fmtFixed(entity.getZ(), 3));
+                        fact.value(fmtFixed(camX, 3)).text(" / ").value(fmtFixed(camY, 5)).text(" / ").value(fmtFixed(camZ, 3));
                     }
                 }
             );

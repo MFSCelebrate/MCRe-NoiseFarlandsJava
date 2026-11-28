@@ -929,6 +929,17 @@ public abstract class Player extends Avatar implements ContainerUser {
     }
 
     private boolean canFallAtLeast(final double deltaX, final double deltaZ, final double minHeight) {
+        // 🔧 MCRe「高精度位置」：远坐标下**世界量级的包围盒会塌成一个点**（5e18 处六个端点全等）
+        //   → 方块查询找不到东西 → 这里恒返回「可以下坠」→ 上游 maybeBackOffFromEdge 会把水平位移
+        //   每 0.05 格减一次直到减成 0（表现为潜行时水平移动被卡住）。
+        //   服务端没有模拟层，按「无方块」处理（与改动前一致）。
+        final net.MinecraftTools.precision.PrecisePosition precise = this.getPrecisePosition();
+
+        if (precise != null
+                && !(precise.anchor(0).isZero() && precise.anchor(1).isZero() && precise.anchor(2).isZero())) {
+            return true;
+        }
+
         AABB boundingBox = this.getBoundingBox();
         return this.level()
                 .noCollision(
