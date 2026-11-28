@@ -1,6 +1,7 @@
 package net.minecraft.client.renderer.block;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.MinecraftTools.render.BedrockFloatVertex;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -27,8 +28,36 @@ public class FluidRenderer {
     private static final float MAX_FLUID_HEIGHT = 0.8888889F;
     private final FluidStateModelSet fluidModels;
 
+    // 🔧 MCRe「基岩版 条纹之地与切片之地」：携带版 0.6.1 的 TileRenderer 用【绝对 float32】坐标写流体顶点
+    // （(float)x + 角点），2^24 起角点偏移被 round-half-to-even 吃掉 → 流体表面同样出现条纹/切片。
+    // 关闭时（默认）全部为 0 → 行为与原版逐位一致。
+    private boolean bedrockAbsoluteCoords = false;
+    private long originBlockX;
+    private long originBlockY;
+    private long originBlockZ;
+    private float originXf;
+    private float originYf;
+    private float originZf;
+
     public FluidRenderer(final FluidStateModelSet fluidModels) {
         this.fluidModels = fluidModels;
+    }
+
+    /**
+     * 🔧 MCRe：切换到携带版 0.6.1 的 float32 绝对坐标流体渲染（见 {@link BedrockFloatVertex}）。
+     *
+     * @param originBlockX 区块（section）原点 X（方块坐标）
+     * @param originBlockY 区块（section）原点 Y（方块坐标）
+     * @param originBlockZ 区块（section）原点 Z（方块坐标）
+     */
+    public void setBedrockAbsoluteCoords(final long originBlockX, final long originBlockY, final long originBlockZ) {
+        this.bedrockAbsoluteCoords = true;
+        this.originBlockX = originBlockX;
+        this.originBlockY = originBlockY;
+        this.originBlockZ = originBlockZ;
+        this.originXf = BedrockFloatVertex.quantizeBlockCoord(originBlockX);
+        this.originYf = BedrockFloatVertex.quantizeBlockCoord(originBlockY);
+        this.originZf = BedrockFloatVertex.quantizeBlockCoord(originBlockZ);
     }
 
     private static boolean isNeighborSameFluid(final FluidState fluidState, final FluidState neighborFluidState) {
@@ -119,9 +148,19 @@ public class FluidRenderer {
                 );
             }
 
-            float x = pos.getX() & 15;
-            float y = pos.getY() & 15;
-            float z = pos.getZ() & 15;
+            float x;
+            float y;
+            float z;
+            if (this.bedrockAbsoluteCoords) {
+                // 携带版语义：绝对坐标先量化成 float32，后面的「+1 格 / 0.001 内缩」都在绝对量级上做
+                x = BedrockFloatVertex.quantizeBlockCoord(this.originBlockX + (pos.getX() & 15));
+                y = BedrockFloatVertex.quantizeBlockCoord(this.originBlockY + (pos.getY() & 15));
+                z = BedrockFloatVertex.quantizeBlockCoord(this.originBlockZ + (pos.getZ() & 15));
+            } else {
+                x = pos.getX() & 15;
+                y = pos.getY() & 15;
+                z = pos.getZ() & 15;
+            }
             float offs = 0.001F;
             float bottomOffs = renderDown ? 0.001F : 0.0F;
             if (renderUp
@@ -426,7 +465,10 @@ public class FluidRenderer {
     private void vertex(
         final VertexConsumer builder, final float x, final float y, final float z, final int color, final float u, final float v, final int lightCoords
     ) {
-        builder.addVertex(x, y, z, color, u, v, OverlayTexture.NO_OVERLAY, lightCoords, 0.0F, 1.0F, 0.0F);
+        // 🔧 MCRe「基岩版 条纹之地与切片之地」：携带版的顶点最终是「绝对 float32 角点 + float32(-区块原点)」
+        // （Chunk.cpp 的 t.offset((float)(-chunk->x), …)）→ 这里等价地减去区块原点。
+        // 非基岩模式下原点为 0 → 与原版逐位一致。
+        builder.addVertex(x - this.originXf, y - this.originYf, z - this.originZf, color, u, v, OverlayTexture.NO_OVERLAY, lightCoords, 0.0F, 1.0F, 0.0F);
     }
 
     private int getLightCoords(final BlockAndTintGetter level, final BlockPos pos) {

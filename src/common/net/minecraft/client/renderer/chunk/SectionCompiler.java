@@ -10,6 +10,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import net.MinecraftTools.render.BedrockTileRenderer;
 import net.minecraft.CrashReport;
 import net.minecraft.CrashReportCategory;
 import net.minecraft.ReportedException;
@@ -65,14 +66,53 @@ public class SectionCompiler {
         BlockModelLighter.enableCaching();
         ModelBlockRenderer blockRenderer = new ModelBlockRenderer(this.ambientOcclusion, true, this.blockColors);
         FluidRenderer fluidRenderer = new FluidRenderer(this.fluidModelSet);
+        // 🔧 MCRe「基岩版 条纹之地与切片之地」：携带版 0.6.1 的 TileRenderer 把【绝对方块坐标】直接塞进
+        // float32 顶点（(float)x + 角点），float32 的 ULP 在 2^24 = 16777216 处变成 2 →
+        // 「+1 格」的偏移被 round-half-to-even 吃掉 → 周期 3 的条纹之地；2^25 起 ULP=4/8/16 → 切片之地。
+        // 开启时改走该算法（逐位一致还原携带版几何）；关闭时保持 26.2 原版的 section 局部坐标路径（零行为变化）。
+        final boolean bedrockStripeLands = BedrockTileRenderer.isEnabled();
+        final long originBlockX = sectionPos.minBlockXLong();
+        final long originBlockY = sectionPos.minBlockYLong();
+        final long originBlockZ = sectionPos.minBlockZLong();
+        if (bedrockStripeLands) {
+            fluidRenderer.setBedrockAbsoluteCoords(originBlockX, originBlockY, originBlockZ);
+        }
         Map<ChunkSectionLayer, BufferBuilder> startedLayers = new EnumMap<>(ChunkSectionLayer.class);
         BlockQuadOutput quadOutput = (x, y, z, quad, instance) -> {
             BufferBuilder builder = this.getOrBeginLayer(startedLayers, builders, quad.materialInfo().layer());
-            builder.putBlockBakedQuad(x, y, z, quad, instance);
+            if (bedrockStripeLands) {
+                BedrockTileRenderer.putBlockBakedQuad(
+                    builder,
+                    originBlockX + (long) x,
+                    originBlockY + (long) y,
+                    originBlockZ + (long) z,
+                    originBlockX,
+                    originBlockY,
+                    originBlockZ,
+                    quad,
+                    instance
+                );
+            } else {
+                builder.putBlockBakedQuad(x, y, z, quad, instance);
+            }
         };
         BlockQuadOutput opaqueQuadOutput = (x, y, z, quad, instance) -> {
             BufferBuilder builder = this.getOrBeginLayer(startedLayers, builders, ChunkSectionLayer.SOLID);
-            builder.putBlockBakedQuad(x, y, z, quad, instance);
+            if (bedrockStripeLands) {
+                BedrockTileRenderer.putBlockBakedQuad(
+                    builder,
+                    originBlockX + (long) x,
+                    originBlockY + (long) y,
+                    originBlockZ + (long) z,
+                    originBlockX,
+                    originBlockY,
+                    originBlockZ,
+                    quad,
+                    instance
+                );
+            } else {
+                builder.putBlockBakedQuad(x, y, z, quad, instance);
+            }
         };
         FluidRenderer.Output fluidOutput = layerx -> this.getOrBeginLayer(startedLayers, builders, layerx);
 

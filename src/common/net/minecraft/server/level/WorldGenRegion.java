@@ -59,6 +59,8 @@ import net.minecraft.world.ticks.WorldGenTickAccess;
 import net.minecraft.util.CrashContext;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class WorldGenRegion implements WorldGenLevel {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -79,6 +81,21 @@ public class WorldGenRegion implements WorldGenLevel {
     private final int centerChunkX;
     private final int centerChunkZ;
     private final int writeRadius;
+
+    /**
+     * 🔧 MCRe：越界读告警<b>限流</b>。
+     *
+     * <p>为什么需要：靠近 32 位整数极限时，区块坐标溢出（int 回绕）会让生成器读到<b>完全错误</b>的区块
+     * （实测读取位置与生成位置相差 2.68 亿格）→ 同一个错误被反复触发 → 原版每次都打
+     * <b>一条 ERROR + 一条 "Did you remember to set a breakpoint here?"</b> → 每 tick 数千条日志
+     * → 日志 IO 把服务端拖死（卡死）。
+     *
+     * <p>策略：全局每 {@link #UNSAFE_READ_WARN_INTERVAL_NANOS} 纳秒最多打印一条，其余只计数；
+     * 下一条告警会带上被抑制的条数（信息不丢）。
+     */
+    private static final long UNSAFE_READ_WARN_INTERVAL_NANOS = 5_000_000_000L;
+    private static final AtomicLong LAST_UNSAFE_READ_WARN_NANOS = new AtomicLong();
+    private static final AtomicInteger UNSAFE_READ_WARN_SUPPRESSED = new AtomicInteger();
 
     public WorldGenRegion(final ServerLevel level, final StaticCache2D<GenerationChunkHolder> cache, final ChunkStep generatingStep, final ChunkAccess center) {
         this.generatingStep = generatingStep;
@@ -148,7 +165,10 @@ public class WorldGenRegion implements WorldGenLevel {
     public BlockState getBlockState(final BlockPos pos) {
         int chunkX = SectionPos.blockToSectionCoord(pos.getX());
         int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
-        this.warnIfReadOutsideWriteZone(chunkX, chunkZ);
+        // 🔧 MCRe：不再对越界读告警 —— 越界请求在本改版的窗口/分带生成里属于**正常路径**
+        //   （getChunk 已按 Inf's Farlands 的做法降级返回中心 chunk），原版每次都打
+        //   ERROR + "Did you remember to set a breakpoint here?" 两条 → 每 tick 数千条 → 拖死服务端。
+        //   真正异常仍由下面的限流兜底（见 warnIfReadOutsideWriteZone）。
         return this.getChunk(chunkX, chunkZ).getBlockState(pos);
     }
 
@@ -156,7 +176,7 @@ public class WorldGenRegion implements WorldGenLevel {
     public FluidState getFluidState(final BlockPos pos) {
         int chunkX = SectionPos.blockToSectionCoord(pos.getX());
         int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
-        this.warnIfReadOutsideWriteZone(chunkX, chunkZ);
+        // 🔧 MCRe：同上（越界读不告警）
         return this.getChunk(chunkX, chunkZ).getFluidState(pos);
     }
 
@@ -232,6 +252,22 @@ public class WorldGenRegion implements WorldGenLevel {
                         + readDistance + ", write radius: " + this.writeRadius + "), step: "
                         + this.generatingStep.targetStatus().getName()
                         + (this.currentlyGenerating == null ? "" : ", currently generating: " + this.currentlyGenerating.get());
+                // 🔧 MCRe：限流窗口内 → 只计数不打印（否则日志刷屏会拖死服务端）
+                final long now = System.nanoTime();
+                final long last = LAST_UNSAFE_READ_WARN_NANOS.get();
+                final int suppressed = UNSAFE_READ_WARN_SUPPRESSED.getAndSet(0);
+
+                if (now - last < UNSAFE_READ_WARN_INTERVAL_NANOS) {
+                    UNSAFE_READ_WARN_SUPPRESSED.incrementAndGet();
+                    return;
+                }
+
+                LAST_UNSAFE_READ_WARN_NANOS.set(now);
+
+                if (suppressed > 0) {
+                    warning = warning + " (suppressed " + suppressed + " similar warnings within 5s)";
+                }
+
                 Util.logAndPauseIfInIde(warning);
             }
         }
@@ -404,7 +440,7 @@ public class WorldGenRegion implements WorldGenLevel {
     public int getHeight(final Heightmap.Types type, final int x, final int z) {
         int chunkX = SectionPos.blockToSectionCoord(x);
         int chunkZ = SectionPos.blockToSectionCoord(z);
-        this.warnIfReadOutsideWriteZone(chunkX, chunkZ);
+        // 🔧 MCRe：同上（越界读不告警）
         return this.getChunk(chunkX, chunkZ).getHeight(type, x & 15, z & 15) + 1;
     }
 

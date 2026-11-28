@@ -37,6 +37,7 @@
 - [调试控制台](UserGuide.DebugConsoleInfo) - 展示并讲解仅供调试使用的调试控制台
 
 ### Minecraft 内部方法及旧版本边境之地参考资料
+- [Minecraft 1.18.1 渐消之地：成因链、逐位对照与本改版的还原](Project.Vanilla1181) - 解析 1.18.1 的渐消之地成因链（SHIFT 越界 → 样条 0×Infinity=NaN）、携带版 0.6.1 的条纹/切片之地，以及本改版的逐位还原方式
 - [1.18 实验性快照 边境之地](https://b23.tv/JLLV0T3) - 展示关于 1.18 Experimental Snapshot 4 边境之地生成原理的讲解
 
 ### 与改版无关，但有完整推断链的可参考资料

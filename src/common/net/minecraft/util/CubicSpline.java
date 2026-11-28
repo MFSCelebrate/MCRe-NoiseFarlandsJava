@@ -224,7 +224,30 @@ public sealed interface CubicSpline<I> permits CubicSpline.Multipoint, CubicSpli
 
         private static float linearExtend(final float input, final float[] locations, final float value, final float[] derivatives, final int index) {
             float derivative = derivatives[index];
+            // 🔧 MCRe「1.18.1 样条外推」：1.19.2 起才有「端点斜率为零 → 直接返回端点值」的保护（linearExtend）。
+            // 1.18.1 的公式是「端点值 + 端点斜率 × (输入 − 端点位置)」—— 0 × Infinity = NaN，
+            // 这正是 1.18.1 在 32 位坐标极限附近「渐消之地」迅速崩掉的成因链末环。
+            // 开关开启时整条世界生成器链改走 1.18.1 语义（默认关闭 = 26.2 原版行为，零变化）。
+            if (useLegacy1181Extrapolation()) {
+                return net.MinecraftTools.terrain.pipeline.SplineExtrapolation1181.extend(input, locations[index], value, derivative);
+            }
+
             return derivative == 0.0F ? value : value + derivative * (input - locations[index]);
+        }
+
+        /**
+         * 🔧 MCRe：是否启用 1.18.1 样条外推（读全局配置；common 类读 client 配置是本改版既有模式，
+         * 见 {@code ChunkMap} / {@code TeleportCommand}）。
+         */
+        private static boolean useLegacy1181Extrapolation() {
+            // 🔧 1.18.1 管线激活时强制 1.18.1 语义（管线在 patch RandomState 时置位）
+            if (net.MinecraftTools.terrain.pipeline.SplineExtrapolation1181.isForced1181()) {
+                return true;
+            }
+
+            final net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData config =
+                net.minecraft.client.gui.screens.worldselection.WorldMainSettingScreen.FarLandsConfigData.activeConfig;
+            return config != null && config.disableCubicSplineLinearExtend;
         }
 
         private static <I> void validateSizes(final float[] locations, final List<CubicSpline<I>> values, final float[] derivatives) {

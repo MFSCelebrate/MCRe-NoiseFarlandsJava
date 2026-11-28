@@ -49,6 +49,9 @@ public class WorldMainSettingScreen extends Screen {
     // ==================== 配置数据 ====================
     private final FarLandsConfigData configData;
 
+    /** 进入界面时「基岩版 条纹之地与切片之地」的值（用于判断是否需要强制重编译区块网格） */
+    private final boolean initialEnabledBedrockStripeLands;
+
     // ==================== 布局组件 ====================
     private final LinearLayout scrollContent = LinearLayout.vertical().spacing(6);
     private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
@@ -93,6 +96,7 @@ public class WorldMainSettingScreen extends Screen {
         this.settings = settings;
         // 🔧 MCRe：从 options.txt 同目录的 farlands_config.json 加载上次保存的全局配置
         this.configData = FarLandsConfigStorage.load(Minecraft.getInstance().gameDirectory);
+        this.initialEnabledBedrockStripeLands = this.configData.enabledBedrockStripeLands;
     }
 
     /** 便捷构造函数：用于主菜单直接打开，无需 WorldCreationContext */
@@ -230,6 +234,20 @@ public class WorldMainSettingScreen extends Screen {
                 () -> this.configData.progressiveFarlands,
                 val -> this.configData.progressiveFarlands = val
         ).withInfo(Component.literal("强制让自实现的 lerp 方法返回 start，不再进行原计算"));
+        skyGridBuilder.addSwitch(
+                Component.literal("1.18.1 样条外推（不走 CubicSpline.linearExtend）"),
+                () -> this.configData.disableCubicSplineLinearExtend,
+                val -> this.configData.disableCubicSplineLinearExtend = val
+        ).withInfo(Component.literal(
+                "§e让整个世界生成器链不使用 CubicSpline.linearExtend 的「端点斜率为零时\n"
+                        + "§e直接返回端点值」捷径，改用 1.18.1 的外推公式：\n"
+                        + "§f  端点值 + 端点斜率 × (输入 − 端点位置)\n"
+                        + "§b气候噪声输出为 ±Infinity 时，平坦端点会得到 0 × Infinity = NaN，\n"
+                        + "§bNaN 沿最终密度与网格插值传播 —— 这正是 1.18.1 在 32 位坐标极限附近\n"
+                        + "§c「渐消之地只有几百格」的成因链末环（1.19.2 起才有 linearExtend 保护，\n"
+                        + "§7实测能把渐消距离从 504 格拉到 607908 格）。\n"
+                        + "§7默认关闭（= 26.2 原版行为，零变化）。"
+        ));
         skyGridBuilder.addSwitch(
                 Component.literal("使用 BigDecimal / BigInteger 重写地形"),
                 () -> this.configData.exactTerrainRewrite,
@@ -692,6 +710,21 @@ public class WorldMainSettingScreen extends Screen {
                 val -> this.configData.preventGenerationFails = val
         ).withInfo(Component.literal("开启后，如果在生成区块时出现错误，游戏会像区块读取失败那样在右上角显示弹窗并继续运行，而不是直接崩溃"));
         this.scrollContent.addChild(serverBuilder.build().layout(), s -> s.paddingHorizontal(10));
+
+        // ========== 第二组：客户端渲染 / 客户端距离现象 ==========
+        this.scrollContent.addChild(this.createSectionHeader(
+                Component.literal("§b§l客户端渲染 / 客户端距离现象")
+        ));
+
+        SwitchGrid.Builder clientRenderBuilder = SwitchGrid.builder(CONTENT_WIDTH - 20)
+                .withRowSpacing(4)
+                .withInfoUnderneathUnlimited(false);
+        clientRenderBuilder.addSwitch(
+                Component.literal("基岩版 条纹之地与切片之地"),
+                () -> this.configData.enabledBedrockStripeLands,
+                val -> this.configData.enabledBedrockStripeLands = val
+        ).withInfo(Component.literal("根据携带版 0.6.1 的 TileRenderer 方块表面贴图渲染，逐位一致地还原由 Float 精度丢失带来的纯客户端条纹之地与切片之地"));
+        this.scrollContent.addChild(clientRenderBuilder.build().layout(), s -> s.paddingHorizontal(10));
     }
 
     /**
@@ -748,14 +781,14 @@ public class WorldMainSettingScreen extends Screen {
                 this.titleWidget.setMessage(Component.literal("地形偏移与缩放").withStyle(ChatFormatting.BOLD));
                 this.subtitleWidget.setMessage(Component.literal("§7用于在 32 位整数限制下探索更远的地形"));
             } else if (this.currentPage == 2) {
-                this.titleWidget.setMessage(Component.literal("服务端").withStyle(ChatFormatting.BOLD));
-                this.subtitleWidget.setMessage(Component.literal("§7控制 Minecraft 服务端线程，得到想要的效果"));
+                this.titleWidget.setMessage(Component.literal("服务端与客户端渲染").withStyle(ChatFormatting.BOLD));
+                this.subtitleWidget.setMessage(Component.literal("§7控制 Minecraft 服务端线程和纯客户端的渲染层，得到想要的效果"));
             } else if (this.currentPage == 3) {
                 this.titleWidget.setMessage(Component.literal("调试").withStyle(ChatFormatting.BOLD));
                 this.subtitleWidget.setMessage(Component.literal("§7仅开发调试使用的特殊功能"));
             } else {
                 this.titleWidget.setMessage(this.title.copy().withStyle(ChatFormatting.BOLD));
-                this.subtitleWidget.setMessage(Component.literal("§7进行对世界生成器的自定义 │ Customize the world generator"));
+                this.subtitleWidget.setMessage(Component.literal("§7进行对世界生成器的自定义"));
             }
         }
     }
@@ -837,6 +870,11 @@ public class WorldMainSettingScreen extends Screen {
     private void onDone() {
         FarLandsConfigData cfg = this.configData;
         FarLandsConfigData.activeConfig = cfg;
+        // 🔧 MCRe「基岩版 条纹之地与切片之地」：该开关会改变【方块表面网格的生成方式】（顶点量化算法不同）
+        // → 已经编译好的区块网格不会自动变，必须强制全部重编译才看得到效果。
+        if (cfg.enabledBedrockStripeLands != this.initialEnabledBedrockStripeLands) {
+            Minecraft.getInstance().levelExtractor.allChanged();
+        }
         // 一次性解析为 BigDecimal（自研 DynamicAccuracy 库，无大小限制），避免运行期反复 parse 字符串
         WorldReposition.refresh(new WorldReposition.RepositionConfig(
         cfg.enabledTerrainScaler ? WorldReposition.parseOrFallback(cfg.xWorldScaler, BigDecimal.ONE) : BigDecimal.ONE,
@@ -929,6 +967,28 @@ public class WorldMainSettingScreen extends Screen {
 
         // 🔧 MCRe（大佬 10-16 派活）：阻止游戏在区块生成失败时崩溃
         public boolean preventGenerationFails = false;
+
+        /**
+         * 🔧 MCRe「基岩版 条纹之地与切片之地」（大佬 2026-11-28 派活）。
+         * <p>开启后，方块表面贴图渲染改用携带版 0.6.1 {@code TileRenderer} 的算法：
+         * 把<b>绝对方块坐标</b>直接塞进 float32 顶点（{@code (float)x + 角点}），
+         * float32 的 ULP 在 2^24 = 16777216 处变成 2 → 「+1 格」的偏移被 round-half-to-even 吃掉
+         * → 周期 3 的<b>条纹之地</b>；2^25 起 ULP = 4/8/16 → <b>切片之地</b>。
+         * <p>纯客户端现象：地形本身不变，只是方块表面网格被 float32 精度切碎。
+         * <p>默认关闭（正常世界完全无影响）。
+         */
+        public boolean enabledBedrockStripeLands = false;
+
+        /**
+         * 🔧 MCRe「1.18.1 样条外推」（大佬 2026-11-28 派活）。
+         * <p>开启后，整个世界生成器链不使用 {@code CubicSpline.linearExtend} 的
+         * 「端点斜率为零 → 直接返回端点值」捷径，改用 1.18.1 的外推公式
+         * 「端点值 + 端点斜率 × (输入 − 端点位置)」。
+         * <p>后果（1.18.1 原版行为）：气候噪声输出为 ±Infinity 时，平坦端点得到
+         * {@code 0 × Infinity = NaN} → NaN 沿密度树传播 → 32 位坐标极限附近「渐消之地」迅速崩坏。
+         * <p>默认关闭（= 26.2 原版行为，零变化）。
+         */
+        public boolean disableCubicSplineLinearExtend = false;
 
         // 🔧 MCRe：第二页「地形偏移与缩放」——
         // scaler 默认 1（无缩放），offset 默认 0（无偏移）。用 String 存 BigDecimal.toString()，
